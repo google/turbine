@@ -222,13 +222,19 @@ public class Lower {
     return inners.build();
   }
 
+  /**
+   * Record all enclosing declarations of a symbol, to make sure the necessary InnerClass attributes
+   * are added.
+   *
+   * <p>javac expects InnerClass attributes for enclosing classes to appear before their member
+   * classes' entries.
+   */
   private void addEnclosing(
       Env<ClassSymbol, TypeBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
-    TypeBoundClass innerinfo = env.get(sym);
-    while (innerinfo.owner() != null) {
+    ClassSymbol owner = env.get(sym).owner();
+    if (owner != null) {
+      addEnclosing(env, all, owner);
       all.add(sym);
-      sym = innerinfo.owner();
-      innerinfo = env.get(sym);
     }
   }
 

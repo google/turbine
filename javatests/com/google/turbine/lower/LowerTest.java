@@ -19,9 +19,12 @@ package com.google.turbine.lower;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
+import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -36,13 +39,19 @@ import com.google.turbine.bytecode.AsmUtils;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.parse.Parser;
 import com.google.turbine.type.Type;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
 
 @RunWith(JUnit4.class)
 public class LowerTest {
@@ -196,5 +205,37 @@ public class LowerTest {
                 ByteStreams.toByteArray(
                     LowerTest.class.getResourceAsStream("testdata/golden/inner.txt")),
                 UTF_8));
+  }
+
+  @Test
+  public void innerClassAttributeOrder() throws IOException {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    Joiner.on('\n')
+                        .join(
+                            "class Test {", //
+                            "  class Inner {",
+                            "    class InnerMost {}",
+                            "  }",
+                            "}"))),
+            ImmutableList.of(),
+            BOOTCLASSPATH);
+    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
+    List<String> attributes = new ArrayList<>();
+    new org.objectweb.asm.ClassReader(lowered.get("Test$Inner$InnerMost"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM5) {
+              @Override
+              public void visitInnerClass(
+                  String name, String outerName, String innerName, int access) {
+                attributes.add(String.format("%s %s %s", name, outerName, innerName));
+              }
+            },
+            0);
+    assertThat(attributes)
+        .containsExactly("Test$Inner Test Inner", "Test$Inner$InnerMost Test$Inner InnerMost")
+        .inOrder();
   }
 }
