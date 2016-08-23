@@ -1,0 +1,17 @@
+class Test {
+  class Inner {}
+  interface Inner {}
+  {
+    here = there + be + dragons;
+  }
+}
+
+===
+
+class Test {
+  class Inner {
+  }
+
+  interface Inner {
+  }
+}

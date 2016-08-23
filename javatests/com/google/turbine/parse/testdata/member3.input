@@ -1,0 +1,15 @@
+class Test {
+  void f() {}
+  int f() {}
+  public void f() {}
+  public <T> T f() {}
+}
+
+===
+
+class Test {
+  void f() {}
+  int f() {}
+  public void f() {}
+  public <T> T f() {}
+}

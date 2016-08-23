@@ -1,0 +1,13 @@
+enum Test {
+  ONE, TWO(asd);
+  void m() {}
+}
+
+===
+
+enum Test {
+  ONE,
+  TWO,
+  ;
+  void m() {}
+}

@@ -1,0 +1,11 @@
+class Test {
+  int[] f() [] {}
+  int f() [][] {}
+}
+
+===
+
+class Test {
+  int[][] f() {}
+  int[][] f() {}
+}

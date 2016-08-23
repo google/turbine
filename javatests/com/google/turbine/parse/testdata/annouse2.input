@@ -1,0 +1,4 @@
+@Anno
+class Simple {
+  @B(1) int x;
+}

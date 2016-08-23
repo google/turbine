@@ -1,0 +1,5 @@
+class Test<U extends Foo<Bar>> {
+}
+
+class Test<U extends Foo<Bar<Baz>>> {
+}

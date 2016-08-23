@@ -1,0 +1,27 @@
+class Test {
+  int x;
+  public int x;
+  public static final int x = 1;
+  List<String> x;
+  public static final List<String> x;
+  public static final List<String> x = 1;
+  Object x = 1;
+  Object[] x;
+  Object[] x = 1;
+  Object[] x[] = 1;
+}
+
+===
+
+class Test {
+  int x;
+  public int x;
+  public static final int x = 1;
+  List<String> x;
+  public static final List<String> x;
+  public static final List<String> x = 1;
+  Object x = 1;
+  Object[] x;
+  Object[] x = 1;
+  Object[][] x = 1;
+}

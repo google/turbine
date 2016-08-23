@@ -1,0 +1,2 @@
+class Test<T extends Test<T>> extends foo.Bar implements c.g.Outer<String>.Inner, Comparable {
+}

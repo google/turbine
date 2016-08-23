@@ -1,0 +1,3 @@
+public @interface Test {
+  boolean serializable() default false;
+}

@@ -19,12 +19,10 @@ package com.google.turbine.parse;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.escape.SourceCodeEscapers;
-
 import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.parser.Tokens;
 import com.sun.tools.javac.util.Context;
-
 import java.util.ArrayList;
 import java.util.List;
 

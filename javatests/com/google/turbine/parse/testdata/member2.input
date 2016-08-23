@@ -1,0 +1,13 @@
+class Test {
+  Test() {}
+  public Test() {}
+  public <T> Test() {}
+}
+
+===
+
+class Test {
+  <init>() {}
+  public <init>() {}
+  public <T> <init>() {}
+}
