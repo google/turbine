@@ -23,6 +23,8 @@ import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ArrTy;
@@ -38,7 +40,6 @@ import com.google.turbine.tree.Tree.TyParam;
 import com.google.turbine.tree.Tree.Type;
 import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.tree.Tree.WildTy;
-import com.google.turbine.tree.TurbineConstantTypeKind;
 import com.google.turbine.tree.TurbineModifier;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -188,7 +189,7 @@ public class Parser {
         Optional.<ClassTy>absent(),
         interfaces.build(),
         members,
-        TyDecl.TurbineTyKind.INTERFACE);
+        TurbineTyKind.INTERFACE);
   }
 
   private TyDecl annotationDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
@@ -205,7 +206,7 @@ public class Parser {
         Optional.<ClassTy>absent(),
         ImmutableList.<ClassTy>of(),
         members,
-        TyDecl.TurbineTyKind.ANNOTATION);
+        TurbineTyKind.ANNOTATION);
   }
 
   private TyDecl enumDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
@@ -230,7 +231,7 @@ public class Parser {
         Optional.<ClassTy>absent(),
         interfaces.build(),
         members,
-        TyDecl.TurbineTyKind.ENUM);
+        TurbineTyKind.ENUM);
   }
 
   private static final ImmutableSet<TurbineModifier> ENUM_CONSTANT_MODIFIERS =
@@ -317,7 +318,7 @@ public class Parser {
         Optional.fromNullable(xtnds),
         interfaces.build(),
         members,
-        TyDecl.TurbineTyKind.CLASS);
+        TurbineTyKind.CLASS);
   }
 
   private ImmutableList<Tree> classMembers() {

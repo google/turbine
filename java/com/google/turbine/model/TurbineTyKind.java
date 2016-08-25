@@ -14,29 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.turbine.tree;
+package com.google.turbine.model;
 
-/** A type of a compile-time constant expression literal. */
-public enum TurbineConstantTypeKind {
-  CHAR("char"),
-  SHORT("short"),
-  INT("int"),
-  LONG("long"),
-  FLOAT("float"),
-  DOUBLE("double"),
-  BOOLEAN("boolean"),
-  BYTE("byte"),
-  STRING("String"),
-  NULL("null");
-
-  private final String name;
-
-  TurbineConstantTypeKind(String name) {
-    this.name = name;
-  }
-
-  @Override
-  public String toString() {
-    return name;
-  }
+/** Type declaration kind. */
+public enum TurbineTyKind {
+  CLASS,
+  INTERFACE,
+  ENUM,
+  ANNOTATION
 }

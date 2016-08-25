@@ -20,6 +20,8 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.model.TurbineTyKind;
 import java.util.Set;
 
 /** An AST node. */
@@ -685,15 +687,6 @@ public abstract class Tree {
 
   /** A JLS 7.6 or 8.5 type declaration. */
   public static class TyDecl extends Tree {
-
-    /** Type declaration kind. */
-    public enum TurbineTyKind {
-      CLASS,
-      INTERFACE,
-      ENUM,
-      ANNOTATION
-    }
-
     private final ImmutableSet<TurbineModifier> mods;
     private final ImmutableList<Anno> annos;
     private final String name;

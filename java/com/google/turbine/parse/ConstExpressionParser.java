@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.UnsignedInts;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.tree.Tree;
-import com.google.turbine.tree.TurbineConstantTypeKind;
 import com.google.turbine.tree.TurbineOperatorKind;
 import javax.annotation.Nullable;
 
