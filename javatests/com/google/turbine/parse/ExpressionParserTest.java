@@ -125,6 +125,9 @@ public class ExpressionParserTest {
           {
             "1+-2", "(1 + -2)",
           },
+          {
+            "0xffffffff", "-1",
+          }
         });
   }
 
