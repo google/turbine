@@ -22,6 +22,7 @@ import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ArrTy;
@@ -232,8 +233,8 @@ public class Parser {
         TyDecl.TurbineTyKind.ENUM);
   }
 
-  private static final EnumSet<TurbineModifier> ENUM_CONSTANT_MODIFIERS =
-      EnumSet.of(
+  private static final ImmutableSet<TurbineModifier> ENUM_CONSTANT_MODIFIERS =
+      ImmutableSet.of(
           TurbineModifier.PUBLIC,
           TurbineModifier.STATIC,
           TurbineModifier.ACC_ENUM,
@@ -251,9 +252,8 @@ public class Parser {
             if (token == Token.LPAREN) {
               dropParens();
             }
-            // this is a bad place to do this :/
-            // but javac...
-            EnumSet<TurbineModifier> access = ENUM_CONSTANT_MODIFIERS;
+            // TODO(cushon): consider desugaring enum constants later
+            EnumSet<TurbineModifier> access = EnumSet.copyOf(ENUM_CONSTANT_MODIFIERS);
             if (token == Token.LBRACE) {
               access.add(TurbineModifier.ENUM_IMPL);
               dropBlocks();
