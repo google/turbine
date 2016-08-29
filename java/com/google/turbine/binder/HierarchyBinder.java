@@ -169,9 +169,9 @@ public class HierarchyBinder {
 
   /** Returns true if the given type is declared in an interface. */
   private boolean enclosedByInterface(BoundClass c) {
-    while (c.owner() != null) {
-      c = env.get(c.owner());
-      switch (c.kind()) {
+    if (c.owner() != null) {
+      HeaderBoundClass info = env.get(c.owner());
+      switch (info.kind()) {
         case INTERFACE:
         case ANNOTATION:
           return true;

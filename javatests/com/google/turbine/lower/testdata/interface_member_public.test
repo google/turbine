@@ -1,0 +1,6 @@
+=== Test.java ===
+interface I {
+  class A {
+    static class B {}
+  }
+}
