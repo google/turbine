@@ -23,7 +23,9 @@ package com.google.turbine.model;
 public abstract class Const {
 
   /** Subtypes of {@link Const} for primitive and String literals. */
-  public abstract static class Value extends Const {}
+  public abstract static class Value extends Const {
+    public abstract TurbineConstantTypeKind constantTypeKind();
+  }
 
   /** A boolean literal value. */
   public static class BooleanValue extends Value {
@@ -36,6 +38,15 @@ public abstract class Const {
     @Override
     public String toString() {
       return String.valueOf(value);
+    }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.BOOLEAN;
+    }
+
+    public boolean value() {
+      return value;
     }
   }
 
@@ -52,6 +63,15 @@ public abstract class Const {
     public String toString() {
       return String.valueOf(value);
     }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.INT;
+    }
+
+    public int value() {
+      return value;
+    }
   }
 
   /** A long literal value. */
@@ -66,6 +86,15 @@ public abstract class Const {
     public String toString() {
       return value + "L";
     }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.LONG;
+    }
+
+    public long value() {
+      return value;
+    }
   }
 
   /** A char literal value. */
@@ -78,7 +107,16 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return "'" + String.valueOf(value) + "'";
+      return "'" + value + "'";
+    }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.CHAR;
+    }
+
+    public char value() {
+      return value;
     }
   }
 
@@ -92,7 +130,16 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return String.valueOf(value) + "f";
+      return value + "f";
+    }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.FLOAT;
+    }
+
+    public float value() {
+      return value;
     }
   }
 
@@ -108,6 +155,15 @@ public abstract class Const {
     public String toString() {
       return String.valueOf(value);
     }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.DOUBLE;
+    }
+
+    public double value() {
+      return value;
+    }
   }
 
   /** A String literal value. */
@@ -121,6 +177,15 @@ public abstract class Const {
     @Override
     public String toString() {
       return String.format("\"%s\"", value);
+    }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.STRING;
+    }
+
+    public String value() {
+      return value;
     }
   }
 }

@@ -18,6 +18,8 @@ package com.google.turbine.tree;
 
 import static java.util.Locale.ENGLISH;
 
+import com.google.turbine.model.TurbineFlag;
+
 /**
  * Modifiers.
  *

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.turbine.tree;
+package com.google.turbine.model;
 
 /**
  * Access bits.
