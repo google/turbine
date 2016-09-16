@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.env.LazyEnv;
@@ -29,7 +30,10 @@ import com.google.turbine.parse.Parser;
 import com.google.turbine.parse.StreamLexer;
 import com.google.turbine.parse.UnicodeEscapePreprocessor;
 import com.google.turbine.tree.Tree;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,8 +42,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class BinderTest {
 
+  private static final ImmutableList<Path> BOOTCLASSPATH =
+      ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
+
   @Test
-  public void hello() {
+  public void hello() throws Exception {
     List<Tree.CompUnit> units = new ArrayList<>();
     units.add(
         parseLines(
@@ -57,7 +64,8 @@ public class BinderTest {
             "public class B extends A {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound = Binder.bind(units);
+    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -81,7 +89,7 @@ public class BinderTest {
   }
 
   @Test
-  public void interfaces() {
+  public void interfaces() throws Exception {
     List<Tree.CompUnit> units = new ArrayList<>();
     units.add(
         parseLines(
@@ -97,7 +105,8 @@ public class BinderTest {
             "  class BInner extends IInner {}",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound = Binder.bind(units);
+    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -111,10 +120,11 @@ public class BinderTest {
 
     assertThat(bound.get(new ClassSymbol("b/B$BInner")).superclass())
         .isEqualTo(new ClassSymbol("com/i/I$IInner"));
+    assertThat(bound.get(new ClassSymbol("b/B$BInner")).interfaces()).isEmpty();
   }
 
   @Test
-  public void enums() {
+  public void enums() throws Exception {
     List<Tree.CompUnit> units = new ArrayList<>();
     units.add(
         parseLines(
@@ -135,7 +145,8 @@ public class BinderTest {
             "  public void g() {}",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound = Binder.bind(units);
+    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
 
     SourceHeaderBoundClass e1 = bound.get(new ClassSymbol("test/E1"));
     assertThat((e1.access() & TurbineFlag.ACC_ABSTRACT) == TurbineFlag.ACC_ABSTRACT).isTrue();
@@ -147,7 +158,7 @@ public class BinderTest {
   }
 
   @Test
-  public void imports() {
+  public void imports() throws Exception {
     List<Tree.CompUnit> units = new ArrayList<>();
     units.add(
         parseLines(
@@ -163,14 +174,15 @@ public class BinderTest {
             "public class Foo extends Inner {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound = Binder.bind(units);
+    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
 
     assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
         .isEqualTo(new ClassSymbol("com/test/Test$Inner"));
   }
 
   @Test
-  public void cycle() {
+  public void cycle() throws Exception {
     List<Tree.CompUnit> units = new ArrayList<>();
     units.add(
         parseLines(
@@ -188,7 +200,7 @@ public class BinderTest {
             "}"));
 
     try {
-      Binder.bind(units);
+      Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
       fail();
     } catch (LazyEnv.LazyBindingError e) {
       assertThat(e.getMessage()).contains("cycle: a/A$Inner -> a/A -> b/B -> a/A");
@@ -204,7 +216,8 @@ public class BinderTest {
             "public @interface Annotation {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound = Binder.bind(units);
+    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
 
     SourceHeaderBoundClass a = bound.get(new ClassSymbol("com/test/Annotation"));
     assertThat(a.access())
@@ -215,6 +228,23 @@ public class BinderTest {
                 | TurbineFlag.ACC_ANNOTATION);
     assertThat(a.superclass()).isEqualTo(new ClassSymbol("java/lang/Object"));
     assertThat(a.interfaces()).containsExactly(new ClassSymbol("java/lang/annotation/Annotation"));
+  }
+
+  @Test
+  public void helloBytecode() throws Exception {
+    List<Tree.CompUnit> units = new ArrayList<>();
+    units.add(
+        parseLines(
+            "package a;", //
+            "import java.util.Map.Entry;",
+            "public class A implements Entry {",
+            "}"));
+
+    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+
+    SourceHeaderBoundClass a = bound.get(new ClassSymbol("a/A"));
+    assertThat(a.interfaces()).containsExactly(new ClassSymbol("java/util/Map$Entry"));
   }
 
   private Tree.CompUnit parseLines(String... lines) {

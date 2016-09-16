@@ -34,7 +34,6 @@ public class ClassSymbol {
   public static final ClassSymbol ENUM = new ClassSymbol("java/lang/Enum");
   public static final ClassSymbol ANNOTATION = new ClassSymbol("java/lang/annotation/Annotation");
 
-  /** The JVMS 4.2.1 binary name of the class. */
   private final String className;
 
   public ClassSymbol(String className) {
@@ -54,5 +53,10 @@ public class ClassSymbol {
   @Override
   public boolean equals(Object o) {
     return o instanceof ClassSymbol && className.equals(((ClassSymbol) o).className);
+  }
+
+  /** The JVMS 4.2.1 binary name of the class. */
+  public String binaryName() {
+    return className;
   }
 }

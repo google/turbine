@@ -16,15 +16,21 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.Verify.verifyNotNull;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.turbine.binder.bound.BoundClass;
+import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
+import com.google.turbine.binder.bytecode.BytecodeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.env.SimpleEnv;
@@ -35,6 +41,9 @@ import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +52,9 @@ import java.util.Map;
 public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
-  public static ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bind(List<CompUnit> units) {
+  public static ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bind(
+      List<CompUnit> units, Iterable<Path> classpath, Iterable<Path> bootclasspath)
+      throws IOException {
 
     TopLevelIndex.Builder tliBuilder = TopLevelIndex.builder();
 
@@ -53,7 +64,8 @@ public class Binder {
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
-    // TODO(cushon): classpath set-up
+    CompoundEnv<BytecodeBoundClass> classPathEnv =
+        ClassPathBinder.bind(classpath, bootclasspath, tliBuilder);
 
     // Insertion order into the top-level index is important:
     // * the first insert into the TLI wins
@@ -62,9 +74,9 @@ public class Binder {
 
     TopLevelIndex tli = tliBuilder.build();
 
-    SimpleEnv<PackageSourceBoundClass> psenv = bindPackages(ienv, tli, toplevels);
+    SimpleEnv<PackageSourceBoundClass> psenv = bindPackages(ienv, tli, toplevels, classPathEnv);
 
-    Env<SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv);
+    Env<SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
 
     ImmutableMap.Builder<ClassSymbol, SourceHeaderBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
@@ -77,7 +89,7 @@ public class Binder {
   static SimpleEnv<SourceBoundClass> bindSourceBoundClasses(
       Multimap<CompUnit, ClassSymbol> toplevels,
       List<CompUnit> units,
-      TopLevelIndex.Builder tpiBuilder) {
+      TopLevelIndex.Builder tliBuilder) {
     SimpleEnv.Builder<SourceBoundClass> envbuilder = SimpleEnv.builder();
     for (CompUnit unit : units) {
       String packagename;
@@ -94,7 +106,7 @@ public class Binder {
             sym, new SourceBoundClass(decl, null, decl.tykind(), children))) {
           toplevels.put(unit, sym);
         }
-        tpiBuilder.insert(sym);
+        tliBuilder.insert(sym);
       }
     }
     return envbuilder.build();
@@ -124,12 +136,15 @@ public class Binder {
 
   /** Initializes scopes for compilation unit and package-level lookup. */
   private static SimpleEnv<PackageSourceBoundClass> bindPackages(
-      Env<SourceBoundClass> ienv, TopLevelIndex tli, Multimap<CompUnit, ClassSymbol> info0) {
+      Env<SourceBoundClass> ienv,
+      TopLevelIndex tli,
+      Multimap<CompUnit, ClassSymbol> classes,
+      CompoundEnv<BytecodeBoundClass> classPathEnv) {
 
     SimpleEnv.Builder<PackageSourceBoundClass> env = SimpleEnv.builder();
-    // TODO(cushon): append scope for java.lang
-    CompoundScope topLevel = CompoundScope.base(tli);
-    for (Map.Entry<CompUnit, Collection<ClassSymbol>> entry : info0.asMap().entrySet()) {
+    Scope javaLang = verifyNotNull(tli.lookupPackage(Arrays.asList("java", "lang")));
+    CompoundScope topLevel = CompoundScope.base(tli).append(javaLang);
+    for (Map.Entry<CompUnit, Collection<ClassSymbol>> entry : classes.asMap().entrySet()) {
       CompUnit unit = entry.getKey();
       // TODO(cushon): split this in the parser?
       Iterable<String> packagename =
@@ -137,8 +152,9 @@ public class Binder {
               ? Splitter.on('.').split(unit.pkg().get().name())
               : ImmutableList.<String>of();
       Scope packageScope = tli.lookupPackage(packagename);
-      // TODO(cushon): include classpath environment, once it exists
-      Scope importScope = ImportIndex.create(ienv, tli, unit.imports());
+      Scope importScope =
+          ImportIndex.create(
+              CompoundEnv.<BoundClass>of(ienv).append(classPathEnv), tli, unit.imports());
       CompoundScope scope = topLevel.append(packageScope).append(importScope);
 
       for (ClassSymbol sym : entry.getValue()) {
@@ -150,21 +166,21 @@ public class Binder {
 
   /** Binds the type hierarchy (superclasses and interfaces) for all classes in the compilation. */
   private static Env<SourceHeaderBoundClass> bindHierarchy(
-      Iterable<ClassSymbol> syms, final SimpleEnv<PackageSourceBoundClass> psenv) {
-    ImmutableMap.Builder<ClassSymbol, LazyEnv.Completer<SourceHeaderBoundClass>> completers =
-        ImmutableMap.builder();
+      Iterable<ClassSymbol> syms,
+      final SimpleEnv<PackageSourceBoundClass> psenv,
+      CompoundEnv<BytecodeBoundClass> classPathEnv) {
+    ImmutableMap.Builder<ClassSymbol, LazyEnv.Completer<HeaderBoundClass, SourceHeaderBoundClass>>
+        completers = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
       completers.put(
           sym,
-          new LazyEnv.Completer<SourceHeaderBoundClass>() {
+          new LazyEnv.Completer<HeaderBoundClass, SourceHeaderBoundClass>() {
             @Override
-            public SourceHeaderBoundClass complete(
-                Env<SourceHeaderBoundClass> henv, ClassSymbol sym) {
+            public SourceHeaderBoundClass complete(Env<HeaderBoundClass> henv, ClassSymbol sym) {
               return HierarchyBinder.bind(psenv.get(sym), henv);
             }
           });
     }
-    // TODO(cushon): classpath envs
-    return new LazyEnv<>(completers.build());
+    return new LazyEnv<>(completers.build(), classPathEnv);
   }
 }
