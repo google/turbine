@@ -188,4 +188,27 @@ public abstract class Const {
       return value;
     }
   }
+
+  /** A short literal value. */
+  public static class ShortValue extends Value {
+    private final short value;
+
+    public ShortValue(short value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.SHORT;
+    }
+
+    public short value() {
+      return value;
+    }
+  }
 }

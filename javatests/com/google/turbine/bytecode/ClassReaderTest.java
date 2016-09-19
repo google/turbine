@@ -75,7 +75,7 @@ public class ClassReaderTest {
     assertThat(f.name()).isEqualTo("f");
     assertThat(f.descriptor()).isEqualTo("(Ljava/lang/String;)Ljava/lang/String;");
     assertThat(f.signature()).isEqualTo("<T:Ljava/lang/String;>(TT;)TT;");
-    assertThat(f.exceptions()).isNull();
+    assertThat(f.exceptions()).isEmpty();
     assertThat(f.annotations()).isEmpty();
     assertThat(f.parameterAnnotations()).isEmpty();
     assertThat(f.defaultValue()).isNull();

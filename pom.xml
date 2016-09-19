@@ -37,6 +37,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-util</artifactId>
+      <version>5.0.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>javac</artifactId>
       <version>1.9.0-dev-r2973-2</version>

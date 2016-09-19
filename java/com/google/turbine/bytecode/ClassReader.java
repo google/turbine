@@ -16,6 +16,7 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
@@ -244,7 +245,7 @@ public class ClassReader {
       String desc = constantPool.utf8(descriptorIndex);
       int attributesCount = reader.u2();
       String signature = null;
-      List<String> exceptions = null;
+      ImmutableList<String> exceptions = ImmutableList.of();
       for (int j = 0; j < attributesCount; j++) {
         String attributeName = constantPool.utf8(reader.u2());
         switch (attributeName) {
@@ -274,15 +275,14 @@ public class ClassReader {
   }
 
   /** Reads an Exceptions attribute. */
-  private List<String> readExceptions(ConstantPoolReader constantPool) {
-    List<String> exceptions;
+  private ImmutableList<String> readExceptions(ConstantPoolReader constantPool) {
+    ImmutableList.Builder<String> exceptions = ImmutableList.builder();
     reader.u4(); // length
     int numberOfExceptions = reader.u2();
-    exceptions = new ArrayList<>();
     for (int exceptionIndex = 0; exceptionIndex < numberOfExceptions; exceptionIndex++) {
       exceptions.add(constantPool.classInfo(reader.u2()));
     }
-    return exceptions;
+    return exceptions.build();
   }
 
   /** Reads JVMS 4.5 field_infos. */
