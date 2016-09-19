@@ -27,7 +27,6 @@ import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassReader;
-import com.google.turbine.bytecode.InnerClass;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import javax.annotation.Nullable;
@@ -92,7 +91,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass {
           new Supplier<ClassSymbol>() {
             @Override
             public ClassSymbol get() {
-              for (InnerClass inner : classFile.get().innerClasses()) {
+              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
                 if (sym.binaryName().equals(inner.innerClass())) {
                   return new ClassSymbol(inner.outerClass());
                 }
@@ -113,7 +112,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass {
             @Override
             public ImmutableMap<String, ClassSymbol> get() {
               ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
-              for (InnerClass inner : classFile.get().innerClasses()) {
+              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
                 if (sym.binaryName().equals(inner.outerClass())) {
                   result.put(inner.innerName(), new ClassSymbol(inner.innerClass()));
                 }

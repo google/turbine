@@ -19,7 +19,7 @@ package com.google.turbine.bytecode;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.Iterables;
-import com.google.turbine.bytecode.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
@@ -70,7 +70,7 @@ public class ClassReaderTest {
 
     assertThat(classFile.methods()).hasSize(3);
 
-    MethodInfo f = classFile.methods().get(0);
+    ClassFile.MethodInfo f = classFile.methods().get(0);
     assertThat(f.access()).isEqualTo(TurbineFlag.ACC_PUBLIC);
     assertThat(f.name()).isEqualTo("f");
     assertThat(f.descriptor()).isEqualTo("(Ljava/lang/String;)Ljava/lang/String;");
@@ -80,13 +80,13 @@ public class ClassReaderTest {
     assertThat(f.parameterAnnotations()).isEmpty();
     assertThat(f.defaultValue()).isNull();
 
-    MethodInfo g = classFile.methods().get(1);
+    ClassFile.MethodInfo g = classFile.methods().get(1);
     assertThat(g.access()).isEqualTo(TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC);
     assertThat(g.name()).isEqualTo("g");
     assertThat(g.descriptor()).isEqualTo("(Z)V");
     assertThat(g.signature()).isEqualTo("<T:Ljava/lang/Error;>(Z)V^TT;");
 
-    MethodInfo h = classFile.methods().get(2);
+    ClassFile.MethodInfo h = classFile.methods().get(2);
     assertThat(h.access()).isEqualTo(0);
     assertThat(h.name()).isEqualTo("h");
     assertThat(h.descriptor()).isEqualTo("(I)V");
@@ -123,7 +123,7 @@ public class ClassReaderTest {
     assertThat(classFile.interfaces()).containsExactly("java/lang/annotation/Annotation");
 
     assertThat(classFile.annotations()).hasSize(1);
-    AnnotationInfo annotation = Iterables.getOnlyElement(classFile.annotations());
+    ClassFile.AnnotationInfo annotation = Iterables.getOnlyElement(classFile.annotations());
     assertThat(annotation.typeName()).isEqualTo("Ljava/lang/annotation/Retention;");
     assertThat(annotation.isRuntimeVisible()).isTrue();
     assertThat(annotation.elementValuePairs()).hasSize(1);
@@ -160,7 +160,7 @@ public class ClassReaderTest {
 
     assertThat(classFile.fields()).hasSize(3);
 
-    FieldInfo x = classFile.fields().get(0);
+    ClassFile.FieldInfo x = classFile.fields().get(0);
     assertThat(x.access()).isEqualTo(TurbineFlag.ACC_PUBLIC);
     assertThat(x.name()).isEqualTo("x");
     assertThat(x.descriptor()).isEqualTo("I");
@@ -168,7 +168,7 @@ public class ClassReaderTest {
     assertThat(x.value()).isNull();
     assertThat(x.annotations()).isEmpty();
 
-    FieldInfo y = classFile.fields().get(1);
+    ClassFile.FieldInfo y = classFile.fields().get(1);
     assertThat(y.access())
         .isEqualTo(TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC | TurbineFlag.ACC_FINAL);
     assertThat(y.name()).isEqualTo("y");
@@ -176,7 +176,7 @@ public class ClassReaderTest {
     assertThat(y.value().constantTypeKind()).isEqualTo(TurbineConstantTypeKind.INT);
     assertThat(((Const.IntValue) y.value()).value()).isEqualTo(42);
 
-    FieldInfo z = classFile.fields().get(2);
+    ClassFile.FieldInfo z = classFile.fields().get(2);
     assertThat(z.name()).isEqualTo("z");
     assertThat(z.descriptor()).isEqualTo("Ljava/util/List;");
     // don't bother reading signatures for fields; we only care about constants
@@ -196,13 +196,13 @@ public class ClassReaderTest {
 
     assertThat(classFile.innerClasses()).hasSize(2);
 
-    InnerClass a = classFile.innerClasses().get(0);
+    ClassFile.InnerClass a = classFile.innerClasses().get(0);
     assertThat(a.access()).isEqualTo(TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PRIVATE);
     assertThat(a.innerName()).isEqualTo("Inner");
     assertThat(a.innerClass()).isEqualTo("test/Hello$Inner");
     assertThat(a.outerClass()).isEqualTo("test/Hello");
 
-    InnerClass b = classFile.innerClasses().get(1);
+    ClassFile.InnerClass b = classFile.innerClasses().get(1);
     assertThat(b.innerName()).isEqualTo("InnerMost");
     assertThat(b.innerClass()).isEqualTo("test/Hello$Inner$InnerMost");
     assertThat(b.outerClass()).isEqualTo("test/Hello$Inner");

@@ -17,8 +17,8 @@
 package com.google.turbine.bytecode;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.bytecode.AnnotationInfo.ElementValue;
-import com.google.turbine.bytecode.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
@@ -65,13 +65,13 @@ public class ClassReader {
       interfaces.add(constantPool.classInfo(reader.u2()));
     }
 
-    List<FieldInfo> fieldinfos = readFields(constantPool);
+    List<ClassFile.FieldInfo> fieldinfos = readFields(constantPool);
 
-    List<MethodInfo> methodinfos = readMethods(constantPool);
+    List<ClassFile.MethodInfo> methodinfos = readMethods(constantPool);
 
     String signature = null;
-    List<InnerClass> innerclasses = Collections.emptyList();
-    List<AnnotationInfo> annotations = Collections.emptyList();
+    List<ClassFile.InnerClass> innerclasses = Collections.emptyList();
+    List<ClassFile.AnnotationInfo> annotations = Collections.emptyList();
     int attributesCount = reader.u2();
     for (int j = 0; j < attributesCount; j++) {
       int attributeNameIndex = reader.u2();
@@ -113,10 +113,11 @@ public class ClassReader {
   }
 
   /** Reads JVMS 4.7.6 InnerClasses attributes. */
-  private List<InnerClass> readInnerClasses(ConstantPoolReader constantPool, String thisClass) {
+  private List<ClassFile.InnerClass> readInnerClasses(
+      ConstantPoolReader constantPool, String thisClass) {
     reader.u4(); // length
     int numberOfClasses = reader.u2();
-    List<InnerClass> innerclasses = new ArrayList<>();
+    List<ClassFile.InnerClass> innerclasses = new ArrayList<>();
     for (int i = 0; i < numberOfClasses; i++) {
       int innerClassInfoIndex = reader.u2();
       String innerClass = constantPool.classInfo(innerClassInfoIndex);
@@ -127,7 +128,8 @@ public class ClassReader {
       String innerName = innerNameIndex != 0 ? constantPool.utf8(innerNameIndex) : null;
       short innerClassAccessFlags = reader.u2();
       if (thisClass.equals(innerClass) || thisClass.equals(outerClass)) {
-        innerclasses.add(new InnerClass(innerClass, outerClass, innerName, innerClassAccessFlags));
+        innerclasses.add(
+            new ClassFile.InnerClass(innerClass, outerClass, innerName, innerClassAccessFlags));
       }
     }
     return innerclasses;
@@ -139,8 +141,9 @@ public class ClassReader {
    * <p>The only annotation that affects header compilation is {@link @Retention} on annotation
    * declarations.
    */
-  private List<AnnotationInfo> readAnnotations(ConstantPoolReader constantPool, short accessFlags) {
-    List<AnnotationInfo> annotations = new ArrayList<>();
+  private List<ClassFile.AnnotationInfo> readAnnotations(
+      ConstantPoolReader constantPool, short accessFlags) {
+    List<ClassFile.AnnotationInfo> annotations = new ArrayList<>();
     if ((accessFlags & TurbineFlag.ACC_ANNOTATION) == 0) {
       reader.skip(reader.u4());
       return null;
@@ -148,7 +151,7 @@ public class ClassReader {
     reader.u4(); // length
     int numAnnotations = reader.u2();
     for (int n = 0; n < numAnnotations; n++) {
-      AnnotationInfo tmp = readAnnotation(constantPool);
+      ClassFile.AnnotationInfo tmp = readAnnotation(constantPool);
       if (tmp != null) {
         annotations.add(tmp);
       }
@@ -156,20 +159,23 @@ public class ClassReader {
     return annotations;
   }
 
-  /** Extracts an {@link @Retention} {@link AnnotationInfo}, or else skips over the annotation. */
-  private AnnotationInfo readAnnotation(ConstantPoolReader constantPool) {
+  /**
+   * Extracts an {@link @Retention} {@link ClassFile.AnnotationInfo}, or else skips over the
+   * annotation.
+   */
+  private ClassFile.AnnotationInfo readAnnotation(ConstantPoolReader constantPool) {
     int typeIndex = reader.u2();
     String annotationType = constantPool.utf8(typeIndex);
     boolean retention = annotationType.equals("Ljava/lang/annotation/Retention;");
     int numElementValuePairs = reader.u2();
-    AnnotationInfo result = null;
+    ClassFile.AnnotationInfo result = null;
     for (int e = 0; e < numElementValuePairs; e++) {
       int elementNameIndex = reader.u2();
       String key = constantPool.utf8(elementNameIndex);
       boolean value = retention && key.equals("value");
       ElementValue tmp = readElementValue(constantPool, value);
       if (tmp != null) {
-        result = new AnnotationInfo(annotationType, true, ImmutableMap.of(key, tmp));
+        result = new ClassFile.AnnotationInfo(annotationType, true, ImmutableMap.of(key, tmp));
       }
     }
     return result;
@@ -227,9 +233,9 @@ public class ClassReader {
   }
 
   /** Reads JVMS 4.6 method_infos. */
-  private List<MethodInfo> readMethods(ConstantPoolReader constantPool) {
+  private List<ClassFile.MethodInfo> readMethods(ConstantPoolReader constantPool) {
     int methodsCount = reader.u2();
-    List<MethodInfo> methods = new ArrayList<>();
+    List<ClassFile.MethodInfo> methods = new ArrayList<>();
     for (int i = 0; i < methodsCount; i++) {
       int accessFlags = reader.u2();
       int nameIndex = reader.u2();
@@ -254,15 +260,15 @@ public class ClassReader {
         }
       }
       methods.add(
-          new MethodInfo(
+          new ClassFile.MethodInfo(
               accessFlags,
               name,
               desc,
               signature,
               exceptions,
               null,
-              Collections.<AnnotationInfo>emptyList(),
-              Collections.<List<AnnotationInfo>>emptyList()));
+              Collections.<ClassFile.AnnotationInfo>emptyList(),
+              Collections.<List<ClassFile.AnnotationInfo>>emptyList()));
     }
     return methods;
   }
@@ -280,9 +286,9 @@ public class ClassReader {
   }
 
   /** Reads JVMS 4.5 field_infos. */
-  private List<FieldInfo> readFields(ConstantPoolReader constantPool) {
+  private List<ClassFile.FieldInfo> readFields(ConstantPoolReader constantPool) {
     int fieldsCount = reader.u2();
-    List<FieldInfo> fields = new ArrayList<>();
+    List<ClassFile.FieldInfo> fields = new ArrayList<>();
     for (int i = 0; i < fieldsCount; i++) {
       int accessFlags = reader.u2();
       int nameIndex = reader.u2();
@@ -304,13 +310,13 @@ public class ClassReader {
         }
       }
       fields.add(
-          new FieldInfo(
+          new ClassFile.FieldInfo(
               accessFlags,
               name,
               desc,
               /*signature*/ null,
               value,
-              Collections.<AnnotationInfo>emptyList()));
+              Collections.<ClassFile.AnnotationInfo>emptyList()));
     }
     return fields;
   }
