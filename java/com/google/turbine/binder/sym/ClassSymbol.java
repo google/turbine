@@ -27,7 +27,7 @@ import com.google.errorprone.annotations.Immutable;
  */
 // TODO(cushon): investigate performance impact of interning names/symbols
 @Immutable
-public class ClassSymbol {
+public class ClassSymbol implements Symbol {
 
   public static final ClassSymbol OBJECT = new ClassSymbol("java/lang/Object");
   public static final ClassSymbol STRING = new ClassSymbol("java/lang/String");
@@ -58,5 +58,10 @@ public class ClassSymbol {
   /** The JVMS 4.2.1 binary name of the class. */
   public String binaryName() {
     return className;
+  }
+
+  @Override
+  public Kind symKind() {
+    return Kind.CLASS;
   }
 }
