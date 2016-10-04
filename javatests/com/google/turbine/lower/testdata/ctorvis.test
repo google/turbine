@@ -1,0 +1,20 @@
+=== test/Public.java ===
+package test;
+
+public class Public {
+  public class PublicInner {}
+  private class PrivateInner {}
+  protected class ProtectedInner {}
+  class PackagePrivateInner {}
+}
+
+=== test/PackagePrivate.java ===
+package test;
+
+class PackagePrivate {
+  public class PublicInner {}
+  private class PrivateInner {}
+  protected class ProtectedInner {}
+  class PackagePrivateInner {}
+}
+

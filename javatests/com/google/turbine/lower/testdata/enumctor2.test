@@ -1,0 +1,8 @@
+=== test/Test.java ===
+package test;
+
+public enum Test {
+  ONE(true);
+
+  Test(boolean value) {}
+}

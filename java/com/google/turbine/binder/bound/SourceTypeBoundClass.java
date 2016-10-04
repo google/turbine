@@ -103,6 +103,7 @@ public class SourceTypeBoundClass implements HeaderBoundClass {
   }
 
   /** Declared type parameters. */
+  @Override
   public ImmutableMap<String, TyVarSymbol> typeParameters() {
     return typeParameters;
   }

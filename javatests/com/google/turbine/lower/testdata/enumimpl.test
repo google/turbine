@@ -1,0 +1,20 @@
+=== test/I.java ===
+package test;
+
+public interface I {
+  public String foo();
+}
+
+=== test/EnumImpl.java ===
+package test;
+
+class EnumImpl {
+  enum Foo implements I {
+    ONE {
+      public String foo() {
+        return "asd";
+      }
+    };
+  }
+}
+

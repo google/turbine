@@ -1,0 +1,35 @@
+=== test/MapMakerInternalMap.java ===
+package test;
+
+import java.util.AbstractMap;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.io.Serializable;
+
+import test.MapMaker.RemovalCause;
+
+public abstract class MapMakerInternalMap<K, V> 
+    extends AbstractMap<K, V> implements ConcurrentMap<K, V>, Serializable {
+  static class Segment<K, V> {
+    Object cause = RemovalCause.EXPLICIT;
+    void enqueueNotification(RemovalCause cause) {
+    }
+  }
+}
+
+=== test/MapMaker.java ===
+package test;
+
+public class MapMaker {
+  public enum RemovalCause {
+    EXPLICIT {
+      @Override
+        boolean wasEvicted() {
+          return false;
+        }
+    };
+    abstract boolean wasEvicted();
+  }
+}
+
+

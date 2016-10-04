@@ -1,0 +1,8 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  State state;
+
+  enum State {ONE, TWO, THREE}
+}

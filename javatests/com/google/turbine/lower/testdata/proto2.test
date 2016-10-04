@@ -1,0 +1,7 @@
+=== test/Test.java ===
+package test;
+
+// yikes
+public class Test<T extends Test.Inner<T>> {
+  public interface Inner<T extends Inner<T>> extends Comparable<T> {}
+}

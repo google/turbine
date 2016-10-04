@@ -1,0 +1,8 @@
+=== test/Test.java ===
+package test;
+
+public class Test {
+  public static void main(String... args) {
+    // http://stackoverflow.com/a/2201895
+  }  
+}

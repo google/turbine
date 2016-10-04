@@ -1,0 +1,29 @@
+=== test/A.java ===
+package test;
+
+class A {
+  static class AOne {
+    static class ATwo extends AOne {
+    }
+  }
+  static class AThree extends C {
+  }
+}
+
+=== test/B.java ===
+package test;
+
+class B extends A {
+  static class BOne extends AOne {
+  }
+}
+
+=== test/C.java ===
+package test;
+
+class C {
+  static class COne extends B {
+    static class CTwo extends BOne {
+    }
+  }
+}

@@ -1,0 +1,10 @@
+=== test/Test.java ===
+package test;
+
+public class Test {
+  private class Inner {
+    private class InnerMost {
+    }
+  }
+  public Inner.InnerMost x;
+}

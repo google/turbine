@@ -1,0 +1,8 @@
+=== test/Raw.java ===
+package test;
+
+public class Raw {
+  public static class Inner<T> {
+    public static Inner INSTANCE = null;
+  }
+}

@@ -1,0 +1,7 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple<V> {
+  interface IntTree<V> {}
+  private IntTree<V> left, right;
+}

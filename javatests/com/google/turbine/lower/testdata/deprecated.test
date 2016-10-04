@@ -1,0 +1,16 @@
+=== test/Test.java ===
+package test;
+
+public class Test {
+  /** @deprecated */
+  void f() {}
+
+  @Deprecated
+  void g() {}
+
+  /** @deprecated */
+  int x;
+
+  @Deprecated
+  int y;
+}

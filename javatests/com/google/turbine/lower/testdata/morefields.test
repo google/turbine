@@ -1,0 +1,12 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  public static class I1{}
+  public Simple myField1;
+  public static class I2{}
+  protected Simple myField2;
+  public static class I3{}
+  protected int myField3;
+  public static class I4{}
+}

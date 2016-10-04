@@ -1,0 +1,18 @@
+=== a/I.java ===
+package a;
+
+interface I<T> {}
+
+=== a/B.java ===
+package a;
+
+public class B {
+  public static class Inner {
+  }
+}
+
+=== a/C.java ===
+package a;
+
+public class C extends B implements I<C.Inner> {
+}

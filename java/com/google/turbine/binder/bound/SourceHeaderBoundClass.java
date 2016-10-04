@@ -18,9 +18,12 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
+import com.google.turbine.tree.Tree;
 
 /** A {@link HeaderBoundClass} that corresponds to a source file being compiled. */
 public class SourceHeaderBoundClass implements HeaderBoundClass {
@@ -30,19 +33,22 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   private final ImmutableList<ClassSymbol> interfaces;
   private final TurbineVisibility visibility;
   private final int access;
+  private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
   public SourceHeaderBoundClass(
       PackageSourceBoundClass base,
       ClassSymbol superclass,
       ImmutableList<ClassSymbol> interfaces,
       TurbineVisibility visibility,
-      int access) {
+      int access,
+      ImmutableMap<String, TyVarSymbol> typeParameters) {
 
     this.base = base;
     this.superclass = superclass;
     this.interfaces = interfaces;
     this.visibility = visibility;
     this.access = access;
+    this.typeParameters = typeParameters;
   }
 
   @Override
@@ -77,5 +83,19 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
 
   public TurbineVisibility visibility() {
     return visibility;
+  }
+
+  /** Declared type parameters. */
+  @Override
+  public ImmutableMap<String, TyVarSymbol> typeParameters() {
+    return typeParameters;
+  }
+
+  public CompoundScope scope() {
+    return base.scope();
+  }
+
+  public Tree.TyDecl decl() {
+    return base.decl();
   }
 }

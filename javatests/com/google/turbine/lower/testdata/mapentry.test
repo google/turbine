@@ -1,0 +1,11 @@
+=== test/Maps.java ===
+package test;
+
+import java.util.Set;
+import java.util.Map;
+
+public abstract class Maps implements Map {
+  abstract class Inner {
+    abstract Set<Entry<String, Integer>> entries();
+  }
+}

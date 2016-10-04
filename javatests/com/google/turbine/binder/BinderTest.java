@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.bound.SourceHeaderBoundClass;
+import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineFlag;
@@ -64,8 +64,8 @@ public class BinderTest {
             "public class B extends A {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -74,7 +74,7 @@ public class BinderTest {
             new ClassSymbol("a/A$Inner2"),
             new ClassSymbol("b/B"));
 
-    SourceHeaderBoundClass a = bound.get(new ClassSymbol("a/A"));
+    SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
     assertThat(a.superclass()).isEqualTo(new ClassSymbol("java/lang/Object"));
     assertThat(a.interfaces()).isEmpty();
 
@@ -84,7 +84,7 @@ public class BinderTest {
     assertThat(bound.get(new ClassSymbol("a/A$Inner2")).superclass())
         .isEqualTo(new ClassSymbol("a/A$Inner1"));
 
-    SourceHeaderBoundClass b = bound.get(new ClassSymbol("b/B"));
+    SourceTypeBoundClass b = bound.get(new ClassSymbol("b/B"));
     assertThat(b.superclass()).isEqualTo(new ClassSymbol("a/A"));
   }
 
@@ -105,8 +105,8 @@ public class BinderTest {
             "  class BInner extends IInner {}",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -145,15 +145,15 @@ public class BinderTest {
             "  public void g() {}",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
 
-    SourceHeaderBoundClass e1 = bound.get(new ClassSymbol("test/E1"));
+    SourceTypeBoundClass e1 = bound.get(new ClassSymbol("test/E1"));
     assertThat((e1.access() & TurbineFlag.ACC_ABSTRACT) == TurbineFlag.ACC_ABSTRACT).isTrue();
     assertThat(e1.superclass()).isEqualTo(new ClassSymbol("java/lang/Enum"));
     assertThat(e1.interfaces()).isEmpty();
 
-    SourceHeaderBoundClass e2 = bound.get(new ClassSymbol("test/E2"));
+    SourceTypeBoundClass e2 = bound.get(new ClassSymbol("test/E2"));
     assertThat((e2.access() & TurbineFlag.ACC_ABSTRACT) == 0).isTrue();
   }
 
@@ -174,8 +174,8 @@ public class BinderTest {
             "public class Foo extends Inner {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
 
     assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
         .isEqualTo(new ClassSymbol("com/test/Test$Inner"));
@@ -216,13 +216,14 @@ public class BinderTest {
             "public @interface Annotation {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
 
-    SourceHeaderBoundClass a = bound.get(new ClassSymbol("com/test/Annotation"));
+    SourceTypeBoundClass a = bound.get(new ClassSymbol("com/test/Annotation"));
     assertThat(a.access())
         .isEqualTo(
             TurbineFlag.ACC_PUBLIC
+                | TurbineFlag.ACC_STATIC
                 | TurbineFlag.ACC_INTERFACE
                 | TurbineFlag.ACC_ABSTRACT
                 | TurbineFlag.ACC_ANNOTATION);
@@ -240,10 +241,10 @@ public class BinderTest {
             "public class A implements Entry {",
             "}"));
 
-    ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
 
-    SourceHeaderBoundClass a = bound.get(new ClassSymbol("a/A"));
+    SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
     assertThat(a.interfaces()).containsExactly(new ClassSymbol("java/util/Map$Entry"));
   }
 

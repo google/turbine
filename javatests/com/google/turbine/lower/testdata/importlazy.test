@@ -1,0 +1,6 @@
+=== pkg/One.java ===
+package pkg;
+import no.such.pkg.NoSuch;
+public class One {
+  String s;
+}

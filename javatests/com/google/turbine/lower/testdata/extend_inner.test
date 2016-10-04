@@ -1,0 +1,15 @@
+=== a/A.java ===
+package a;
+
+public class A {
+  public static class I {
+  }
+}
+
+=== b/B.java ===
+package b;
+
+import a.A;
+
+public class B extends A.I {
+}

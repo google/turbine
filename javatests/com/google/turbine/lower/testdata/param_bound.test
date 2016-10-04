@@ -1,0 +1,21 @@
+=== p/I.java ===
+
+package p;
+
+public interface I {}
+
+=== p/C.java ===
+package p;
+
+public class C {}
+
+=== p/Test.java ===
+package p;
+
+public class Test {
+  class One<T extends C & I> {}
+  class Two<T extends C> {}
+  class Three<U, T extends U> {}
+  class Four<A extends I, B extends I, T extends A> {}
+  class Five<T extends I> {}
+}

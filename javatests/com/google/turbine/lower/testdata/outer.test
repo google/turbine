@@ -1,0 +1,7 @@
+=== test/C.java ===
+package test;
+
+public class C {
+  public class I {
+  }
+}

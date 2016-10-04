@@ -1,0 +1,12 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple extends a.b.c.D {
+}
+
+=== a/b/c/D.java ===
+
+package a.b.c;
+
+public class D {
+}

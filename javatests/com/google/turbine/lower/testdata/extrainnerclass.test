@@ -1,0 +1,25 @@
+=== test/A.java ===
+package test;
+
+class A {
+  class Inner {
+  }
+}
+
+=== test/PackagePrivate.java ===
+package test;
+
+import java.util.Map;
+
+class Test {
+  public A.Inner i;
+
+  public void m(Map<?, ?> map) {
+    for (Map.Entry<?, ?> entry : map.entrySet()) {
+      System.err.println(entry.getKey());
+    }
+  }
+  static class Inner {
+  }
+}
+

@@ -1,0 +1,16 @@
+=== test/One.java ===
+package test;
+
+public abstract class One {
+  public abstract static class Builder {
+  }
+}
+
+=== test/Two.java ===
+package test;
+
+public class Two extends One {
+  public static class Builder extends One.Builder {
+    Builder build() { return new Builder(); }
+  }
+}

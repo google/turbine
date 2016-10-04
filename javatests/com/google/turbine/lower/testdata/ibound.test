@@ -1,0 +1,8 @@
+=== test/PackagePrivate.java ===
+package test;
+
+class Test {
+  public <T extends Comparable> void f(T t) {}
+  public <U extends Comparable, T extends U> void f(T t, U u) {}
+}
+

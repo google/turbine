@@ -1,0 +1,12 @@
+=== pkg/E.java ===
+package pkg;
+
+public enum E {
+  ;
+  int x;
+  class Inner {
+    void f() {
+      x++;
+    }
+  }
+}

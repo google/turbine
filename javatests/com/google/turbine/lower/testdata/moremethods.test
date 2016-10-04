@@ -1,0 +1,22 @@
+=== pkg/MyExn.java ===
+
+package pkg;
+
+public abstract class MyExn extends java.lang.Throwable {
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+public abstract class Simple {
+  public abstract int f();
+  public abstract void g();
+  public abstract void h(int x);
+  public abstract void i(int x, int y);
+  public abstract <T> T j(int x, int y);
+  public abstract <T, U extends T> T k(U x, int y);
+  public abstract <T, U extends T> T l(U x, int[] y);
+  public abstract <T, U extends T> T m(U[][] x, int[] y);
+  public abstract void z() throws java.lang.Throwable, MyExn;
+  public abstract <T extends String> T j(T x);
+}

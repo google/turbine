@@ -1,0 +1,17 @@
+=== pkg/Soup.java ===
+package pkg;
+
+public class Soup {
+  static class Builder {
+    Builder add(Object e) { return null; }
+  }
+}
+
+=== pkg/Test.java ===
+package pkg;
+
+public class Test extends Soup {
+  static class Builder {
+    Builder add(Object e) { return null; }
+  }
+}

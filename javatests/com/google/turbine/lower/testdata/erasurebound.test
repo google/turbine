@@ -1,0 +1,18 @@
+=== test/I.java ===
+package test;
+
+public interface I {}
+
+=== test/J.java ===
+package test;
+
+public interface J {}
+
+=== test/Test.java ===
+package test;
+
+public class Test {
+  <T extends Test> T f1(T t) { return null; }
+  <T extends Test & I> T f2(T t) { return null; }
+  <T extends Test & I & J> T f3(T t) { return null; }
+}

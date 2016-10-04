@@ -1,0 +1,15 @@
+=== pkg/One.java ===
+package pkg;
+public class One {
+  public static class Inner1 {
+  }
+}
+
+=== pkg/Two.java ===
+package pkg;
+public class Two extends One {
+  public static class Inner2 extends Inner1 {
+    public static class InnerMost extends Inner1 {
+    }
+  }
+}

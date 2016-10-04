@@ -1,0 +1,13 @@
+=== a/I.java ===
+package a;
+
+public interface I<T> {
+}
+
+=== a/A.java ===
+package a;
+
+public class A implements I<A.Inner> {
+  public static class Inner {
+  }
+}

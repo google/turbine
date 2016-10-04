@@ -1,0 +1,15 @@
+=== test/A.java ===
+package test;
+
+public class A<T> {}
+
+=== test/I.java ===
+package test;
+
+public interface I<T> {}
+
+=== test/Test.java ===
+package test;
+
+public class Test<T> extends A<T> implements I<T> {
+}

@@ -1,0 +1,17 @@
+=== a/A.java ===
+package a;
+
+public class A {
+  public static class Inner {
+    public static final int CONST = 1;
+  }
+}
+
+=== b/B.java ===
+package b;
+
+import a.A;
+
+public class B {
+  public static final int VAL = A.Inner.CONST + 1;
+}

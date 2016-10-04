@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.ClassPathBinder;
-import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -160,12 +159,11 @@ public class LowerTest {
     SimpleEnv.Builder<SourceTypeBoundClass> b = SimpleEnv.builder();
     b.putIfAbsent(new ClassSymbol("test/Test"), c);
     b.putIfAbsent(new ClassSymbol("test/Test$Inner"), i);
-    SimpleEnv<SourceTypeBoundClass> env = b.build();
 
     Map<String, byte[]> bytes =
         Lower.lowerAll(
-            CompoundEnv.<HeaderBoundClass>of(classpath).append(env),
-            ImmutableList.of(new ClassSymbol("test/Test"), new ClassSymbol("test/Test$Inner")));
+            ImmutableMap.of(new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
+            classpath);
 
     assertThat(AsmUtils.textify(bytes.get("test/Test")))
         .isEqualTo(

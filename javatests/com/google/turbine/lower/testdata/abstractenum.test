@@ -1,0 +1,10 @@
+=== test/Test.java ===
+package test;
+
+public enum Test {
+  INSTANCE() {
+    public String f() { return "hi"; }
+  };
+
+  public abstract String f();
+}

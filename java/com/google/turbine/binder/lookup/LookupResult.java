@@ -19,6 +19,7 @@ package com.google.turbine.binder.lookup;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.Immutable;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.Symbol;
 
 /**
  * The result of a canonical type name lookup.
@@ -30,7 +31,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 public class LookupResult {
 
   /** A top-level class symbol. */
-  public ClassSymbol sym() {
+  public Symbol sym() {
     return sym;
   }
 
@@ -39,10 +40,10 @@ public class LookupResult {
     return remaining;
   }
 
-  private final ClassSymbol sym;
+  private final Symbol sym;
   private final ImmutableList<String> remaining;
 
-  public LookupResult(ClassSymbol sym, LookupKey remaining) {
+  public LookupResult(Symbol sym, LookupKey remaining) {
     this.sym = sym;
     this.remaining =
         remaining.hasNext() ? remaining.rest().simpleNames() : ImmutableList.<String>of();

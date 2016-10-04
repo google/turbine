@@ -1,0 +1,6 @@
+=== pkg/Colours.java ===
+package pkg;
+
+public enum Colours {
+RED, GREEN, BLUE
+}

@@ -1,0 +1,8 @@
+=== test/Test.java ===
+package test;
+
+public class Test {
+  public static <X extends Throwable> void propagateIfInstanceOf(
+      Throwable throwable, Class<X> declaredType) throws X {
+  }
+}

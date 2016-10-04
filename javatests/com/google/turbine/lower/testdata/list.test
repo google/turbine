@@ -1,0 +1,5 @@
+=== pkg/Test.java ===
+package pkg;
+
+public abstract class Test implements java.util.List<String> {
+}

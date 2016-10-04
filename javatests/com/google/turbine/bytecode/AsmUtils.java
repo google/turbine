@@ -19,6 +19,7 @@ package com.google.turbine.bytecode;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -28,7 +29,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
  */
 public class AsmUtils {
   public static String textify(byte[] bytes) {
-    Textifier textifier = new Textifier();
+    Printer textifier = new Textifier();
     StringWriter sw = new StringWriter();
     new ClassReader(bytes)
         .accept(

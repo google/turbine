@@ -25,7 +25,10 @@ import com.google.turbine.binder.bound.SourceTypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.TyVarInfo;
+import com.google.turbine.binder.bytecode.BytecodeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
@@ -54,11 +57,13 @@ public class Lower {
 
   /** Lowers all given classes to bytecode. */
   public static Map<String, byte[]> lowerAll(
-      Env<HeaderBoundClass> env, Iterable<ClassSymbol> syms) {
+      ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
+      CompoundEnv<BytecodeBoundClass> classpath) {
+    CompoundEnv<HeaderBoundClass> env =
+        CompoundEnv.<HeaderBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
-    for (ClassSymbol sym : syms) {
-      result.put(
-          sym.binaryName(), new Lower().lower((SourceTypeBoundClass) env.get(sym), env, sym));
+    for (ClassSymbol sym : units.keySet()) {
+      result.put(sym.binaryName(), new Lower().lower(units.get(sym), env, sym));
     }
     return result.build();
   }
@@ -69,12 +74,12 @@ public class Lower {
   public byte[] lower(SourceTypeBoundClass info, Env<HeaderBoundClass> env, ClassSymbol sym) {
 
     int access = classAccess(info);
-    String name = sym.binaryName();
+    String name = sig.descriptor(sym);
     String signature = sig.classSignature(info);
-    String superName = info.superclass().binaryName();
+    String superName = sig.descriptor(info.superclass());
     List<String> interfaces = new ArrayList<>();
     for (ClassSymbol i : info.interfaces()) {
-      interfaces.add(i.binaryName());
+      interfaces.add(sig.descriptor(i));
     }
 
     List<ClassFile.MethodInfo> methods = new ArrayList<>();
@@ -126,7 +131,7 @@ public class Lower {
     ImmutableList.Builder<String> exceptions = ImmutableList.builder();
     if (!m.exceptions().isEmpty()) {
       for (Type e : m.exceptions()) {
-        exceptions.add(((ClassTy) Erasure.erase(e, tenv)).sym().binaryName());
+        exceptions.add(sig.descriptor(((ClassTy) Erasure.erase(e, tenv)).sym()));
       }
     }
 
@@ -161,7 +166,7 @@ public class Lower {
     final String name = f.name();
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(Collections.emptyMap(), env);
     String desc = SigWriter.type(sig.signature(Erasure.erase(f.type(), tenv)));
-    String signature = SigWriter.type(sig.signature(f.type()));
+    String signature = sig.fieldSignature(f.type());
 
     // TODO(cushon): annotations
     ImmutableList<ClassFile.AnnotationInfo> annotations = ImmutableList.of();

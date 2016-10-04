@@ -1,0 +1,14 @@
+=== pkg/Simple.java ===
+package pkg;
+
+;
+
+public class Simple<V> {
+  ;
+  int x = 1;
+  ;
+  int y = 2;
+  ;
+}
+
+;

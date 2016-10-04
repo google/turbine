@@ -1,0 +1,11 @@
+=== test/Test.java ===
+
+import java.util.Map;
+
+public class Test {
+  public int a;
+  public String b;
+  public Map.Entry c;
+  public Map.Entry<String, Integer> d;
+}
+

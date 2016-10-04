@@ -1,0 +1,9 @@
+=== nested/Test.java ===
+package nested;
+
+public class Test {
+  public static class Inner1 {
+  }
+  public static class Inner2 {
+  }
+}

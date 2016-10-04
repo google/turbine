@@ -1,0 +1,9 @@
+=== test/Test.java ===
+package test;
+
+public class Test<T> {
+  T f1() { return null; }
+  T[] f2() { return null; }
+  void f3(T t) {}
+  void f4(T[] t) {}
+}

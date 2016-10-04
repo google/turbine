@@ -1,0 +1,7 @@
+=== test/Test.java ===
+package test;
+
+public class Test<T> {
+  public interface I {}
+  public static class Inner implements I {}
+}

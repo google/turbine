@@ -1,0 +1,28 @@
+%%% lib/I0.java %%%
+package lib;
+
+public class I0<S> {}
+
+%%% lib/I.java %%%
+package lib;
+
+public class I<S> {
+  public class IInner extends I0<S> {}
+}
+
+%%% lib/Lib.java %%%
+package lib;
+
+public class Lib<K> {
+  public class Inner extends I<K> {
+  }
+}
+
+=== test/Test.java ===
+package test;
+
+import lib.Lib;
+
+public class Test {
+  Lib<String>.Inner.IInner i() { return null; }
+}

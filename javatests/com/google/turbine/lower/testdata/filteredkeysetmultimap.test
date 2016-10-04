@@ -1,0 +1,15 @@
+=== test/FilteredKeyMultimap.java ===
+package test;
+
+public class FilteredKeyMultimap<K, V> {
+  class Entries  {
+  }
+}
+
+=== test/FilteredKeySetMultimap.java ===
+package test;
+
+class FilteredKeySetMultimap<K, V> extends FilteredKeyMultimap<K, V> {
+  class EntrySet extends Entries {
+  }
+}

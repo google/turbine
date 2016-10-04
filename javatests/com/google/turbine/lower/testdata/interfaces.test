@@ -1,0 +1,19 @@
+=== test/I1.java ===
+package test;
+
+public interface I1 {
+}
+
+=== test/I2.java ===
+package test;
+
+public interface I2 {
+}
+
+=== Default.java ===
+
+import test.I1;
+import test.I2;
+
+public class Default implements I1, I2 {
+}

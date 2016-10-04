@@ -1,0 +1,9 @@
+=== test/Test.java ===
+package test;
+
+public class Test {
+  enum Foo {
+    ONE(1);
+    Foo(int id) {}
+  }
+}

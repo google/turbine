@@ -1,0 +1,18 @@
+=== test/One.java ===
+package test;
+
+public class One<T> {}
+
+=== test/Two.java ===
+package test;
+
+public class Two<T, U> {}
+
+=== test/Test.java ===
+package test;
+
+public class Test {
+  Two<?, ?> a1(Two<?, ?> x) { return null; } 
+  One<? extends Test> a2(One<? extends Test> x) { return null; }
+  One<? super Test> a3(One<? super Test> x) { return null; }
+}

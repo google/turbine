@@ -1,0 +1,9 @@
+=== pkg/Test.java ===
+package pkg;
+
+public class Test {
+  private class Inner {
+    Inner(int x) {}
+    <T> Inner(int x, T t) {}
+  }
+}

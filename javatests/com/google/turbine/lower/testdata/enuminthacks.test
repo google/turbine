@@ -1,0 +1,13 @@
+=== test/FirstComparator.java ===
+package test;
+
+import java.util.Comparator;
+
+public enum FirstComparator implements Comparator<Object> {
+  FIRST_COMPARATOR {
+    @Override
+    public int compare(Object a, Object b) {
+      return -1;
+    }
+  }
+}

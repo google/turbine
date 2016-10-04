@@ -1,0 +1,7 @@
+=== a/A.java ===
+package a;
+public class A {}
+
+=== a/B.java ===
+package a;
+public class B extends A {}

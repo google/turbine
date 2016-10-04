@@ -1,0 +1,30 @@
+=== a/A1.java ===
+package a;
+
+public class A1 {
+  // this was supposed to exercise weird access patterns,
+  // except I can't think of any where visibility causes
+  // types to be skipped instead of resolved & erroring
+  // out.
+  // we should consider erroring out too, but that's a
+  // separate issue...
+  protected static class Inner {
+  }
+}
+
+=== b/B.java ===
+package b;
+
+import a.A1;
+
+public class B extends A1 {
+}
+
+=== a/A2.java ===
+package a;
+
+import b.B;
+
+public class A2 extends B {
+  Inner i;
+}

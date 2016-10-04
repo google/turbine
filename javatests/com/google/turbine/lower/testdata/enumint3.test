@@ -1,0 +1,21 @@
+=== test/I.java ===
+package test;
+
+public interface I {
+  void f();
+}
+
+=== test/J.java ===
+package test;
+
+public interface J extends I {}
+
+=== test/Test.java ===
+package test;
+
+public class Test {
+  enum Foo implements J {
+    READY;
+    public void f() {}
+  }
+}

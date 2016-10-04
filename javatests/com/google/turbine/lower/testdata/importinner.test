@@ -1,0 +1,16 @@
+=== test/A.java ===
+package test;
+
+public class A<T> {
+  public class I {
+  }
+}
+
+=== test/B.java ===
+package test;
+
+import test.A.I;
+
+public class B {
+  I i;
+}

@@ -1,0 +1,9 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  static final int A = 1;
+  static class Inner {
+    static final int B = A;
+  }
+}

@@ -1,0 +1,12 @@
+=== test/Test.java ===
+package test;
+
+import java.util.Map;
+import java.util.Set;
+
+public class Test {
+  public static abstract class FooMap<K, V> implements Map<K, V> {
+    private abstract class EntrySet implements Set<Entry<K, V>> {
+    }
+  }
+}

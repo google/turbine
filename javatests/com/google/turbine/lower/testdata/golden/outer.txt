@@ -8,8 +8,6 @@ public class test/Test implements java/util/List  {
   protected static INNERCLASS test/Test$Inner test/Test Inner
 
   // access flags 0x19
-  // signature Ltest/Test$Inner;
-  // declaration: test.Test$Inner
   public final static Ltest/Test$Inner; theField
 
   // access flags 0x9

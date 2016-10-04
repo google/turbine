@@ -1,0 +1,14 @@
+%%% i/I.java %%%
+package i;
+
+public class I<T> {}
+
+=== a/A.java ===
+package a;
+
+public class A<T> {
+  public class AI1 extends i.I<AI1> {
+  }
+  public static class AI2 extends i.I<AI2> {
+  }
+}

@@ -17,7 +17,9 @@
 package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.TyVarSymbol;
 
 /** A bound node that augments {@link BoundClass} with superclasses and interfaces. */
 public interface HeaderBoundClass extends BoundClass {
@@ -29,4 +31,7 @@ public interface HeaderBoundClass extends BoundClass {
 
   /** Class access bits (see JVMS table 4.1). */
   int access();
+
+  /** Declared type parameters. */
+  public ImmutableMap<String, TyVarSymbol> typeParameters();
 }

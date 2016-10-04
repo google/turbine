@@ -1,0 +1,33 @@
+=== bar/Bar.java ===
+package bar;
+
+public class Bar {
+  public static class Inner {}
+}
+
+=== bar/Boo.java ===
+package bar;
+
+public class Boo extends Bar {
+}
+
+=== Default.java ===
+public final class Default<T, X extends T> extends Default2<T> {
+}
+
+=== Default2.java ===
+public class Default2<T> {
+}
+
+=== foo/baz/Baz.java ===
+package foo.baz;
+
+public class Baz extends bar.Bar.Inner {}
+
+=== foo/Foo.java ===
+package foo;
+
+import bar.Bar;
+
+public class Foo extends Bar.Inner {
+}

@@ -29,6 +29,7 @@ import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
+import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -52,7 +53,7 @@ import java.util.Map;
 public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
-  public static ImmutableMap<ClassSymbol, SourceHeaderBoundClass> bind(
+  public static BindingResult bind(
       List<CompUnit> units, Iterable<Path> classpath, Iterable<Path> bootclasspath)
       throws IOException {
 
@@ -78,11 +79,14 @@ public class Binder {
 
     Env<SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
 
-    ImmutableMap.Builder<ClassSymbol, SourceHeaderBoundClass> result = ImmutableMap.builder();
+    Env<SourceTypeBoundClass> tenv =
+        bindTypes(syms, henv, CompoundEnv.<HeaderBoundClass>of(classPathEnv).append(henv));
+
+    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
-      result.put(sym, henv.get(sym));
+      result.put(sym, tenv.get(sym));
     }
-    return result.build();
+    return new BindingResult(result.build(), classPathEnv);
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
@@ -177,10 +181,44 @@ public class Binder {
           new LazyEnv.Completer<HeaderBoundClass, SourceHeaderBoundClass>() {
             @Override
             public SourceHeaderBoundClass complete(Env<HeaderBoundClass> henv, ClassSymbol sym) {
-              return HierarchyBinder.bind(psenv.get(sym), henv);
+              return HierarchyBinder.bind(sym, psenv.get(sym), henv);
             }
           });
     }
     return new LazyEnv<>(completers.build(), classPathEnv);
+  }
+
+  private static Env<SourceTypeBoundClass> bindTypes(
+      ImmutableSet<ClassSymbol> syms,
+      Env<SourceHeaderBoundClass> shenv,
+      Env<HeaderBoundClass> henv) {
+    SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
+    for (ClassSymbol sym : syms) {
+      builder.putIfAbsent(sym, TypeBinder.bind(henv, sym, shenv.get(sym)));
+    }
+    return builder.build();
+  }
+
+  /** The result of binding: bound nodes for sources in the compilation, and the classpath. */
+  public static class BindingResult {
+    private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
+    private final CompoundEnv<BytecodeBoundClass> classPathEnv;
+
+    public BindingResult(
+        ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
+        CompoundEnv<BytecodeBoundClass> classPathEnv) {
+      this.units = units;
+      this.classPathEnv = classPathEnv;
+    }
+
+    /** Bound nodes for sources in the compilation. */
+    public ImmutableMap<ClassSymbol, SourceTypeBoundClass> units() {
+      return units;
+    }
+
+    /** The classpath. */
+    public CompoundEnv<BytecodeBoundClass> classPathEnv() {
+      return classPathEnv;
+    }
   }
 }

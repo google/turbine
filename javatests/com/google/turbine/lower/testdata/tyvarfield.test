@@ -1,0 +1,7 @@
+=== test/Test.java ===
+package test;
+
+public class Test<A, B> {
+  A one;
+  B two;
+}

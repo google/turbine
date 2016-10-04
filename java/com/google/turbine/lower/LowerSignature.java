@@ -219,6 +219,13 @@ public class LowerSignature {
     return SigWriter.classSig(sig);
   }
 
+  /**
+   * A field signature, or {@code null} if the descriptor provides all necessary type information.
+   */
+  public String fieldSignature(Type type) {
+    return needsSig(type) ? SigWriter.type(signature(type)) : null;
+  }
+
   private boolean classNeedsSig(SourceTypeBoundClass ci) {
     if (!ci.typeParameters().isEmpty()) {
       return true;
@@ -281,5 +288,10 @@ public class LowerSignature {
       ibounds.add(signature(i));
     }
     return new Sig.TyParamSig(identifier, cbound, ibounds.build());
+  }
+
+  public String descriptor(ClassSymbol sym) {
+    classes.add(sym);
+    return sym.binaryName();
   }
 }

@@ -1,0 +1,8 @@
+=== test/Test.java ===
+package test;
+
+import java.util.Set;
+
+public class Test<T> {
+  public Set<T> asSet() { return null; }
+}

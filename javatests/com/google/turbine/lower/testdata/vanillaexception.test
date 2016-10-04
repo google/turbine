@@ -1,0 +1,10 @@
+=== test/PackagePrivate.java ===
+package test;
+
+import java.io.IOException;
+
+class Test {
+  public <T> void f(T t) throws IOException {
+  }
+}
+

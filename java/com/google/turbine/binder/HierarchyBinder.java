@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
@@ -26,6 +27,8 @@ import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.Symbol;
+import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
@@ -38,7 +41,7 @@ public class HierarchyBinder {
 
   /** Binds the type hierarchy (superclasses and interfaces) for a single class. */
   public static SourceHeaderBoundClass bind(
-      PackageSourceBoundClass base, Env<? extends HeaderBoundClass> env) {
+      Symbol origin, PackageSourceBoundClass base, Env<? extends HeaderBoundClass> env) {
     Tree.TyDecl decl = base.decl();
 
     int access = 0;
@@ -70,12 +73,8 @@ public class HierarchyBinder {
       visibility = TurbineVisibility.fromAccess(access);
     }
 
-    if ((access & TurbineFlag.ACC_STATIC) == 0) {
-      // nested enums (JLS 8.9) and types nested within interfaces and annotations (JLS 9.5) are
-      // implicitly static
-      if (base.kind() == TurbineTyKind.ENUM || enclosedByInterface(env, base)) {
-        access |= TurbineFlag.ACC_STATIC;
-      }
+    if ((access & TurbineFlag.ACC_STATIC) == 0 && implicitStatic(env, base)) {
+      access |= TurbineFlag.ACC_STATIC;
     }
 
     if (decl.tykind() == TurbineTyKind.INTERFACE) {
@@ -120,7 +119,38 @@ public class HierarchyBinder {
         interfaces.add(ClassSymbol.ANNOTATION);
       }
     }
-    return new SourceHeaderBoundClass(base, superclass, interfaces.build(), visibility, access);
+
+    ImmutableMap.Builder<String, TyVarSymbol> typeParameters = ImmutableMap.builder();
+    for (Tree.TyParam p : decl.typarams()) {
+      typeParameters.put(p.name(), new TyVarSymbol(origin, p.name()));
+    }
+
+    return new SourceHeaderBoundClass(
+        base, superclass, interfaces.build(), visibility, access, typeParameters.build());
+  }
+
+  /**
+   * Nested enums (JLS 8.9) and types nested within interfaces and annotations (JLS 9.5) are
+   * implicitly static
+   */
+  private static boolean implicitStatic(Env<? extends HeaderBoundClass> env, BoundClass c) {
+    if (c.kind() == TurbineTyKind.ENUM) {
+      return true;
+    }
+    while (true) {
+      switch (c.kind()) {
+        case INTERFACE:
+        case ANNOTATION:
+          return true;
+        default:
+          break;
+      }
+      if (c.owner() == null) {
+        break;
+      }
+      c = env.get(c.owner());
+    }
+    return false;
   }
 
   /** Returns true if the given type is declared in an interface. */
@@ -178,7 +208,7 @@ public class HierarchyBinder {
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
-    ClassSymbol sym = result.sym();
+    ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
       sym = Resolve.resolve(env, sym, bit);
       if (sym == null) {

@@ -1,0 +1,18 @@
+%%% b/B.java %%%
+package b;
+
+public class B {}
+
+=== b/B.java ===
+package b;
+
+public class B {}
+
+=== a/A.java ===
+package a;
+
+import b.B;
+
+public class A {
+  B b;
+}

@@ -96,7 +96,7 @@ public class ImportIndex implements Scope {
    * them, not by types that are inherited into).
    */
   public static ClassSymbol lookupCanonical(Env<? extends BoundClass> env, LookupResult result) {
-    ClassSymbol sym = result.sym();
+    ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
       sym = lookupOneCanonical(env, sym, bit);
       if (sym == null) {

@@ -1,0 +1,11 @@
+=== pkg/Simple.java ===
+package pkg;
+
+import java.util.List;
+
+public class Simple<T> {
+  List<String> l1;
+  List<T> l2;
+  List<List<T>> l3;
+  List<java.util.List<T>> l4;
+}

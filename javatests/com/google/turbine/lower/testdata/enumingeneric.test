@@ -1,0 +1,10 @@
+=== test/Test.java ===
+package test;
+
+import java.util.Iterator;
+
+abstract public class Test<T> implements Iterator<T> {
+  enum State { READY, SET, GO, }
+
+  public State state;
+}

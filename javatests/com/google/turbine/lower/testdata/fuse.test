@@ -1,0 +1,28 @@
+=== pkg/Converter.java ===
+package pkg;
+
+public interface Converter<T> {
+  T convert(String input);
+}
+
+=== pkg/EnumConverter.java ===
+package pkg;
+
+public abstract class EnumConverter<T extends Enum<T>> implements Converter<T> {
+  @Override public T convert(String input) { return null; }
+}
+
+=== pkg/Suite.java ===
+package pkg;
+
+public enum Suite {
+  HEARTS
+}
+
+=== pkg/Test.java ===
+package pkg;
+
+public class Test {
+  public static class MyConverter extends EnumConverter<Suite> {
+  }
+}

@@ -1,0 +1,19 @@
+=== test/Pair.java ===
+package test;
+
+public class Pair<A, B> {}
+
+=== test/FirstComparator.java ===
+package test;
+
+import java.util.Comparator;
+
+public enum FirstComparator implements Comparator<Pair<Comparable, Object>> {
+  FIRST_COMPARATOR;
+
+  @Override
+  public int compare(
+      Pair<Comparable, Object> pair1, Pair<Comparable, Object> pair2) {
+    return -1;
+  }
+}

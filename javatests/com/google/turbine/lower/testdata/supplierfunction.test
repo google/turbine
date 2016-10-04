@@ -1,0 +1,37 @@
+=== test/Supplier.java ===
+package test;
+
+public interface Supplier<T> {
+  T get();
+}
+
+=== test/Function.java ===
+package test;
+
+public interface Function<F, T> {
+  T apply(F input);
+}
+
+=== test/Suppliers.java ===
+package test;
+
+public class Suppliers {
+  public static <T> Function<Supplier<T>, T> supplierFunction() {
+    return null;
+  }
+
+  private interface SupplierFunction<T> extends Function<Supplier<T>, T> {}
+
+  private enum SupplierFunctionImpl implements SupplierFunction<Object> {
+    INSTANCE;
+
+    // Note: This makes T a "pass-through type"
+    @Override public Object apply(Supplier<Object> input) {
+      return input.get();
+    }
+
+    @Override public String toString() {
+      return "Suppliers.supplierFunction()";
+    }
+  }
+}

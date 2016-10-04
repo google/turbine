@@ -1,0 +1,7 @@
+=== test/Test.java ===
+package test;
+
+public class Test {
+  public static Test INSTANCE = new Test() {
+  };
+}

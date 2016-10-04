@@ -1,0 +1,5 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+}

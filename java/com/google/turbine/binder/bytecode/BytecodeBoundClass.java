@@ -25,8 +25,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassReader;
+import com.google.turbine.bytecode.sig.Sig;
+import com.google.turbine.bytecode.sig.Sig.ClassSig;
+import com.google.turbine.bytecode.sig.SigParser;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import javax.annotation.Nullable;
@@ -67,7 +71,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass {
           new Supplier<TurbineTyKind>() {
             @Override
             public TurbineTyKind get() {
-              int access = classFile.get().access();
+              int access = access();
               if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
                 return TurbineTyKind.ANNOTATION;
               }
@@ -126,9 +130,59 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass {
     return children.get();
   }
 
+  final Supplier<Integer> access =
+      Suppliers.memoize(
+          new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+              int access = classFile.get().access();
+              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
+                if (sym.binaryName().equals(inner.innerClass())) {
+                  access = inner.access();
+                }
+              }
+              return access;
+            }
+          });
+
   @Override
   public int access() {
-    return classFile.get().access();
+    return access.get();
+  }
+
+  private final Supplier<ClassSig> sig =
+      Suppliers.memoize(
+          new Supplier<ClassSig>() {
+            @Override
+            public ClassSig get() {
+              String signature = classFile.get().signature();
+              if (signature == null) {
+                return null;
+              }
+              return new SigParser(signature).parseClassSig();
+            }
+          });
+
+  private final Supplier<ImmutableMap<String, TyVarSymbol>> tyParams =
+      Suppliers.memoize(
+          new Supplier<ImmutableMap<String, TyVarSymbol>>() {
+            @Override
+            public ImmutableMap<String, TyVarSymbol> get() {
+              ClassSig csig = sig.get();
+              if (csig == null || csig.tyParams().isEmpty()) {
+                return ImmutableMap.of();
+              }
+              ImmutableMap.Builder<String, TyVarSymbol> result = ImmutableMap.builder();
+              for (Sig.TyParamSig p : csig.tyParams()) {
+                result.put(p.name(), new TyVarSymbol(sym, p.name()));
+              }
+              return result.build();
+            }
+          });
+
+  @Override
+  public ImmutableMap<String, TyVarSymbol> typeParameters() {
+    return tyParams.get();
   }
 
   final Supplier<ClassSymbol> superclass =

@@ -1,0 +1,19 @@
+=== a/A0.java ===
+package a;
+
+public class A0<T> {}
+
+=== a/A.java ===
+package a;
+
+public class A<T> extends A0 {}
+
+=== test/B.java ===
+package test;
+
+import a.A;
+
+public class B extends A<String> {
+  A a;
+  B b;
+}

@@ -1,0 +1,16 @@
+%%% lib/Lib.java %%%
+package lib;
+
+public class Lib {
+  public class Inner {
+  }
+}
+
+=== test/Test.java ===
+package test;
+
+import lib.Lib;
+
+public class Test {
+  Lib.Inner i;
+}

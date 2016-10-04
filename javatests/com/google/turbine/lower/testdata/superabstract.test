@@ -1,0 +1,17 @@
+%%% pkg/Simple.java %%%
+package pkg;
+
+public abstract class Simple {
+  public abstract static class Inner<T> {
+  }
+}
+
+=== test/Test.java ===
+package test;
+
+import pkg.Simple;
+
+public class Test {
+  static final class Inner extends Simple.Inner<Test> {
+  }
+}

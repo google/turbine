@@ -1,0 +1,17 @@
+=== Lex.java ===
+
+public class Lex {
+  public static class SideB {
+  }
+  public static class SideA {
+    public static class SideI {
+    }
+  }
+  public static class I2 {
+    public static class I3 {
+      public static class I4 {
+        SideA s;
+      }
+    }
+  }
+}
