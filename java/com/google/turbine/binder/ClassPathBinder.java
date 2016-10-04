@@ -39,7 +39,7 @@ public class ClassPathBinder {
    * Creates an environment containing symbols in the given classpath and bootclasspath, and adds
    * them to the top-level index.
    */
-  static CompoundEnv<BytecodeBoundClass> bind(
+  public static CompoundEnv<BytecodeBoundClass> bind(
       Iterable<Path> classpath, Iterable<Path> bootclasspath, TopLevelIndex.Builder tli)
       throws IOException {
     // TODO(cushon): this is going to require an env eventually,

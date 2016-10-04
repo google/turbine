@@ -90,7 +90,9 @@ public class ConstantPool {
     if (classInfoPool.containsKey(utf8)) {
       return classInfoPool.get(utf8);
     }
-    return insert(new Entry(Kind.CLASS_INFO, new ShortValue(utf8)));
+    short index = insert(new Entry(Kind.CLASS_INFO, new ShortValue(utf8)));
+    classInfoPool.put(utf8, index);
+    return index;
   }
 
   /** Adds a CONSTANT_Utf8_info entry to the pool. */
@@ -98,7 +100,9 @@ public class ConstantPool {
     if (utf8Pool.containsKey(value)) {
       return utf8Pool.get(value);
     }
-    return insert(new Entry(Kind.UTF8, new StringValue(value)));
+    short index = insert(new Entry(Kind.UTF8, new StringValue(value)));
+    utf8Pool.put(value, index);
+    return index;
   }
 
   private short insert(Entry key) {

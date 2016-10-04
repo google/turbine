@@ -1,0 +1,7 @@
+// class version 52.0 (52)
+// access flags 0x1
+public class test/Test$Inner {
+
+  // access flags 0xC
+  protected static INNERCLASS test/Test$Inner test/Test Inner
+}

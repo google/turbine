@@ -28,7 +28,9 @@ public class LowerAttributes {
   /** Collects the {@link Attribute}s for a {@link ClassFile}. */
   static List<Attribute> classAttributes(ClassFile classfile) {
     List<Attribute> attributes = new ArrayList<>();
-    attributes.add(new InnerClasses(classfile.innerClasses()));
+    if (!classfile.innerClasses().isEmpty()) {
+      attributes.add(new InnerClasses(classfile.innerClasses()));
+    }
     if (classfile.signature() != null) {
       attributes.add(new Signature(classfile.signature()));
     }

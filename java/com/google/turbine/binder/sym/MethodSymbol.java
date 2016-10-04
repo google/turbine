@@ -19,31 +19,25 @@ package com.google.turbine.binder.sym;
 import com.google.errorprone.annotations.Immutable;
 import java.util.Objects;
 
-/** A type variable symbol. */
+/** A method symbol. */
 @Immutable
-public class TyVarSymbol implements Symbol {
-
-  private final Symbol owner;
+public class MethodSymbol implements Symbol {
+  private final ClassSymbol owner;
   private final String name;
 
-  public TyVarSymbol(Symbol owner, String name) {
+  public MethodSymbol(ClassSymbol owner, String name) {
     this.owner = owner;
     this.name = name;
   }
 
-  /** The type variable name. */
-  public String name() {
-    return name;
-  }
-
-  /** The class or method that declares this type variable. */
-  public Symbol owner() {
+  /** The enclosing class. */
+  public ClassSymbol owner() {
     return owner;
   }
 
-  @Override
-  public Kind symKind() {
-    return Kind.TY_PARAM;
+  /** The method name. */
+  public String name() {
+    return name;
   }
 
   @Override
@@ -52,11 +46,16 @@ public class TyVarSymbol implements Symbol {
   }
 
   @Override
+  public Kind symKind() {
+    return Kind.METHOD;
+  }
+
+  @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof TyVarSymbol)) {
+    if (!(obj instanceof MethodSymbol)) {
       return false;
     }
-    TyVarSymbol other = (TyVarSymbol) obj;
-    return name.equals(other.name()) && owner().equals(other.owner());
+    MethodSymbol other = (MethodSymbol) obj;
+    return name().equals(other.name()) && owner().equals(other.owner());
   }
 }

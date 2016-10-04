@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
-
 import java.util.Arrays;
 
 /** JLS 4 types. */
@@ -66,6 +65,9 @@ public interface Type {
      * instance, it's just to avoid some boilerplate.
      */
     public static final ClassTy OBJECT = asNonParametricClassTy(ClassSymbol.OBJECT);
+
+    /** The {@link ClassTy} for {@code java.lang.String}. */
+    public static final ClassTy STRING = asNonParametricClassTy(ClassSymbol.STRING);
 
     /** Returns a {@link ClassTy} with no type arguments for the given {@link ClassSymbol}. */
     public static ClassTy asNonParametricClassTy(ClassSymbol i) {

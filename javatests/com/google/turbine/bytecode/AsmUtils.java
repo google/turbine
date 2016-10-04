@@ -27,7 +27,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
  * com.google.turbine.bytecode.ClassReader}.
  */
 public class AsmUtils {
-  static String textify(byte[] bytes) {
+  public static String textify(byte[] bytes) {
     Textifier textifier = new Textifier();
     StringWriter sw = new StringWriter();
     new ClassReader(bytes)

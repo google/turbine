@@ -16,13 +16,17 @@
 
 package com.google.turbine.binder.sym;
 
+import com.google.errorprone.annotations.Immutable;
+
 /** The top interface for all symbols. */
+@Immutable
 public interface Symbol {
   /** The symbol kind. */
   enum Kind {
     CLASS,
-    TY_PARAM
-    // TODO(cushon): FIELD, METHOD
+    TY_PARAM,
+    METHOD,
+    FIELD
   }
 
   /** The symbol kind. */

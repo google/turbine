@@ -19,31 +19,30 @@ package com.google.turbine.binder.sym;
 import com.google.errorprone.annotations.Immutable;
 import java.util.Objects;
 
-/** A type variable symbol. */
+/** A field symbol. */
 @Immutable
-public class TyVarSymbol implements Symbol {
-
-  private final Symbol owner;
+public class FieldSymbol implements Symbol {
+  private final ClassSymbol owner;
   private final String name;
 
-  public TyVarSymbol(Symbol owner, String name) {
+  public FieldSymbol(ClassSymbol owner, String name) {
     this.owner = owner;
     this.name = name;
   }
 
-  /** The type variable name. */
+  /** The enclosing class. */
+  public ClassSymbol owner() {
+    return owner;
+  }
+
+  /** The field name. */
   public String name() {
     return name;
   }
 
-  /** The class or method that declares this type variable. */
-  public Symbol owner() {
-    return owner;
-  }
-
   @Override
   public Kind symKind() {
-    return Kind.TY_PARAM;
+    return Kind.FIELD;
   }
 
   @Override
@@ -53,10 +52,10 @@ public class TyVarSymbol implements Symbol {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof TyVarSymbol)) {
+    if (!(obj instanceof FieldSymbol)) {
       return false;
     }
-    TyVarSymbol other = (TyVarSymbol) obj;
-    return name.equals(other.name()) && owner().equals(other.owner());
+    FieldSymbol other = (FieldSymbol) obj;
+    return name().equals(other.name()) && owner().equals(other.owner());
   }
 }

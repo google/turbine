@@ -1,0 +1,22 @@
+// class version 52.0 (52)
+// access flags 0x21
+// signature <V:Ltest/Test$Inner;>Ljava/lang/Object;Ljava/util/List<TV;>;
+// declaration: test/Test<V extends test.Test$Inner> implements java.util.List<V>
+public class test/Test implements java/util/List  {
+
+  // access flags 0xC
+  protected static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x19
+  // signature Ltest/Test$Inner;
+  // declaration: test.Test$Inner
+  public final static Ltest/Test$Inner; theField
+
+  // access flags 0x9
+  public static f()I
+
+  // access flags 0x1
+  // signature <V::Ljava/lang/Runnable;E:Ljava/lang/Error;>(I)V^TE;
+  // declaration: void g<V extends java.lang.Runnable, E extends java.lang.Error>(int) throws E
+  public g(I)V throws java/lang/Error 
+}
