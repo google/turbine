@@ -1,0 +1,19 @@
+=== test/A.java ===
+package test;
+
+public class A<T> {
+  public class Inner {
+  } 
+}
+
+=== test/B.java ===
+package test;
+
+public class B extends A<String> {
+}
+
+=== test/Test.java ===
+package test;
+
+public class Test<T extends B.Inner> {
+}

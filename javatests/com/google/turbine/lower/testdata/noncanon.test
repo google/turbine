@@ -1,0 +1,16 @@
+=== C.java ===
+
+public class C extends Sub.I {
+}
+
+=== Sub.java ===
+
+public class Sub extends Sup {
+}
+
+=== Sup.java ===
+
+public class Sup {
+  public static class I {
+  }
+}

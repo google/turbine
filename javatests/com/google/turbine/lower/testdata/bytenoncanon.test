@@ -1,0 +1,22 @@
+%%% lib/A.java %%%
+package lib;
+
+public class A {
+  public static class Inner {
+  }
+}
+
+%%% lib/B.java %%%
+package lib;
+
+public class B extends A {
+}
+
+=== test/Test.java ===
+package test;
+
+import lib.B;
+
+public class Test {
+  B.Inner i;
+}

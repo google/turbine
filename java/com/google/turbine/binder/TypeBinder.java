@@ -27,7 +27,7 @@ import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.TyVarInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.LookupKey;
@@ -560,7 +560,7 @@ public class TypeBinder {
     } else if (t.upper().isPresent()) {
       return new Type.WildUpperBoundedTy(bindTy(env, scope, t.upper().get()));
     } else {
-      return new Type.WildTy();
+      return Type.WILD_TY;
     }
   }
 }

@@ -24,6 +24,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
@@ -33,6 +35,10 @@ import com.google.turbine.bytecode.sig.Sig.ClassSig;
 import com.google.turbine.bytecode.sig.SigParser;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.ClassTy;
+import java.util.Map;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
@@ -43,13 +49,16 @@ import javax.annotation.Nullable;
  * resolved and canonicalized so there are no cycles. The laziness also minimizes the amount of work
  * done on the classpath.
  */
-public class BytecodeBoundClass implements BoundClass, HeaderBoundClass {
+public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBoundClass {
 
   private final ClassSymbol sym;
+  private final Env<BytecodeBoundClass> env;
   private final Supplier<ClassFile> classFile;
 
-  public BytecodeBoundClass(ClassSymbol sym, final Supplier<byte[]> bytes) {
+  public BytecodeBoundClass(
+      ClassSymbol sym, final Supplier<byte[]> bytes, Env<BytecodeBoundClass> env) {
     this.sym = sym;
+    this.env = env;
     this.classFile =
         Suppliers.memoize(
             new Supplier<ClassFile>() {
@@ -219,5 +228,92 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass {
   @Override
   public ImmutableList<ClassSymbol> interfaces() {
     return interfaces.get();
+  }
+
+  Supplier<ClassTy> superClassType =
+      Suppliers.memoize(
+          new Supplier<ClassTy>() {
+            @Override
+            public ClassTy get() {
+              if (superclass() == null) {
+                return null;
+              }
+              if (sig.get() == null || sig.get().superClass() == null) {
+                return ClassTy.asNonParametricClassTy(superclass());
+              }
+              return BytecodeBinder.bindClassTy(
+                  sig.get().superClass(), makeScope(env, sym, ImmutableMap.of()));
+            }
+          });
+
+  @Override
+  public ClassTy superClassType() {
+    return superClassType.get();
+  }
+
+  Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>> typeParameterTypes =
+      Suppliers.memoize(
+          new Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>>() {
+            @Override
+            public ImmutableMap<TyVarSymbol, TyVarInfo> get() {
+              if (sig.get() == null) {
+                return ImmutableMap.of();
+              }
+              ImmutableMap.Builder<TyVarSymbol, TyVarInfo> tparams = ImmutableMap.builder();
+              Function<String, TyVarSymbol> scope = makeScope(env, sym, typeParameters());
+              for (Sig.TyParamSig p : sig.get().tyParams()) {
+                tparams.put(typeParameters().get(p.name()), bindTyParam(p, scope));
+              }
+              return tparams.build();
+            }
+          });
+
+  private static TyVarInfo bindTyParam(Sig.TyParamSig sig, Function<String, TyVarSymbol> scope) {
+    Type superClassBound = null;
+    if (sig.classBound() != null) {
+      superClassBound = BytecodeBinder.bindTy(sig.classBound(), scope);
+    }
+    ImmutableList.Builder<Type> interfaceBounds = ImmutableList.builder();
+    for (Sig.TySig t : sig.interfaceBounds()) {
+      interfaceBounds.add(BytecodeBinder.bindTy(t, scope));
+    }
+    return new TyVarInfo(superClassBound, interfaceBounds.build());
+  }
+
+  @Override
+  public ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes() {
+    return typeParameterTypes.get();
+  }
+
+  /**
+   * Create a scope for resolving type variable symbols declared in the class, and any enclosing
+   * instances.
+   */
+  private static Function<String, TyVarSymbol> makeScope(
+      final Env<BytecodeBoundClass> env,
+      final ClassSymbol sym,
+      final Map<String, TyVarSymbol> typeVariables) {
+    return new Function<String, TyVarSymbol>() {
+      @Override
+      public TyVarSymbol apply(String input) {
+        TyVarSymbol result = typeVariables.get(input);
+        if (result != null) {
+          return result;
+        }
+        ClassSymbol curr = sym;
+        while (curr != null) {
+          BytecodeBoundClass info = env.get(curr);
+          if (info == null) {
+            throw new AssertionError(curr);
+          }
+          result = info.typeParameters().get(input);
+          if (result != null) {
+            return result;
+          }
+          curr = info.owner();
+        }
+        throw new AssertionError(input);
+      }
+    };
   }
 }

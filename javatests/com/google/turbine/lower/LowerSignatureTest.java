@@ -98,7 +98,7 @@ public class LowerSignatureTest {
                                 new Type.ClassTy.SimpleClassTy(
                                     new ClassSymbol("test/Test"),
                                     ImmutableList.of(
-                                        new Type.WildTy(),
+                                        Type.WILD_TY,
                                         new Type.WildLowerBoundedTy(Type.ClassTy.OBJECT),
                                         new Type.WildUpperBoundedTy(Type.ClassTy.OBJECT))))))))
         .isEqualTo("Ltest/Test<*-Ljava/lang/Object;+Ljava/lang/Object;>;");

@@ -295,11 +295,11 @@ public interface Type {
   }
 
   /** An unbounded wildcard type. */
-  class WildTy extends TyArg {
-
-    @Override
-    public TyArgKind tyArgKind() {
-      return TyArgKind.WILD;
-    }
-  }
+  TyArg WILD_TY =
+      new TyArg() {
+        @Override
+        public TyArgKind tyArgKind() {
+          return TyArgKind.WILD;
+        }
+      };
 }

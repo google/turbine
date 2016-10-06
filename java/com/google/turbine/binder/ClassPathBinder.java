@@ -16,8 +16,7 @@
 
 package com.google.turbine.binder;
 
-import static com.google.turbine.binder.env.SimpleEnv.builder;
-
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -29,8 +28,11 @@ import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
 
 /** Sets up an environment for symbols on the classpath. */
 public class ClassPathBinder {
@@ -51,15 +53,25 @@ public class ClassPathBinder {
 
   private static Env<BytecodeBoundClass> bindClasspath(
       TopLevelIndex.Builder tli, Iterable<Path> paths) throws IOException {
-    SimpleEnv.Builder<BytecodeBoundClass> result = builder();
+    Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
+    Env<BytecodeBoundClass> benv =
+        new Env<BytecodeBoundClass>() {
+          @Override
+          public BytecodeBoundClass get(ClassSymbol sym) {
+            return map.get(sym);
+          }
+        };
     for (Path path : paths) {
-      bindJar(tli, path, result);
+      bindJar(tli, path, map, benv);
     }
-    return result.build();
+    return new SimpleEnv<>(ImmutableMap.copyOf(map));
   }
 
   private static void bindJar(
-      TopLevelIndex.Builder tli, Path path, SimpleEnv.Builder<BytecodeBoundClass> env)
+      TopLevelIndex.Builder tli,
+      Path path,
+      Map<ClassSymbol, BytecodeBoundClass> env,
+      Env<BytecodeBoundClass> benv)
       throws IOException {
     // TODO(cushon): consider creating a nio-friendly jar reading abstraction for testing,
     // that yields something like `Iterable<Pair<String, Supplier<byte[]>>>`
@@ -73,7 +85,8 @@ public class ClassPathBinder {
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
-      if (env.putIfAbsent(sym, new BytecodeBoundClass(sym, () -> toByteArrayOrDie(jf, je)))) {
+      if (!env.containsKey(sym)) {
+        env.put(sym, new BytecodeBoundClass(sym, () -> toByteArrayOrDie(jf, je), benv));
         tli.insert(sym);
       }
     }

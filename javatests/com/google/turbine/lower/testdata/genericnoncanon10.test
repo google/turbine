@@ -1,0 +1,22 @@
+=== test/B.java ===
+package test;
+
+public class B<U> {
+  public class One extends B<Long>.Two {
+  }
+  public class Two extends B<Short>.Three {
+  }
+  public class Three extends B<Float>.Four {
+    public class Inner {
+    }
+  }
+  public class Four {
+  }
+}
+
+=== test/Test.java ===
+package test;
+
+public class Test {
+  B<Test>.One.Inner i3;
+}

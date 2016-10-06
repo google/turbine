@@ -30,6 +30,7 @@ import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -81,6 +82,8 @@ public class Binder {
 
     Env<SourceTypeBoundClass> tenv =
         bindTypes(syms, henv, CompoundEnv.<HeaderBoundClass>of(classPathEnv).append(henv));
+
+    tenv = canonicalizeTypes(syms, tenv, CompoundEnv.<TypeBoundClass>of(classPathEnv).append(tenv));
 
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
@@ -195,6 +198,15 @@ public class Binder {
     SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, TypeBinder.bind(henv, sym, shenv.get(sym)));
+    }
+    return builder.build();
+  }
+
+  private static Env<SourceTypeBoundClass> canonicalizeTypes(
+      ImmutableSet<ClassSymbol> syms, Env<SourceTypeBoundClass> stenv, Env<TypeBoundClass> tenv) {
+    SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
+    for (ClassSymbol sym : syms) {
+      builder.putIfAbsent(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
     }
     return builder.build();
   }

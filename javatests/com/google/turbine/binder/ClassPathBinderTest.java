@@ -107,7 +107,8 @@ public class ClassPathBinderTest {
               } catch (IOException e) {
                 throw new IOError(e);
               }
-            });
+            },
+            null);
     try {
       c.owner();
       fail();

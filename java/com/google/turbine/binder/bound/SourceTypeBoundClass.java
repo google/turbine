@@ -27,7 +27,7 @@ import com.google.turbine.type.Type;
 import javax.annotation.Nullable;
 
 /** A HeaderBoundClass for classes compiled from source. */
-public class SourceTypeBoundClass implements HeaderBoundClass {
+public class SourceTypeBoundClass implements TypeBoundClass {
 
   private final TurbineTyKind kind;
   private final ClassSymbol owner;
@@ -102,7 +102,6 @@ public class SourceTypeBoundClass implements HeaderBoundClass {
     return children;
   }
 
-  /** Declared type parameters. */
   @Override
   public ImmutableMap<String, TyVarSymbol> typeParameters() {
     return typeParameters;
@@ -114,6 +113,7 @@ public class SourceTypeBoundClass implements HeaderBoundClass {
   }
 
   /** The super-class type. */
+  @Override
   public Type.ClassTy superClassType() {
     return superClassType;
   }
@@ -129,6 +129,7 @@ public class SourceTypeBoundClass implements HeaderBoundClass {
   }
 
   /** Declared type parameters. */
+  @Override
   public ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes() {
     return typeParameterTypes;
   }
@@ -247,27 +248,6 @@ public class SourceTypeBoundClass implements HeaderBoundClass {
     /** Access bits. */
     public int access() {
       return access;
-    }
-  }
-
-  /** A type parameter declaration. */
-  public static class TyVarInfo {
-    private final Type superClassBound;
-    private final ImmutableList<Type> interfaceBounds;
-
-    public TyVarInfo(Type superClassBound, ImmutableList<Type> interfaceBounds) {
-      this.superClassBound = superClassBound;
-      this.interfaceBounds = interfaceBounds;
-    }
-
-    /** A class bound, or {@code null}. */
-    public Type superClassBound() {
-      return superClassBound;
-    }
-
-    /** Interface type bounds. */
-    public ImmutableList<Type> interfaceBounds() {
-      return interfaceBounds;
     }
   }
 }

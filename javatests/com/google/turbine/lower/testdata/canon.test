@@ -1,0 +1,11 @@
+=== C.java ===
+
+public class C extends D.I {
+}
+
+=== D.java ===
+
+public class D {
+  public static class I {
+  }
+}

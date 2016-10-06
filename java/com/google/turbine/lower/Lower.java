@@ -24,7 +24,7 @@ import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.TyVarInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
