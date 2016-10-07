@@ -74,6 +74,10 @@ public class IntegrationTestSupport {
     }
 
     for (ClassNode n : classes) {
+      // TODO(cushon): annotation method default values
+      for (MethodNode m : (List<MethodNode>) n.methods) {
+        m.annotationDefault = null;
+      }
       removeImplementation(n);
       removeUnusedInnerClassAttributes(infos, n);
       sortMembersAndAttributes(n);

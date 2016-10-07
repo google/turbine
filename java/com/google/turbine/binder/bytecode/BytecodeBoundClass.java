@@ -28,8 +28,10 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
@@ -39,6 +41,7 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -299,7 +302,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
                 Type type = null;
                 int access = cfi.access();
                 Const.Value value = cfi.value();
-                fields.add(new FieldInfo(fieldSym, type, access, null, value));
+                fields.add(new FieldInfo(fieldSym, type, access, ImmutableList.of(), null, value));
               }
               return fields.build();
             }
@@ -308,6 +311,85 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
   @Override
   public ImmutableList<FieldInfo> fields() {
     return fields.get();
+  }
+
+  Supplier<ImmutableList<MethodInfo>> methods =
+      Suppliers.memoize(
+          new Supplier<ImmutableList<MethodInfo>>() {
+            @Override
+            public ImmutableList<MethodInfo> get() {
+              // we only need methods for annotation declarations
+              if (kind() != TurbineTyKind.ANNOTATION) {
+                return ImmutableList.of();
+              }
+              ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
+              for (ClassFile.MethodInfo m : classFile.get().methods()) {
+                methods.add(bindMethod(m));
+              }
+              return methods.build();
+            }
+          });
+
+  private MethodInfo bindMethod(ClassFile.MethodInfo m) {
+    MethodSymbol methodSymbol = new MethodSymbol(sym, m.name());
+    // annotation interfaces can't have methods with generic signatures
+    verify(m.signature() == null);
+    Sig.MethodSig sig = new SigParser(m.descriptor()).parseMethodSig();
+
+    verify(sig.tyParams().isEmpty());
+
+    Function<String, TyVarSymbol> scope = makeScope(env, sym, ImmutableMap.of());
+
+    Type ret = null;
+    if (sig.returnType() != null) {
+      ret = BytecodeBinder.bindTy(sig.returnType(), scope);
+    }
+
+    ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
+    for (Sig.TySig tySig : sig.params()) {
+      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), false));
+    }
+
+    verify(sig.exceptions().isEmpty());
+
+    return new MethodInfo(
+        methodSymbol, ImmutableMap.of(), ret, formals.build(), ImmutableList.of(), m.access());
+  }
+
+  @Override
+  public ImmutableList<MethodInfo> methods() {
+    return methods.get();
+  }
+
+  final Supplier<RetentionPolicy> retention =
+      Suppliers.memoize(
+          new Supplier<RetentionPolicy>() {
+            @Override
+            public RetentionPolicy get() {
+              if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
+                return null;
+              }
+              for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
+                if (!annotation.typeName().equals("Ljava/lang/annotation/Retention;")) {
+                  continue;
+                }
+                ElementValue val = annotation.elementValuePairs().get("value");
+                if (val.kind() != ElementValue.Kind.ENUM) {
+                  continue;
+                }
+                ElementValue.EnumConstValue enumVal = (ElementValue.EnumConstValue) val;
+                if (!enumVal.typeName().equals("Ljava/lang/annotation/RetentionPolicy;")) {
+                  continue;
+                }
+                return RetentionPolicy.valueOf(enumVal.constName());
+              }
+              return null;
+            }
+          });
+
+  @Override
+  public RetentionPolicy retention() {
+    return retention.get();
   }
 
   /**

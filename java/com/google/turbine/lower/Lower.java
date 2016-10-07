@@ -19,11 +19,12 @@ package com.google.turbine.lower;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -34,22 +35,27 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
 import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.SigWriter;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.types.Erasure;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 
 /** Lowering from bound classes to bytecode. */
 public class Lower {
@@ -58,8 +64,8 @@ public class Lower {
   public static Map<String, byte[]> lowerAll(
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classpath) {
-    CompoundEnv<ClassSymbol, HeaderBoundClass> env =
-        CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classpath).append(new SimpleEnv<>(units));
+    CompoundEnv<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     for (ClassSymbol sym : units.keySet()) {
       result.put(sym.binaryName(), new Lower().lower(units.get(sym), env, sym));
@@ -71,7 +77,7 @@ public class Lower {
 
   /** Lowers a class to bytecode. */
   public byte[] lower(
-      SourceTypeBoundClass info, Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym) {
+      SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
 
     int access = classAccess(info);
     String name = sig.descriptor(sym);
@@ -101,8 +107,7 @@ public class Lower {
       fields.add(lowerField(env, f));
     }
 
-    // TODO(cushon): annotations
-    ImmutableList<ClassFile.AnnotationInfo> annotations = ImmutableList.of();
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(env, info.annotations());
 
     ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(sym, info, env);
 
@@ -122,7 +127,7 @@ public class Lower {
   }
 
   private ClassFile.MethodInfo lowerMethod(
-      final Env<ClassSymbol, HeaderBoundClass> env, final MethodInfo m, final ClassSymbol sym) {
+      final Env<ClassSymbol, TypeBoundClass> env, final MethodInfo m, final ClassSymbol sym) {
     int access = m.access();
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(m.tyParams(), env);
     String name = m.name();
@@ -135,10 +140,14 @@ public class Lower {
       }
     }
 
+    // TODO(cushon): default values for @interface methods
+    ElementValue defaultValue = null;
+
     // TODO(cushon): annotations
-    ClassFile.AnnotationInfo.ElementValue defaultValue = null;
-    ImmutableList<ClassFile.AnnotationInfo> annotations = ImmutableList.of();
-    List<List<ClassFile.AnnotationInfo>> paramAnnotations = ImmutableList.of();
+    ImmutableList<AnnotationInfo> annotations = ImmutableList.of();
+
+    // TODO(cushon): parameter annotations
+    List<List<AnnotationInfo>> paramAnnotations = ImmutableList.of();
 
     return new ClassFile.MethodInfo(
         access,
@@ -162,22 +171,18 @@ public class Lower {
     return SigWriter.method(new MethodSig(typarams, fparams.build(), result, excns));
   }
 
-  private ClassFile.FieldInfo lowerField(
-      final Env<ClassSymbol, HeaderBoundClass> env, FieldInfo f) {
+  private ClassFile.FieldInfo lowerField(final Env<ClassSymbol, TypeBoundClass> env, FieldInfo f) {
     final String name = f.name();
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(Collections.emptyMap(), env);
     String desc = SigWriter.type(sig.signature(Erasure.erase(f.type(), tenv)));
     String signature = sig.fieldSignature(f.type());
-
-    // TODO(cushon): annotations
-    ImmutableList<ClassFile.AnnotationInfo> annotations = ImmutableList.of();
-
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(env, f.annotations());
     return new ClassFile.FieldInfo(f.access(), name, desc, signature, f.value(), annotations);
   }
 
   /** Creates inner class attributes for all referenced inner classes. */
   private ImmutableList<ClassFile.InnerClass> collectInnerClasses(
-      ClassSymbol origin, SourceTypeBoundClass info, Env<ClassSymbol, HeaderBoundClass> env) {
+      ClassSymbol origin, SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env) {
     Set<ClassSymbol> all = new LinkedHashSet<>();
     addEnclosing(env, all, origin);
     for (ClassSymbol sym : info.children().values()) {
@@ -194,8 +199,8 @@ public class Lower {
   }
 
   private void addEnclosing(
-      Env<ClassSymbol, HeaderBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
-    HeaderBoundClass innerinfo = env.get(sym);
+      Env<ClassSymbol, TypeBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
+    TypeBoundClass innerinfo = env.get(sym);
     while (innerinfo.owner() != null) {
       all.add(sym);
       sym = innerinfo.owner();
@@ -208,8 +213,8 @@ public class Lower {
    * class.
    */
   private ClassFile.InnerClass innerClass(
-      Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol innerSym) {
-    HeaderBoundClass inner = env.get(innerSym);
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol innerSym) {
+    TypeBoundClass inner = env.get(innerSym);
 
     String innerName = innerSym.binaryName().substring(inner.owner().binaryName().length() + 1);
 
@@ -238,14 +243,14 @@ public class Lower {
    */
   static class TyVarEnv implements Function<TyVarSymbol, TyVarInfo> {
 
-    private final Env<ClassSymbol, HeaderBoundClass> env;
+    private final Env<ClassSymbol, TypeBoundClass> env;
     private final Map<TyVarSymbol, TyVarInfo> tyParams;
 
     /**
      * @param tyParams the initial lookup scope, e.g. a method's formal type parameters.
      * @param env the environment to look up a type variable's owning declaration in.
      */
-    public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams, Env<ClassSymbol, HeaderBoundClass> env) {
+    public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams, Env<ClassSymbol, TypeBoundClass> env) {
       this.tyParams = tyParams;
       this.env = env;
     }
@@ -266,11 +271,94 @@ public class Lower {
       // must be in the same compilation unit, so we have source
       // information for it
       // TODO(cushon): remove this cast once we're reading type parameters from bytecode
-      HeaderBoundClass owner = env.get((ClassSymbol) ownerSym);
+      TypeBoundClass owner = env.get((ClassSymbol) ownerSym);
       if (!(owner instanceof SourceTypeBoundClass)) {
         throw new AssertionError(sym);
       }
       return ((SourceTypeBoundClass) owner).typeParameterTypes().get(sym);
+    }
+  }
+
+  private ImmutableList<AnnotationInfo> lowerAnnotations(
+      Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
+    ImmutableList.Builder<AnnotationInfo> lowered = ImmutableList.builder();
+    outer:
+    for (AnnoInfo annotation : annotations) {
+      AnnotationInfo anno = lowerAnnotation(env, annotation);
+      if (anno == null) {
+        continue outer;
+      }
+      lowered.add(anno);
+    }
+    return lowered.build();
+  }
+
+  private AnnotationInfo lowerAnnotation(
+      Env<ClassSymbol, TypeBoundClass> env, AnnoInfo annotation) {
+    Boolean visible = isVisible(env, annotation.sym());
+    if (visible == null) {
+      return null;
+    }
+    return new AnnotationInfo(
+        descriptor(sig.descriptor(annotation.sym())), visible, annotationValues(annotation, env));
+  }
+
+  private static String descriptor(String descriptor) {
+    return "L" + descriptor + ";";
+  }
+
+  /**
+   * Returns true if the annotation is visible at runtime, false if it is not visible at runtime,
+   * and {@code null} if it should not be retained in bytecode.
+   */
+  @Nullable
+  private static Boolean isVisible(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
+    RetentionPolicy retention = env.get(sym).retention();
+    switch (retention) {
+      case CLASS:
+        return false;
+      case RUNTIME:
+        return true;
+      case SOURCE:
+        return null;
+      default:
+        throw new AssertionError(retention);
+    }
+  }
+
+  private static ImmutableMap<String, ElementValue> annotationValues(
+      AnnoInfo a, Env<ClassSymbol, TypeBoundClass> env) {
+    ImmutableMap.Builder<String, ElementValue> values = ImmutableMap.builder();
+    for (Map.Entry<String, Const> entry : a.values().entrySet()) {
+      values.put(entry.getKey(), annotationValue(entry.getValue(), env));
+    }
+    return values.build();
+  }
+
+  private static ElementValue annotationValue(Const value, Env<ClassSymbol, TypeBoundClass> env) {
+    switch (value.kind()) {
+      case CLASS_LITERAL:
+        // TODO(cushon): class literals
+        throw new AssertionError();
+      case ENUM_CONSTANT:
+        {
+          Const.EnumConstantValue enumValue = (Const.EnumConstantValue) value;
+          return new ElementValue.EnumConstValue(
+              descriptor(enumValue.sym().owner().binaryName()), enumValue.sym().name());
+        }
+      case ARRAY:
+        {
+          Const.ArrayInitValue arrayValue = (Const.ArrayInitValue) value;
+          List<ElementValue> values = new ArrayList<>();
+          for (Const element : arrayValue.elements()) {
+            values.add(annotationValue(element, env));
+          }
+          return new ElementValue.ArrayValue(values);
+        }
+      case PRIMITIVE:
+        return new ElementValue.ConstValue((Const.Value) value);
+      default:
+        throw new AssertionError(value.kind());
     }
   }
 }

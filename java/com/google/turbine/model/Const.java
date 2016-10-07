@@ -16,15 +16,34 @@
 
 package com.google.turbine.model;
 
+import com.google.common.collect.ImmutableList;
+import com.google.turbine.binder.sym.FieldSymbol;
+
 /**
  * Compile-time constant expressions, including literals of primitive or String type, class
  * literals, enum constants, and annotation literals.
  */
 public abstract class Const {
 
+  /** The constant kind. */
+  public abstract Kind kind();
+
+  /** A constant kind. */
+  public enum Kind {
+    ARRAY,
+    PRIMITIVE,
+    CLASS_LITERAL,
+    ENUM_CONSTANT
+  }
+
   /** Subtypes of {@link Const} for primitive and String literals. */
   public abstract static class Value extends Const {
     public abstract TurbineConstantTypeKind constantTypeKind();
+
+    @Override
+    public Kind kind() {
+      return Kind.PRIMITIVE;
+    }
 
     public IntValue asInteger() {
       throw new AssertionError(constantTypeKind());
@@ -142,6 +161,16 @@ public abstract class Const {
     @Override
     public ShortValue asShort() {
       return new ShortValue((short) value);
+    }
+
+    @Override
+    public DoubleValue asDouble() {
+      return new DoubleValue(value);
+    }
+
+    @Override
+    public FloatValue asFloat() {
+      return new FloatValue(value);
     }
   }
 
@@ -364,6 +393,44 @@ public abstract class Const {
     @Override
     public String toString() {
       return String.valueOf(value);
+    }
+  }
+
+  /** A constant array literal (e.g. in an annotation). */
+  public static class ArrayInitValue extends Const {
+
+    private final ImmutableList<Const> elements;
+
+    public ArrayInitValue(ImmutableList<Const> elements) {
+      this.elements = elements;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.ARRAY;
+    }
+
+    public ImmutableList<Const> elements() {
+      return elements;
+    }
+  }
+
+  /** An enum constant. */
+  public static class EnumConstantValue extends Const {
+
+    private final FieldSymbol sym;
+
+    public EnumConstantValue(FieldSymbol sym) {
+      this.sym = sym;
+    }
+
+    public FieldSymbol sym() {
+      return sym;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.ENUM_CONSTANT;
     }
   }
 }

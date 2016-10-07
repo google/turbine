@@ -17,10 +17,13 @@
 package com.google.turbine.bytecode;
 
 import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
+import com.google.turbine.bytecode.Attribute.Annotations;
 import com.google.turbine.bytecode.Attribute.ConstantValue;
 import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.Signature;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.model.Const;
 
 /** Writer {@link Attribute}s to bytecode. */
@@ -48,6 +51,12 @@ public class AttributeWriter {
         break;
       case CONSTANT_VALUE:
         writeConstantValue((ConstantValue) attribute);
+        break;
+      case RUNTIME_VISIBLE_ANNOTATIONS:
+        writeAnnotation((Attribute.RuntimeVisibleAnnotations) attribute);
+        break;
+      case RUNTIME_INVISIBLE_ANNOTATIONS:
+        writeAnnotation((Attribute.RuntimeInvisibleAnnotations) attribute);
         break;
       default:
         throw new AssertionError(attribute.kind());
@@ -110,5 +119,17 @@ public class AttributeWriter {
       default:
         throw new AssertionError(value.constantTypeKind());
     }
+  }
+
+  public void writeAnnotation(Annotations attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    ByteArrayDataOutput tmp = ByteStreams.newDataOutput();
+    tmp.writeShort(attribute.annotations().size());
+    for (AnnotationInfo annotation : attribute.annotations()) {
+      new AnnotationWriter(pool, tmp).writeAnnotation(annotation);
+    }
+    byte[] data = tmp.toByteArray();
+    output.writeInt(data.length);
+    output.write(data);
   }
 }

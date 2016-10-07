@@ -20,9 +20,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
@@ -41,6 +45,8 @@ import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.Type;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /** Constant expression evaluation. */
 public class ConstEvaluator {
@@ -156,8 +162,7 @@ public class ConstEvaluator {
     }
     FieldInfo field = inheritedField(env, sym, name);
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
-      // TODO(cushon): enum constants
-      throw new AssertionError();
+      return new Const.EnumConstantValue(field.sym());
     }
     verifyNotNull(field, "%s", result);
     return values.get(field.sym());
@@ -741,6 +746,65 @@ public class ConstEvaluator {
         }
       default:
         throw new AssertionError(a.constantTypeKind());
+    }
+  }
+
+  /**
+   * Evaluates annotation arguments given the symbol of the annotation declaration and a list of
+   * expression trees.
+   */
+  AnnoInfo evaluateAnnotation(ClassSymbol sym, ImmutableList<Expression> args) {
+    Map<String, Type> template = new LinkedHashMap<>();
+    for (MethodInfo method : env.get(sym).methods()) {
+      template.put(method.name(), method.returnType());
+    }
+
+    ImmutableMap.Builder<String, Const> values = ImmutableMap.builder();
+    for (Expression arg : args) {
+      Expression expr;
+      String key;
+      if (arg.kind() == Tree.Kind.ASSIGN) {
+        Tree.Assign assign = (Tree.Assign) arg;
+        key = assign.name();
+        expr = assign.expr();
+      } else {
+        // expand the implicit 'value' name; `@Foo(42)` is sugar for `@Foo(value=42)`
+        key = "value";
+        expr = arg;
+      }
+      Type ty = template.get(key);
+      Const value = evalAnnotationValue(expr, ty);
+      values.put(key, value);
+    }
+    return new AnnoInfo(sym, args, values.build());
+  }
+
+  private Const.ArrayInitValue evalArrayInit(Tree.ArrayInit t) {
+    ImmutableList.Builder<Const> exprs = ImmutableList.builder();
+    for (Expression tree : t.exprs()) {
+      exprs.add(eval(tree));
+    }
+    return new Const.ArrayInitValue(exprs.build());
+  }
+
+  private Const evalAnnotationValue(Expression tree, Type ty) {
+    Const value = eval(tree);
+    switch (ty.tyKind()) {
+      case PRIM_TY:
+        return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
+      case CLASS_TY:
+      case TY_VAR:
+        return value;
+      case ARRAY_TY:
+        {
+          if (value.kind() == Const.Kind.ARRAY) {
+            return value;
+          }
+          Type.ArrayTy aty = (Type.ArrayTy) ty;
+          return new Const.ArrayInitValue(ImmutableList.of(cast(aty.elementType(), value)));
+        }
+      default:
+        throw new AssertionError(ty.tyKind());
     }
   }
 }

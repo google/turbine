@@ -1,0 +1,104 @@
+/*
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.turbine.bytecode;
+
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.model.Const.Value;
+import java.util.Map.Entry;
+
+/** Writes an {@link AnnotationInfo} to a class file. */
+public class AnnotationWriter {
+
+  final ConstantPool pool;
+  final ByteArrayDataOutput output;
+
+  public AnnotationWriter(ConstantPool pool, ByteArrayDataOutput output) {
+    this.pool = pool;
+    this.output = output;
+  }
+
+  public void writeAnnotation(AnnotationInfo annotation) {
+    output.writeShort(pool.utf8(annotation.typeName()));
+    output.writeShort(annotation.elementValuePairs().size());
+    for (Entry<String, ElementValue> entry : annotation.elementValuePairs().entrySet()) {
+      output.writeShort(pool.utf8(entry.getKey()));
+      writeElementValue(entry.getValue());
+    }
+  }
+
+  void writeElementValue(ElementValue value) {
+    switch (value.kind()) {
+      case CONST:
+        writeConstElementValue(((ConstValue) value).value());
+        break;
+      case ENUM:
+        writeEnumElementValue((EnumConstValue) value);
+        break;
+      default:
+        throw new AssertionError(value.kind());
+    }
+  }
+
+  private void writeConstElementValue(Value value) {
+    switch (value.constantTypeKind()) {
+      case BYTE:
+        writeConst('B', pool.integer(value.asInteger().value()));
+        break;
+      case CHAR:
+        writeConst('C', pool.integer(value.asInteger().value()));
+        break;
+      case SHORT:
+        writeConst('S', pool.integer(value.asInteger().value()));
+        break;
+      case DOUBLE:
+        writeConst('D', pool.doubleInfo(value.asDouble().value()));
+        break;
+      case FLOAT:
+        writeConst('F', pool.floatInfo(value.asFloat().value()));
+        break;
+      case INT:
+        writeConst('I', pool.integer(value.asInteger().value()));
+        break;
+      case LONG:
+        writeConst('J', pool.longInfo(value.asLong().value()));
+        break;
+      case STRING:
+        writeConst('s', pool.utf8(value.asString().value()));
+        break;
+      case BOOLEAN:
+        writeConst('Z', pool.integer(value.asBoolean().value() ? 1 : 0));
+        break;
+      default:
+        throw new AssertionError(value.constantTypeKind());
+    }
+  }
+
+  private void writeConst(char tag, short index) {
+    output.writeByte(tag);
+    output.writeShort(index);
+  }
+
+  private void writeEnumElementValue(EnumConstValue value) {
+    output.writeByte('e');
+    output.writeShort(pool.utf8(value.typeName()));
+    output.writeShort(pool.utf8(value.constName()));
+  }
+}

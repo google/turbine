@@ -292,7 +292,7 @@ public class Binder {
 
     SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.putIfAbsent(sym, new ConstBinder(constenv, env.get(sym)).bind());
+      builder.putIfAbsent(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
     }
     return builder.build();
   }

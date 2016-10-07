@@ -307,7 +307,9 @@ public class ClassFile {
       /** Element value kinds. */
       enum Kind {
         ENUM,
-        // TODO(cushon): CLASS, CONST, ANNOTATION, ARRAY
+        CONST,
+        ARRAY
+        // TODO(cushon): CLASS, ANNOTATION,
       }
 
       /** An enum constant value. */
@@ -334,6 +336,47 @@ public class ClassFile {
         /** The name of the enum constant. */
         public String constName() {
           return constName;
+        }
+      }
+
+      /** A primitive or string constant value. */
+      class ConstValue implements ElementValue {
+
+        private final Const.Value value;
+
+        public ConstValue(Const.Value value) {
+
+          this.value = value;
+        }
+
+        @Override
+        public Kind kind() {
+          return Kind.CONST;
+        }
+
+        /** The constant value. */
+        public Const.Value value() {
+          return value;
+        }
+      }
+
+      /** A constant array value. */
+      class ArrayValue implements ElementValue {
+
+        private final List<ElementValue> elements;
+
+        public ArrayValue(List<ElementValue> elements) {
+          this.elements = elements;
+        }
+
+        @Override
+        public Kind kind() {
+          return Kind.ARRAY;
+        }
+
+        /** The elements of the array. */
+        public List<ElementValue> elements() {
+          return elements;
         }
       }
     }

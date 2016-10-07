@@ -201,6 +201,7 @@ public class LowerIntegrationTest {
       "const_conditional.test",
       "const_moreexpr.test",
       "const_multi.test",
+      "field_anno.test",
     };
     return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
   }

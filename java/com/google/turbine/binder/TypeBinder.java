@@ -18,15 +18,17 @@ package com.google.turbine.binder;
 
 import static com.google.common.base.Verify.verify;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CompoundScope;
@@ -194,6 +196,9 @@ public class TypeBinder {
 
     ImmutableList<FieldInfo> fields = bindFields(base, env, scope, sym, base.decl().members());
 
+    ImmutableList<TypeBoundClass.AnnoInfo> annotations =
+        bindAnnotations(env, scope, base.decl().annos());
+
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
         superClassType,
@@ -208,7 +213,9 @@ public class TypeBinder {
         base.interfaces(),
         base.typeParameters(),
         base.scope(),
-        base.memberImports());
+        base.memberImports(),
+        /*retention*/ null,
+        annotations);
   }
 
   /** Add synthetic and implicit methods, including default constructors and enum methods. */
@@ -447,6 +454,7 @@ public class TypeBinder {
       Tree.VarDecl decl) {
     FieldSymbol sym = new FieldSymbol(owner, decl.name());
     Type type = bindTy(env, scope, decl.ty());
+    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(env, scope, decl.annos());
     int access = 0;
     for (TurbineModifier m : decl.mods()) {
       access |= m.flag();
@@ -459,7 +467,21 @@ public class TypeBinder {
       default:
         break;
     }
-    return new FieldInfo(sym, type, access, decl, null);
+    return new FieldInfo(sym, type, access, annotations, decl, null);
+  }
+
+  private static ImmutableList<TypeBoundClass.AnnoInfo> bindAnnotations(
+      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, ImmutableList<Tree.Anno> trees) {
+    ImmutableList.Builder<TypeBoundClass.AnnoInfo> result = ImmutableList.builder();
+    for (Tree.Anno tree : trees) {
+      LookupResult lookupResult = scope.lookup(new LookupKey(Splitter.on('.').split(tree.name())));
+      ClassSymbol sym = (ClassSymbol) lookupResult.sym();
+      for (String name : lookupResult.remaining()) {
+        sym = Resolve.resolve(env, sym, name);
+      }
+      result.add(new TypeBoundClass.AnnoInfo(sym, tree.args(), null));
+    }
+    return result.build();
   }
 
   private static ImmutableList<Type.TyArg> bindTyArgs(

@@ -18,11 +18,14 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.type.Type;
+import java.lang.annotation.RetentionPolicy;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
 public interface TypeBoundClass extends HeaderBoundClass {
@@ -34,6 +37,12 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
   /** Declared fields. */
   ImmutableList<FieldInfo> fields();
+
+  /** Declared methods. */
+  ImmutableList<MethodInfo> methods();
+
+  /** Retention policy for annotation declarations, {@code null} for other declarations. */
+  RetentionPolicy retention();
 
   /** A type parameter declaration. */
   class TyVarInfo {
@@ -61,14 +70,22 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final FieldSymbol sym;
     private final Type type;
     private final int access;
+    private final ImmutableList<AnnoInfo> annotations;
 
     private final Tree.VarDecl decl;
     private final Const.Value value;
 
-    public FieldInfo(FieldSymbol sym, Type type, int access, Tree.VarDecl decl, Const.Value value) {
+    public FieldInfo(
+        FieldSymbol sym,
+        Type type,
+        int access,
+        ImmutableList<AnnoInfo> annotations,
+        Tree.VarDecl decl,
+        Const.Value value) {
       this.sym = sym;
       this.type = type;
       this.access = access;
+      this.annotations = annotations;
       this.decl = decl;
       this.value = value;
     }
@@ -101,6 +118,124 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** The constant field value. */
     public Const.Value value() {
       return value;
+    }
+
+    /** Declaration annotations. */
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
+    }
+  }
+
+  /** An annotation use. */
+  class AnnoInfo {
+    private final ClassSymbol sym;
+    private final ImmutableList<Tree.Expression> args;
+    private final ImmutableMap<String, Const> values;
+
+    public AnnoInfo(
+        ClassSymbol sym, ImmutableList<Tree.Expression> args, ImmutableMap<String, Const> values) {
+      this.sym = sym;
+      this.args = args;
+      this.values = values;
+    }
+
+    /** Arguments, either assignments or a single expression. */
+    public ImmutableList<Tree.Expression> args() {
+      return args;
+    }
+
+    /** Bound element-value pairs. */
+    public ImmutableMap<String, Const> values() {
+      return values;
+    }
+
+    /** The annotation's declaration. */
+    public ClassSymbol sym() {
+      return sym;
+    }
+  }
+
+  /** A declared method. */
+  class MethodInfo {
+    private final MethodSymbol sym;
+    private final ImmutableMap<TyVarSymbol, TyVarInfo> tyParams;
+    private final Type returnType;
+    private final ImmutableList<ParamInfo> parameters;
+    private final ImmutableList<Type> exceptions;
+    private final int access;
+
+    public MethodInfo(
+        MethodSymbol sym,
+        ImmutableMap<TyVarSymbol, TyVarInfo> tyParams,
+        Type returnType,
+        ImmutableList<ParamInfo> parameters,
+        ImmutableList<Type> exceptions,
+        int access) {
+      this.sym = sym;
+      this.tyParams = tyParams;
+      this.returnType = returnType;
+      this.parameters = parameters;
+      this.exceptions = exceptions;
+      this.access = access;
+    }
+
+    /** The method symbol. */
+    public MethodSymbol sym() {
+      return sym;
+    }
+
+    /** The method name. */
+    public String name() {
+      return sym.name();
+    }
+
+    /** The type parameters */
+    public ImmutableMap<TyVarSymbol, TyVarInfo> tyParams() {
+      return tyParams;
+    }
+
+    /** Type return type, possibly {#link Type#VOID}. */
+    public Type returnType() {
+      return returnType;
+    }
+
+    /** The formal parameters. */
+    public ImmutableList<ParamInfo> parameters() {
+      return parameters;
+    }
+
+    /** Thrown exceptions. */
+    public ImmutableList<Type> exceptions() {
+      return exceptions;
+    }
+
+    /** Access bits. */
+    public int access() {
+      return access;
+    }
+  }
+
+  /** A formal parameter declaration. */
+  class ParamInfo {
+    private final Type type;
+    private final boolean synthetic;
+
+    public ParamInfo(Type type, boolean synthetic) {
+      this.type = type;
+      this.synthetic = synthetic;
+    }
+
+    /** The parameter type. */
+    public Type type() {
+      return type;
+    }
+
+    /**
+     * Returns true if the parameter is synthetic, e.g. the enclosing instance parameter in an inner
+     * class constructor.
+     */
+    public boolean synthetic() {
+      return synthetic;
     }
   }
 }

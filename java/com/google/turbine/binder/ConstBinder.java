@@ -19,27 +19,37 @@ package com.google.turbine.binder;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
+import java.lang.annotation.RetentionPolicy;
+import javax.annotation.Nullable;
 
 /** Binding pass to evaluate constant expressions. */
 public class ConstBinder {
 
-  /** The constant variable environment. */
   private final Env<FieldSymbol, Value> constantEnv;
-
-  /** The bound node of the enclosing class. */
   private final SourceTypeBoundClass base;
+  private final ConstEvaluator constEvaluator;
 
-  public ConstBinder(Env<FieldSymbol, Value> constantEnv, SourceTypeBoundClass base) {
+  public ConstBinder(
+      Env<FieldSymbol, Value> constantEnv,
+      ClassSymbol sym,
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      SourceTypeBoundClass base) {
     this.constantEnv = constantEnv;
     this.base = base;
+    this.constEvaluator = new ConstEvaluator(sym, base, constantEnv, env);
   }
 
   public SourceTypeBoundClass bind() {
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
+    ImmutableList<TypeBoundClass.AnnoInfo> annos = bindAnnotations(base.annotations());
     return new SourceTypeBoundClass(
         base.interfaceTypes(),
         base.superClassType(),
@@ -54,7 +64,32 @@ public class ConstBinder {
         base.interfaces(),
         base.typeParameters(),
         base.scope(),
-        base.memberImports());
+        base.memberImports(),
+        bindRetention(base.kind(), annos),
+        annos);
+  }
+
+  /** Returns the {@link RetentionPolicy} for an annotation declaration, or {@code null}. */
+  @Nullable
+  static RetentionPolicy bindRetention(
+      TurbineTyKind kind, Iterable<TypeBoundClass.AnnoInfo> annotations) {
+    if (kind != TurbineTyKind.ANNOTATION) {
+      return null;
+    }
+    for (TypeBoundClass.AnnoInfo annotation : annotations) {
+      if (annotation.sym().toString().equals("java/lang/annotation/Retention")) {
+        Const value = annotation.values().get("value");
+        if (value.kind() != Const.Kind.ENUM_CONSTANT) {
+          break;
+        }
+        Const.EnumConstantValue enumValue = (Const.EnumConstantValue) value;
+        if (!enumValue.sym().owner().toString().equals("java/lang/annotation/RetentionPolicy")) {
+          break;
+        }
+        return RetentionPolicy.valueOf(enumValue.sym().name());
+      }
+    }
+    return RetentionPolicy.CLASS;
   }
 
   private ImmutableList<TypeBoundClass.FieldInfo> fields(
@@ -63,7 +98,24 @@ public class ConstBinder {
     for (TypeBoundClass.FieldInfo base : fields) {
       Value value = fieldValue(base);
       result.add(
-          new TypeBoundClass.FieldInfo(base.sym(), base.type(), base.access(), base.decl(), value));
+          new TypeBoundClass.FieldInfo(
+              base.sym(),
+              base.type(),
+              base.access(),
+              bindAnnotations(base.annotations()),
+              base.decl(),
+              value));
+    }
+    return result.build();
+  }
+
+  private ImmutableList<TypeBoundClass.AnnoInfo> bindAnnotations(
+      ImmutableList<TypeBoundClass.AnnoInfo> annotations) {
+    // TODO(cushon): Java 8 repeated annotations
+    // TODO(cushon): disallow duplicate non-repeated annotations
+    ImmutableList.Builder<TypeBoundClass.AnnoInfo> result = ImmutableList.builder();
+    for (TypeBoundClass.AnnoInfo annotation : annotations) {
+      result.add(constEvaluator.evaluateAnnotation(annotation.sym(), annotation.args()));
     }
     return result.build();
   }

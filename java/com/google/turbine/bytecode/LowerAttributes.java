@@ -32,6 +32,7 @@ public class LowerAttributes {
     if (!classfile.innerClasses().isEmpty()) {
       attributes.add(new InnerClasses(classfile.innerClasses()));
     }
+    addAllAnnotations(attributes, classfile.annotations());
     if (classfile.signature() != null) {
       attributes.add(new Signature(classfile.signature()));
     }
@@ -59,6 +60,22 @@ public class LowerAttributes {
     if (field.value() != null) {
       attributes.add(new ConstantValue(field.value()));
     }
+    addAllAnnotations(attributes, field.annotations());
     return attributes;
+  }
+
+  static void addAllAnnotations(
+      List<Attribute> attributes, List<ClassFile.AnnotationInfo> annotations) {
+    List<ClassFile.AnnotationInfo> visible = new ArrayList<>();
+    List<ClassFile.AnnotationInfo> invisible = new ArrayList<>();
+    for (ClassFile.AnnotationInfo annotation : annotations) {
+      (annotation.isRuntimeVisible() ? visible : invisible).add(annotation);
+    }
+    if (!visible.isEmpty()) {
+      attributes.add(new Attribute.RuntimeVisibleAnnotations(visible));
+    }
+    if (!invisible.isEmpty()) {
+      attributes.add(new Attribute.RuntimeInvisibleAnnotations(invisible));
+    }
   }
 }

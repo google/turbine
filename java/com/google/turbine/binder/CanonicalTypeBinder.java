@@ -19,10 +19,10 @@ package com.google.turbine.binder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -65,7 +65,9 @@ public class CanonicalTypeBinder {
         base.interfaces(),
         base.typeParameters(),
         base.scope(),
-        base.memberImports());
+        base.memberImports(),
+        base.retention(),
+        base.annotations());
   }
 
   private static ImmutableList<FieldInfo> fields(
@@ -77,6 +79,7 @@ public class CanonicalTypeBinder {
               base.sym(),
               Canonicalize.canonicalize(env, sym, base.type()),
               base.access(),
+              base.annotations(),
               base.decl(),
               base.value()));
     }

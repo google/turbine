@@ -118,6 +118,7 @@ public class LowerTest {
                 new FieldSymbol(new ClassSymbol("test/Test"), "theField"),
                 Type.ClassTy.asNonParametricClassTy(new ClassSymbol("test/Test$Inner")),
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_PUBLIC,
+                ImmutableList.of(),
                 null,
                 null));
     ClassSymbol owner = null;
@@ -143,7 +144,9 @@ public class LowerTest {
             interfaces,
             tyParams,
             null,
-            null);
+            null,
+            null,
+            ImmutableList.of());
 
     SourceTypeBoundClass i =
         new SourceTypeBoundClass(
@@ -160,7 +163,9 @@ public class LowerTest {
             ImmutableList.of(),
             ImmutableMap.of(),
             null,
-            null);
+            null,
+            null,
+            ImmutableList.of());
 
     SimpleEnv.Builder<SourceTypeBoundClass> b = SimpleEnv.builder();
     b.putIfAbsent(new ClassSymbol("test/Test"), c);

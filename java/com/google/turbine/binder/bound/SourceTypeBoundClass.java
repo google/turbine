@@ -21,10 +21,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
+import java.lang.annotation.RetentionPolicy;
 import javax.annotation.Nullable;
 
 /** A HeaderBoundClass for classes compiled from source. */
@@ -46,6 +46,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableList<FieldInfo> fields;
   private final CompoundScope scope;
   private final MemberImportIndex memberImports;
+  private final RetentionPolicy retention;
+  private final ImmutableList<AnnoInfo> annotations;
 
   public SourceTypeBoundClass(
       ImmutableList<Type.ClassTy> interfaceTypes,
@@ -61,7 +63,9 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       ImmutableList<ClassSymbol> interfaces,
       ImmutableMap<String, TyVarSymbol> typeParameters,
       CompoundScope scope,
-      MemberImportIndex memberImports) {
+      MemberImportIndex memberImports,
+      RetentionPolicy retention,
+      ImmutableList<AnnoInfo> annotations) {
     this.interfaceTypes = interfaceTypes;
     this.superClassType = superClassType;
     this.typeParameterTypes = typeParameterTypes;
@@ -76,6 +80,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.typeParameters = typeParameters;
     this.scope = scope;
     this.memberImports = memberImports;
+    this.retention = retention;
+    this.annotations = annotations;
   }
 
   @Override
@@ -126,8 +132,14 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   }
 
   /** Declared methods. */
+  @Override
   public ImmutableList<MethodInfo> methods() {
     return methods;
+  }
+
+  @Override
+  public RetentionPolicy retention() {
+    return retention;
   }
 
   /** Declared fields. */
@@ -142,90 +154,6 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return typeParameterTypes;
   }
 
-  /** A declared method. */
-  public static class MethodInfo {
-    private final MethodSymbol sym;
-    private final ImmutableMap<TyVarSymbol, TyVarInfo> tyParams;
-    private final Type returnType;
-    private final ImmutableList<ParamInfo> parameters;
-    private final ImmutableList<Type> exceptions;
-    private final int access;
-
-    public MethodInfo(
-        MethodSymbol sym,
-        ImmutableMap<TyVarSymbol, TyVarInfo> tyParams,
-        Type returnType,
-        ImmutableList<ParamInfo> parameters,
-        ImmutableList<Type> exceptions,
-        int access) {
-      this.sym = sym;
-      this.tyParams = tyParams;
-      this.returnType = returnType;
-      this.parameters = parameters;
-      this.exceptions = exceptions;
-      this.access = access;
-    }
-
-    /** The method symbol. */
-    public MethodSymbol sym() {
-      return sym;
-    }
-
-    /** The method name. */
-    public String name() {
-      return sym.name();
-    }
-
-    /** The type parameters */
-    public ImmutableMap<TyVarSymbol, TyVarInfo> tyParams() {
-      return tyParams;
-    }
-
-    /** Type return type, possibly {#link Type#VOID}. */
-    public Type returnType() {
-      return returnType;
-    }
-
-    /** The formal parameters. */
-    public ImmutableList<ParamInfo> parameters() {
-      return parameters;
-    }
-
-    /** Thrown exceptions. */
-    public ImmutableList<Type> exceptions() {
-      return exceptions;
-    }
-
-    /** Access bits. */
-    public int access() {
-      return access;
-    }
-  }
-
-  /** A formal parameter declaration. */
-  public static class ParamInfo {
-    private final Type type;
-    private final boolean synthetic;
-
-    public ParamInfo(Type type, boolean synthetic) {
-      this.type = type;
-      this.synthetic = synthetic;
-    }
-
-    /** The parameter type. */
-    public Type type() {
-      return type;
-    }
-
-    /**
-     * Returns true if the parameter is synthetic, e.g. the enclosing instance parameter in an inner
-     * class constructor.
-     */
-    public boolean synthetic() {
-      return synthetic;
-    }
-  }
-
   public CompoundScope scope() {
     return scope;
   }
@@ -233,5 +161,10 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   /** The static member import index for the enclosing compilation unit. */
   public MemberImportIndex memberImports() {
     return memberImports;
+  }
+
+  /** Declaration annotations. */
+  public ImmutableList<AnnoInfo> annotations() {
+    return annotations;
   }
 }

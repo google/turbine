@@ -16,6 +16,7 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.model.Const.Value;
 import java.util.List;
 
@@ -26,7 +27,9 @@ interface Attribute {
     SIGNATURE("Signature"),
     EXCEPTIONS("Exceptions"),
     INNER_CLASSES("InnerClasses"),
-    CONSTANT_VALUE("ConstantValue");
+    CONSTANT_VALUE("ConstantValue"),
+    RUNTIME_VISIBLE_ANNOTATIONS("RuntimeVisibleAnnotations"),
+    RUNTIME_INVISIBLE_ANNOTATIONS("RuntimeInvisibleAnnotations");
 
     private final String signature;
 
@@ -83,6 +86,48 @@ interface Attribute {
     @Override
     public Kind kind() {
       return Kind.EXCEPTIONS;
+    }
+  }
+
+  interface Annotations extends Attribute {
+    List<AnnotationInfo> annotations();
+  }
+
+  /** A JVMS §4.7.16 RuntimeVisibleAnnotations attribute. */
+  class RuntimeVisibleAnnotations implements Annotations {
+    List<AnnotationInfo> annotations;
+
+    public RuntimeVisibleAnnotations(List<AnnotationInfo> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public List<AnnotationInfo> annotations() {
+      return annotations;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RUNTIME_VISIBLE_ANNOTATIONS;
+    }
+  }
+
+  /** A JVMS §4.7.17 RuntimeInvisibleAnnotations attribute. */
+  class RuntimeInvisibleAnnotations implements Annotations {
+    List<AnnotationInfo> annotations;
+
+    public RuntimeInvisibleAnnotations(List<AnnotationInfo> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public List<AnnotationInfo> annotations() {
+      return annotations;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RUNTIME_INVISIBLE_ANNOTATIONS;
     }
   }
 
