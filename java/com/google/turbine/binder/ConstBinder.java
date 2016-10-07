@@ -77,7 +77,7 @@ public class ConstBinder {
     }
     Value value = constantEnv.get(base.sym());
     if (value != null) {
-      value = ConstEvaluator.cast(base.type(), value);
+      value = (Value) ConstEvaluator.cast(base.type(), value);
     }
     return value;
   }

@@ -83,8 +83,7 @@ public class LowerIntegrationTest {
       "circ_cvar.test",
       "clash.test",
       "ctorvis.test",
-      // TODO(cushon): const expr evaluation (uses a binary expression)
-      // "cvar_qualified.test",
+      "cvar_qualified.test",
       "cycle.test",
       "default_fbound.test",
       "default_rawfbound.test",
@@ -196,6 +195,12 @@ public class LowerIntegrationTest {
       "constlevel.test",
       "constpack.test",
       "importconst.test",
+      "const.test",
+      "const_all.test",
+      "const_arith.test",
+      "const_conditional.test",
+      "const_moreexpr.test",
+      "const_multi.test",
     };
     return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
   }

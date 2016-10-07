@@ -1,0 +1,8 @@
+=== test/B.java ===
+package test;
+
+public class B {
+  public static final int X = 1;
+  public static final int Y = 1;
+  public static final boolean C = X < Y, D = X > Y;
+}

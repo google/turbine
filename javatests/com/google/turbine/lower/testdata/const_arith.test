@@ -1,0 +1,13 @@
+=== test/B.java ===
+package test;
+
+public class B {
+  public static final long S1 = Short.MAX_VALUE + Short.MAX_VALUE;
+  public static final long S2 = -Short.MIN_VALUE;
+  public static final boolean B1 = -Short.MIN_VALUE < 0;
+  public static final boolean B2 = -Integer.MIN_VALUE < 0;
+  public static final boolean B3 = -Long.MIN_VALUE < 0L;
+  public static final boolean B4 = -Long.MIN_VALUE < 0l;
+  public static final long MAX_LONG_POWER_OF_TWO = 1L << (Long.SIZE - 2);
+  public static final short MAX_SHORT_POWER_OF_TWO = 1 << (Short.SIZE - 2);
+}

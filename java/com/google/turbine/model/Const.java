@@ -57,6 +57,10 @@ public abstract class Const {
     public ShortValue asShort() {
       throw new AssertionError(constantTypeKind());
     }
+
+    public ByteValue asByte() {
+      throw new AssertionError(constantTypeKind());
+    }
   }
 
   /** A boolean literal value. */
@@ -114,6 +118,31 @@ public abstract class Const {
     public IntValue asInteger() {
       return this;
     }
+
+    @Override
+    public ByteValue asByte() {
+      return new ByteValue((byte) value);
+    }
+
+    @Override
+    public LongValue asLong() {
+      return new LongValue(value);
+    }
+
+    @Override
+    public StringValue asString() {
+      return new StringValue(String.valueOf(value));
+    }
+
+    @Override
+    public CharValue asChar() {
+      return new CharValue((char) value);
+    }
+
+    @Override
+    public ShortValue asShort() {
+      return new ShortValue((short) value);
+    }
   }
 
   /** A long literal value. */
@@ -141,6 +170,11 @@ public abstract class Const {
     @Override
     public LongValue asLong() {
       return this;
+    }
+
+    @Override
+    public ShortValue asShort() {
+      return new ShortValue((short) value);
     }
   }
 
@@ -286,6 +320,50 @@ public abstract class Const {
     @Override
     public ShortValue asShort() {
       return this;
+    }
+
+    @Override
+    public IntValue asInteger() {
+      return new IntValue(value);
+    }
+  }
+
+  /** A short literal value. */
+  public static class ByteValue extends Value {
+
+    private final byte value;
+
+    public ByteValue(byte value) {
+      this.value = value;
+    }
+
+    @Override
+    public TurbineConstantTypeKind constantTypeKind() {
+      return TurbineConstantTypeKind.BYTE;
+    }
+
+    @Override
+    public ByteValue asByte() {
+      return this;
+    }
+
+    @Override
+    public LongValue asLong() {
+      return new LongValue(value);
+    }
+
+    @Override
+    public IntValue asInteger() {
+      return new IntValue(value);
+    }
+
+    public byte value() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
     }
   }
 }

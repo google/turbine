@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.base.Joiner;
@@ -29,9 +30,16 @@ import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.Binary;
+import com.google.turbine.tree.Tree.ClassTy;
+import com.google.turbine.tree.Tree.Conditional;
 import com.google.turbine.tree.Tree.ConstVarName;
+import com.google.turbine.tree.Tree.Expression;
+import com.google.turbine.tree.Tree.TypeCast;
+import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.Type;
 
 /** Constant expression evaluation. */
@@ -62,7 +70,7 @@ public class ConstEvaluator {
   }
 
   /** Evaluates the given expression's value. */
-  public Const eval(Tree.Expression t) {
+  public Const eval(Expression t) {
     switch (t.kind()) {
       case LITERAL:
         {
@@ -100,12 +108,16 @@ public class ConstEvaluator {
       case CONST_VAR_NAME:
         return evalConstVar((ConstVarName) t);
       case BINARY:
+        return evalBinary((Binary) t);
       case TYPE_CAST:
+        return evalCast((TypeCast) t);
       case UNARY:
+        return evalUnary((Unary) t);
       case CONDITIONAL:
+        return evalConditional((Conditional) t);
       case ARRAY_INIT:
       case ANNO:
-        // TODO(cushon): constant expression evaluation
+        // TODO(cushon): annotations
         throw new AssertionError(t.kind());
       default:
         throw new AssertionError(t.kind());
@@ -188,8 +200,547 @@ public class ConstEvaluator {
   }
 
   /** Casts the value to the given type. */
-  public static Const.Value cast(Type type, Const.Value value) {
-    // TODO(cushon): implement type casts
-    return value;
+  static Const cast(Type ty, Const value) {
+    checkNotNull(value);
+    switch (ty.tyKind()) {
+      case CLASS_TY:
+      case TY_VAR:
+        return value;
+      case PRIM_TY:
+        return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
+      default:
+        throw new AssertionError(ty.tyKind());
+    }
+  }
+
+  private static Const.Value coerce(Const.Value value, TurbineConstantTypeKind kind) {
+    switch (kind) {
+      case BOOLEAN:
+        return value.asBoolean();
+      case STRING:
+        return value.asString();
+      case LONG:
+        return value.asLong();
+      case INT:
+        return value.asInteger();
+      case BYTE:
+        return value.asByte();
+      case CHAR:
+        return value.asChar();
+      case SHORT:
+        return value.asShort();
+      case DOUBLE:
+        return value.asDouble();
+      case FLOAT:
+        return value.asFloat();
+      default:
+        throw new AssertionError(kind);
+    }
+  }
+
+  private Const.Value evalValue(Expression tree) {
+    return (Const.Value) eval(tree);
+  }
+
+  private Const.Value evalConditional(Conditional t) {
+    return evalValue(t.cond()).asBoolean().value() ? evalValue(t.iftrue()) : evalValue(t.iffalse());
+  }
+
+  private Const.Value evalUnary(Unary t) {
+    Const.Value expr = evalValue(t.expr());
+    switch (t.op()) {
+      case NOT:
+        switch (expr.constantTypeKind()) {
+          case BOOLEAN:
+            return new Const.BooleanValue(!expr.asBoolean().value());
+          default:
+            throw new AssertionError(expr.constantTypeKind());
+        }
+      case BITWISE_COMP:
+        switch (expr.constantTypeKind()) {
+          case INT:
+            return new Const.IntValue(~expr.asInteger().value());
+          default:
+            throw new AssertionError(expr.constantTypeKind());
+        }
+      case UNARY_PLUS:
+        switch (expr.constantTypeKind()) {
+          case INT:
+            return new Const.IntValue(+expr.asInteger().value());
+          default:
+            throw new AssertionError(expr.constantTypeKind());
+        }
+      case NEG:
+        switch (expr.constantTypeKind()) {
+          case INT:
+            return new Const.IntValue(-expr.asInteger().value());
+          case LONG:
+            return new Const.LongValue(-expr.asLong().value());
+          case DOUBLE:
+            return new Const.DoubleValue(-expr.asDouble().value());
+          default:
+            throw new AssertionError(expr.constantTypeKind());
+        }
+      default:
+        throw new AssertionError(t.op());
+    }
+  }
+
+  private Const.Value evalCast(TypeCast t) {
+    Const.Value expr = evalValue(t.expr());
+    switch (t.ty().kind()) {
+      case PRIM_TY:
+        return coerce(expr, ((Tree.PrimTy) t.ty()).tykind());
+      case CLASS_TY:
+        {
+          ClassTy classTy = (ClassTy) t.ty();
+          // TODO(cushon): check package?
+          if (!classTy.name().equals("String")) {
+            throw new AssertionError(classTy);
+          }
+          return expr.asString();
+        }
+      default:
+        throw new AssertionError(t.ty().kind());
+    }
+  }
+
+  static Const.Value add(Const.Value a, Const.Value b) {
+    if (a.constantTypeKind() == TurbineConstantTypeKind.STRING
+        || b.constantTypeKind() == TurbineConstantTypeKind.STRING) {
+      return new Const.StringValue(a.asString().value() + b.asString().value());
+    }
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() + b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() + b.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(a.asFloat().value() + b.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(a.asDouble().value() + b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value subtract(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() - b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() - b.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(a.asFloat().value() - b.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(a.asDouble().value() - b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value mult(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() * b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() * b.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(a.asFloat().value() * b.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(a.asDouble().value() * b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value divide(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() / b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() / b.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(a.asFloat().value() / b.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(a.asDouble().value() / b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value mod(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() % b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() % b.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(a.asFloat().value() % b.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(a.asDouble().value() % b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static final int INT_SHIFT_MASK = 0b11111;
+
+  static final int LONG_SHIFT_MASK = 0b111111;
+
+  static Const.Value shiftLeft(Const.Value a, Const.Value b) {
+    a = promoteUnary(a);
+    b = promoteUnary(b);
+    switch (a.constantTypeKind()) {
+      case INT:
+        return new Const.IntValue(
+            a.asInteger().value() << (b.asInteger().value() & INT_SHIFT_MASK));
+      case LONG:
+        return new Const.LongValue(a.asLong().value() << (b.asInteger().value() & LONG_SHIFT_MASK));
+      default:
+        throw new AssertionError(a.constantTypeKind());
+    }
+  }
+
+  static Const.Value shiftRight(Const.Value a, Const.Value b) {
+    a = promoteUnary(a);
+    b = promoteUnary(b);
+    switch (a.constantTypeKind()) {
+      case INT:
+        return new Const.IntValue(
+            a.asInteger().value() >> (b.asInteger().value() & INT_SHIFT_MASK));
+      case LONG:
+        return new Const.LongValue(a.asLong().value() >> (b.asInteger().value() & LONG_SHIFT_MASK));
+      default:
+        throw new AssertionError(a.constantTypeKind());
+    }
+  }
+
+  static Const.Value unsignedShiftRight(Const.Value a, Const.Value b) {
+    a = promoteUnary(a);
+    b = promoteUnary(b);
+    switch (a.constantTypeKind()) {
+      case INT:
+        return new Const.IntValue(
+            a.asInteger().value() >>> (b.asInteger().value() & INT_SHIFT_MASK));
+      case LONG:
+        return new Const.LongValue(
+            a.asLong().value() >>> (b.asInteger().value() & LONG_SHIFT_MASK));
+      default:
+        throw new AssertionError(a.constantTypeKind());
+    }
+  }
+
+  static Const.Value lessThan(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.BooleanValue(a.asInteger().value() < b.asInteger().value());
+      case LONG:
+        return new Const.BooleanValue(a.asLong().value() < b.asLong().value());
+      case FLOAT:
+        return new Const.BooleanValue(a.asFloat().value() < b.asFloat().value());
+      case DOUBLE:
+        return new Const.BooleanValue(a.asDouble().value() < b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value lessThanEqual(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.BooleanValue(a.asInteger().value() <= b.asInteger().value());
+      case LONG:
+        return new Const.BooleanValue(a.asLong().value() <= b.asLong().value());
+      case FLOAT:
+        return new Const.BooleanValue(a.asFloat().value() <= b.asFloat().value());
+      case DOUBLE:
+        return new Const.BooleanValue(a.asDouble().value() <= b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value greaterThan(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.BooleanValue(a.asInteger().value() > b.asInteger().value());
+      case LONG:
+        return new Const.BooleanValue(a.asLong().value() > b.asLong().value());
+      case FLOAT:
+        return new Const.BooleanValue(a.asFloat().value() > b.asFloat().value());
+      case DOUBLE:
+        return new Const.BooleanValue(a.asDouble().value() > b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value greaterThanEqual(Const.Value a, Const.Value b) {
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.BooleanValue(a.asInteger().value() >= b.asInteger().value());
+      case LONG:
+        return new Const.BooleanValue(a.asLong().value() >= b.asLong().value());
+      case FLOAT:
+        return new Const.BooleanValue(a.asFloat().value() >= b.asFloat().value());
+      case DOUBLE:
+        return new Const.BooleanValue(a.asDouble().value() >= b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value equal(Const.Value a, Const.Value b) {
+    switch (a.constantTypeKind()) {
+      case STRING:
+        return new Const.BooleanValue(a.asString().value().equals(b.asString().value()));
+      case BOOLEAN:
+        return new Const.BooleanValue(a.asBoolean().value() == b.asBoolean().value());
+      default:
+        break;
+    }
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.BooleanValue(a.asInteger().value() == b.asInteger().value());
+      case LONG:
+        return new Const.BooleanValue(a.asLong().value() == b.asLong().value());
+      case FLOAT:
+        return new Const.BooleanValue(a.asFloat().value() == b.asFloat().value());
+      case DOUBLE:
+        return new Const.BooleanValue(a.asDouble().value() == b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value notEqual(Const.Value a, Const.Value b) {
+    switch (a.constantTypeKind()) {
+      case STRING:
+        return new Const.BooleanValue(!a.asString().value().equals(b.asString().value()));
+      case BOOLEAN:
+        return new Const.BooleanValue(a.asBoolean().value() != b.asBoolean().value());
+      default:
+        break;
+    }
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.BooleanValue(a.asInteger().value() != b.asInteger().value());
+      case LONG:
+        return new Const.BooleanValue(a.asLong().value() != b.asLong().value());
+      case FLOAT:
+        return new Const.BooleanValue(a.asFloat().value() != b.asFloat().value());
+      case DOUBLE:
+        return new Const.BooleanValue(a.asDouble().value() != b.asDouble().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value bitwiseAnd(Const.Value a, Const.Value b) {
+    switch (a.constantTypeKind()) {
+      case BOOLEAN:
+        return new Const.BooleanValue(a.asBoolean().value() & b.asBoolean().value());
+      default:
+        break;
+    }
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() & b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() & b.asLong().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value bitwiseOr(Const.Value a, Const.Value b) {
+    switch (a.constantTypeKind()) {
+      case BOOLEAN:
+        return new Const.BooleanValue(a.asBoolean().value() | b.asBoolean().value());
+      default:
+        break;
+    }
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() | b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() | b.asLong().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  static Const.Value bitwiseXor(Const.Value a, Const.Value b) {
+    switch (a.constantTypeKind()) {
+      case BOOLEAN:
+        return new Const.BooleanValue(a.asBoolean().value() ^ b.asBoolean().value());
+      default:
+        break;
+    }
+    TurbineConstantTypeKind type = promoteBinary(a, b);
+    a = coerce(a, type);
+    b = coerce(b, type);
+    switch (type) {
+      case INT:
+        return new Const.IntValue(a.asInteger().value() ^ b.asInteger().value());
+      case LONG:
+        return new Const.LongValue(a.asLong().value() ^ b.asLong().value());
+      default:
+        throw new AssertionError(type);
+    }
+  }
+
+  private Const.Value evalBinary(Binary t) {
+    Const.Value lhs = evalValue(t.lhs());
+    Const.Value rhs = evalValue(t.rhs());
+    switch (t.op()) {
+      case PLUS:
+        return add(lhs, rhs);
+      case MINUS:
+        return subtract(lhs, rhs);
+      case MULT:
+        return mult(lhs, rhs);
+      case DIVIDE:
+        return divide(lhs, rhs);
+      case MODULO:
+        return mod(lhs, rhs);
+      case SHIFT_LEFT:
+        return shiftLeft(lhs, rhs);
+      case SHIFT_RIGHT:
+        return shiftRight(lhs, rhs);
+      case UNSIGNED_SHIFT_RIGHT:
+        return unsignedShiftRight(lhs, rhs);
+      case LESS_THAN:
+        return lessThan(lhs, rhs);
+      case GREATER_THAN:
+        return greaterThan(lhs, rhs);
+      case LESS_THAN_EQ:
+        return lessThanEqual(lhs, rhs);
+      case GREATER_THAN_EQ:
+        return greaterThanEqual(lhs, rhs);
+      case EQUAL:
+        return equal(lhs, rhs);
+      case NOT_EQUAL:
+        return notEqual(lhs, rhs);
+      case AND:
+        return new Const.BooleanValue(lhs.asBoolean().value() && rhs.asBoolean().value());
+      case OR:
+        return new Const.BooleanValue(lhs.asBoolean().value() || rhs.asBoolean().value());
+      case BITWISE_AND:
+        return bitwiseAnd(lhs, rhs);
+      case BITWISE_XOR:
+        return bitwiseXor(lhs, rhs);
+      case BITWISE_OR:
+        return bitwiseOr(lhs, rhs);
+      default:
+        throw new AssertionError(t.op());
+    }
+  }
+
+  private static Const.Value promoteUnary(Const.Value v) {
+    switch (v.constantTypeKind()) {
+      case CHAR:
+      case SHORT:
+      case BYTE:
+        return v.asInteger();
+      case INT:
+      case LONG:
+      case FLOAT:
+      case DOUBLE:
+        return v;
+      default:
+        throw new AssertionError(v.constantTypeKind());
+    }
+  }
+
+  private static TurbineConstantTypeKind promoteBinary(Const.Value a, Const.Value b) {
+    a = promoteUnary(a);
+    b = promoteUnary(b);
+    switch (a.constantTypeKind()) {
+      case INT:
+        switch (b.constantTypeKind()) {
+          case INT:
+          case LONG:
+          case DOUBLE:
+          case FLOAT:
+            return b.constantTypeKind();
+          default:
+            throw new AssertionError(b.constantTypeKind());
+        }
+      case LONG:
+        switch (b.constantTypeKind()) {
+          case INT:
+            return TurbineConstantTypeKind.LONG;
+          case LONG:
+          case DOUBLE:
+          case FLOAT:
+            return b.constantTypeKind();
+          default:
+            throw new AssertionError(b.constantTypeKind());
+        }
+      case FLOAT:
+        switch (b.constantTypeKind()) {
+          case INT:
+          case LONG:
+          case FLOAT:
+            return TurbineConstantTypeKind.FLOAT;
+          case DOUBLE:
+            return TurbineConstantTypeKind.DOUBLE;
+          default:
+            throw new AssertionError(b.constantTypeKind());
+        }
+      case DOUBLE:
+        switch (b.constantTypeKind()) {
+          case INT:
+          case LONG:
+          case FLOAT:
+          case DOUBLE:
+            return TurbineConstantTypeKind.DOUBLE;
+          default:
+            throw new AssertionError(b.constantTypeKind());
+        }
+      default:
+        throw new AssertionError(a.constantTypeKind());
+    }
   }
 }

@@ -1,0 +1,43 @@
+=== test/B.java ===
+package test;
+
+public class B {
+  public static final byte   B = (byte)  0;
+  public static final char   C = (char)  0;
+  public static final short  S = (short) 0;
+  public static final int    I = (int)   0;
+  public static final long   L = (long)  0;
+  public static final String O = (String) "";
+
+  public static final int     U1 = +1;
+  public static final int     U2 = -1;
+  public static final int     U3 = ~1;
+  public static final boolean U4 = !false;
+
+  public static final int M1 = 1 * 1;
+  public static final int M2 = 1 / 1;
+  public static final int M3 = 1 % 1;
+
+  public static final int S1 = 0b1 << 1;
+  public static final int S2 = -1 >> 1;
+  public static final int S3 = -1 >>> 1;
+
+  public static final boolean R1 = 1 < 0;
+  public static final boolean R2 = 1 > 0;
+  public static final boolean R3 = 1 <= 0;
+  public static final boolean R4 = 1 >= 0;
+
+  public static final boolean EQ1 = 1 == 1;
+  public static final boolean EQ2 = 1 != 1;
+
+  public static final int BIT1 = 1 & 1;
+  public static final int BIT2 = 1 ^ 1;
+  public static final int BIT3 = 1 | 1;
+
+  public static final boolean BOOL1 = true && true;
+  public static final boolean BOOL2 = true || true;
+
+  public static final int TERNARY = true ? 1 : 0;
+
+  public static final int PAREN = (1 + 2);
+}
