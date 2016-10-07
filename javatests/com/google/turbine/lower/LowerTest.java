@@ -52,7 +52,7 @@ public class LowerTest {
 
   @Test
   public void hello() throws Exception {
-    CompoundEnv<BytecodeBoundClass> classpath =
+    CompoundEnv<ClassSymbol, BytecodeBoundClass> classpath =
         ClassPathBinder.bind(ImmutableList.of(), BOOTCLASSPATH, TopLevelIndex.builder());
 
     ImmutableList<Type.ClassTy> interfaceTypes =
@@ -117,7 +117,9 @@ public class LowerTest {
             new SourceTypeBoundClass.FieldInfo(
                 new FieldSymbol(new ClassSymbol("test/Test"), "theField"),
                 Type.ClassTy.asNonParametricClassTy(new ClassSymbol("test/Test$Inner")),
-                TurbineFlag.ACC_STATIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_PUBLIC));
+                TurbineFlag.ACC_STATIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_PUBLIC,
+                null,
+                null));
     ClassSymbol owner = null;
     TurbineTyKind kind = TurbineTyKind.CLASS;
     ImmutableMap<String, ClassSymbol> children = ImmutableMap.of();
@@ -139,7 +141,9 @@ public class LowerTest {
             children,
             superclass,
             interfaces,
-            tyParams);
+            tyParams,
+            null,
+            null);
 
     SourceTypeBoundClass i =
         new SourceTypeBoundClass(
@@ -154,7 +158,9 @@ public class LowerTest {
             ImmutableMap.of("Inner", new ClassSymbol("test/Test$Inner")),
             ClassSymbol.OBJECT,
             ImmutableList.of(),
-            ImmutableMap.of());
+            ImmutableMap.of(),
+            null,
+            null);
 
     SimpleEnv.Builder<SourceTypeBoundClass> b = SimpleEnv.builder();
     b.putIfAbsent(new ClassSymbol("test/Test"), c);

@@ -1,0 +1,13 @@
+%%% test/A.java %%%
+package test;
+
+public class A {
+  public static final int CONST = 42;
+}
+
+=== test/B.java ===
+package test;
+
+public class B {
+  public static final int CONST = A.CONST;
+}

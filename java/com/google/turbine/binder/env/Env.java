@@ -17,9 +17,10 @@
 package com.google.turbine.binder.env;
 
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.Symbol;
 
 /**
- * An environment that maps {@link ClassSymbol}s to bound nodes {@code V}.
+ * An environment that maps {@link Symbols} {@code S} to bound nodes {@code V}.
  *
  * <p>For example, {@link BoundClass} represents superclasses as a {@link ClassSymbol}, which only
  * contains the binary name of the type. To get the {@link BoundClass} for that supertype, an {@code
@@ -31,7 +32,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
  * <p>TODO(cushon): keep an eye on the cost of indirections, and consider caching lookups in bound
  * nodes if it looks like it would make a difference.
  */
-public interface Env<V> {
+public interface Env<S extends Symbol, V> {
   /** Returns the information associated with the given symbol in this environment. */
-  V get(ClassSymbol sym);
+  V get(S sym);
 }

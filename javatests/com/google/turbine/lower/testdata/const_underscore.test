@@ -1,0 +1,7 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  public static final long CONST1 = 10_000L;
+  public static final int CONST2 = 10_000;
+}

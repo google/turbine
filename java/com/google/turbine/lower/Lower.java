@@ -21,9 +21,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -39,7 +39,6 @@ import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
 import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.SigWriter;
-import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.type.Type;
@@ -58,9 +57,9 @@ public class Lower {
   /** Lowers all given classes to bytecode. */
   public static Map<String, byte[]> lowerAll(
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
-      CompoundEnv<BytecodeBoundClass> classpath) {
-    CompoundEnv<HeaderBoundClass> env =
-        CompoundEnv.<HeaderBoundClass>of(classpath).append(new SimpleEnv<>(units));
+      CompoundEnv<ClassSymbol, BytecodeBoundClass> classpath) {
+    CompoundEnv<ClassSymbol, HeaderBoundClass> env =
+        CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     for (ClassSymbol sym : units.keySet()) {
       result.put(sym.binaryName(), new Lower().lower(units.get(sym), env, sym));
@@ -71,7 +70,8 @@ public class Lower {
   private final LowerSignature sig = new LowerSignature();
 
   /** Lowers a class to bytecode. */
-  public byte[] lower(SourceTypeBoundClass info, Env<HeaderBoundClass> env, ClassSymbol sym) {
+  public byte[] lower(
+      SourceTypeBoundClass info, Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym) {
 
     int access = classAccess(info);
     String name = sig.descriptor(sym);
@@ -122,7 +122,7 @@ public class Lower {
   }
 
   private ClassFile.MethodInfo lowerMethod(
-      final Env<HeaderBoundClass> env, final MethodInfo m, final ClassSymbol sym) {
+      final Env<ClassSymbol, HeaderBoundClass> env, final MethodInfo m, final ClassSymbol sym) {
     int access = m.access();
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(m.tyParams(), env);
     String name = m.name();
@@ -162,7 +162,8 @@ public class Lower {
     return SigWriter.method(new MethodSig(typarams, fparams.build(), result, excns));
   }
 
-  private ClassFile.FieldInfo lowerField(final Env<HeaderBoundClass> env, FieldInfo f) {
+  private ClassFile.FieldInfo lowerField(
+      final Env<ClassSymbol, HeaderBoundClass> env, FieldInfo f) {
     final String name = f.name();
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(Collections.emptyMap(), env);
     String desc = SigWriter.type(sig.signature(Erasure.erase(f.type(), tenv)));
@@ -170,15 +171,13 @@ public class Lower {
 
     // TODO(cushon): annotations
     ImmutableList<ClassFile.AnnotationInfo> annotations = ImmutableList.of();
-    // TODO(cushon): constants
-    Const.Value value = null;
 
-    return new ClassFile.FieldInfo(f.access(), name, desc, signature, value, annotations);
+    return new ClassFile.FieldInfo(f.access(), name, desc, signature, f.value(), annotations);
   }
 
   /** Creates inner class attributes for all referenced inner classes. */
   private ImmutableList<ClassFile.InnerClass> collectInnerClasses(
-      ClassSymbol origin, SourceTypeBoundClass info, Env<HeaderBoundClass> env) {
+      ClassSymbol origin, SourceTypeBoundClass info, Env<ClassSymbol, HeaderBoundClass> env) {
     Set<ClassSymbol> all = new LinkedHashSet<>();
     addEnclosing(env, all, origin);
     for (ClassSymbol sym : info.children().values()) {
@@ -194,7 +193,8 @@ public class Lower {
     return inners.build();
   }
 
-  private void addEnclosing(Env<HeaderBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
+  private void addEnclosing(
+      Env<ClassSymbol, HeaderBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
     HeaderBoundClass innerinfo = env.get(sym);
     while (innerinfo.owner() != null) {
       all.add(sym);
@@ -207,7 +207,8 @@ public class Lower {
    * Creates an inner class attribute, given an inner class that was referenced somewhere in the
    * class.
    */
-  private ClassFile.InnerClass innerClass(Env<HeaderBoundClass> env, ClassSymbol innerSym) {
+  private ClassFile.InnerClass innerClass(
+      Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol innerSym) {
     HeaderBoundClass inner = env.get(innerSym);
 
     String innerName = innerSym.binaryName().substring(inner.owner().binaryName().length() + 1);
@@ -237,14 +238,14 @@ public class Lower {
    */
   static class TyVarEnv implements Function<TyVarSymbol, TyVarInfo> {
 
-    private final Env<HeaderBoundClass> env;
+    private final Env<ClassSymbol, HeaderBoundClass> env;
     private final Map<TyVarSymbol, TyVarInfo> tyParams;
 
     /**
      * @param tyParams the initial lookup scope, e.g. a method's formal type parameters.
      * @param env the environment to look up a type variable's owning declaration in.
      */
-    public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams, Env<HeaderBoundClass> env) {
+    public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams, Env<ClassSymbol, HeaderBoundClass> env) {
       this.tyParams = tyParams;
       this.env = env;
     }

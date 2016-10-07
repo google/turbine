@@ -47,7 +47,7 @@ public class ImportIndex implements Scope {
 
   /** Creates an import index for the given top-level environment. */
   public static ImportIndex create(
-      final Env<? extends BoundClass> env,
+      final Env<ClassSymbol, ? extends BoundClass> env,
       final TopLevelIndex cpi,
       ImmutableList<Tree.ImportDecl> imports) {
     ImmutableMap.Builder<String, Supplier<ClassSymbol>> thunks = ImmutableMap.builder();
@@ -95,7 +95,8 @@ public class ImportIndex implements Scope {
    * Resolves a type by canonical name (member types must be qualified by the type that declares
    * them, not by types that are inherited into).
    */
-  public static ClassSymbol lookupCanonical(Env<? extends BoundClass> env, LookupResult result) {
+  public static ClassSymbol lookupCanonical(
+      Env<ClassSymbol, ? extends BoundClass> env, LookupResult result) {
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
       sym = lookupOneCanonical(env, sym, bit);
@@ -108,7 +109,7 @@ public class ImportIndex implements Scope {
 
   /** Resolves a single member type of the given symbol by canonical name. */
   private static ClassSymbol lookupOneCanonical(
-      Env<? extends BoundClass> env, ClassSymbol sym, String bit) {
+      Env<ClassSymbol, ? extends BoundClass> env, ClassSymbol sym, String bit) {
     BoundClass ci = env.get(sym);
     if (ci == null) {
       return null;

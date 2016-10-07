@@ -29,7 +29,7 @@ public class Resolve {
    * superclasses or interfaces.
    */
   public static ClassSymbol resolve(
-      Env<? extends HeaderBoundClass> env, ClassSymbol sym, String simpleName) {
+      Env<ClassSymbol, ? extends HeaderBoundClass> env, ClassSymbol sym, String simpleName) {
     ClassSymbol result;
     HeaderBoundClass bound = env.get(sym);
     if (bound == null) {

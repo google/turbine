@@ -19,10 +19,10 @@ package com.google.turbine.binder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -38,7 +38,7 @@ import java.util.Map;
 public class CanonicalTypeBinder {
 
   static SourceTypeBoundClass bind(
-      ClassSymbol sym, SourceTypeBoundClass base, Env<TypeBoundClass> env) {
+      ClassSymbol sym, SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
     ClassTy superClassType = null;
     if (base.superClassType() != null) {
       superClassType = Canonicalize.canonicalizeClassTy(env, sym, base.superClassType());
@@ -63,22 +63,28 @@ public class CanonicalTypeBinder {
         base.children(),
         base.superclass(),
         base.interfaces(),
-        base.typeParameters());
+        base.typeParameters(),
+        base.scope(),
+        base.memberImports());
   }
 
   private static ImmutableList<FieldInfo> fields(
-      Env<TypeBoundClass> env, ClassSymbol sym, ImmutableList<FieldInfo> fields) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, ImmutableList<FieldInfo> fields) {
     ImmutableList.Builder<FieldInfo> result = ImmutableList.builder();
     for (FieldInfo base : fields) {
       result.add(
           new FieldInfo(
-              base.sym(), Canonicalize.canonicalize(env, sym, base.type()), base.access()));
+              base.sym(),
+              Canonicalize.canonicalize(env, sym, base.type()),
+              base.access(),
+              base.decl(),
+              base.value()));
     }
     return result.build();
   }
 
   private static ImmutableList<MethodInfo> methods(
-      Env<TypeBoundClass> env, ClassSymbol sym, ImmutableList<MethodInfo> methods) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, ImmutableList<MethodInfo> methods) {
     ImmutableList.Builder<MethodInfo> result = ImmutableList.builder();
     for (MethodInfo base : methods) {
       ImmutableMap<TyVarSymbol, TyVarInfo> tps = typeParameters(env, sym, base.tyParams());
@@ -97,7 +103,7 @@ public class CanonicalTypeBinder {
   }
 
   private static ImmutableMap<TyVarSymbol, TyVarInfo> typeParameters(
-      Env<TypeBoundClass> env, ClassSymbol sym, Map<TyVarSymbol, TyVarInfo> tps) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, Map<TyVarSymbol, TyVarInfo> tps) {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Map.Entry<TyVarSymbol, TyVarInfo> e : tps.entrySet()) {
       TyVarInfo info = e.getValue();
@@ -112,7 +118,7 @@ public class CanonicalTypeBinder {
   }
 
   private static ImmutableList<Type> canonicalizeList(
-      Env<TypeBoundClass> env, ClassSymbol sym, ImmutableList<Type> types) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, ImmutableList<Type> types) {
     ImmutableList.Builder<Type> result = ImmutableList.builder();
     for (Type type : types) {
       result.add(Canonicalize.canonicalize(env, sym, type));

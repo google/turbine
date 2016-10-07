@@ -16,6 +16,7 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.turbine.bytecode.Attribute.ConstantValue;
 import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.Signature;
@@ -54,6 +55,9 @@ public class LowerAttributes {
     List<Attribute> attributes = new ArrayList<>();
     if (field.signature() != null) {
       attributes.add(new Signature(field.signature()));
+    }
+    if (field.value() != null) {
+      attributes.add(new ConstantValue(field.value()));
     }
     return attributes;
   }

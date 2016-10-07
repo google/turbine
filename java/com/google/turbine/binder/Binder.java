@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import static com.google.common.base.Verify.verifyNotNull;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,6 +32,7 @@ import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -38,9 +40,12 @@ import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.ImportIndex;
+import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.model.Const;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.io.IOException;
@@ -66,7 +71,7 @@ public class Binder {
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
-    CompoundEnv<BytecodeBoundClass> classPathEnv =
+    CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv =
         ClassPathBinder.bind(classpath, bootclasspath, tliBuilder);
 
     // Insertion order into the top-level index is important:
@@ -78,12 +83,18 @@ public class Binder {
 
     SimpleEnv<PackageSourceBoundClass> psenv = bindPackages(ienv, tli, toplevels, classPathEnv);
 
-    Env<SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
+    Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
 
-    Env<SourceTypeBoundClass> tenv =
-        bindTypes(syms, henv, CompoundEnv.<HeaderBoundClass>of(classPathEnv).append(henv));
+    Env<ClassSymbol, SourceTypeBoundClass> tenv =
+        bindTypes(
+            syms, henv, CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
 
-    tenv = canonicalizeTypes(syms, tenv, CompoundEnv.<TypeBoundClass>of(classPathEnv).append(tenv));
+    tenv =
+        canonicalizeTypes(
+            syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
+    tenv =
+        constants(
+            syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
 
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
@@ -143,10 +154,10 @@ public class Binder {
 
   /** Initializes scopes for compilation unit and package-level lookup. */
   private static SimpleEnv<PackageSourceBoundClass> bindPackages(
-      Env<SourceBoundClass> ienv,
+      Env<ClassSymbol, SourceBoundClass> ienv,
       TopLevelIndex tli,
       Multimap<CompUnit, ClassSymbol> classes,
-      CompoundEnv<BytecodeBoundClass> classPathEnv) {
+      CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
 
     SimpleEnv.Builder<PackageSourceBoundClass> env = SimpleEnv.builder();
     Scope javaLang = verifyNotNull(tli.lookupPackage(Arrays.asList("java", "lang")));
@@ -161,29 +172,34 @@ public class Binder {
       Scope packageScope = tli.lookupPackage(packagename);
       Scope importScope =
           ImportIndex.create(
-              CompoundEnv.<BoundClass>of(ienv).append(classPathEnv), tli, unit.imports());
+              CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv),
+              tli,
+              unit.imports());
+      MemberImportIndex memberImports = new MemberImportIndex(tli, unit.imports());
       CompoundScope scope = topLevel.append(packageScope).append(importScope);
 
       for (ClassSymbol sym : entry.getValue()) {
-        env.putIfAbsent(sym, new PackageSourceBoundClass(ienv.get(sym), scope));
+        env.putIfAbsent(sym, new PackageSourceBoundClass(ienv.get(sym), scope, memberImports));
       }
     }
     return env.build();
   }
 
   /** Binds the type hierarchy (superclasses and interfaces) for all classes in the compilation. */
-  private static Env<SourceHeaderBoundClass> bindHierarchy(
+  private static Env<ClassSymbol, SourceHeaderBoundClass> bindHierarchy(
       Iterable<ClassSymbol> syms,
       final SimpleEnv<PackageSourceBoundClass> psenv,
-      CompoundEnv<BytecodeBoundClass> classPathEnv) {
-    ImmutableMap.Builder<ClassSymbol, LazyEnv.Completer<HeaderBoundClass, SourceHeaderBoundClass>>
+      CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
+    ImmutableMap.Builder<
+            ClassSymbol, LazyEnv.Completer<ClassSymbol, HeaderBoundClass, SourceHeaderBoundClass>>
         completers = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
       completers.put(
           sym,
-          new LazyEnv.Completer<HeaderBoundClass, SourceHeaderBoundClass>() {
+          new LazyEnv.Completer<ClassSymbol, HeaderBoundClass, SourceHeaderBoundClass>() {
             @Override
-            public SourceHeaderBoundClass complete(Env<HeaderBoundClass> henv, ClassSymbol sym) {
+            public SourceHeaderBoundClass complete(
+                Env<ClassSymbol, HeaderBoundClass> henv, ClassSymbol sym) {
               return HierarchyBinder.bind(sym, psenv.get(sym), henv);
             }
           });
@@ -191,10 +207,10 @@ public class Binder {
     return new LazyEnv<>(completers.build(), classPathEnv);
   }
 
-  private static Env<SourceTypeBoundClass> bindTypes(
+  private static Env<ClassSymbol, SourceTypeBoundClass> bindTypes(
       ImmutableSet<ClassSymbol> syms,
-      Env<SourceHeaderBoundClass> shenv,
-      Env<HeaderBoundClass> henv) {
+      Env<ClassSymbol, SourceHeaderBoundClass> shenv,
+      Env<ClassSymbol, HeaderBoundClass> henv) {
     SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, TypeBinder.bind(henv, sym, shenv.get(sym)));
@@ -202,8 +218,10 @@ public class Binder {
     return builder.build();
   }
 
-  private static Env<SourceTypeBoundClass> canonicalizeTypes(
-      ImmutableSet<ClassSymbol> syms, Env<SourceTypeBoundClass> stenv, Env<TypeBoundClass> tenv) {
+  private static Env<ClassSymbol, SourceTypeBoundClass> canonicalizeTypes(
+      ImmutableSet<ClassSymbol> syms,
+      Env<ClassSymbol, SourceTypeBoundClass> stenv,
+      Env<ClassSymbol, TypeBoundClass> tenv) {
     SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
@@ -211,14 +229,82 @@ public class Binder {
     return builder.build();
   }
 
+  private static Env<ClassSymbol, SourceTypeBoundClass> constants(
+      ImmutableSet<ClassSymbol> syms,
+      Env<ClassSymbol, SourceTypeBoundClass> env,
+      CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv) {
+
+    // Prepare to lazily evaluate constant fields in each compilation unit.
+    // The laziness is necessary since constant fields can reference other
+    // constant fields.
+    ImmutableMap.Builder<FieldSymbol, LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>>
+        completers = ImmutableMap.builder();
+    for (ClassSymbol sym : syms) {
+      SourceTypeBoundClass info = env.get(sym);
+      for (FieldInfo field : info.fields()) {
+        if (field.decl() == null) {
+          continue;
+        }
+        final Optional<Tree.Expression> init = field.decl().init();
+        if (!init.isPresent()) {
+          continue;
+        }
+        completers.put(
+            field.sym(),
+            new LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>() {
+              @Override
+              public Const.Value complete(Env<FieldSymbol, Const.Value> env1, FieldSymbol k) {
+                try {
+                  return (Const.Value)
+                      new ConstEvaluator(sym, info, env1, baseEnv).eval(init.get());
+                } catch (LazyEnv.LazyBindingError e) {
+                  // fields initializers are allowed to reference the field being initialized,
+                  // but if they do they aren't constants
+                  return null;
+                }
+              }
+            });
+      }
+    }
+
+    // Create an environment of constant field values that combines
+    // lazily evaluated fields in the current compilation unit with
+    // constant fields in the classpath (which don't require evaluation).
+    Env<FieldSymbol, Const.Value> constenv =
+        new LazyEnv<>(
+            completers.build(),
+            CompoundEnv.<FieldSymbol, Const.Value>of(
+                new Env<FieldSymbol, Const.Value>() {
+                  @Override
+                  public Const.Value get(FieldSymbol sym1) {
+                    TypeBoundClass info1 = baseEnv.get(sym1.owner());
+                    if (info1 == null) {
+                      return null;
+                    }
+                    for (FieldInfo fi : info1.fields()) {
+                      if (fi.name().equals(sym1.name())) {
+                        return fi.value();
+                      }
+                    }
+                    throw new AssertionError(sym1);
+                  }
+                }));
+
+    SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
+    for (ClassSymbol sym : syms) {
+      builder.putIfAbsent(sym, new ConstBinder(constenv, env.get(sym)).bind());
+    }
+    return builder.build();
+  }
+
   /** The result of binding: bound nodes for sources in the compilation, and the classpath. */
   public static class BindingResult {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
-    private final CompoundEnv<BytecodeBoundClass> classPathEnv;
+    private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
 
     public BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
-        CompoundEnv<BytecodeBoundClass> classPathEnv) {
+        CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
       this.units = units;
       this.classPathEnv = classPathEnv;
     }
@@ -229,7 +315,7 @@ public class Binder {
     }
 
     /** The classpath. */
-    public CompoundEnv<BytecodeBoundClass> classPathEnv() {
+    public CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv() {
       return classPathEnv;
     }
   }

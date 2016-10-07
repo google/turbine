@@ -16,21 +16,21 @@
 
 package com.google.turbine.binder.env;
 
-import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.Symbol;
 
 /** An {@link Env} that chains two existing envs together. */
-public class CompoundEnv<V> implements Env<V> {
+public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {
 
-  private final Env<? extends V> base;
-  private final Env<? extends V> env;
+  private final Env<S, ? extends V> base;
+  private final Env<S, ? extends V> env;
 
-  private CompoundEnv(Env<? extends V> base, Env<? extends V> env) {
+  private CompoundEnv(Env<S, ? extends V> base, Env<S, ? extends V> env) {
     this.base = base;
     this.env = env;
   }
 
   @Override
-  public V get(ClassSymbol sym) {
+  public V get(S sym) {
     V result = env.get(sym);
     if (result != null) {
       return result;
@@ -39,12 +39,12 @@ public class CompoundEnv<V> implements Env<V> {
   }
 
   /** A chainable compound env with a single entry. */
-  public static <V> CompoundEnv<V> of(Env<? extends V> env) {
+  public static <S extends Symbol, V> CompoundEnv<S, V> of(Env<S, ? extends V> env) {
     return new CompoundEnv<>(null, env);
   }
 
   /** Adds an env to the chain. */
-  public CompoundEnv<V> append(Env<? extends V> env) {
+  public CompoundEnv<S, V> append(Env<S, ? extends V> env) {
     return new CompoundEnv<>(this, env);
   }
 }

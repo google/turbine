@@ -123,9 +123,6 @@ public class IntegrationTestSupport {
             .stream()
             .filter(x -> (x.access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PRIVATE)) == 0)
             .collect(toList());
-    for (FieldNode f : (List<FieldNode>) n.fields) {
-      f.value = null;
-    }
   }
 
   /** Remove synthetic members, and apply a standard sort order. */

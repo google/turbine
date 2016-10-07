@@ -18,8 +18,9 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.lookup.CompoundScope;
+import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineTyKind;
@@ -43,6 +44,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableList<Type.ClassTy> interfaceTypes;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
+  private final CompoundScope scope;
+  private final MemberImportIndex memberImports;
 
   public SourceTypeBoundClass(
       ImmutableList<Type.ClassTy> interfaceTypes,
@@ -56,7 +59,9 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       ImmutableMap<String, ClassSymbol> children,
       ClassSymbol superclass,
       ImmutableList<ClassSymbol> interfaces,
-      ImmutableMap<String, TyVarSymbol> typeParameters) {
+      ImmutableMap<String, TyVarSymbol> typeParameters,
+      CompoundScope scope,
+      MemberImportIndex memberImports) {
     this.interfaceTypes = interfaceTypes;
     this.superClassType = superClassType;
     this.typeParameterTypes = typeParameterTypes;
@@ -69,6 +74,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.superclass = superclass;
     this.interfaces = interfaces;
     this.typeParameters = typeParameters;
+    this.scope = scope;
+    this.memberImports = memberImports;
   }
 
   @Override
@@ -124,6 +131,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   }
 
   /** Declared fields. */
+  @Override
   public ImmutableList<FieldInfo> fields() {
     return fields;
   }
@@ -218,36 +226,12 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     }
   }
 
-  /** A field declaration. */
-  public static class FieldInfo {
-    private final FieldSymbol sym;
-    private final Type type;
-    private final int access;
+  public CompoundScope scope() {
+    return scope;
+  }
 
-    public FieldInfo(FieldSymbol sym, Type type, int access) {
-      this.sym = sym;
-      this.type = type;
-      this.access = access;
-    }
-
-    /** The field symbol. */
-    public FieldSymbol sym() {
-      return sym;
-    }
-
-    /** The field name. */
-    public String name() {
-      return sym.name();
-    }
-
-    /** The field type. */
-    public Type type() {
-      return type;
-    }
-
-    /** Access bits. */
-    public int access() {
-      return access;
-    }
+  /** The static member import index for the enclosing compilation unit. */
+  public MemberImportIndex memberImports() {
+    return memberImports;
   }
 }

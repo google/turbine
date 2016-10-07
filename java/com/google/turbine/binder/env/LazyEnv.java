@@ -18,7 +18,7 @@ package com.google.turbine.binder.env;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.Symbol;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -39,33 +39,32 @@ import java.util.Map;
  *     either be backed by other {@link SourceHeaderBoundClass} nodes or {@link BytecodeBoundClass}
  *     nodes. So the phase uses an {@link LazyEnv<HeaderBoundClass, SourceHeaderBoundClass>}.
  */
-public class LazyEnv<T, V extends T> implements Env<V> {
+public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
 
   /** The list of symbols that are currently being processed, used to check for cycles. */
-  private final LinkedHashSet<ClassSymbol> seen = new LinkedHashSet<>();
+  private final LinkedHashSet<S> seen = new LinkedHashSet<>();
 
   /** Lazy value providers for the symbols in the environment. */
-  private final ImmutableMap<ClassSymbol, Completer<T, V>> completers;
+  private final ImmutableMap<S, Completer<S, T, V>> completers;
 
   /** Values that have already been computed. */
-  private final Map<ClassSymbol, V> cache = new LinkedHashMap<>();
+  private final Map<S, V> cache = new LinkedHashMap<>();
 
   /** An underlying env of already-computed {@code T}s that can be queried during completion. */
-  private final Env<T> rec;
+  private final Env<S, T> rec;
 
-  public LazyEnv(
-      ImmutableMap<ClassSymbol, Completer<T, V>> completers, CompoundEnv<? extends T> base) {
+  public LazyEnv(ImmutableMap<S, Completer<S, T, V>> completers, CompoundEnv<S, ? extends T> base) {
     this.completers = completers;
-    this.rec = CompoundEnv.<T>of(base).append(this);
+    this.rec = CompoundEnv.<S, T>of(base).append(this);
   }
 
   @Override
-  public V get(ClassSymbol sym) {
+  public V get(S sym) {
     V v = cache.get(sym);
     if (v != null) {
       return v;
     }
-    Completer<T, V> completer = completers.get(sym);
+    Completer<S, T, V> completer = completers.get(sym);
     if (completer != null) {
       if (!seen.add(sym)) {
         throw new LazyBindingError("cycle: " + Joiner.on(" -> ").join(seen) + " -> " + sym);
@@ -79,9 +78,9 @@ public class LazyEnv<T, V extends T> implements Env<V> {
   }
 
   /** A lazy value provider which is given access to the current environment. */
-  public interface Completer<T, V extends T> {
+  public interface Completer<S extends Symbol, T, V extends T> {
     /** Provides the value for the given symbol in the current environment. */
-    V complete(Env<T> env, ClassSymbol k);
+    V complete(Env<S, T> env, S k);
   }
 
   /** Indicates that a completer tried to complete itself, possibly transitively. */

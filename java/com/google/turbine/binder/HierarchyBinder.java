@@ -41,7 +41,9 @@ public class HierarchyBinder {
 
   /** Binds the type hierarchy (superclasses and interfaces) for a single class. */
   public static SourceHeaderBoundClass bind(
-      Symbol origin, PackageSourceBoundClass base, Env<? extends HeaderBoundClass> env) {
+      Symbol origin,
+      PackageSourceBoundClass base,
+      Env<ClassSymbol, ? extends HeaderBoundClass> env) {
     Tree.TyDecl decl = base.decl();
 
     int access = 0;
@@ -133,7 +135,8 @@ public class HierarchyBinder {
    * Nested enums (JLS 8.9) and types nested within interfaces and annotations (JLS 9.5) are
    * implicitly static
    */
-  private static boolean implicitStatic(Env<? extends HeaderBoundClass> env, BoundClass c) {
+  private static boolean implicitStatic(
+      Env<ClassSymbol, ? extends HeaderBoundClass> env, BoundClass c) {
     if (c.kind() == TurbineTyKind.ENUM) {
       return true;
     }
@@ -154,7 +157,8 @@ public class HierarchyBinder {
   }
 
   /** Returns true if the given type is declared in an interface. */
-  private static boolean enclosedByInterface(Env<? extends HeaderBoundClass> env, BoundClass c) {
+  private static boolean enclosedByInterface(
+      Env<ClassSymbol, ? extends HeaderBoundClass> env, BoundClass c) {
     while (c.owner() != null) {
       c = env.get(c.owner());
       switch (c.kind()) {
@@ -191,7 +195,7 @@ public class HierarchyBinder {
    * non-canonical qualified type names.
    */
   public static ClassSymbol resolveClass(
-      Env<? extends HeaderBoundClass> env,
+      Env<ClassSymbol, ? extends HeaderBoundClass> env,
       CompoundScope enclscope,
       ClassSymbol owner,
       Tree.ClassTy ty) {
@@ -220,7 +224,7 @@ public class HierarchyBinder {
 
   /** Resolve a qualified type name to a symbol. */
   public static LookupResult lookup(
-      Env<? extends HeaderBoundClass> env,
+      Env<ClassSymbol, ? extends HeaderBoundClass> env,
       CompoundScope parent,
       ClassSymbol sym,
       LookupKey lookup) {

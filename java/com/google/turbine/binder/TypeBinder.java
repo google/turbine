@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.SourceTypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CompoundScope;
@@ -95,9 +95,9 @@ public class TypeBinder {
    */
   private static class ClassMemberScope implements Scope {
     private final ClassSymbol sym;
-    private final Env<HeaderBoundClass> env;
+    private final Env<ClassSymbol, HeaderBoundClass> env;
 
-    public ClassMemberScope(ClassSymbol sym, Env<HeaderBoundClass> env) {
+    public ClassMemberScope(ClassSymbol sym, Env<ClassSymbol, HeaderBoundClass> env) {
       this.sym = sym;
       this.env = env;
     }
@@ -123,7 +123,7 @@ public class TypeBinder {
 
   /** Creates {@link SourceTypeBoundClass} nodes for a compilation. */
   public static SourceTypeBoundClass bind(
-      final Env<HeaderBoundClass> env, ClassSymbol sym, SourceHeaderBoundClass base) {
+      final Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym, SourceHeaderBoundClass base) {
 
     // This method uses two scopes. This first one is built up as we process the signature
     // and its elements become visible to subsequent elements (e.g. type parameters can
@@ -206,7 +206,9 @@ public class TypeBinder {
         base.children(),
         base.superclass(),
         base.interfaces(),
-        base.typeParameters());
+        base.typeParameters(),
+        base.scope(),
+        base.memberImports());
   }
 
   /** Add synthetic and implicit methods, including default constructors and enum methods. */
@@ -292,7 +294,7 @@ public class TypeBinder {
 
   /** Bind type parameter types. */
   private static ImmutableMap<TyVarSymbol, TyVarInfo> bindTyParams(
-      Env<HeaderBoundClass> env,
+      Env<ClassSymbol, HeaderBoundClass> env,
       ImmutableList<Tree.TyParam> trees,
       CompoundScope scope,
       Map<String, TyVarSymbol> symbols) {
@@ -318,7 +320,7 @@ public class TypeBinder {
     return result.build();
   }
 
-  private static boolean isInterface(Env<HeaderBoundClass> env, Type ty) {
+  private static boolean isInterface(Env<ClassSymbol, HeaderBoundClass> env, Type ty) {
     if (ty.tyKind() != Type.TyKind.CLASS_TY) {
       return false;
     }
@@ -328,7 +330,7 @@ public class TypeBinder {
 
   private static List<MethodInfo> bindMethods(
       HeaderBoundClass base,
-      Env<HeaderBoundClass> env,
+      Env<ClassSymbol, HeaderBoundClass> env,
       CompoundScope scope,
       ClassSymbol sym,
       ImmutableList<Tree> members) {
@@ -343,7 +345,7 @@ public class TypeBinder {
 
   private static MethodInfo bindMethod(
       HeaderBoundClass base,
-      Env<HeaderBoundClass> env,
+      Env<ClassSymbol, HeaderBoundClass> env,
       CompoundScope scope,
       ClassSymbol owner,
       Tree.MethDecl t) {
@@ -424,7 +426,7 @@ public class TypeBinder {
 
   private static ImmutableList<FieldInfo> bindFields(
       HeaderBoundClass base,
-      Env<HeaderBoundClass> env,
+      Env<ClassSymbol, HeaderBoundClass> env,
       CompoundScope scope,
       ClassSymbol sym,
       ImmutableList<Tree> members) {
@@ -439,14 +441,14 @@ public class TypeBinder {
 
   private static FieldInfo bindField(
       HeaderBoundClass hi,
-      Env<HeaderBoundClass> env,
+      Env<ClassSymbol, HeaderBoundClass> env,
       CompoundScope scope,
       ClassSymbol owner,
-      Tree.VarDecl t) {
-    FieldSymbol sym = new FieldSymbol(owner, t.name());
-    Type type = bindTy(env, scope, t.ty());
+      Tree.VarDecl decl) {
+    FieldSymbol sym = new FieldSymbol(owner, decl.name());
+    Type type = bindTy(env, scope, decl.ty());
     int access = 0;
-    for (TurbineModifier m : t.mods()) {
+    for (TurbineModifier m : decl.mods()) {
       access |= m.flag();
     }
     switch (hi.kind()) {
@@ -457,11 +459,11 @@ public class TypeBinder {
       default:
         break;
     }
-    return new FieldInfo(sym, type, access);
+    return new FieldInfo(sym, type, access, decl, null);
   }
 
   private static ImmutableList<Type.TyArg> bindTyArgs(
-      Env<HeaderBoundClass> env, CompoundScope scope, ImmutableList<Tree.Type> targs) {
+      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, ImmutableList<Tree.Type> targs) {
     ImmutableList.Builder<Type.TyArg> result = ImmutableList.builder();
     for (Tree.Type ty : targs) {
       result.add(bindTyArg(env, scope, ty));
@@ -470,7 +472,7 @@ public class TypeBinder {
   }
 
   private static Type.TyArg bindTyArg(
-      Env<HeaderBoundClass> env, CompoundScope scope, Tree.Type ty) {
+      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.Type ty) {
     switch (ty.kind()) {
       case WILD_TY:
         return bindWildTy(env, scope, (Tree.WildTy) ty);
@@ -479,7 +481,7 @@ public class TypeBinder {
     }
   }
 
-  private static Type bindTy(Env<HeaderBoundClass> env, CompoundScope scope, Tree t) {
+  private static Type bindTy(Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree t) {
     switch (t.kind()) {
       case CLASS_TY:
         return bindClassTy(env, scope, (Tree.ClassTy) t);
@@ -494,7 +496,8 @@ public class TypeBinder {
     }
   }
 
-  private static Type bindClassTy(Env<HeaderBoundClass> env, CompoundScope scope, Tree.ClassTy t) {
+  private static Type bindClassTy(
+      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.ClassTy t) {
     // flatten the components of a qualified class type
     ArrayList<Tree.ClassTy> flat;
     {
@@ -526,7 +529,7 @@ public class TypeBinder {
   }
 
   private static Type bindClassTyRest(
-      Env<HeaderBoundClass> env,
+      Env<ClassSymbol, HeaderBoundClass> env,
       CompoundScope scope,
       ArrayList<Tree.ClassTy> flat,
       ArrayList<String> bits,
@@ -548,13 +551,14 @@ public class TypeBinder {
     return new Type.PrimTy(t.tykind());
   }
 
-  private static Type bindArrTy(Env<HeaderBoundClass> env, CompoundScope scope, Tree.ArrTy t) {
+  private static Type bindArrTy(
+      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.ArrTy t) {
     verify(t.elem().kind() != Tree.Kind.ARR_TY);
     return new Type.ArrayTy(t.dim(), bindTy(env, scope, t.elem()));
   }
 
   private static Type.TyArg bindWildTy(
-      Env<HeaderBoundClass> env, CompoundScope scope, Tree.WildTy t) {
+      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.WildTy t) {
     if (t.lower().isPresent()) {
       return new Type.WildLowerBoundedTy(bindTy(env, scope, t.lower().get()));
     } else if (t.upper().isPresent()) {

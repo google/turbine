@@ -18,7 +18,10 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.model.Const;
+import com.google.turbine.tree.Tree;
 import com.google.turbine.type.Type;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
@@ -28,6 +31,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
   Type.ClassTy superClassType();
 
   ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes();
+
+  /** Declared fields. */
+  ImmutableList<FieldInfo> fields();
 
   /** A type parameter declaration. */
   class TyVarInfo {
@@ -47,6 +53,54 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** Interface type bounds. */
     public ImmutableList<Type> interfaceBounds() {
       return interfaceBounds;
+    }
+  }
+
+  /** A field declaration. */
+  class FieldInfo {
+    private final FieldSymbol sym;
+    private final Type type;
+    private final int access;
+
+    private final Tree.VarDecl decl;
+    private final Const.Value value;
+
+    public FieldInfo(FieldSymbol sym, Type type, int access, Tree.VarDecl decl, Const.Value value) {
+      this.sym = sym;
+      this.type = type;
+      this.access = access;
+      this.decl = decl;
+      this.value = value;
+    }
+
+    /** The field symbol. */
+    public FieldSymbol sym() {
+      return sym;
+    }
+
+    /** The field name. */
+    public String name() {
+      return sym.name();
+    }
+
+    /** The field type. */
+    public Type type() {
+      return type;
+    }
+
+    /** Access bits. */
+    public int access() {
+      return access;
+    }
+
+    /** The field's declaration. */
+    public Tree.VarDecl decl() {
+      return decl;
+    }
+
+    /** The constant field value. */
+    public Const.Value value() {
+      return value;
     }
   }
 }

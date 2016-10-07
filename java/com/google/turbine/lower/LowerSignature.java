@@ -135,7 +135,9 @@ public class LowerSignature {
    * unnecessary.
    */
   public String methodSignature(
-      Env<HeaderBoundClass> env, SourceTypeBoundClass.MethodInfo method, ClassSymbol sym) {
+      Env<ClassSymbol, HeaderBoundClass> env,
+      SourceTypeBoundClass.MethodInfo method,
+      ClassSymbol sym) {
     if (!needsMethodSig(sym, env, method)) {
       return null;
     }
@@ -166,7 +168,7 @@ public class LowerSignature {
   }
 
   private boolean needsMethodSig(
-      ClassSymbol sym, Env<HeaderBoundClass> env, SourceTypeBoundClass.MethodInfo m) {
+      ClassSymbol sym, Env<ClassSymbol, HeaderBoundClass> env, SourceTypeBoundClass.MethodInfo m) {
     if ((env.get(sym).access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM
         && m.name().equals("<init>")) {
       // JDK-8024694: javac always expects signature attribute for enum constructors

@@ -18,8 +18,12 @@ package com.google.turbine.bytecode;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.DoubleValue;
+import com.google.turbine.model.Const.FloatValue;
+import com.google.turbine.model.Const.IntValue;
+import com.google.turbine.model.Const.LongValue;
 import com.google.turbine.model.Const.ShortValue;
+import com.google.turbine.model.Const.StringValue;
 import com.google.turbine.model.Const.Value;
 import java.util.List;
 
@@ -85,10 +89,22 @@ public class ClassWriter {
       Value value = e.value();
       switch (value.constantTypeKind()) {
         case STRING:
-          output.writeUTF(((Const.StringValue) value).value());
+          output.writeUTF(((StringValue) value).value());
           break;
         case SHORT:
           output.writeShort(((ShortValue) value).value());
+          break;
+        case INT:
+          output.writeInt(((IntValue) value).value());
+          break;
+        case LONG:
+          output.writeLong(((LongValue) value).value());
+          break;
+        case FLOAT:
+          output.writeFloat(((FloatValue) value).value());
+          break;
+        case DOUBLE:
+          output.writeDouble(((DoubleValue) value).value());
           break;
         default:
           throw new AssertionError(value.constantTypeKind());

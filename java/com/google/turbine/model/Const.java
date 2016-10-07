@@ -25,6 +25,38 @@ public abstract class Const {
   /** Subtypes of {@link Const} for primitive and String literals. */
   public abstract static class Value extends Const {
     public abstract TurbineConstantTypeKind constantTypeKind();
+
+    public IntValue asInteger() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public FloatValue asFloat() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public DoubleValue asDouble() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public LongValue asLong() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public BooleanValue asBoolean() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public StringValue asString() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public CharValue asChar() {
+      throw new AssertionError(constantTypeKind());
+    }
+
+    public ShortValue asShort() {
+      throw new AssertionError(constantTypeKind());
+    }
   }
 
   /** A boolean literal value. */
@@ -47,6 +79,11 @@ public abstract class Const {
 
     public boolean value() {
       return value;
+    }
+
+    @Override
+    public BooleanValue asBoolean() {
+      return this;
     }
   }
 
@@ -72,6 +109,11 @@ public abstract class Const {
     public int value() {
       return value;
     }
+
+    @Override
+    public IntValue asInteger() {
+      return this;
+    }
   }
 
   /** A long literal value. */
@@ -94,6 +136,11 @@ public abstract class Const {
 
     public long value() {
       return value;
+    }
+
+    @Override
+    public LongValue asLong() {
+      return this;
     }
   }
 
@@ -118,6 +165,16 @@ public abstract class Const {
     public char value() {
       return value;
     }
+
+    @Override
+    public CharValue asChar() {
+      return this;
+    }
+
+    @Override
+    public IntValue asInteger() {
+      return new IntValue(value);
+    }
   }
 
   /** A float literal value. */
@@ -140,6 +197,11 @@ public abstract class Const {
 
     public float value() {
       return value;
+    }
+
+    @Override
+    public FloatValue asFloat() {
+      return this;
     }
   }
 
@@ -164,6 +226,11 @@ public abstract class Const {
     public double value() {
       return value;
     }
+
+    @Override
+    public DoubleValue asDouble() {
+      return this;
+    }
   }
 
   /** A String literal value. */
@@ -187,6 +254,11 @@ public abstract class Const {
     public String value() {
       return value;
     }
+
+    @Override
+    public StringValue asString() {
+      return this;
+    }
   }
 
   /** A short literal value. */
@@ -209,6 +281,11 @@ public abstract class Const {
 
     public short value() {
       return value;
+    }
+
+    @Override
+    public ShortValue asShort() {
+      return this;
     }
   }
 }

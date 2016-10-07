@@ -17,6 +17,7 @@
 package com.google.turbine.bytecode;
 
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ShortValue;
 import com.google.turbine.model.Const.StringValue;
 import com.google.turbine.model.Const.Value;
@@ -31,11 +32,13 @@ public class ConstantPool {
   /** The next available constant pool entry. */
   short nextEntry = 1;
 
-  /** A map from CONSTANT_Utf8_info entries to their offset. */
-  Map<String, Short> utf8Pool = new HashMap<>();
-
-  /** A map from CONSTANT_Class_info entries to their offset. */
-  Map<Short, Short> classInfoPool = new HashMap<>();
+  private final Map<String, Short> utf8Pool = new HashMap<>();
+  private final Map<Short, Short> classInfoPool = new HashMap<>();
+  private final Map<Short, Short> stringPool = new HashMap<>();
+  private final Map<Integer, Short> integerPool = new HashMap<>();
+  private final Map<Double, Short> doublePool = new HashMap<>();
+  private final Map<Float, Short> floatPool = new HashMap<>();
+  private final Map<Long, Short> longPool = new HashMap<>();
 
   private final List<Entry> constants = new ArrayList<>();
 
@@ -102,6 +105,52 @@ public class ConstantPool {
     }
     short index = insert(new Entry(Kind.UTF8, new StringValue(value)));
     utf8Pool.put(value, index);
+    return index;
+  }
+
+  short integer(int value) {
+    if (integerPool.containsKey(value)) {
+      return integerPool.get(value);
+    }
+    short index = insert(new Entry(Kind.INTEGER, new Const.IntValue(value)));
+    integerPool.put(value, index);
+    return index;
+  }
+
+  short longInfo(long value) {
+    if (longPool.containsKey(value)) {
+      return longPool.get(value);
+    }
+    short index = insert(new Entry(Kind.LONG, new Const.LongValue(value)));
+    longPool.put(value, index);
+    return index;
+  }
+
+  short doubleInfo(double value) {
+    if (doublePool.containsKey(value)) {
+      return doublePool.get(value);
+    }
+    short index = insert(new Entry(Kind.DOUBLE, new Const.DoubleValue(value)));
+    doublePool.put(value, index);
+    return index;
+  }
+
+  short floatInfo(float value) {
+    if (floatPool.containsKey(value)) {
+      return floatPool.get(value);
+    }
+    short index = insert(new Entry(Kind.FLOAT, new Const.FloatValue(value)));
+    floatPool.put(value, index);
+    return index;
+  }
+
+  short string(String value) {
+    short utf8 = utf8(value);
+    if (stringPool.containsKey(utf8)) {
+      return stringPool.get(utf8);
+    }
+    short index = insert(new Entry(Kind.STRING, new ShortValue(utf8)));
+    stringPool.put(utf8, index);
     return index;
   }
 

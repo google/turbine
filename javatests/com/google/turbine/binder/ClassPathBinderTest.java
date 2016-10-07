@@ -75,7 +75,7 @@ public class ClassPathBinderTest {
 
   @Test
   public void classPathClasses() throws IOException {
-    CompoundEnv<BytecodeBoundClass> env =
+    CompoundEnv<ClassSymbol, BytecodeBoundClass> env =
         ClassPathBinder.bind(ImmutableList.of(), BOOTCLASSPATH, TopLevelIndex.builder());
 
     HeaderBoundClass c = env.get(new ClassSymbol("java/util/Map$Entry"));
@@ -146,7 +146,7 @@ public class ClassPathBinderTest {
       jos.write(cw.toByteArray());
     }
 
-    CompoundEnv<BytecodeBoundClass> env =
+    CompoundEnv<ClassSymbol, BytecodeBoundClass> env =
         ClassPathBinder.bind(ImmutableList.of(lib), ImmutableList.of(bcp), TopLevelIndex.builder());
 
     assertThat(env.get(new ClassSymbol("foo/Bar")).superclass())

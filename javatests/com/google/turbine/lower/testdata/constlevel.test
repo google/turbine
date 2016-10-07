@@ -1,0 +1,8 @@
+=== test/Test.java ===
+package test;
+
+import java.util.logging.Level;
+
+public class Test {
+  public static final Level DEFAULT_LEVEL = Level.INFO;
+}

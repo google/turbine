@@ -19,6 +19,7 @@ package com.google.turbine.binder.bound;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.lookup.CompoundScope;
+import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineTyKind;
@@ -97,5 +98,10 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
 
   public Tree.TyDecl decl() {
     return base.decl();
+  }
+
+  /** The static member import index for the enclosing compilation unit. */
+  public MemberImportIndex memberImports() {
+    return base.memberImports();
   }
 }

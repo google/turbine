@@ -27,12 +27,14 @@ import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
 import com.google.turbine.bytecode.sig.SigParser;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
@@ -52,11 +54,11 @@ import javax.annotation.Nullable;
 public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBoundClass {
 
   private final ClassSymbol sym;
-  private final Env<BytecodeBoundClass> env;
+  private final Env<ClassSymbol, BytecodeBoundClass> env;
   private final Supplier<ClassFile> classFile;
 
   public BytecodeBoundClass(
-      ClassSymbol sym, final Supplier<byte[]> bytes, Env<BytecodeBoundClass> env) {
+      ClassSymbol sym, final Supplier<byte[]> bytes, Env<ClassSymbol, BytecodeBoundClass> env) {
     this.sym = sym;
     this.env = env;
     this.classFile =
@@ -285,12 +287,35 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return typeParameterTypes.get();
   }
 
+  private final Supplier<ImmutableList<FieldInfo>> fields =
+      Suppliers.memoize(
+          new Supplier<ImmutableList<FieldInfo>>() {
+            @Override
+            public ImmutableList<FieldInfo> get() {
+              ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
+              for (ClassFile.FieldInfo cfi : classFile.get().fields()) {
+                FieldSymbol fieldSym = new FieldSymbol(sym, cfi.name());
+                // we don't need a type here, the const value has all necessary information
+                Type type = null;
+                int access = cfi.access();
+                Const.Value value = cfi.value();
+                fields.add(new FieldInfo(fieldSym, type, access, null, value));
+              }
+              return fields.build();
+            }
+          });
+
+  @Override
+  public ImmutableList<FieldInfo> fields() {
+    return fields.get();
+  }
+
   /**
    * Create a scope for resolving type variable symbols declared in the class, and any enclosing
    * instances.
    */
   private static Function<String, TyVarSymbol> makeScope(
-      final Env<BytecodeBoundClass> env,
+      final Env<ClassSymbol, BytecodeBoundClass> env,
       final ClassSymbol sym,
       final Map<String, TyVarSymbol> typeVariables) {
     return new Function<String, TyVarSymbol>() {

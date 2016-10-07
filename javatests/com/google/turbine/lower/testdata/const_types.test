@@ -1,0 +1,9 @@
+=== test/B.java ===
+package test;
+
+public class B {
+  public static final byte NUL = 0;
+  public static final long L = 0;
+  static final long INT_MASK = 0xffffffffL;
+  static final long SIGNIFICAND_MASK = 0x000fffffffffffffL;
+}

@@ -1,0 +1,15 @@
+=== test/A.java ===
+package test;
+
+public class A {
+  public static final int CONST = 1;
+  public static final int REC = B.REC;
+}
+
+=== test/B.java ===
+package test;
+
+public class B {
+  public static final int B_CONST = A.CONST;
+  public static final int REC = A.REC;
+}

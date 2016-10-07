@@ -16,6 +16,7 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.turbine.model.Const.Value;
 import java.util.List;
 
 /** Well-known JVMS §4.1 attributes. */
@@ -24,7 +25,8 @@ interface Attribute {
   enum Kind {
     SIGNATURE("Signature"),
     EXCEPTIONS("Exceptions"),
-    INNER_CLASSES("InnerClasses");
+    INNER_CLASSES("InnerClasses"),
+    CONSTANT_VALUE("ConstantValue");
 
     private final String signature;
 
@@ -81,6 +83,21 @@ interface Attribute {
     @Override
     public Kind kind() {
       return Kind.EXCEPTIONS;
+    }
+  }
+
+  /** A JVMS §4.7.2 ConstantValue attribute. */
+  class ConstantValue implements Attribute {
+
+    final Value value;
+
+    public ConstantValue(Value value) {
+      this.value = value;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.CONSTANT_VALUE;
     }
   }
 }

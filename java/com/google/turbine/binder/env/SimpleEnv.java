@@ -21,7 +21,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import java.util.LinkedHashMap;
 
 /** A simple {@link ImmutableMap}-backed {@link Env}. */
-public class SimpleEnv<V> implements Env<V> {
+public class SimpleEnv<V> implements Env<ClassSymbol, V> {
 
   private final ImmutableMap<ClassSymbol, V> map;
 

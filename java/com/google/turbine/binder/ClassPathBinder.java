@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-
 /** Sets up an environment for symbols on the classpath. */
 public class ClassPathBinder {
 
@@ -41,21 +40,21 @@ public class ClassPathBinder {
    * Creates an environment containing symbols in the given classpath and bootclasspath, and adds
    * them to the top-level index.
    */
-  public static CompoundEnv<BytecodeBoundClass> bind(
+  public static CompoundEnv<ClassSymbol, BytecodeBoundClass> bind(
       Iterable<Path> classpath, Iterable<Path> bootclasspath, TopLevelIndex.Builder tli)
       throws IOException {
     // TODO(cushon): this is going to require an env eventually,
     // e.g. to look up type parameters in enclosing declarations
-    Env<BytecodeBoundClass> cp = bindClasspath(tli, classpath);
-    Env<BytecodeBoundClass> bcp = bindClasspath(tli, bootclasspath);
+    Env<ClassSymbol, BytecodeBoundClass> cp = bindClasspath(tli, classpath);
+    Env<ClassSymbol, BytecodeBoundClass> bcp = bindClasspath(tli, bootclasspath);
     return CompoundEnv.of(cp).append(bcp);
   }
 
-  private static Env<BytecodeBoundClass> bindClasspath(
+  private static Env<ClassSymbol, BytecodeBoundClass> bindClasspath(
       TopLevelIndex.Builder tli, Iterable<Path> paths) throws IOException {
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
-    Env<BytecodeBoundClass> benv =
-        new Env<BytecodeBoundClass>() {
+    Env<ClassSymbol, BytecodeBoundClass> benv =
+        new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
           public BytecodeBoundClass get(ClassSymbol sym) {
             return map.get(sym);
@@ -71,7 +70,7 @@ public class ClassPathBinder {
       TopLevelIndex.Builder tli,
       Path path,
       Map<ClassSymbol, BytecodeBoundClass> env,
-      Env<BytecodeBoundClass> benv)
+      Env<ClassSymbol, BytecodeBoundClass> benv)
       throws IOException {
     // TODO(cushon): consider creating a nio-friendly jar reading abstraction for testing,
     // that yields something like `Iterable<Pair<String, Supplier<byte[]>>>`

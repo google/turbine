@@ -1,0 +1,13 @@
+=== a/One.java ===
+package a;
+
+public interface One {
+  int CONST = 1;
+}
+
+=== a/Two.java ===
+package a;
+
+public class Two implements One {
+  int value = One.CONST;
+}

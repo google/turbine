@@ -17,9 +17,11 @@
 package com.google.turbine.bytecode;
 
 import com.google.common.io.ByteArrayDataOutput;
+import com.google.turbine.bytecode.Attribute.ConstantValue;
 import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.Signature;
+import com.google.turbine.model.Const;
 
 /** Writer {@link Attribute}s to bytecode. */
 public class AttributeWriter {
@@ -43,6 +45,9 @@ public class AttributeWriter {
         break;
       case INNER_CLASSES:
         writeInnerClasses((InnerClasses) attribute);
+        break;
+      case CONSTANT_VALUE:
+        writeConstantValue((ConstantValue) attribute);
         break;
       default:
         throw new AssertionError(attribute.kind());
@@ -74,5 +79,36 @@ public class AttributeWriter {
     output.writeShort(pool.utf8(attribute.kind().signature()));
     output.writeInt(2);
     output.writeShort(pool.utf8(attribute.signature));
+  }
+
+  public void writeConstantValue(ConstantValue attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(2);
+    Const.Value value = attribute.value;
+    switch (value.constantTypeKind()) {
+      case INT:
+      case CHAR:
+      case SHORT:
+      case BYTE:
+        output.writeShort(pool.integer(value.asInteger().value()));
+        break;
+      case LONG:
+        output.writeShort(pool.longInfo(value.asLong().value()));
+        break;
+      case DOUBLE:
+        output.writeShort(pool.doubleInfo(value.asDouble().value()));
+        break;
+      case FLOAT:
+        output.writeShort(pool.floatInfo(value.asFloat().value()));
+        break;
+      case BOOLEAN:
+        output.writeShort(pool.integer(value.asBoolean().value() ? 1 : 0));
+        break;
+      case STRING:
+        output.writeShort(pool.string(value.asString().value()));
+        break;
+      default:
+        throw new AssertionError(value.constantTypeKind());
+    }
   }
 }

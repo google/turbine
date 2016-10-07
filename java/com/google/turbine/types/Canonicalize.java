@@ -57,7 +57,8 @@ import javax.annotation.Nullable;
 public class Canonicalize {
 
   /** Canonicalizes the given type. */
-  public static Type canonicalize(Env<TypeBoundClass> env, ClassSymbol base, Type type) {
+  public static Type canonicalize(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, Type type) {
     switch (type.tyKind()) {
       case PRIM_TY:
       case VOID_TY:
@@ -77,7 +78,7 @@ public class Canonicalize {
   }
 
   /** Canonicalize a qualified class type, excluding type arguments. */
-  private static ClassTy canon(Env<TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
+  private static ClassTy canon(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
     // for the enclosing declarations
     Iterator<ClassTy.SimpleClassTy> it = ty.classes.iterator();
@@ -96,7 +97,7 @@ public class Canonicalize {
 
   /** Given a base symbol to canonicalize, find any implicit enclosing instances. */
   private static Collection<ClassTy.SimpleClassTy> lexicalBase(
-      Env<TypeBoundClass> env, ClassSymbol first, ClassSymbol owner) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol first, ClassSymbol owner) {
     if ((env.get(first).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
       return Collections.emptyList();
     }
@@ -116,7 +117,8 @@ public class Canonicalize {
     return result;
   }
 
-  private static ClassTy.SimpleClassTy uninstantiated(Env<TypeBoundClass> env, ClassSymbol owner) {
+  private static ClassTy.SimpleClassTy uninstantiated(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol owner) {
     ImmutableList.Builder<Type.TyArg> targs = ImmutableList.builder();
     for (TyVarSymbol p : env.get(owner).typeParameterTypes().keySet()) {
       targs.add(new Type.ConcreteTyArg(new Type.TyVar(p)));
@@ -125,7 +127,7 @@ public class Canonicalize {
   }
 
   // is s a subclass (not interface) of t?
-  static boolean isSubclass(Env<TypeBoundClass> env, ClassSymbol s, ClassSymbol t) {
+  static boolean isSubclass(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol s, ClassSymbol t) {
     while (s != null) {
       if (s.equals(t)) {
         return true;
@@ -139,7 +141,8 @@ public class Canonicalize {
    * Adds a simple class type to an existing canonical base class type, and canonicalizes the
    * result.
    */
-  private static ClassTy canonOne(Env<TypeBoundClass> env, ClassTy base, ClassTy.SimpleClassTy ty) {
+  private static ClassTy canonOne(
+      Env<ClassSymbol, TypeBoundClass> env, ClassTy base, ClassTy.SimpleClassTy ty) {
     // if the class is static, it has a trivial canonical qualifier with no type arguments
     if ((env.get(ty.sym()).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
       return new ClassTy(Collections.singletonList(ty));
@@ -175,7 +178,7 @@ public class Canonicalize {
 
   /** Add the type arguments of a simple class type to a type mapping. */
   static void addInstantiation(
-      Env<TypeBoundClass> env,
+      Env<ClassSymbol, TypeBoundClass> env,
       Map<TyVarSymbol, Type.TyArg> mapping,
       ClassTy.SimpleClassTy simpleType) {
     Collection<TyVarSymbol> symbols = env.get(simpleType.sym()).typeParameters().values();
@@ -200,7 +203,9 @@ public class Canonicalize {
 
   /** Instantiate a simple class type for the given symbol, and with the given type mapping. */
   static ClassTy.SimpleClassTy instantiate(
-      Env<TypeBoundClass> env, Map<TyVarSymbol, Type.TyArg> mapping, ClassSymbol classSymbol) {
+      Env<ClassSymbol, TypeBoundClass> env,
+      Map<TyVarSymbol, Type.TyArg> mapping,
+      ClassSymbol classSymbol) {
     List<Type.TyArg> args = new ArrayList<>();
     for (TyVarSymbol sym : env.get(classSymbol).typeParameterTypes().keySet()) {
       if (!mapping.containsKey(sym)) {
@@ -247,7 +252,8 @@ public class Canonicalize {
     return ((Type.TyVar) concrete.type()).sym();
   }
 
-  public static ClassTy canonicalizeClassTy(Env<TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
+  public static ClassTy canonicalizeClassTy(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
     // canonicalize type arguments first
     ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
     for (ClassTy.SimpleClassTy s : ty.classes) {
@@ -258,7 +264,7 @@ public class Canonicalize {
   }
 
   private static ImmutableList<Type.TyArg> canonicalizeTyArgs(
-      ImmutableList<Type.TyArg> targs, ClassSymbol base, Env<TypeBoundClass> env) {
+      ImmutableList<Type.TyArg> targs, ClassSymbol base, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableList.Builder<Type.TyArg> result = ImmutableList.builder();
     for (Type.TyArg a : targs) {
       result.add(canonicalizeTyArg(a, base, env));
@@ -267,7 +273,7 @@ public class Canonicalize {
   }
 
   private static Type.TyArg canonicalizeTyArg(
-      Type.TyArg tyArg, ClassSymbol base, Env<TypeBoundClass> env) {
+      Type.TyArg tyArg, ClassSymbol base, Env<ClassSymbol, TypeBoundClass> env) {
     switch (tyArg.tyArgKind()) {
       case CONCRETE:
         return new Type.ConcreteTyArg(canonicalize(env, base, ((Type.ConcreteTyArg) tyArg).type()));
