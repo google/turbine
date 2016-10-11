@@ -592,7 +592,7 @@ public abstract class Tree {
     private final String name;
     private final ImmutableList<VarDecl> params;
     private final ImmutableList<ClassTy> exntys;
-    private final Optional<Tree> defaultval;
+    private final Optional<Tree> defaultValue;
 
     public MethDecl(
         Set<TurbineModifier> mods,
@@ -602,7 +602,7 @@ public abstract class Tree {
         String name,
         ImmutableList<VarDecl> params,
         ImmutableList<ClassTy> exntys,
-        Optional<Tree> defaultval) {
+        Optional<Tree> defaultValue) {
       this.mods = ImmutableSet.copyOf(mods);
       this.annos = annos;
       this.typarams = typarams;
@@ -610,7 +610,7 @@ public abstract class Tree {
       this.name = name;
       this.params = params;
       this.exntys = exntys;
-      this.defaultval = defaultval;
+      this.defaultValue = defaultValue;
     }
 
     @Override
@@ -651,8 +651,8 @@ public abstract class Tree {
       return exntys;
     }
 
-    public Optional<Tree> defaultval() {
-      return defaultval;
+    public Optional<Tree> defaultValue() {
+      return defaultValue;
     }
   }
 

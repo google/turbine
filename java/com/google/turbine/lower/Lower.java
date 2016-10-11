@@ -140,14 +140,12 @@ public class Lower {
       }
     }
 
-    // TODO(cushon): default values for @interface methods
-    ElementValue defaultValue = null;
+    ElementValue defaultValue =
+        m.defaultValue() != null ? annotationValue(m.defaultValue(), env) : null;
 
-    // TODO(cushon): annotations
-    ImmutableList<AnnotationInfo> annotations = ImmutableList.of();
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(env, m.annotations());
 
-    // TODO(cushon): parameter annotations
-    List<List<AnnotationInfo>> paramAnnotations = ImmutableList.of();
+    ImmutableList<ImmutableList<AnnotationInfo>> paramAnnotations = parameterAnnotations(env, m);
 
     return new ClassFile.MethodInfo(
         access,
@@ -158,6 +156,32 @@ public class Lower {
         defaultValue,
         annotations,
         paramAnnotations);
+  }
+
+  private ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations(
+      Env<ClassSymbol, TypeBoundClass> env, MethodInfo m) {
+    ImmutableList.Builder<ImmutableList<AnnotationInfo>> annotations = ImmutableList.builder();
+    for (ParamInfo parameter : m.parameters()) {
+      if (parameter.synthetic()) {
+        continue;
+      }
+      if (parameter.annotations().isEmpty()) {
+        annotations.add(ImmutableList.of());
+        continue;
+      }
+      ImmutableList.Builder<AnnotationInfo> parameterAnnotations = ImmutableList.builder();
+      for (AnnoInfo annotation : parameter.annotations()) {
+        Boolean visible = isVisible(env, annotation.sym());
+        if (visible == null) {
+          continue;
+        }
+        String desc = descriptor(sig.descriptor(annotation.sym()));
+        parameterAnnotations.add(
+            new AnnotationInfo(desc, visible, annotationValues(annotation.values(), env)));
+      }
+      annotations.add(parameterAnnotations.build());
+    }
+    return annotations.build();
   }
 
   private String methodDescriptor(MethodInfo m, Function<TyVarSymbol, TyVarInfo> tenv) {
@@ -300,7 +324,9 @@ public class Lower {
       return null;
     }
     return new AnnotationInfo(
-        descriptor(sig.descriptor(annotation.sym())), visible, annotationValues(annotation, env));
+        descriptor(sig.descriptor(annotation.sym())),
+        visible,
+        annotationValues(annotation.values(), env));
   }
 
   private static String descriptor(String descriptor) {
@@ -327,19 +353,21 @@ public class Lower {
   }
 
   private static ImmutableMap<String, ElementValue> annotationValues(
-      AnnoInfo a, Env<ClassSymbol, TypeBoundClass> env) {
-    ImmutableMap.Builder<String, ElementValue> values = ImmutableMap.builder();
-    for (Map.Entry<String, Const> entry : a.values().entrySet()) {
-      values.put(entry.getKey(), annotationValue(entry.getValue(), env));
+      ImmutableMap<String, Const> values, Env<ClassSymbol, TypeBoundClass> env) {
+    ImmutableMap.Builder<String, ElementValue> result = ImmutableMap.builder();
+    for (Map.Entry<String, Const> entry : values.entrySet()) {
+      result.put(entry.getKey(), annotationValue(entry.getValue(), env));
     }
-    return values.build();
+    return result.build();
   }
 
   private static ElementValue annotationValue(Const value, Env<ClassSymbol, TypeBoundClass> env) {
     switch (value.kind()) {
       case CLASS_LITERAL:
-        // TODO(cushon): class literals
-        throw new AssertionError();
+        {
+          Const.ClassValue classValue = (Const.ClassValue) value;
+          return new ElementValue.ConstClassValue("L" + classValue.className() + ";");
+        }
       case ENUM_CONSTANT:
         {
           Const.EnumConstantValue enumValue = (Const.EnumConstantValue) value;
@@ -354,6 +382,19 @@ public class Lower {
             values.add(annotationValue(element, env));
           }
           return new ElementValue.ArrayValue(values);
+        }
+      case ANNOTATION:
+        {
+          Const.AnnotationValue annotationValue = (Const.AnnotationValue) value;
+          Boolean visible = isVisible(env, annotationValue.sym());
+          if (visible == null) {
+            visible = true;
+          }
+          return new ElementValue.AnnotationValue(
+              new AnnotationInfo(
+                  descriptor(annotationValue.sym().binaryName()),
+                  visible,
+                  annotationValues(annotationValue.values(), env)));
         }
       case PRIMITIVE:
         return new ElementValue.ConstValue((Const.Value) value);

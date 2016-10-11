@@ -19,6 +19,9 @@ package com.google.turbine.binder;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -49,13 +52,14 @@ public class ConstBinder {
 
   public SourceTypeBoundClass bind() {
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
-    ImmutableList<TypeBoundClass.AnnoInfo> annos = bindAnnotations(base.annotations());
+    ImmutableList<MethodInfo> methods = bindMethods(base.methods());
+    ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations());
     return new SourceTypeBoundClass(
         base.interfaceTypes(),
         base.superClassType(),
         base.typeParameterTypes(),
         base.access(),
-        base.methods(),
+        methods,
         fields,
         base.owner(),
         base.kind(),
@@ -69,14 +73,49 @@ public class ConstBinder {
         annos);
   }
 
+  private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> methods) {
+    ImmutableList.Builder<MethodInfo> result = ImmutableList.builder();
+    for (MethodInfo f : methods) {
+      result.add(bindMethod(f));
+    }
+    return result.build();
+  }
+
+  private MethodInfo bindMethod(MethodInfo base) {
+    Const value = null;
+    if (base.decl() != null && base.decl().defaultValue().isPresent()) {
+      value =
+          constEvaluator.evalAnnotationValue(base.decl().defaultValue().get(), base.returnType());
+    }
+
+    return new MethodInfo(
+        base.sym(),
+        base.tyParams(),
+        base.returnType(),
+        bindParameters(base.parameters()),
+        base.exceptions(),
+        base.access(),
+        value,
+        base.decl(),
+        bindAnnotations(base.annotations()));
+  }
+
+  private ImmutableList<ParamInfo> bindParameters(ImmutableList<ParamInfo> formals) {
+    ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
+    for (ParamInfo base : formals) {
+      ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations());
+      result.add(new ParamInfo(base.type(), annos, base.synthetic()));
+    }
+    return result.build();
+  }
+
   /** Returns the {@link RetentionPolicy} for an annotation declaration, or {@code null}. */
   @Nullable
-  static RetentionPolicy bindRetention(
-      TurbineTyKind kind, Iterable<TypeBoundClass.AnnoInfo> annotations) {
+  static RetentionPolicy bindRetention(TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
     if (kind != TurbineTyKind.ANNOTATION) {
       return null;
     }
-    for (TypeBoundClass.AnnoInfo annotation : annotations) {
+    for (AnnoInfo annotation : annotations) {
       if (annotation.sym().toString().equals("java/lang/annotation/Retention")) {
         Const value = annotation.values().get("value");
         if (value.kind() != Const.Kind.ENUM_CONSTANT) {
@@ -109,12 +148,11 @@ public class ConstBinder {
     return result.build();
   }
 
-  private ImmutableList<TypeBoundClass.AnnoInfo> bindAnnotations(
-      ImmutableList<TypeBoundClass.AnnoInfo> annotations) {
+  private ImmutableList<AnnoInfo> bindAnnotations(ImmutableList<AnnoInfo> annotations) {
     // TODO(cushon): Java 8 repeated annotations
     // TODO(cushon): disallow duplicate non-repeated annotations
-    ImmutableList.Builder<TypeBoundClass.AnnoInfo> result = ImmutableList.builder();
-    for (TypeBoundClass.AnnoInfo annotation : annotations) {
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
+    for (AnnoInfo annotation : annotations) {
       result.add(constEvaluator.evaluateAnnotation(annotation.sym(), annotation.args()));
     }
     return result.build();

@@ -1,0 +1,16 @@
+=== pkg/Anno.java ===
+package pkg;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+public @interface Anno {
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+@Anno
+public class Simple {
+}

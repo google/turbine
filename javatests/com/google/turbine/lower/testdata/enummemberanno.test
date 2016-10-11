@@ -1,0 +1,8 @@
+=== pkg/Simple.java ===
+package pkg;
+@Deprecated
+public enum Simple {
+  A,
+  @Deprecated B,
+  C;
+}

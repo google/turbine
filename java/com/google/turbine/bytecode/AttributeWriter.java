@@ -25,6 +25,7 @@ import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.Signature;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.model.Const;
+import java.util.List;
 
 /** Writer {@link Attribute}s to bytecode. */
 public class AttributeWriter {
@@ -57,6 +58,18 @@ public class AttributeWriter {
         break;
       case RUNTIME_INVISIBLE_ANNOTATIONS:
         writeAnnotation((Attribute.RuntimeInvisibleAnnotations) attribute);
+        break;
+      case ANNOTATION_DEFAULT:
+        writeAnnotationDefault((Attribute.AnnotationDefault) attribute);
+        break;
+      case RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS:
+        writeParameterAnnotations((Attribute.RuntimeVisibleParameterAnnotations) attribute);
+        break;
+      case RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS:
+        writeParameterAnnotations((Attribute.RuntimeInvisibleParameterAnnotations) attribute);
+        break;
+      case DEPRECATED:
+        writeDeprecated(attribute);
         break;
       default:
         throw new AssertionError(attribute.kind());
@@ -131,5 +144,34 @@ public class AttributeWriter {
     byte[] data = tmp.toByteArray();
     output.writeInt(data.length);
     output.write(data);
+  }
+
+  public void writeAnnotationDefault(Attribute.AnnotationDefault attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    ByteArrayDataOutput tmp = ByteStreams.newDataOutput();
+    new AnnotationWriter(pool, tmp).writeElementValue(attribute.value());
+    byte[] data = tmp.toByteArray();
+    output.writeInt(data.length);
+    output.write(data);
+  }
+
+  public void writeParameterAnnotations(Attribute.ParameterAnnotations attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    ByteArrayDataOutput tmp = ByteStreams.newDataOutput();
+    tmp.writeByte(attribute.annotations().size());
+    for (List<AnnotationInfo> parameterAnnotations : attribute.annotations()) {
+      tmp.writeShort(parameterAnnotations.size());
+      for (AnnotationInfo annotation : parameterAnnotations) {
+        new AnnotationWriter(pool, tmp).writeAnnotation(annotation);
+      }
+    }
+    byte[] data = tmp.toByteArray();
+    output.writeInt(data.length);
+    output.write(data);
+  }
+
+  private void writeDeprecated(Attribute attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(0);
   }
 }

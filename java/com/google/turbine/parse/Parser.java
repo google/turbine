@@ -649,7 +649,7 @@ public class Parser {
       next();
       exceptions.addAll(exceptions());
     }
-    Tree defaultVal = null;
+    Tree defaultValue = null;
     switch (token) {
       case SEMI:
         next();
@@ -669,7 +669,7 @@ public class Parser {
           if (expr == null) {
             throw new AssertionError(token);
           }
-          defaultVal = expr;
+          defaultValue = expr;
           eat(Token.SEMI);
           break;
         }
@@ -687,7 +687,7 @@ public class Parser {
         name,
         formals.build(),
         exceptions.build(),
-        Optional.fromNullable(defaultVal));
+        Optional.fromNullable(defaultValue));
   }
 
   private Type parseDims(Type result) {

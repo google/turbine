@@ -1,0 +1,6 @@
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  public @interface Foo {}
+}

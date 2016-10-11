@@ -1,0 +1,8 @@
+=== test/Test.java ===
+package test;
+
+import java.lang.annotation.Annotation;
+
+public @interface Test {
+  Class<? extends Annotation> foo() default Test.class;
+}

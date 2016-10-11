@@ -24,6 +24,7 @@ import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
 
@@ -163,6 +164,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final ImmutableList<ParamInfo> parameters;
     private final ImmutableList<Type> exceptions;
     private final int access;
+    private final Const defaultValue;
+    private final MethDecl decl;
+    private final ImmutableList<AnnoInfo> annotations;
 
     public MethodInfo(
         MethodSymbol sym,
@@ -170,13 +174,19 @@ public interface TypeBoundClass extends HeaderBoundClass {
         Type returnType,
         ImmutableList<ParamInfo> parameters,
         ImmutableList<Type> exceptions,
-        int access) {
+        int access,
+        Const defaultValue,
+        MethDecl decl,
+        ImmutableList<AnnoInfo> annotations) {
       this.sym = sym;
       this.tyParams = tyParams;
       this.returnType = returnType;
       this.parameters = parameters;
       this.exceptions = exceptions;
       this.access = access;
+      this.defaultValue = defaultValue;
+      this.decl = decl;
+      this.annotations = annotations;
     }
 
     /** The method symbol. */
@@ -213,15 +223,32 @@ public interface TypeBoundClass extends HeaderBoundClass {
     public int access() {
       return access;
     }
+
+    /** The default value of an annotation interface method. */
+    public Const defaultValue() {
+      return defaultValue;
+    }
+
+    /** The declaration. */
+    public MethDecl decl() {
+      return decl;
+    }
+
+    /** Declaration annotations. */
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
+    }
   }
 
   /** A formal parameter declaration. */
   class ParamInfo {
     private final Type type;
+    private final ImmutableList<AnnoInfo> annotations;
     private final boolean synthetic;
 
-    public ParamInfo(Type type, boolean synthetic) {
+    public ParamInfo(Type type, ImmutableList<AnnoInfo> annotations, boolean synthetic) {
       this.type = type;
+      this.annotations = annotations;
       this.synthetic = synthetic;
     }
 
@@ -236,6 +263,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
      */
     public boolean synthetic() {
       return synthetic;
+    }
+
+    /** Parameter annotations. */
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
     }
   }
 }

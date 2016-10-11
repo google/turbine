@@ -17,6 +17,8 @@
 package com.google.turbine.model;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 
 /**
@@ -33,7 +35,8 @@ public abstract class Const {
     ARRAY,
     PRIMITIVE,
     CLASS_LITERAL,
-    ENUM_CONSTANT
+    ENUM_CONSTANT,
+    ANNOTATION
   }
 
   /** Subtypes of {@link Const} for primitive and String literals. */
@@ -294,6 +297,11 @@ public abstract class Const {
     public DoubleValue asDouble() {
       return this;
     }
+
+    @Override
+    public IntValue asInteger() {
+      return new IntValue((int) value);
+    }
   }
 
   /** A String literal value. */
@@ -431,6 +439,63 @@ public abstract class Const {
     @Override
     public Kind kind() {
       return Kind.ENUM_CONSTANT;
+    }
+  }
+
+  /** A class literal constant. */
+  public static class ClassValue extends Const {
+
+    private final String className;
+
+    public ClassValue(String className) {
+      this.className = className;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s.class", className);
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.CLASS_LITERAL;
+    }
+
+    /** The class name. */
+    public String className() {
+      return className;
+    }
+  }
+
+  /** An annotation literal constant. */
+  public static class AnnotationValue extends Const {
+
+    private final ClassSymbol sym;
+    private final ImmutableMap<String, Const> values;
+
+    public AnnotationValue(ClassSymbol sym, ImmutableMap<String, Const> values) {
+      this.sym = sym;
+      this.values = values;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("@%s", sym);
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.ANNOTATION;
+    }
+
+    /** The annotation declaration. */
+    public ClassSymbol sym() {
+      return sym;
+    }
+
+    /** The annotation literal's element-value pairs. */
+    public ImmutableMap<String, Const> values() {
+      return values;
     }
   }
 }

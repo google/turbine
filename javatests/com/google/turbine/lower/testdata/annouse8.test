@@ -1,0 +1,13 @@
+=== pkg/Super.java ===
+package pkg;
+
+public class Super {
+  void m() {}
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple extends Super {
+  @Override void m() {}
+}

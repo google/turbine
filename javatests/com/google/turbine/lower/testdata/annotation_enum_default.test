@@ -1,0 +1,11 @@
+=== test/Test.java ===
+package test;
+
+public @interface Test {
+
+  public enum Kind {
+    FOO;
+  }
+
+  Kind kind() default Kind.FOO;
+}

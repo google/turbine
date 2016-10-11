@@ -1,0 +1,21 @@
+=== pkg/Anno1.java ===
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Anno1 {}
+
+=== pkg/Anno2.java ===
+package pkg;
+
+public @interface Anno2 {}
+
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  @Anno1 @Anno2 void f() {}
+  @Anno1 @Anno2 void g() {}
+}

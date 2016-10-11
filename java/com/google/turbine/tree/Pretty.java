@@ -297,9 +297,9 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       first = false;
     }
     append(')');
-    if (methDecl.defaultval().isPresent()) {
+    if (methDecl.defaultValue().isPresent()) {
       append(" default ");
-      methDecl.defaultval().get().accept(this, null);
+      methDecl.defaultValue().get().accept(this, null);
       append(";");
     } else if (methDecl.mods().contains(TurbineModifier.ABSTRACT)
         || methDecl.mods().contains(TurbineModifier.NATIVE)) {

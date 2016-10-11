@@ -131,6 +131,10 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
             public ImmutableMap<String, ClassSymbol> get() {
               ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
               for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
+                if (inner.innerName() == null) {
+                  // anonymous class
+                  continue;
+                }
                 if (sym.binaryName().equals(inner.outerClass())) {
                   result.put(inner.innerName(), new ClassSymbol(inner.innerClass()));
                 }
@@ -347,13 +351,24 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
 
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
     for (Sig.TySig tySig : sig.params()) {
-      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), false));
+      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), ImmutableList.of(), false));
     }
 
     verify(sig.exceptions().isEmpty());
 
+    // TODO(cushon): default values for annotations in bytecode
+    Const defaultValue = null;
+
     return new MethodInfo(
-        methodSymbol, ImmutableMap.of(), ret, formals.build(), ImmutableList.of(), m.access());
+        methodSymbol,
+        ImmutableMap.of(),
+        ret,
+        formals.build(),
+        ImmutableList.of(),
+        m.access(),
+        defaultValue,
+        null,
+        ImmutableList.of());
   }
 
   @Override

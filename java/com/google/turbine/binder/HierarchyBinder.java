@@ -67,12 +67,9 @@ public class HierarchyBinder {
         throw new AssertionError(decl.tykind());
     }
 
-    TurbineVisibility visibility;
     // types declared in interfaces  annotations are implicitly public (JLS 9.5)
     if (enclosedByInterface(env, base)) {
-      visibility = TurbineVisibility.PUBLIC;
-    } else {
-      visibility = TurbineVisibility.fromAccess(access);
+      access = TurbineVisibility.PUBLIC.setAccess(access);
     }
 
     if ((access & TurbineFlag.ACC_STATIC) == 0 && implicitStatic(env, base)) {
@@ -128,7 +125,7 @@ public class HierarchyBinder {
     }
 
     return new SourceHeaderBoundClass(
-        base, superclass, interfaces.build(), visibility, access, typeParameters.build());
+        base, superclass, interfaces.build(), access, typeParameters.build());
   }
 
   /**

@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -37,6 +38,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.ArrayInit;
 import com.google.turbine.tree.Tree.Binary;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Conditional;
@@ -76,7 +78,7 @@ public class ConstEvaluator {
   }
 
   /** Evaluates the given expression's value. */
-  public Const eval(Expression t) {
+  public Const eval(Tree t) {
     switch (t.kind()) {
       case LITERAL:
         {
@@ -122,9 +124,9 @@ public class ConstEvaluator {
       case CONDITIONAL:
         return evalConditional((Conditional) t);
       case ARRAY_INIT:
+        return evalArrayInit((ArrayInit) t);
       case ANNO:
-        // TODO(cushon): annotations
-        throw new AssertionError(t.kind());
+        return evalAnno((Tree.Anno) t);
       default:
         throw new AssertionError(t.kind());
     }
@@ -155,10 +157,9 @@ public class ConstEvaluator {
     }
     String name = result.remaining().get(result.remaining().size() - 1);
     if (name.equals("class")) {
-      // TODO(cushon): class literals
-      throw new AssertionError();
       // TODO(cushon): consider distinguishing between constant field and annotation values,
       // and only allowing class literals / enum constants in the latter
+      return new Const.ClassValue(sym.toString());
     }
     FieldInfo field = inheritedField(env, sym, name);
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
@@ -779,15 +780,25 @@ public class ConstEvaluator {
     return new AnnoInfo(sym, args, values.build());
   }
 
-  private Const.ArrayInitValue evalArrayInit(Tree.ArrayInit t) {
-    ImmutableList.Builder<Const> exprs = ImmutableList.builder();
-    for (Expression tree : t.exprs()) {
-      exprs.add(eval(tree));
+  private Const.AnnotationValue evalAnno(Tree.Anno t) {
+    LookupResult result = owner.scope().lookup(new LookupKey(Splitter.on('.').split(t.name())));
+    ClassSymbol sym = (ClassSymbol) result.sym();
+    for (String name : result.remaining()) {
+      sym = Resolve.resolve(env, sym, name);
     }
-    return new Const.ArrayInitValue(exprs.build());
+    AnnoInfo annoInfo = evaluateAnnotation(sym, t.args());
+    return new Const.AnnotationValue(annoInfo.sym(), annoInfo.values());
   }
 
-  private Const evalAnnotationValue(Expression tree, Type ty) {
+  private Const.ArrayInitValue evalArrayInit(ArrayInit t) {
+    ImmutableList.Builder<Const> elements = ImmutableList.builder();
+    for (Expression e : t.exprs()) {
+      elements.add(eval(e));
+    }
+    return new Const.ArrayInitValue(elements.build());
+  }
+
+  Const evalAnnotationValue(Tree tree, Type ty) {
     Const value = eval(tree);
     switch (ty.tyKind()) {
       case PRIM_TY:

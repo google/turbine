@@ -23,7 +23,6 @@ import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 
 /** A {@link HeaderBoundClass} that corresponds to a source file being compiled. */
@@ -32,7 +31,6 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   private final PackageSourceBoundClass base;
   private final ClassSymbol superclass;
   private final ImmutableList<ClassSymbol> interfaces;
-  private final TurbineVisibility visibility;
   private final int access;
   private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
@@ -40,14 +38,12 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
       PackageSourceBoundClass base,
       ClassSymbol superclass,
       ImmutableList<ClassSymbol> interfaces,
-      TurbineVisibility visibility,
       int access,
       ImmutableMap<String, TyVarSymbol> typeParameters) {
 
     this.base = base;
     this.superclass = superclass;
     this.interfaces = interfaces;
-    this.visibility = visibility;
     this.access = access;
     this.typeParameters = typeParameters;
   }
@@ -80,10 +76,6 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   @Override
   public ImmutableMap<String, ClassSymbol> children() {
     return base.children();
-  }
-
-  public TurbineVisibility visibility() {
-    return visibility;
   }
 
   /** Declared type parameters. */

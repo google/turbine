@@ -1,0 +1,13 @@
+=== test/ClassPreamble.java ===
+package test;
+
+// https://docs.oracle.com/javase/tutorial/java/annotations/declaring.html
+
+public @interface ClassPreamble {
+  String author();
+  String date();
+  int currentRevision() default 1;
+  String lastModified() default "N/A";
+  String lastModifiedBy() default "N/A";
+  String[] reviewers();
+}

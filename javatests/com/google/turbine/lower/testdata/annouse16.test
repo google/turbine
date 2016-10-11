@@ -1,0 +1,30 @@
+=== pkg/Anno1.java ===
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Anno1 {
+  int x() default Simple.CONST;
+}
+
+=== pkg/Anno2.java ===
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Anno2 {
+  Anno1 x() default @Anno1(x=Simple.CONST);
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+  public static final int CONST = 42;
+
+  @Anno2 int annotated;
+}

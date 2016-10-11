@@ -20,42 +20,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
-import com.google.turbine.binder.Binder;
-import com.google.turbine.binder.Binder.BindingResult;
-import com.google.turbine.bytecode.AsmUtils;
-import com.google.turbine.parse.Parser;
-import com.google.turbine.parse.StreamLexer;
-import com.google.turbine.parse.UnicodeEscapePreprocessor;
-import com.google.turbine.tree.Tree;
-import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.nio.JavacPathFileManager;
-import com.sun.tools.javac.util.Context;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.FileSystem;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -202,6 +174,33 @@ public class LowerIntegrationTest {
       "const_moreexpr.test",
       "const_multi.test",
       "field_anno.test",
+      "annotation_bool_default.test",
+      "annotation_class_default.test",
+      "annotation_declaration.test",
+      "annotation_enum_default.test",
+      "annotations_default.test",
+      "annouse.test",
+      "annouse10.test",
+      "annouse11.test",
+      "annouse12.test",
+      "annouse13.test",
+      "annouse14.test",
+      "annouse15.test",
+      "annouse16.test",
+      "annouse17.test",
+      "annouse2.test",
+      "annouse3.test",
+      "annouse4.test",
+      "annouse5.test",
+      "annouse6.test",
+      "annouse7.test",
+      "annouse8.test",
+      "annouse9.test",
+      "annovis.test",
+      "complex_param_anno.test",
+      "enummemberanno.test",
+      "innerannodecl.test",
+      "source_anno_retention.test",
     };
     return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
   }
@@ -212,7 +211,7 @@ public class LowerIntegrationTest {
     this.test = test;
   }
 
-  private static final ImmutableList<Path> BOOTCLASSPATH =
+  static final ImmutableList<Path> BOOTCLASSPATH =
       ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -220,15 +219,16 @@ public class LowerIntegrationTest {
   @Test
   public void test() throws Exception {
 
-    TestInput input =
-        TestInput.parse(
+    IntegrationTestSupport.TestInput input =
+        IntegrationTestSupport.TestInput.parse(
             new String(
                 ByteStreams.toByteArray(getClass().getResourceAsStream("testdata/" + test)),
                 UTF_8));
 
     ImmutableList<Path> classpathJar = ImmutableList.of();
     if (!input.classes.isEmpty()) {
-      Map<String, byte[]> classpath = runJavac(input.classes, null);
+      Map<String, byte[]> classpath =
+          IntegrationTestSupport.runJavac(input.classes, null, BOOTCLASSPATH);
       Path lib = temporaryFolder.newFile("lib.jar").toPath();
       try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
         for (Map.Entry<String, byte[]> entry : classpath.entrySet()) {
@@ -239,150 +239,13 @@ public class LowerIntegrationTest {
       classpathJar = ImmutableList.of(lib);
     }
 
-    Map<String, byte[]> expected = runJavac(input.sources, classpathJar);
+    Map<String, byte[]> expected =
+        IntegrationTestSupport.runJavac(input.sources, classpathJar, BOOTCLASSPATH);
 
-    List<Tree.CompUnit> units =
-        input
-            .sources
-            .values()
-            .stream()
-            .map(
-                s ->
-                    new Parser(new StreamLexer(new UnicodeEscapePreprocessor(s))).compilationUnit())
-            .collect(toList());
+    Map<String, byte[]> actual =
+        IntegrationTestSupport.runTurbine(input.sources, classpathJar, BOOTCLASSPATH);
 
-    BindingResult bound = Binder.bind(units, classpathJar, BOOTCLASSPATH);
-    Map<String, byte[]> actual = Lower.lowerAll(bound.units(), bound.classPathEnv());
-
-    assertThat(dump(IntegrationTestSupport.sortMembers(actual)))
-        .isEqualTo(dump(IntegrationTestSupport.canonicalize(expected)));
-  }
-
-  static class TestInput {
-
-    final Map<String, String> sources;
-    final Map<String, String> classes;
-
-    public TestInput(Map<String, String> sources, Map<String, String> classes) {
-      this.sources = sources;
-      this.classes = classes;
-    }
-
-    static TestInput parse(String text) {
-      Map<String, String> sources = new LinkedHashMap<>();
-      Map<String, String> classes = new LinkedHashMap<>();
-      String className = null;
-      String sourceName = null;
-      List<String> lines = new ArrayList<>();
-      for (String line : Splitter.on('\n').split(text)) {
-        if (line.startsWith("===")) {
-          if (sourceName != null) {
-            sources.put(sourceName, Joiner.on('\n').join(lines) + "\n");
-          }
-          if (className != null) {
-            classes.put(className, Joiner.on('\n').join(lines) + "\n");
-          }
-          lines.clear();
-          sourceName = line.substring(3, line.length() - 3).trim();
-          className = null;
-        } else if (line.startsWith("%%%")) {
-          if (className != null) {
-            classes.put(className, Joiner.on('\n').join(lines) + "\n");
-          }
-          if (sourceName != null) {
-            sources.put(sourceName, Joiner.on('\n').join(lines) + "\n");
-          }
-          className = line.substring(3, line.length() - 3).trim();
-          lines.clear();
-          sourceName = null;
-        } else {
-          lines.add(line);
-        }
-      }
-      if (sourceName != null) {
-        sources.put(sourceName, Joiner.on('\n').join(lines) + "\n");
-      }
-      if (className != null) {
-        classes.put(className, Joiner.on('\n').join(lines) + "\n");
-      }
-      lines.clear();
-      return new TestInput(sources, classes);
-    }
-  }
-
-  private static Map<String, byte[]> runJavac(Map<String, String> sources, Iterable<Path> classpath)
-      throws Exception {
-
-    FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
-
-    Path srcs = fs.getPath("srcs");
-    Path out = fs.getPath("out");
-
-    Files.createDirectories(out);
-
-    ArrayList<Path> inputs = new ArrayList<>();
-    for (Map.Entry<String, String> entry : sources.entrySet()) {
-      Path path = srcs.resolve(entry.getKey());
-      if (path.getParent() != null) {
-        Files.createDirectories(path.getParent());
-      }
-      Files.write(path, entry.getValue().getBytes(UTF_8));
-      inputs.add(path);
-    }
-
-    JavacTool compiler = JavacTool.create();
-    DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
-    JavacPathFileManager fileManager = new JavacPathFileManager(new Context(), true, UTF_8);
-    fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, BOOTCLASSPATH);
-    fileManager.setLocation(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
-    fileManager.setLocation(StandardLocation.CLASS_PATH, classpath);
-
-    JavacTask task =
-        compiler.getTask(
-            new PrintWriter(System.err, true),
-            fileManager,
-            collector,
-            ImmutableList.of(),
-            ImmutableList.of(),
-            fileManager.getJavaFileObjectsFromPaths(inputs));
-
-    assertThat(task.call()).named(collector.getDiagnostics().toString()).isTrue();
-
-    List<Path> classes = new ArrayList<>();
-    Files.walkFileTree(
-        out,
-        new SimpleFileVisitor<Path>() {
-          @Override
-          public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
-              throws IOException {
-            if (path.getFileName().toString().endsWith(".class")) {
-              classes.add(path);
-            }
-            return FileVisitResult.CONTINUE;
-          }
-        });
-    Map<String, byte[]> result = new LinkedHashMap<>();
-    for (Path path : classes) {
-      String r = out.relativize(path).toString();
-      result.put(r.substring(0, r.length() - ".class".length()), Files.readAllBytes(path));
-    }
-    return result;
-  }
-
-  /** Normalizes and stringifies a collection of class files. */
-  public static String dump(Map<String, byte[]> compiled) throws Exception {
-    compiled = IntegrationTestSupport.canonicalize(compiled);
-    StringBuilder sb = new StringBuilder();
-    List<String> keys = new ArrayList<>(compiled.keySet());
-    Collections.sort(keys);
-    for (String key : keys) {
-      String na = key;
-      if (na.startsWith("/")) {
-        na = na.substring(1);
-      }
-      sb.append(String.format("=== %s ===\n", na));
-      sb.append(AsmUtils.textify(compiled.get(key)));
-    }
-    return sb.toString();
+    assertThat(IntegrationTestSupport.dump(IntegrationTestSupport.sortMembers(actual)))
+        .isEqualTo(IntegrationTestSupport.dump(IntegrationTestSupport.canonicalize(expected)));
   }
 }

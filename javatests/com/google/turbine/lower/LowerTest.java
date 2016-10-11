@@ -84,7 +84,10 @@ public class LowerTest {
                 new Type.PrimTy(TurbineConstantTypeKind.INT),
                 ImmutableList.of(),
                 ImmutableList.of(),
-                TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PUBLIC),
+                TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PUBLIC,
+                null,
+                null,
+                ImmutableList.of()),
             new SourceTypeBoundClass.MethodInfo(
                 new MethodSymbol(new ClassSymbol("test/Test"), "g"),
                 ImmutableMap.of(
@@ -107,11 +110,14 @@ public class LowerTest {
                 Type.VOID,
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
-                        new Type.PrimTy(TurbineConstantTypeKind.INT), false)),
+                        new Type.PrimTy(TurbineConstantTypeKind.INT), ImmutableList.of(), false)),
                 ImmutableList.of(
                     new Type.TyVar(
                         new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"))),
-                TurbineFlag.ACC_PUBLIC));
+                TurbineFlag.ACC_PUBLIC,
+                null,
+                null,
+                ImmutableList.of()));
     ImmutableList<SourceTypeBoundClass.FieldInfo> fields =
         ImmutableList.of(
             new SourceTypeBoundClass.FieldInfo(

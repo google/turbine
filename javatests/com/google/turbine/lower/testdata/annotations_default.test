@@ -1,0 +1,8 @@
+=== test/GwtCompatible.java ===
+package test;
+
+public @interface GwtCompatible {
+  boolean serializable() default false;
+  boolean emulated() default false;
+  String[] altNames() default {};
+}

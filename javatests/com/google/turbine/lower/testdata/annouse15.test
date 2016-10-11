@@ -1,0 +1,28 @@
+=== pkg/Anno.java ===
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Anno {
+  byte one() default 0;
+  char two() default 0;
+  double three() default 0d;
+  float four() default 0f;
+  int five() default 0;
+  long six() default 0L;
+  short seven() default 0;
+  boolean eight() default true;
+  String nine() default "hi";
+  RetentionPolicy ten() default RetentionPolicy.RUNTIME;
+  Class<?> eleven() default String.class;
+  Retention twelve() default @Retention(RetentionPolicy.SOURCE);
+  int[] thirteen() default {42};
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+@Anno
+public class Simple {}

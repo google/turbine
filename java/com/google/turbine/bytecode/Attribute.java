@@ -29,7 +29,11 @@ interface Attribute {
     INNER_CLASSES("InnerClasses"),
     CONSTANT_VALUE("ConstantValue"),
     RUNTIME_VISIBLE_ANNOTATIONS("RuntimeVisibleAnnotations"),
-    RUNTIME_INVISIBLE_ANNOTATIONS("RuntimeInvisibleAnnotations");
+    RUNTIME_INVISIBLE_ANNOTATIONS("RuntimeInvisibleAnnotations"),
+    ANNOTATION_DEFAULT("AnnotationDefault"),
+    RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS("RuntimeVisibleParameterAnnotations"),
+    RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS("RuntimeInvisibleParameterAnnotations"),
+    DEPRECATED("Deprecated");
 
     private final String signature;
 
@@ -145,4 +149,76 @@ interface Attribute {
       return Kind.CONSTANT_VALUE;
     }
   }
+
+  /** A JVMS §4.7.22 AnnotationDefault attribute. */
+  class AnnotationDefault implements Attribute {
+
+    private final AnnotationInfo.ElementValue value;
+
+    public AnnotationDefault(AnnotationInfo.ElementValue value) {
+      this.value = value;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.ANNOTATION_DEFAULT;
+    }
+
+    public AnnotationInfo.ElementValue value() {
+      return value;
+    }
+  }
+
+  interface ParameterAnnotations extends Attribute {
+    List<List<AnnotationInfo>> annotations();
+  }
+
+  /** A JVMS §4.7.18 RuntimeVisibleParameterAnnotations attribute. */
+  class RuntimeVisibleParameterAnnotations implements ParameterAnnotations {
+
+    @Override
+    public List<List<AnnotationInfo>> annotations() {
+      return annotations;
+    }
+
+    final List<List<AnnotationInfo>> annotations;
+
+    public RuntimeVisibleParameterAnnotations(List<List<AnnotationInfo>> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS;
+    }
+  }
+
+  /** A JVMS §4.7.19 RuntimeInvisibleParameterAnnotations attribute. */
+  class RuntimeInvisibleParameterAnnotations implements ParameterAnnotations {
+
+    @Override
+    public List<List<AnnotationInfo>> annotations() {
+      return annotations;
+    }
+
+    final List<List<AnnotationInfo>> annotations;
+
+    public RuntimeInvisibleParameterAnnotations(List<List<AnnotationInfo>> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS;
+    }
+  }
+
+  /** A JVMS §4.7.15 Deprecated attribute. */
+  Attribute DEPRECATED =
+      new Attribute() {
+        @Override
+        public Kind kind() {
+          return Kind.DEPRECATED;
+        }
+      };
 }

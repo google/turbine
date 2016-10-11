@@ -96,11 +96,22 @@ public class CanonicalTypeBinder {
       for (ParamInfo parameter : base.parameters()) {
         parameters.add(
             new ParamInfo(
-                Canonicalize.canonicalize(env, sym, parameter.type()), parameter.synthetic()));
+                Canonicalize.canonicalize(env, sym, parameter.type()),
+                parameter.annotations(),
+                parameter.synthetic()));
       }
       ImmutableList<Type> exceptions = canonicalizeList(env, sym, base.exceptions());
       result.add(
-          new MethodInfo(base.sym(), tps, ret, parameters.build(), exceptions, base.access()));
+          new MethodInfo(
+              base.sym(),
+              tps,
+              ret,
+              parameters.build(),
+              exceptions,
+              base.access(),
+              base.defaultValue(),
+              base.decl(),
+              base.annotations()));
     }
     return result.build();
   }

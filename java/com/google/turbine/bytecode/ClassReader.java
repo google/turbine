@@ -268,8 +268,8 @@ public class ClassReader {
               signature,
               exceptions,
               null,
-              Collections.<ClassFile.AnnotationInfo>emptyList(),
-              Collections.<List<ClassFile.AnnotationInfo>>emptyList()));
+              ImmutableList.of(),
+              ImmutableList.of()));
     }
     return methods;
   }

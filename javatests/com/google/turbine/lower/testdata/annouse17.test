@@ -1,0 +1,25 @@
+=== pkg/SourceAnno.java ===
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.SOURCE)
+public @interface SourceAnno {}
+
+=== pkg/ContainerAnno.java ===
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ContainerAnno {
+  SourceAnno x() default @SourceAnno;
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+@ContainerAnno
+public class Simple {}

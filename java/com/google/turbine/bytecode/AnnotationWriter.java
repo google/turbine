@@ -19,6 +19,9 @@ package com.google.turbine.bytecode;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.AnnotationValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.model.Const.Value;
@@ -51,6 +54,15 @@ public class AnnotationWriter {
         break;
       case ENUM:
         writeEnumElementValue((EnumConstValue) value);
+        break;
+      case CLASS:
+        writeClassElementValue((ConstClassValue) value);
+        break;
+      case ARRAY:
+        writeArrayElementValue((ArrayValue) value);
+        break;
+      case ANNOTATION:
+        writeAnnotationElementValue((AnnotationValue) value);
         break;
       default:
         throw new AssertionError(value.kind());
@@ -100,5 +112,23 @@ public class AnnotationWriter {
     output.writeByte('e');
     output.writeShort(pool.utf8(value.typeName()));
     output.writeShort(pool.utf8(value.constName()));
+  }
+
+  private void writeClassElementValue(ConstClassValue value) {
+    output.writeByte('c');
+    output.writeShort(pool.utf8(value.className()));
+  }
+
+  private void writeArrayElementValue(ArrayValue value) {
+    output.writeByte('[');
+    output.writeShort(value.elements().size());
+    for (ElementValue elementValue : value.elements()) {
+      writeElementValue(elementValue);
+    }
+  }
+
+  private void writeAnnotationElementValue(AnnotationValue value) {
+    output.writeByte('@');
+    writeAnnotation(value.annotation());
   }
 }

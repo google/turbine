@@ -187,8 +187,6 @@ public class TypeBinder {
       interfaceTypes.add((Type.ClassTy) bindClassTy(env, enclosingScope, i));
     }
 
-    int mods = base.access();
-
     CompoundScope scope = base.scope().append(new ClassMemberScope(sym, env));
 
     List<MethodInfo> methods = bindMethods(base, env, scope, sym, base.decl().members());
@@ -203,7 +201,7 @@ public class TypeBinder {
         interfaceTypes.build(),
         superClassType,
         typeParameterTypes,
-        mods,
+        base.access(),
         ImmutableList.copyOf(methods),
         fields,
         base.owner(),
@@ -212,7 +210,7 @@ public class TypeBinder {
         base.superclass(),
         base.interfaces(),
         base.typeParameters(),
-        base.scope(),
+        scope,
         base.memberImports(),
         /*retention*/ null,
         annotations);
@@ -241,7 +239,9 @@ public class TypeBinder {
     ImmutableList<ParamInfo> formals;
     if (hasEnclosingInstance(info)) {
       formals =
-          ImmutableList.of(new ParamInfo(Type.ClassTy.asNonParametricClassTy(info.owner()), true));
+          ImmutableList.of(
+              new ParamInfo(
+                  Type.ClassTy.asNonParametricClassTy(info.owner()), ImmutableList.of(), true));
     } else {
       formals = ImmutableList.of();
     }
@@ -254,7 +254,10 @@ public class TypeBinder {
             Type.VOID,
             formals,
             ImmutableList.of(),
-            access));
+            access,
+            null,
+            null,
+            ImmutableList.of()));
   }
 
   private static void addEnumMethods(ClassSymbol owner, List<MethodInfo> methods) {
@@ -265,10 +268,14 @@ public class TypeBinder {
               ImmutableMap.of(),
               Type.VOID,
               ImmutableList.of(
-                  new ParamInfo(Type.ClassTy.STRING, true),
-                  new ParamInfo(new Type.PrimTy(TurbineConstantTypeKind.INT), true)),
+                  new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), true),
+                  new ParamInfo(
+                      new Type.PrimTy(TurbineConstantTypeKind.INT), ImmutableList.of(), true)),
               ImmutableList.of(),
-              TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR));
+              TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
+              null,
+              null,
+              ImmutableList.of()));
     }
 
     methods.add(
@@ -276,9 +283,12 @@ public class TypeBinder {
             new MethodSymbol(owner, "valueOf"),
             ImmutableMap.of(),
             Type.ClassTy.asNonParametricClassTy(owner),
-            ImmutableList.of(new ParamInfo(Type.ClassTy.STRING, false)),
+            ImmutableList.of(new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), false)),
             ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC));
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
+            null,
+            null,
+            ImmutableList.of()));
 
     methods.add(
         new MethodInfo(
@@ -287,7 +297,10 @@ public class TypeBinder {
             new Type.ArrayTy(1, Type.ClassTy.asNonParametricClassTy(owner)),
             ImmutableList.of(),
             ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC));
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
+            null,
+            null,
+            ImmutableList.of()));
   }
 
   private static boolean hasConstructor(List<MethodInfo> methods) {
@@ -384,15 +397,25 @@ public class TypeBinder {
     if (name.equals("<init>")) {
       if (hasEnclosingInstance(base)) {
         parameters.add(
-            new ParamInfo(Type.ClassTy.asNonParametricClassTy(base.owner()), /*synthetic*/ true));
+            new ParamInfo(
+                Type.ClassTy.asNonParametricClassTy(base.owner()),
+                ImmutableList.of(),
+                /*synthetic*/ true));
       } else if (base.kind() == TurbineTyKind.ENUM && name.equals("<init>")) {
-        parameters.add(new ParamInfo(Type.ClassTy.STRING, /*synthetic*/ true));
+        parameters.add(new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), /*synthetic*/ true));
         parameters.add(
-            new ParamInfo(new Type.PrimTy(TurbineConstantTypeKind.INT), /*synthetic*/ true));
+            new ParamInfo(
+                new Type.PrimTy(TurbineConstantTypeKind.INT),
+                ImmutableList.of(),
+                /*synthetic*/ true));
       }
     }
     for (Tree.VarDecl p : t.params()) {
-      parameters.add(new ParamInfo(bindTy(env, scope, p.ty()), /*synthetic*/ false));
+      parameters.add(
+          new ParamInfo(
+              bindTy(env, scope, p.ty()),
+              bindAnnotations(env, scope, p.annos()),
+              /*synthetic*/ false));
     }
     ImmutableList.Builder<Type> exceptions = ImmutableList.builder();
     for (Tree.ClassTy p : t.exntys()) {
@@ -421,8 +444,17 @@ public class TypeBinder {
         break;
     }
 
+    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(env, scope, t.annos());
     return new MethodInfo(
-        sym, typeParameterTypes, returnType, parameters.build(), exceptions.build(), access);
+        sym,
+        typeParameterTypes,
+        returnType,
+        parameters.build(),
+        exceptions.build(),
+        access,
+        null,
+        t,
+        annotations);
   }
 
   private static boolean hasEnclosingInstance(HeaderBoundClass base) {

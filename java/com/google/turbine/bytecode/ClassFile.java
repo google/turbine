@@ -16,6 +16,7 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.model.Const;
 import java.util.List;
 import java.util.Map;
@@ -204,7 +205,7 @@ public class ClassFile {
     private final List<String> exceptions;
     @Nullable private final AnnotationInfo.ElementValue defaultValue;
     private final List<AnnotationInfo> annotations;
-    private final List<List<AnnotationInfo>> parameterAnnotations;
+    private final ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations;
 
     public MethodInfo(
         int access,
@@ -214,7 +215,7 @@ public class ClassFile {
         List<String> exceptions,
         @Nullable AnnotationInfo.ElementValue defaultValue,
         List<AnnotationInfo> annotations,
-        List<List<AnnotationInfo>> parameterAnnotations) {
+        ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations) {
       this.access = access;
       this.name = name;
       this.descriptor = descriptor;
@@ -263,7 +264,7 @@ public class ClassFile {
     }
 
     /** Declaration annotations of the formal parameters. */
-    public List<List<AnnotationInfo>> parameterAnnotations() {
+    public ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations() {
       return parameterAnnotations;
     }
   }
@@ -308,8 +309,9 @@ public class ClassFile {
       enum Kind {
         ENUM,
         CONST,
-        ARRAY
-        // TODO(cushon): CLASS, ANNOTATION,
+        ARRAY,
+        CLASS,
+        ANNOTATION
       }
 
       /** An enum constant value. */
@@ -377,6 +379,46 @@ public class ClassFile {
         /** The elements of the array. */
         public List<ElementValue> elements() {
           return elements;
+        }
+      }
+
+      /** A constant class literal value. */
+      class ConstClassValue implements ElementValue {
+
+        private final String className;
+
+        public ConstClassValue(String className) {
+          this.className = className;
+        }
+
+        @Override
+        public Kind kind() {
+          return Kind.CLASS;
+        }
+
+        /** The class name. */
+        public String className() {
+          return className;
+        }
+      }
+
+      /** A nested annotation value. */
+      class AnnotationValue implements ElementValue {
+
+        private final AnnotationInfo annotation;
+
+        public AnnotationValue(AnnotationInfo annotation) {
+          this.annotation = annotation;
+        }
+
+        @Override
+        public Kind kind() {
+          return Kind.ANNOTATION;
+        }
+
+        /** The annotation. */
+        public AnnotationInfo annotation() {
+          return annotation;
         }
       }
     }

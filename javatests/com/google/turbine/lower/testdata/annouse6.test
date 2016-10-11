@@ -1,0 +1,21 @@
+=== pkg/Anno.java ===
+package pkg;
+
+public @interface Anno {
+  Class<?> value() default String.class;
+  int z() default 1;
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+public class Simple {
+
+  public static final int CONST = 42;
+
+  @Anno(z = CONST)
+  int z;
+
+  @Anno(value = Integer.class)
+  int y;
+}

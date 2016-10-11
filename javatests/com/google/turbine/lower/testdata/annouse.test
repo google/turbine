@@ -1,0 +1,12 @@
+=== pkg/Anno.java ===
+package pkg;
+
+public @interface Anno {
+}
+
+=== pkg/Simple.java ===
+package pkg;
+
+@Anno
+public class Simple {
+}
