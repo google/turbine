@@ -1,0 +1,33 @@
+=== test/Anno.java ===
+package test;
+public @interface Anno {
+  int value() default 42;
+}
+
+=== test/AnnoNested.java ===
+package test;
+public @interface AnnoNested {
+  Anno[] value() default {};
+}
+
+=== Test.java ===
+package test;
+public class Test {
+  @AnnoNested(@Anno)
+  int b;
+
+  @AnnoNested(value=@Anno)
+  int c;
+
+  @AnnoNested({@Anno})
+  int d;
+
+  @AnnoNested(value={@Anno})
+  int e;
+
+  @AnnoNested(value={@Anno(42)})
+  int f;
+
+  @AnnoNested({@Anno(42), @Anno(43)})
+  int g;
+}

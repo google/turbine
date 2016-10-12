@@ -131,6 +131,8 @@ public class ConstExpressionParser {
         return arrayInitializer();
       case IDENT:
         return qualIdent();
+      case AT:
+        return annotation();
       default:
         return null;
     }
@@ -474,5 +476,34 @@ public class ConstExpressionParser {
       throw new AssertionError();
     }
     return new Tree.TypeCast(new Tree.PrimTy(ty), rhs);
+  }
+
+  private Tree.AnnoExpr annotation() {
+    if (token != Token.AT) {
+      throw new AssertionError();
+    }
+    eat();
+    Tree.Expression name = qualIdent();
+    ImmutableList.Builder<Tree.Expression> args = ImmutableList.builder();
+    if (token == Token.LPAREN) {
+      eat();
+      while (true) {
+        Tree.Expression expression = expression();
+        if (expression == null) {
+          throw new AssertionError("invalid annotation expression");
+        }
+        args.add(expression);
+        if (token == Token.COMMA) {
+          eat();
+          continue;
+        }
+        break;
+      }
+      if (token == Token.RPAREN) {
+        eat();
+      }
+    }
+    // TODO(cushon): avoid stringifying names
+    return new Tree.AnnoExpr(new Tree.Anno(name.toString(), args.build()));
   }
 }

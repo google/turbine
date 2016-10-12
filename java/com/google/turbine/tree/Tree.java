@@ -55,6 +55,7 @@ public abstract class Tree {
     VAR_DECL,
     METH_DECL,
     ANNO,
+    ANNO_EXPR,
     TY_DECL,
     TY_PARAM,
     PKG_DECL
@@ -64,7 +65,7 @@ public abstract class Tree {
   public abstract static class Type extends Tree {}
 
   /** An expression. */
-  public abstract static class Expression extends Type {}
+  public abstract static class Expression extends Tree {}
 
   /** A wildcard type, possibly with an upper or lower bound. */
   public static class WildTy extends Type {
@@ -682,6 +683,34 @@ public abstract class Tree {
 
     public ImmutableList<Expression> args() {
       return args;
+    }
+  }
+
+  /**
+   * An annotation in an expression context, e.g. an annotation literal nested inside another
+   * annotation.
+   */
+  public static class AnnoExpr extends Expression {
+
+    private final Anno value;
+
+    public AnnoExpr(Anno value) {
+      this.value = value;
+    }
+
+    /** The annotation. */
+    public Anno value() {
+      return value;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.ANNO_EXPR;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitAnno(value, input);
     }
   }
 

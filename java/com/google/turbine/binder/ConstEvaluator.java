@@ -125,8 +125,8 @@ public class ConstEvaluator {
         return evalConditional((Conditional) t);
       case ARRAY_INIT:
         return evalArrayInit((ArrayInit) t);
-      case ANNO:
-        return evalAnno((Tree.Anno) t);
+      case ANNO_EXPR:
+        return evalAnno(((Tree.AnnoExpr) t).value());
       default:
         throw new AssertionError(t.kind());
     }
