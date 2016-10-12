@@ -1,0 +1,13 @@
+=== Member.java ===
+package p;
+public class Member {
+  public static class Inner {
+    public static final int Y = 42;
+  }
+}
+
+=== Test.java ===
+import static p.Member.Inner.Y;
+class Test {
+  public static final int X = Y;
+}

@@ -1,0 +1,19 @@
+=== Super.java ===
+package p;
+public class Super {
+  public static final int Y = 42;
+}
+
+=== Member.java ===
+package p;
+public class Member {
+  public static class Inner extends Super {
+  }
+}
+
+=== Test.java ===
+// non-canonical static member import, we'd prefer `p.Super.Y`
+import static p.Member.Inner.Y;
+class Test {
+  public static final int X = Y;
+}

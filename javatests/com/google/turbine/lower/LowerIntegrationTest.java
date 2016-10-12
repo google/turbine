@@ -202,6 +202,8 @@ public class LowerIntegrationTest {
       "innerannodecl.test",
       "source_anno_retention.test",
       "anno_nested.test",
+      "nested_member_import.test",
+      "nested_member_import_noncanon.test",
     };
     return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
   }

@@ -20,6 +20,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,25 +38,14 @@ public class MemberImportIndex {
         continue;
       }
       List<String> bits = Splitter.on('.').splitToList(i.type());
-      String last = bits.get(bits.size() - 1);
-      LookupKey lookup = new LookupKey(bits.subList(0, bits.size() - 1));
+      LookupKey lookup = new LookupKey(bits);
       cache.put(
-          last,
+          Iterables.getLast(bits),
           Suppliers.memoize(
               new Supplier<LookupResult>() {
                 @Override
                 public LookupResult get() {
-                  LookupResult result = tli.lookup(lookup);
-                  if (result == null) {
-                    return null;
-                  }
-                  if (!result.remaining().isEmpty()) {
-                    return null;
-                  }
-                  // TODO(cushon): LookupResults's constructor auto-advances the key, which would
-                  // lose the simple name ('last') if it wasn't repeated. Do this better.
-                  return new LookupResult(
-                      result.sym(), new LookupKey(ImmutableList.of(last, last)));
+                  return tli.lookup(lookup);
                 }
               }));
     }

@@ -143,6 +143,10 @@ public class ConstEvaluator {
     if (info != null) {
       return values.get(info.sym());
     }
+    // This resolves the top-level class symbol, and then doesn inherited member
+    // lookup on the rest of the names. The spec only allows the final name to be
+    // inherited and requires canonical form for the rest, so consider enforcing
+    // that.
     result = owner.memberImports().lookup(simple);
     if (result != null) {
       return resolve(result);
