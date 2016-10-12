@@ -1,0 +1,40 @@
+%%% Anno.java %%%
+public @interface Anno {
+  byte b() default 0;
+  char c() default 0;
+  short s() default 0;
+  double d() default 0;
+  float f() default 0;
+  int i() default 0;
+  long j() default 0;
+  String str() default "";
+  boolean z() default false;
+  short value() default 1;
+}
+
+%%% RuntimeAnno.java %%%
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RuntimeAnno {}
+
+=== Test.java ===
+public class Test {
+  @RuntimeAnno
+  @Anno(
+    b = 42,
+    c = 'z',
+    s = 43,
+    d = 44,
+    f = 45,
+    i = 46,
+    j = 47,
+    str = "48",
+    z = true
+  )
+  int a;
+
+  @Anno
+  int b;
+}

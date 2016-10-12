@@ -356,9 +356,6 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
 
     verify(sig.exceptions().isEmpty());
 
-    // TODO(cushon): default values for annotations in bytecode
-    Const defaultValue = null;
-
     return new MethodInfo(
         methodSymbol,
         ImmutableMap.of(),
@@ -366,8 +363,8 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
         formals.build(),
         ImmutableList.of(),
         m.access(),
-        defaultValue,
-        null,
+        null /*defaultValue*/,
+        null /*decl*/,
         ImmutableList.of());
   }
 
@@ -398,7 +395,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
                 }
                 return RetentionPolicy.valueOf(enumVal.constName());
               }
-              return null;
+              return RetentionPolicy.CLASS;
             }
           });
 
