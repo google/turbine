@@ -64,6 +64,13 @@ public class StreamLexer implements Lexer {
   }
 
   @Override
+  public int position() {
+    // TODO(cushon): this is the position of the character after the last token that was lexed,
+    // keep track of start positions instead.
+    return reader.position();
+  }
+
+  @Override
   public Token next() {
     OUTER:
     while (true) {

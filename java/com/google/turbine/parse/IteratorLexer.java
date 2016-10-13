@@ -45,4 +45,9 @@ public class IteratorLexer implements Lexer {
   public String stringValue() {
     return curr.value;
   }
+
+  @Override
+  public int position() {
+    return curr.position;
+  }
 }

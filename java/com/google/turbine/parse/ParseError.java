@@ -26,8 +26,8 @@ public class ParseError extends Error {
     this.position = position;
   }
 
-  /** Returns the character offset of the error. */
-  public int getPosition() {
+  /** Returns the UTF-16 code unit offset of the error. */
+  public int position() {
     return position;
   }
 }

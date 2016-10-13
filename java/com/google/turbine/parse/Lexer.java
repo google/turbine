@@ -23,4 +23,7 @@ public interface Lexer {
 
   /** Returns the string value of the current literal or identifier token. */
   String stringValue();
+
+  /** Returns the current position in the input. */
+  int position();
 }

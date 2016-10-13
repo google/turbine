@@ -99,10 +99,9 @@ public class ParserIntegrationTest {
       result = CharStreams.toString(in);
     }
     String[] pieces = result.split("===+");
-    String input1 = pieces[0].trim();
-    String expected = pieces.length > 1 ? pieces[1].trim() : input1;
-    Tree.CompUnit unit =
-        new Parser(new StreamLexer(new UnicodeEscapePreprocessor(input1))).compilationUnit();
+    String input = pieces[0].trim();
+    String expected = pieces.length > 1 ? pieces[1].trim() : input;
+    Tree.CompUnit unit = Parser.parse(input);
     assertThat(unit.toString().trim()).isEqualTo(expected);
   }
 }

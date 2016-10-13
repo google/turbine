@@ -195,9 +195,7 @@ public class VariableDeclarationTest {
 
   @Test
   public void test() {
-    Tree.CompUnit unit =
-        new Parser(new StreamLexer(new UnicodeEscapePreprocessor("class Test {" + input + "}")))
-            .compilationUnit();
+    Tree.CompUnit unit = Parser.parse("class Test {" + input + "}");
     assertThat(Joiner.on(" ").join(getOnlyElement(unit.decls()).members())).isEqualTo(expected);
   }
 }

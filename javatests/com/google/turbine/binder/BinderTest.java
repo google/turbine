@@ -27,8 +27,6 @@ import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.parse.Parser;
-import com.google.turbine.parse.StreamLexer;
-import com.google.turbine.parse.UnicodeEscapePreprocessor;
 import com.google.turbine.tree.Tree;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -249,7 +247,6 @@ public class BinderTest {
   }
 
   private Tree.CompUnit parseLines(String... lines) {
-    return new Parser(new StreamLexer(new UnicodeEscapePreprocessor(Joiner.on('\n').join(lines))))
-        .compilationUnit();
+    return Parser.parse(Joiner.on('\n').join(lines));
   }
 }

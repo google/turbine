@@ -19,6 +19,8 @@ package com.google.turbine.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import com.google.common.base.Joiner;
+import com.google.turbine.diag.LineMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -37,6 +39,41 @@ public class ParseErrorTest {
       fail("expected parsing to fail");
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage()).contains("Out of range:");
+    }
+  }
+
+  @Test
+  public void unexpectedTopLevel() {
+    String input = "public static void main(String[] args) {}";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (ParseError e) {
+      // TODO(cushon): the caret position is weird, see the TODO in StreamLexer#position
+      assertThat(LineMap.create(input).formatDiagnostic(e.position(), e.getMessage()))
+          .isEqualTo(
+              Joiner.on('\n')
+                  .join(
+                      "1:18: unexpected token VOID",
+                      "public static void main(String[] args) {}",
+                      "                  ^"));
+    }
+  }
+
+  @Test
+  public void unexpectedIdentifier() {
+    String input = "public clas Test {}";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (ParseError e) {
+      assertThat(LineMap.create(input).formatDiagnostic(e.position(), e.getMessage()))
+          .isEqualTo(
+              Joiner.on('\n')
+                  .join(
+                      "1:11: unexpected identifier 'clas'", //
+                      "public clas Test {}",
+                      "           ^"));
     }
   }
 }

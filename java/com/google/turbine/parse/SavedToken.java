@@ -19,10 +19,12 @@ package com.google.turbine.parse;
 class SavedToken {
   final Token token;
   final String value;
+  final int position;
 
-  SavedToken(Token token, String value) {
+  SavedToken(Token token, String value, int position) {
     this.token = token;
     this.value = value;
+    this.position = position;
   }
 
   @Override

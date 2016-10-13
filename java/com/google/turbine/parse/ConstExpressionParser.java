@@ -309,7 +309,7 @@ public class ConstExpressionParser {
         value = new Const.StringValue(text);
         break;
       default:
-        throw new AssertionError(kind);
+        throw error(kind);
     }
     eat();
     return new Tree.Literal(kind, value);
@@ -337,7 +337,7 @@ public class ConstExpressionParser {
       } else if (c == '_') {
         continue;
       } else {
-        throw new AssertionError(text);
+        throw error(text);
       }
       r = (r * radix) + digit;
     }
@@ -505,5 +505,9 @@ public class ConstExpressionParser {
     }
     // TODO(cushon): avoid stringifying names
     return new Tree.AnnoExpr(new Tree.Anno(name.toString(), args.build()));
+  }
+
+  private ParseError error(Object message) {
+    return new ParseError(lexer.position(), String.valueOf(message));
   }
 }

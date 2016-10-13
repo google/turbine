@@ -206,14 +206,14 @@ public class VariableInitializerParser {
       result.add(
           ImmutableList.<SavedToken>builder()
               .addAll(tokens.subList(start, idx - 1))
-              .add(new SavedToken(Token.EOF, null))
+              .add(new SavedToken(Token.EOF, null, -1))
               .build());
       start = idx;
     }
     result.add(
         ImmutableList.<SavedToken>builder()
             .addAll(tokens.subList(start, tokens.size()))
-            .add(new SavedToken(Token.EOF, null))
+            .add(new SavedToken(Token.EOF, null, -1))
             .build());
     return result;
   }
@@ -263,7 +263,7 @@ public class VariableInitializerParser {
   }
 
   private void save() {
-    tokens.add(new SavedToken(token, lexer.stringValue()));
+    tokens.add(new SavedToken(token, lexer.stringValue(), lexer.position()));
   }
 
   private void dropBracks(int many) {

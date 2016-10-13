@@ -28,8 +28,6 @@ import com.google.common.jimfs.Jimfs;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.bytecode.AsmUtils;
 import com.google.turbine.parse.Parser;
-import com.google.turbine.parse.StreamLexer;
-import com.google.turbine.parse.UnicodeEscapePreprocessor;
 import com.google.turbine.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
@@ -269,14 +267,7 @@ public class IntegrationTestSupport {
   static Map<String, byte[]> runTurbine(
       Map<String, String> input, ImmutableList<Path> classpath, Iterable<Path> bootclasspath)
       throws IOException {
-    List<Tree.CompUnit> units =
-        input
-            .values()
-            .stream()
-            .map(
-                s ->
-                    new Parser(new StreamLexer(new UnicodeEscapePreprocessor(s))).compilationUnit())
-            .collect(toList());
+    List<Tree.CompUnit> units = input.values().stream().map(Parser::parse).collect(toList());
 
     Binder.BindingResult bound = Binder.bind(units, classpath, bootclasspath);
     return Lower.lowerAll(bound.units(), bound.classPathEnv());

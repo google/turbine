@@ -40,9 +40,7 @@ public class ParserTest {
       "  TWO;",
       "}",
     };
-    Tree.CompUnit unit =
-        new Parser(new StreamLexer(new UnicodeEscapePreprocessor(Joiner.on('\n').join(input))))
-            .compilationUnit();
+    Tree.CompUnit unit = Parser.parse(Joiner.on('\n').join(input));
     Tree.TyDecl decl = Iterables.getOnlyElement(unit.decls());
     assertThat(((Tree.VarDecl) decl.members().get(0)).mods())
         .containsExactly(

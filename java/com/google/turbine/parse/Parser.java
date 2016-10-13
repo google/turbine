@@ -58,7 +58,11 @@ public class Parser {
   private Token token;
   private final boolean disallowWild = true;
 
-  public Parser(Lexer lexer) {
+  public static CompUnit parse(String input) {
+    return new Parser(new StreamLexer(new UnicodeEscapePreprocessor(input))).compilationUnit();
+  }
+
+  private Parser(Lexer lexer) {
     this.lexer = lexer;
     this.token = lexer.next();
   }
@@ -153,7 +157,7 @@ public class Parser {
           next();
           continue;
         default:
-          throw new AssertionError(token);
+          throw error(token);
       }
     }
   }
@@ -282,7 +286,7 @@ public class Parser {
           annos.add(annotation());
           break;
         default:
-          throw new AssertionError(token);
+          throw error(token);
       }
     }
     return result.build();
@@ -430,7 +434,7 @@ public class Parser {
           next();
           continue;
         default:
-          throw new AssertionError(token);
+          throw error(token);
       }
     }
   }
@@ -513,10 +517,10 @@ public class Parser {
               result = new ClassTy(Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
               break;
             default:
-              throw new AssertionError(token);
+              throw error(token);
           }
           if (result == null) {
-            throw new AssertionError(token);
+            throw error(token);
           }
           if (token == Token.DOT) {
             next();
@@ -541,16 +545,16 @@ public class Parser {
             case COMMA:
               {
                 if (!typaram.isEmpty()) {
-                  throw new AssertionError(typaram);
+                  throw error(typaram);
                 }
                 return fieldRest(access, annos, result, name);
               }
             default:
-              throw new AssertionError(token);
+              throw error(token);
           }
         }
       default:
-        throw new AssertionError(token);
+        throw error(token);
     }
   }
 
@@ -567,14 +571,14 @@ public class Parser {
       case COMMA:
         {
           if (!typaram.isEmpty()) {
-            throw new AssertionError(typaram);
+            throw error(typaram);
           }
           return fieldRest(access, annos, result, name);
         }
       case LPAREN:
         return ImmutableList.of(methodRest(access, annos, typaram, result, name));
       default:
-        throw new AssertionError(token);
+        throw error(token);
     }
   }
 
@@ -597,7 +601,7 @@ public class Parser {
         if (next.token == Token.IDENT) {
           name = next.value;
         } else {
-          throw new AssertionError(next);
+          throw error(next);
         }
       }
 
@@ -610,7 +614,7 @@ public class Parser {
           dim++;
           next = it.next();
           if (next.token != Token.RBRACK) {
-            throw new AssertionError();
+            throw error(next);
           }
           if (it.hasNext()) {
             next = it.next();
@@ -667,14 +671,14 @@ public class Parser {
             expr = annotation();
           }
           if (expr == null) {
-            throw new AssertionError(token);
+            throw error(token);
           }
           defaultValue = expr;
           eat(Token.SEMI);
           break;
         }
       default:
-        throw new AssertionError(token);
+        throw error(token);
     }
     if (result == null) {
       name = CTOR_NAME;
@@ -807,7 +811,7 @@ public class Parser {
           next();
           break OUTER;
         default:
-          throw new AssertionError(token);
+          throw error(token);
       }
     }
     return acc.build();
@@ -866,7 +870,7 @@ public class Parser {
                 acc.add(new WildTy(Optional.<Type>absent(), Optional.<Type>absent()));
                 break OUTER;
               default:
-                throw new AssertionError(token);
+                throw error(token);
             }
             break;
           }
@@ -882,7 +886,7 @@ public class Parser {
           acc.add(referenceType());
           break;
         default:
-          throw new AssertionError(token);
+          throw error(token);
       }
     } while (maybe(Token.COMMA));
     switch (token) {
@@ -896,7 +900,7 @@ public class Parser {
         token = Token.GTGT;
         break;
       default:
-        throw new AssertionError(token);
+        throw error(token);
     }
     return acc.build();
   }
@@ -940,7 +944,7 @@ public class Parser {
         ty = new PrimTy(TurbineConstantTypeKind.FLOAT);
         break;
       default:
-        throw new AssertionError(token);
+        throw error(token);
     }
     int dim = 0;
     while (maybe(Token.LBRACK)) {
@@ -1026,7 +1030,7 @@ public class Parser {
           break;
         case MULT:
           if (disallowWild) {
-            throw new AssertionError("wildcard import");
+            throw error("wildcard import");
           }
           eat(Token.MULT);
           wild = true;
@@ -1082,7 +1086,7 @@ public class Parser {
 
   private void eat(Token kind) {
     if (token != kind) {
-      throw new AssertionError(token);
+      throw error(token);
     }
     next();
   }
@@ -1093,5 +1097,22 @@ public class Parser {
       return true;
     }
     return false;
+  }
+
+  ParseError error(Token token) {
+    String message;
+    switch (token) {
+      case IDENT:
+        message = String.format("unexpected identifier '%s'", lexer.stringValue());
+        break;
+      default:
+        message = String.format("unexpected token %s", token);
+        break;
+    }
+    return new ParseError(lexer.position(), message);
+  }
+
+  private ParseError error(Object message) {
+    return new ParseError(lexer.position(), String.valueOf(message));
   }
 }
