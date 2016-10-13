@@ -21,10 +21,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
+import java.io.IOError;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -205,7 +209,24 @@ public class LowerIntegrationTest {
       "nested_member_import.test",
       "nested_member_import_noncanon.test",
     };
-    return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
+    List<Object[]> tests =
+        ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
+    String testShardIndex = System.getenv("TEST_SHARD_INDEX");
+    String testTotalShards = System.getenv("TEST_TOTAL_SHARDS");
+    if (testShardIndex == null || testTotalShards == null) {
+      return tests;
+    }
+    String shardFile = System.getenv("TEST_SHARD_STATUS_FILE");
+    if (shardFile != null) {
+      try {
+        Files.write(Paths.get(shardFile), new byte[0]);
+      } catch (IOException e) {
+        throw new IOError(e);
+      }
+    }
+    int index = Integer.parseInt(testShardIndex);
+    int shards = Integer.parseInt(testTotalShards);
+    return Lists.partition(tests, (tests.size() + shards - 1) / shards).get(index);
   }
 
   final String test;
