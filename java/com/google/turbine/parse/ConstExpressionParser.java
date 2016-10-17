@@ -108,9 +108,6 @@ public class ConstExpressionParser {
         return finishLiteral(TurbineConstantTypeKind.CHAR, negate);
       case STRING_LITERAL:
         return finishLiteral(TurbineConstantTypeKind.STRING, false);
-      case NULL:
-        eat();
-        return new Tree.Literal(TurbineConstantTypeKind.NULL, null);
       case PLUS:
         eat();
         return unaryRest(TurbineOperatorKind.UNARY_PLUS);
@@ -187,7 +184,6 @@ public class ConstExpressionParser {
         case FALSE:
         case CHAR_LITERAL:
         case STRING_LITERAL:
-        case NULL:
         case NOT:
         case TILDE:
         case IDENT:

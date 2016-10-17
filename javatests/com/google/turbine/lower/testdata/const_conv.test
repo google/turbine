@@ -1,0 +1,71 @@
+=== Test.java ===
+
+public class Test {
+
+  public static final char char_char = (char) (char) 0;
+  public static final char char_short = (char) (short) 0;
+  public static final char char_int = (char) (int) 0;
+  public static final char char_long = (char) (long) 0;
+  public static final char char_float = (char) (float) 0;
+  public static final char char_double = (char) (double) 0;
+  public static final char char_byte = (char) (byte) 0;
+
+  public static final short short_char = (short) (char) 0;
+  public static final short short_short = (short) (short) 0;
+  public static final short short_int = (short) (int) 0;
+  public static final short short_long = (short) (long) 0;
+  public static final short short_float = (short) (float) 0;
+  public static final short short_double = (short) (double) 0;
+  public static final short short_byte = (short) (byte) 0;
+
+  public static final int int_char = (int) (char) 0;
+  public static final int int_short = (int) (short) 0;
+  public static final int int_int = (int) (int) 0;
+  public static final int int_long = (int) (long) 0;
+  public static final int int_float = (int) (float) 0;
+  public static final int int_double = (int) (double) 0;
+  public static final int int_byte = (int) (byte) 0;
+
+  public static final long long_char = (long) (char) 0;
+  public static final long long_short = (long) (short) 0;
+  public static final long long_int = (long) (int) 0;
+  public static final long long_long = (long) (long) 0;
+  public static final long long_float = (long) (float) 0;
+  public static final long long_double = (long) (double) 0;
+  public static final long long_byte = (long) (byte) 0;
+
+  public static final float float_char = (float) (char) 0;
+  public static final float float_short = (float) (short) 0;
+  public static final float float_int = (float) (int) 0;
+  public static final float float_long = (float) (long) 0;
+  public static final float float_float = (float) (float) 0;
+  public static final float float_double = (float) (double) 0;
+  public static final float float_byte = (float) (byte) 0;
+
+  public static final double double_char = (double) (char) 0;
+  public static final double double_short = (double) (short) 0;
+  public static final double double_int = (double) (int) 0;
+  public static final double double_long = (double) (long) 0;
+  public static final double double_float = (double) (float) 0;
+  public static final double double_double = (double) (double) 0;
+  public static final double double_byte = (double) (byte) 0;
+
+  public static final byte byte_char = (byte) (char) 0;
+  public static final byte byte_short = (byte) (short) 0;
+  public static final byte byte_int = (byte) (int) 0;
+  public static final byte byte_long = (byte) (long) 0;
+  public static final byte byte_float = (byte) (float) 0;
+  public static final byte byte_double = (byte) (double) 0;
+  public static final byte byte_byte = (byte) (byte) 0;
+
+  public static final String char_string = "" + (char) 0;
+  public static final String short_string = "" + (short) 0;
+  public static final String int_string = "" + (int) 0;
+  public static final String long_string = "" + (long) 0;
+  public static final String float_string = "" + (float) 0;
+  public static final String double_string = "" + (double) 0;
+  public static final String boolean_string = "" + false;
+  public static final String byte_string = "" + (byte) 0;
+  public static final String String_string = "" + (String) null;
+  public static final String null_string = "" + null;
+}

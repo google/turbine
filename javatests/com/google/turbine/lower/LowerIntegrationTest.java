@@ -210,6 +210,7 @@ public class LowerIntegrationTest {
       "nested_member_import_noncanon.test",
       "unary.test",
       "hex_int.test",
+      "const_conv.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
