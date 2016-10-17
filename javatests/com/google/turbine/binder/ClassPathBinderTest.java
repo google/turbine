@@ -62,7 +62,7 @@ public class ClassPathBinderTest {
     ClassPathBinder.bind(ImmutableList.of(), BOOTCLASSPATH, tliBuilder);
     TopLevelIndex tli = tliBuilder.build();
 
-    Scope javaLang = tli.lookupPackage(Arrays.asList("java", "lang"));
+    Scope javaLang = tli.lookupPackage(ImmutableList.of("java", "lang"));
 
     LookupResult result = javaLang.lookup(new LookupKey(Arrays.asList("String")));
     assertThat(result.remaining()).isEmpty();

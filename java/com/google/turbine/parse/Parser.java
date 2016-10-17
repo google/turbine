@@ -56,7 +56,6 @@ public class Parser {
   private final Lexer lexer;
 
   private Token token;
-  private final boolean disallowWild = true;
 
   public static CompUnit parse(String input) {
     return new Parser(new StreamLexer(new UnicodeEscapePreprocessor(input))).compilationUnit();
@@ -1028,9 +1027,6 @@ public class Parser {
           type.add(eatIdent());
           break;
         case MULT:
-          if (disallowWild) {
-            throw error("wildcard import");
-          }
           eat(Token.MULT);
           wild = true;
           break OUTER;
@@ -1039,10 +1035,7 @@ public class Parser {
       }
     }
     eat(Token.SEMI);
-    if (wild) {
-      return null;
-    }
-    return new ImportDecl(type.build(), stat);
+    return new ImportDecl(type.build(), stat, wild);
   }
 
   private PkgDecl packageDeclaration() {

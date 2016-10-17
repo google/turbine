@@ -532,10 +532,12 @@ public abstract class Tree {
   public static class ImportDecl extends Tree {
     private final ImmutableList<String> type;
     private final boolean stat;
+    private final boolean wild;
 
-    public ImportDecl(ImmutableList<String> type, boolean stat) {
+    public ImportDecl(ImmutableList<String> type, boolean stat, boolean wild) {
       this.type = type;
       this.stat = stat;
+      this.wild = wild;
     }
 
     @Override
@@ -552,8 +554,14 @@ public abstract class Tree {
       return type;
     }
 
+    /** Returns true for static member imports. */
     public boolean stat() {
       return stat;
+    }
+
+    /** Returns true for wildcard imports. */
+    public boolean wild() {
+      return wild;
     }
   }
 

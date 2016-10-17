@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.turbine.binder.Resolve.CanonicalResolver;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
@@ -38,6 +39,7 @@ import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.env.SimpleEnv;
+import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.ImportIndex;
 import com.google.turbine.binder.lookup.MemberImportIndex;
@@ -50,7 +52,6 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -160,19 +161,17 @@ public class Binder {
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
 
     SimpleEnv.Builder<PackageSourceBoundClass> env = SimpleEnv.builder();
-    Scope javaLang = verifyNotNull(tli.lookupPackage(Arrays.asList("java", "lang")));
+    Scope javaLang = verifyNotNull(tli.lookupPackage(ImmutableList.of("java", "lang")));
     CompoundScope topLevel = CompoundScope.base(tli).append(javaLang);
     for (Map.Entry<CompUnit, Collection<ClassSymbol>> entry : classes.asMap().entrySet()) {
       CompUnit unit = entry.getKey();
-      Iterable<String> packagename =
+      ImmutableList<String> packagename =
           unit.pkg().isPresent() ? unit.pkg().get().name() : ImmutableList.of();
       Scope packageScope = tli.lookupPackage(packagename);
-      Scope importScope =
-          ImportIndex.create(
-              CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv),
-              tli,
-              unit.imports());
-      MemberImportIndex memberImports = new MemberImportIndex(tli, unit.imports());
+      CanonicalSymbolResolver importResolver =
+          new CanonicalResolver(CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv));
+      Scope importScope = ImportIndex.create(importResolver, tli, unit.imports());
+      MemberImportIndex memberImports = new MemberImportIndex(importResolver, tli, unit.imports());
       CompoundScope scope = topLevel.append(packageScope).append(importScope);
 
       for (ClassSymbol sym : entry.getValue()) {

@@ -16,8 +16,12 @@
 
 package com.google.turbine.binder;
 
+import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
+import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 
 /** Qualified name resolution. */
@@ -52,5 +56,38 @@ public class Resolve {
       }
     }
     return null;
+  }
+
+  static class CanonicalResolver implements CanonicalSymbolResolver {
+    private final CompoundEnv<ClassSymbol, BoundClass> env;
+
+    public CanonicalResolver(CompoundEnv<ClassSymbol, BoundClass> env) {
+      this.env = env;
+    }
+
+    @Override
+    public ClassSymbol resolve(LookupResult result) {
+      ClassSymbol sym = (ClassSymbol) result.sym();
+      for (String bit : result.remaining()) {
+        sym = resolveOne(sym, bit);
+        if (sym == null) {
+          return null;
+        }
+      }
+      return sym;
+    }
+
+    @Override
+    public ClassSymbol resolveOne(ClassSymbol sym, String bit) {
+      BoundClass ci = env.get(sym);
+      if (ci == null) {
+        return null;
+      }
+      sym = ci.children().get(bit);
+      if (sym == null) {
+        return null;
+      }
+      return sym;
+    }
   }
 }

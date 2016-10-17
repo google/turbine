@@ -17,11 +17,10 @@
 package com.google.turbine.binder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Verify.verifyNotNull;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
@@ -48,6 +47,7 @@ import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.Type;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -157,38 +157,43 @@ public class ConstEvaluator {
 
   /** Evaluates a reference to another constant variable. */
   Const evalConstVar(ConstVarName t) {
-    LookupResult result = owner.scope().lookup(new LookupKey(t.name()));
-    if (result != null) {
-      return resolve(result);
-    }
-    String simple = t.name().get(0);
-    FieldInfo info = lexicalField(env, sym, simple);
-    if (info != null) {
-      return values.get(info.sym());
-    }
-    // This resolves the top-level class symbol, and then doesn inherited member
-    // lookup on the rest of the names. The spec only allows the final name to be
-    // inherited and requires canonical form for the rest, so consider enforcing
-    // that.
-    result = owner.memberImports().lookup(simple);
-    if (result != null) {
-      return resolve(result);
-    }
-    throw new AssertionError(Joiner.on('.').join(t.name()));
-  }
-
-  private Const resolve(LookupResult result) {
-    ClassSymbol sym = (ClassSymbol) result.sym();
-    for (int i = 0; i < result.remaining().size() - 1; i++) {
-      sym = Resolve.resolve(env, sym, result.remaining().get(i));
-    }
-    String name = result.remaining().get(result.remaining().size() - 1);
-    FieldInfo field = inheritedField(env, sym, name);
+    FieldInfo field = resolveField(t);
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
       return new Const.EnumConstantValue(field.sym());
     }
-    verifyNotNull(field, "%s", result);
     return values.get(field.sym());
+  }
+
+  FieldInfo resolveField(ConstVarName t) {
+    String simpleName = t.name().get(0);
+    FieldInfo field = lexicalField(env, sym, simpleName);
+    if (field != null) {
+      return field;
+    }
+    LookupResult result = owner.scope().lookup(new LookupKey(t.name()));
+    if (result != null) {
+      ClassSymbol sym = (ClassSymbol) result.sym();
+      for (int i = 0; i < result.remaining().size() - 1; i++) {
+        sym = Resolve.resolve(env, sym, result.remaining().get(i));
+      }
+      field = inheritedField(env, sym, Iterables.getLast(result.remaining()));
+      if (field != null) {
+        return field;
+      }
+    }
+    ClassSymbol classSymbol = owner.memberImports().singleMemberImport(simpleName);
+    field = inheritedField(env, classSymbol, simpleName);
+    if (field != null) {
+      return field;
+    }
+    Iterator<ClassSymbol> it = owner.memberImports().onDemandImports();
+    while (it.hasNext()) {
+      field = inheritedField(env, it.next(), simpleName);
+      if (field != null) {
+        return field;
+      }
+    }
+    return null;
   }
 
   /** Search for constant variables in lexically enclosing scopes. */

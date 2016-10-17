@@ -17,6 +17,7 @@
 package com.google.turbine.binder.lookup;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -143,16 +144,13 @@ public class TopLevelIndex implements Scope {
   }
 
   /** Returns a {@link Scope} that performs lookups in the given qualified package name. */
-  public Scope lookupPackage(Iterable<String> packagename) {
+  public Scope lookupPackage(ImmutableList<String> packagename) {
     Node curr = root;
     for (String bit : packagename) {
       curr = curr.lookup(bit);
-      if (curr == null) {
+      if (curr == null || curr.sym != null) {
         return null;
       }
-    }
-    if (curr.sym != null) {
-      return null;
     }
     return new PackageIndex(curr);
   }

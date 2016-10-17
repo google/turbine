@@ -1,0 +1,11 @@
+=== X.java ===
+public class X {
+}
+
+=== Test.java ===
+public class Test {
+  public static final int X = 43;
+  static class Inner {
+    public static final int CONST = X;
+  }
+}
