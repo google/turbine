@@ -1,0 +1,29 @@
+=== Unary.java ===
+class Unary {
+
+  public static final byte B_comp = ~((byte) 42);
+  public static final byte B_plus = +((byte) 42);
+  public static final byte B_minus = -((byte) 42);
+
+  public static final short S_comp = ~((short) 42);
+  public static final short S_plus = +((short) 42);
+  public static final short S_minus = -((short) 42);
+
+  public static final char C_comp = (char) ~'c';
+  public static final char C_plus = (char) +'c';
+  public static final char C_minus = (char) -'c';
+
+  public static final int I_comp = ~42;
+  public static final int I_plus = +42;
+  public static final int I_minus = -42;
+
+  public static final long J_comp = ~((long) 42);
+  public static final long J_plus = +((long) 42);
+  public static final long J_minus = -((long) 42);
+
+  public static final double D_plus = +42d;
+  public static final double D_minus = -42d;
+
+  public static final float F_plus = +42f;
+  public static final float F_minus = -42f;
+}

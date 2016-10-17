@@ -270,6 +270,14 @@ public class ConstEvaluator {
         switch (expr.constantTypeKind()) {
           case INT:
             return new Const.IntValue(~expr.asInteger().value());
+          case LONG:
+            return new Const.LongValue(~expr.asLong().value());
+          case BYTE:
+            return new Const.ByteValue((byte) ~expr.asByte().value());
+          case SHORT:
+            return new Const.ShortValue((short) ~expr.asShort().value());
+          case CHAR:
+            return new Const.CharValue((char) ~expr.asChar().value());
           default:
             throw new AssertionError(expr.constantTypeKind());
         }
@@ -277,6 +285,18 @@ public class ConstEvaluator {
         switch (expr.constantTypeKind()) {
           case INT:
             return new Const.IntValue(+expr.asInteger().value());
+          case LONG:
+            return new Const.LongValue(+expr.asLong().value());
+          case BYTE:
+            return new Const.ByteValue((byte) +expr.asByte().value());
+          case SHORT:
+            return new Const.ShortValue((short) +expr.asShort().value());
+          case CHAR:
+            return new Const.CharValue((char) +expr.asChar().value());
+          case FLOAT:
+            return new Const.FloatValue(+expr.asFloat().value());
+          case DOUBLE:
+            return new Const.DoubleValue(+expr.asDouble().value());
           default:
             throw new AssertionError(expr.constantTypeKind());
         }
@@ -284,8 +304,16 @@ public class ConstEvaluator {
         switch (expr.constantTypeKind()) {
           case INT:
             return new Const.IntValue(-expr.asInteger().value());
+          case BYTE:
+            return new Const.ByteValue((byte) -expr.asByte().value());
+          case SHORT:
+            return new Const.ShortValue((short) -expr.asShort().value());
+          case CHAR:
+            return new Const.CharValue((char) -expr.asChar().value());
           case LONG:
             return new Const.LongValue(-expr.asLong().value());
+          case FLOAT:
+            return new Const.FloatValue(-expr.asFloat().value());
           case DOUBLE:
             return new Const.DoubleValue(-expr.asDouble().value());
           default:
