@@ -136,9 +136,10 @@ public class TypeBinder {
     enclosingScope = enclosingScope.append(new ClassMemberScope(base.owner(), env));
     enclosingScope = enclosingScope.append(new SingletonScope(base.decl().name(), sym));
 
+    // type parameters can refer to each other in f-bounds, so update the scope first
+    enclosingScope = enclosingScope.append(new MapScope(base.typeParameters()));
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
         bindTyParams(env, base.decl().typarams(), enclosingScope, base.typeParameters());
-    enclosingScope = enclosingScope.append(new MapScope(base.typeParameters()));
 
     Type.ClassTy superClassType;
     switch (base.kind()) {
@@ -321,8 +322,6 @@ public class TypeBinder {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Tree.TyParam tree : trees) {
       TyVarSymbol sym = symbols.get(tree.name());
-      // type parameters can refer to themselves (f-bounds), so update the scope first
-      scope = scope.append(new SingletonScope(tree.name(), sym));
       Type classBound = null;
       ImmutableList.Builder<Type> interfaceBounds = ImmutableList.builder();
       boolean first = true;
@@ -381,9 +380,10 @@ public class TypeBinder {
       typeParameters = builder.build();
     }
 
+    // type parameters can refer to each other in f-bounds, so update the scope first
+    scope = scope.append(new MapScope(typeParameters));
     ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
         bindTyParams(env, t.typarams(), scope, typeParameters);
-    scope = scope.append(new MapScope(typeParameters));
 
     Type returnType;
     if (t.ret().isPresent()) {
