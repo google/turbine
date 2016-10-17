@@ -365,7 +365,7 @@ public abstract class Const {
     }
   }
 
-  /** A short literal value. */
+  /** A byte literal value. */
   public static class ByteValue extends Value {
 
     private final byte value;
