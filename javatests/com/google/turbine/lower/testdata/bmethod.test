@@ -1,0 +1,9 @@
+%%% Anno.java %%%
+@interface Anno {
+  Class<? extends Number> value() default Number.class;
+}
+
+=== Test.java ===
+@Anno(Integer.class)
+class Test {
+}

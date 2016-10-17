@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder.bytecode;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Verify.verify;
 
 import com.google.common.base.Supplier;
@@ -336,9 +337,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
 
   private MethodInfo bindMethod(ClassFile.MethodInfo m) {
     MethodSymbol methodSymbol = new MethodSymbol(sym, m.name());
-    // annotation interfaces can't have methods with generic signatures
-    verify(m.signature() == null);
-    Sig.MethodSig sig = new SigParser(m.descriptor()).parseMethodSig();
+    Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
 
     verify(sig.tyParams().isEmpty());
 
