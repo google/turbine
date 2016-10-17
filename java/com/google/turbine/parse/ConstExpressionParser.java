@@ -21,7 +21,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
-import com.google.common.primitives.UnsignedInts;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.tree.Tree;
@@ -266,11 +265,10 @@ public class ConstExpressionParser {
           if (negate) {
             text = "-" + text;
           }
+          long longValue = parseLong(text, radix);
           value =
               new Const.IntValue(
-                  radix == 10
-                      ? Ints.checkedCast(parseLong(text, radix))
-                      : UnsignedInts.parseUnsignedInt(text, radix));
+                  radix != 10 && longValue == 0xffffffffL ? -1 : Ints.checkedCast(longValue));
           break;
         }
       case LONG:
