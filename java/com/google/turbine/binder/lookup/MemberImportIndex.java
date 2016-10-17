@@ -16,14 +16,12 @@
 
 package com.google.turbine.binder.lookup;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /** An index for statically imported members, in particular constant variables. */
@@ -37,10 +35,9 @@ public class MemberImportIndex {
       if (!i.stat()) {
         continue;
       }
-      List<String> bits = Splitter.on('.').splitToList(i.type());
-      LookupKey lookup = new LookupKey(bits);
+      LookupKey lookup = new LookupKey(i.type());
       cache.put(
-          Iterables.getLast(bits),
+          Iterables.getLast(i.type()),
           Suppliers.memoize(
               new Supplier<LookupResult>() {
                 @Override

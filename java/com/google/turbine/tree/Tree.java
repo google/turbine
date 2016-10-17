@@ -530,10 +530,10 @@ public abstract class Tree {
 
   /** A JLS 7.5 import declaration. */
   public static class ImportDecl extends Tree {
-    private final String type;
+    private final ImmutableList<String> type;
     private final boolean stat;
 
-    public ImportDecl(String type, boolean stat) {
+    public ImportDecl(ImmutableList<String> type, boolean stat) {
       this.type = type;
       this.stat = stat;
     }
@@ -548,7 +548,7 @@ public abstract class Tree {
       return visitor.visitImportDecl(this, input);
     }
 
-    public String type() {
+    public ImmutableList<String> type() {
       return type;
     }
 
@@ -684,10 +684,10 @@ public abstract class Tree {
 
   /** A JLS 9.7 annotation. */
   public static class Anno extends Tree {
-    private final String name;
+    private final ImmutableList<String> name;
     private final ImmutableList<Expression> args;
 
-    public Anno(String name, ImmutableList<Expression> args) {
+    public Anno(ImmutableList<String> name, ImmutableList<Expression> args) {
       this.name = name;
       this.args = args;
     }
@@ -702,7 +702,7 @@ public abstract class Tree {
       return visitor.visitAnno(this, input);
     }
 
-    public String name() {
+    public ImmutableList<String> name() {
       return name;
     }
 
@@ -843,9 +843,9 @@ public abstract class Tree {
 
   /** A JLS 7.4 package declaration. */
   public static class PkgDecl extends Tree {
-    private final String name;
+    private final ImmutableList<String> name;
 
-    public PkgDecl(String name) {
+    public PkgDecl(ImmutableList<String> name) {
       this.name = name;
     }
 
@@ -859,7 +859,7 @@ public abstract class Tree {
       return visitor.visitPkgDecl(this, input);
     }
 
-    public String name() {
+    public ImmutableList<String> name() {
       return name;
     }
   }

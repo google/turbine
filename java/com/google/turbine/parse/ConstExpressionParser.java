@@ -519,7 +519,7 @@ public class ConstExpressionParser {
       throw new AssertionError();
     }
     eat();
-    Tree.Expression name = qualIdent();
+    ImmutableList<String> name = ((Tree.ConstVarName) qualIdent()).name();
     ImmutableList.Builder<Tree.Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {
       eat();
@@ -539,8 +539,7 @@ public class ConstExpressionParser {
         eat();
       }
     }
-    // TODO(cushon): avoid stringifying names
-    return new Tree.AnnoExpr(new Tree.Anno(name.toString(), args.build()));
+    return new Tree.AnnoExpr(new Tree.Anno(name, args.build()));
   }
 
   private ParseError error(Object message) {

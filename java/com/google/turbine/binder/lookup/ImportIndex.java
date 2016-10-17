@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder.lookup;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -25,7 +24,6 @@ import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,10 +55,8 @@ public class ImportIndex implements Scope {
         // types are not supported
         continue;
       }
-      // TODO(cushon): split names in the AST?
-      final List<String> bits = Splitter.on('.').splitToList(i.type());
-      final String last = bits.get(bits.size() - 1);
-      final LookupKey lookup = new LookupKey(bits);
+      final String last = i.type().get(i.type().size() - 1);
+      final LookupKey lookup = new LookupKey(i.type());
       thunks.put(
           last,
           Suppliers.memoize(

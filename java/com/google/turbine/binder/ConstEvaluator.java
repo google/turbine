@@ -20,7 +20,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -832,7 +831,7 @@ public class ConstEvaluator {
   }
 
   private Const.AnnotationValue evalAnno(Tree.Anno t) {
-    LookupResult result = owner.scope().lookup(new LookupKey(Splitter.on('.').split(t.name())));
+    LookupResult result = owner.scope().lookup(new LookupKey(t.name()));
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, sym, name);

@@ -18,8 +18,8 @@ package com.google.turbine.binder;
 
 import static com.google.common.base.Verify.verifyNotNull;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -112,7 +112,7 @@ public class Binder {
     for (CompUnit unit : units) {
       String packagename;
       if (unit.pkg().isPresent()) {
-        packagename = unit.pkg().get().name().replace('.', '/') + '/';
+        packagename = Joiner.on('/').join(unit.pkg().get().name()) + '/';
       } else {
         packagename = "";
       }
@@ -164,11 +164,8 @@ public class Binder {
     CompoundScope topLevel = CompoundScope.base(tli).append(javaLang);
     for (Map.Entry<CompUnit, Collection<ClassSymbol>> entry : classes.asMap().entrySet()) {
       CompUnit unit = entry.getKey();
-      // TODO(cushon): split this in the parser?
       Iterable<String> packagename =
-          unit.pkg().isPresent()
-              ? Splitter.on('.').split(unit.pkg().get().name())
-              : ImmutableList.<String>of();
+          unit.pkg().isPresent() ? unit.pkg().get().name() : ImmutableList.of();
       Scope packageScope = tli.lookupPackage(packagename);
       Scope importScope =
           ImportIndex.create(

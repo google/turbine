@@ -18,7 +18,6 @@ package com.google.turbine.binder;
 
 import static com.google.common.base.Verify.verify;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -506,7 +505,7 @@ public class TypeBinder {
       Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, ImmutableList<Tree.Anno> trees) {
     ImmutableList.Builder<TypeBoundClass.AnnoInfo> result = ImmutableList.builder();
     for (Tree.Anno tree : trees) {
-      LookupResult lookupResult = scope.lookup(new LookupKey(Splitter.on('.').split(tree.name())));
+      LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
       for (String name : lookupResult.remaining()) {
         sym = Resolve.resolve(env, sym, name);

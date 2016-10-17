@@ -1018,15 +1018,14 @@ public class Parser {
   private ImportDecl importDeclaration() {
     boolean stat = maybe(Token.STATIC);
 
-    StringBuilder sb = new StringBuilder();
-    sb.append(eatIdent());
+    ImmutableList.Builder<String> type = ImmutableList.builder();
+    type.add(eatIdent());
     boolean wild = false;
     OUTER:
     while (maybe(Token.DOT)) {
-      sb.append('.');
       switch (token) {
         case IDENT:
-          sb.append(eatIdent());
+          type.add(eatIdent());
           break;
         case MULT:
           if (disallowWild) {
@@ -1039,12 +1038,11 @@ public class Parser {
           break;
       }
     }
-    String type = sb.toString();
     eat(Token.SEMI);
     if (wild) {
       return null;
     }
-    return new ImportDecl(type, stat);
+    return new ImportDecl(type.build(), stat);
   }
 
   private PkgDecl packageDeclaration() {
@@ -1053,17 +1051,17 @@ public class Parser {
     return result;
   }
 
-  private String qualIdent() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(eatIdent());
+  private ImmutableList<String> qualIdent() {
+    ImmutableList.Builder<String> name = ImmutableList.builder();
+    name.add(eatIdent());
     while (maybe(Token.DOT)) {
-      sb.append('.').append(eatIdent());
+      name.add(eatIdent());
     }
-    return sb.toString();
+    return name.build();
   }
 
   private Anno annotation() {
-    String name = qualIdent();
+    ImmutableList<String> name = qualIdent();
 
     ImmutableList.Builder<Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {

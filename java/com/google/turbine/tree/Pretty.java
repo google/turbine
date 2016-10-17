@@ -245,7 +245,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     if (importDecl.stat()) {
       append("static ");
     }
-    append(importDecl.type()).append(";").append('\n');
+    append(Joiner.on('.').join(importDecl.type())).append(";").append('\n');
     return null;
   }
 
@@ -321,7 +321,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   @Override
   public Void visitAnno(Tree.Anno anno, Void input) {
     append('@');
-    append(anno.name());
+    append(Joiner.on('.').join(anno.name()));
     if (!anno.args().isEmpty()) {
       append('(');
       boolean first = true;
@@ -484,7 +484,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
 
   @Override
   public Void visitPkgDecl(Tree.PkgDecl pkgDecl, Void input) {
-    append("package ").append(pkgDecl.name()).append(';');
+    append("package ").append(Joiner.on('.').join(pkgDecl.name())).append(';');
     return null;
   }
 }
