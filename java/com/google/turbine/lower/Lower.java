@@ -352,7 +352,7 @@ public class Lower {
     }
   }
 
-  private static ImmutableMap<String, ElementValue> annotationValues(
+  private ImmutableMap<String, ElementValue> annotationValues(
       ImmutableMap<String, Const> values, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableMap.Builder<String, ElementValue> result = ImmutableMap.builder();
     for (Map.Entry<String, Const> entry : values.entrySet()) {
@@ -361,12 +361,12 @@ public class Lower {
     return result.build();
   }
 
-  private static ElementValue annotationValue(Const value, Env<ClassSymbol, TypeBoundClass> env) {
+  private ElementValue annotationValue(Const value, Env<ClassSymbol, TypeBoundClass> env) {
     switch (value.kind()) {
       case CLASS_LITERAL:
         {
           Const.ClassValue classValue = (Const.ClassValue) value;
-          return new ElementValue.ConstClassValue("L" + classValue.className() + ";");
+          return new ElementValue.ConstClassValue(SigWriter.type(sig.signature(classValue.type())));
         }
       case ENUM_CONSTANT:
         {

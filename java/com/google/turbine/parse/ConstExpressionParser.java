@@ -24,6 +24,10 @@ import com.google.common.primitives.Ints;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.ClassLiteral;
+import com.google.turbine.tree.Tree.ClassTy;
+import com.google.turbine.tree.Tree.Expression;
+import com.google.turbine.tree.Tree.VoidTy;
 import com.google.turbine.tree.TurbineOperatorKind;
 import javax.annotation.Nullable;
 
@@ -127,11 +131,46 @@ public class ConstExpressionParser {
         return arrayInitializer();
       case IDENT:
         return qualIdent();
+      case BYTE:
+        return primitiveClassLiteral(TurbineConstantTypeKind.BYTE);
+      case CHAR:
+        return primitiveClassLiteral(TurbineConstantTypeKind.CHAR);
+      case DOUBLE:
+        return primitiveClassLiteral(TurbineConstantTypeKind.DOUBLE);
+      case FLOAT:
+        return primitiveClassLiteral(TurbineConstantTypeKind.FLOAT);
+      case INT:
+        return primitiveClassLiteral(TurbineConstantTypeKind.INT);
+      case LONG:
+        return primitiveClassLiteral(TurbineConstantTypeKind.LONG);
+      case SHORT:
+        return primitiveClassLiteral(TurbineConstantTypeKind.SHORT);
+      case BOOLEAN:
+        return primitiveClassLiteral(TurbineConstantTypeKind.BOOLEAN);
+      case VOID:
+        return primitiveClassLiteral(VoidTy.INSTANCE);
       case AT:
         return annotation();
       default:
         return null;
     }
+  }
+
+  private Expression primitiveClassLiteral(TurbineConstantTypeKind type) {
+    return primitiveClassLiteral(new Tree.PrimTy(type));
+  }
+
+  private Expression primitiveClassLiteral(Tree.Type type) {
+    eat();
+    if (token != Token.DOT) {
+      return null;
+    }
+    eat();
+    if (token != Token.CLASS) {
+      return null;
+    }
+    eat();
+    return new ClassLiteral(type);
   }
 
   private Tree.Expression maybeCast() {
@@ -188,12 +227,7 @@ public class ConstExpressionParser {
         case TILDE:
         case IDENT:
           {
-            Tree.ClassTy cty = null;
-            for (String bit : cvar.name()) {
-              cty =
-                  new Tree.ClassTy(Optional.fromNullable(cty), bit, ImmutableList.<Tree.Type>of());
-            }
-            return new Tree.TypeCast(cty, primary(false));
+            return new Tree.TypeCast(asClassTy(cvar.name()), primary(false));
           }
         default:
           return expr;
@@ -201,6 +235,14 @@ public class ConstExpressionParser {
     } else {
       return expr;
     }
+  }
+
+  private ClassTy asClassTy(ImmutableList<String> names) {
+    ClassTy cty = null;
+    for (String bit : names) {
+      cty = new ClassTy(Optional.fromNullable(cty), bit, ImmutableList.<Tree.Type>of());
+    }
+    return cty;
   }
 
   private void eat() {
@@ -373,8 +415,8 @@ public class ConstExpressionParser {
           break;
         case CLASS:
           // TODO(cushon): only allow in annotations?
-          bits.add("class");
-          break;
+          eat();
+          return new Tree.ClassLiteral(asClassTy(bits.build()));
         default:
           return null;
       }

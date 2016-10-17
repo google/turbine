@@ -212,6 +212,7 @@ public class LowerIntegrationTest {
       "hex_int.test",
       "const_conv.test",
       "bmethod.test",
+      "prim_class.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

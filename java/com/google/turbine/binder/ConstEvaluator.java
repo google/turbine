@@ -40,10 +40,12 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ArrayInit;
 import com.google.turbine.tree.Tree.Binary;
+import com.google.turbine.tree.Tree.ClassLiteral;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Conditional;
 import com.google.turbine.tree.Tree.ConstVarName;
 import com.google.turbine.tree.Tree.Expression;
+import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.Type;
@@ -115,6 +117,8 @@ public class ConstEvaluator {
         throw new AssertionError(t.kind());
       case CONST_VAR_NAME:
         return evalConstVar((ConstVarName) t);
+      case CLASS_LITERAL:
+        return evalClassLiteral((ClassLiteral) t);
       case BINARY:
         return evalBinary((Binary) t);
       case TYPE_CAST:
@@ -132,7 +136,27 @@ public class ConstEvaluator {
     }
   }
 
-  /** Evaluate a reference to another constant variable. */
+  /** Evaluates a class literal. */
+  // TODO(cushon): consider distinguishing between constant field and annotation values,
+  // and only allowing class literals / enum constants in the latter
+  Const evalClassLiteral(ClassLiteral t) {
+    switch (t.type().kind()) {
+      case PRIM_TY:
+        return new Const.ClassValue(new Type.PrimTy(((PrimTy) t.type()).tykind()));
+      case VOID_TY:
+        return new Const.ClassValue(Type.VOID);
+      case CLASS_TY:
+        {
+          ClassTy classTy = (ClassTy) t.type();
+          ClassSymbol classSym = HierarchyBinder.resolveClass(env, owner.scope(), sym, classTy);
+          return new Const.ClassValue(Type.ClassTy.asNonParametricClassTy(classSym));
+        }
+      default:
+        throw new AssertionError(t.type().kind());
+    }
+  }
+
+  /** Evaluates a reference to another constant variable. */
   Const evalConstVar(ConstVarName t) {
     LookupResult result = owner.scope().lookup(new LookupKey(t.name()));
     if (result != null) {
@@ -160,11 +184,6 @@ public class ConstEvaluator {
       sym = Resolve.resolve(env, sym, result.remaining().get(i));
     }
     String name = result.remaining().get(result.remaining().size() - 1);
-    if (name.equals("class")) {
-      // TODO(cushon): consider distinguishing between constant field and annotation values,
-      // and only allowing class literals / enum constants in the latter
-      return new Const.ClassValue(sym.toString());
-    }
     FieldInfo field = inheritedField(env, sym, name);
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
       return new Const.EnumConstantValue(field.sym());

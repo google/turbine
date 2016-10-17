@@ -19,6 +19,7 @@ package com.google.turbine.tree;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.tree.Tree.ClassLiteral;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -175,6 +176,13 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   @Override
   public Void visitConstVarName(Tree.ConstVarName constVarName, Void input) {
     append(Joiner.on('.').join(constVarName.name()));
+    return null;
+  }
+
+  @Override
+  public Void visitClassLiteral(ClassLiteral classLiteral, Void input) {
+    classLiteral.accept(this, input);
+    append(".class");
     return null;
   }
 

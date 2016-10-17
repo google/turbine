@@ -47,6 +47,7 @@ public abstract class Tree {
     UNARY,
     BINARY,
     CONST_VAR_NAME,
+    CLASS_LITERAL,
     ASSIGN,
     CONDITIONAL,
     ARRAY_INIT,
@@ -368,6 +369,30 @@ public abstract class Tree {
 
     public ImmutableList<String> name() {
       return name;
+    }
+  }
+
+  /** A JLS 15.8.2 class literal. */
+  public static class ClassLiteral extends Expression {
+
+    private final Type type;
+
+    public ClassLiteral(Type type) {
+      this.type = type;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.CLASS_LITERAL;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitClassLiteral(this, input);
+    }
+
+    public Type type() {
+      return type;
     }
   }
 
@@ -860,6 +885,8 @@ public abstract class Tree {
     O visitBinary(Binary binary, I input);
 
     O visitConstVarName(ConstVarName constVarName, I input);
+
+    O visitClassLiteral(ClassLiteral classLiteral, I input);
 
     O visitAssign(Assign assign, I input);
 

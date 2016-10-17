@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.type.Type;
 
 /**
  * Compile-time constant expressions, including literals of primitive or String type, class
@@ -626,15 +627,15 @@ public abstract class Const {
   /** A class literal constant. */
   public static class ClassValue extends Const {
 
-    private final String className;
+    private final Type type;
 
-    public ClassValue(String className) {
-      this.className = className;
+    public ClassValue(Type type) {
+      this.type = type;
     }
 
     @Override
     public String toString() {
-      return String.format("%s.class", className);
+      return String.format("%s.class", type);
     }
 
     @Override
@@ -643,8 +644,8 @@ public abstract class Const {
     }
 
     /** The class name. */
-    public String className() {
-      return className;
+    public Type type() {
+      return type;
     }
   }
 

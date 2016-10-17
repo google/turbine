@@ -1,0 +1,25 @@
+=== Anno.java ===
+@interface Anno {
+  Class<?> value() default Anno.class;
+}
+
+=== Annos.java ===
+@interface Annos {
+  Anno[] value() default {};
+}
+
+=== Test.java ===
+class Test {
+  @Annos({
+    @Anno(byte.class),
+    @Anno(char.class),
+    @Anno(double.class),
+    @Anno(float.class),
+    @Anno(int.class),
+    @Anno(long.class),
+    @Anno(short.class),
+    @Anno(boolean.class),
+    @Anno(void.class),
+  })
+  int x;
+}
