@@ -70,7 +70,8 @@ public class ConstBinder {
         base.scope(),
         base.memberImports(),
         bindRetention(base.kind(), annos),
-        annos);
+        annos,
+        base.source());
   }
 
   private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> methods) {

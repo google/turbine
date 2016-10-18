@@ -19,6 +19,7 @@ package com.google.turbine.parse;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.escape.SourceCodeEscapers;
+import com.google.turbine.diag.SourceFile;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -333,7 +334,7 @@ public class LexerTest {
   }
 
   public static List<String> lex(String input) {
-    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(input));
+    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
     List<String> tokens = new ArrayList<>();
     Token token;
     do {

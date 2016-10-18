@@ -27,6 +27,7 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.bytecode.AsmUtils;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree;
 import com.sun.source.util.JavacTask;
@@ -267,7 +268,13 @@ public class IntegrationTestSupport {
   static Map<String, byte[]> runTurbine(
       Map<String, String> input, ImmutableList<Path> classpath, Iterable<Path> bootclasspath)
       throws IOException {
-    List<Tree.CompUnit> units = input.values().stream().map(Parser::parse).collect(toList());
+    List<Tree.CompUnit> units =
+        input
+            .entrySet()
+            .stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toList());
 
     Binder.BindingResult bound = Binder.bind(units, classpath, bootclasspath);
     return Lower.lowerAll(bound.units(), bound.classPathEnv());

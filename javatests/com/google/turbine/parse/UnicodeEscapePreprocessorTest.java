@@ -19,6 +19,7 @@ package com.google.turbine.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import com.google.turbine.diag.SourceFile;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -56,20 +57,20 @@ public class UnicodeEscapePreprocessorTest {
     try {
       readAll("\\u00");
       fail();
-    } catch (ParseError e) {
+    } catch (AssertionError e) {
       assertThat(e).hasMessage("unexpected end of input");
     }
 
     try {
       readAll("\\u");
       fail();
-    } catch (ParseError e) {
+    } catch (AssertionError e) {
       assertThat(e).hasMessage("unexpected end of input");
     }
   }
 
   private List<Character> readAll(String input) {
-    UnicodeEscapePreprocessor reader = new UnicodeEscapePreprocessor(input);
+    UnicodeEscapePreprocessor reader = new UnicodeEscapePreprocessor(new SourceFile(null, input));
     List<Character> result = new ArrayList<>();
     for (char ch = reader.next(); ch != UnicodeEscapePreprocessor.ASCII_SUB; ch = reader.next()) {
       result.add(ch);

@@ -19,6 +19,7 @@ package com.google.turbine.tree;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
@@ -30,6 +31,16 @@ public abstract class Tree {
   public abstract Kind kind();
 
   public abstract <I, O> O accept(Visitor<I, O> visitor, I input);
+
+  private final int position;
+
+  protected Tree(int position) {
+    this.position = position;
+  }
+
+  public int position() {
+    return position;
+  }
 
   @Override
   public String toString() {
@@ -63,17 +74,26 @@ public abstract class Tree {
   }
 
   /** A type use. */
-  public abstract static class Type extends Tree {}
+  public abstract static class Type extends Tree {
+    public Type(int position) {
+      super(position);
+    }
+  }
 
   /** An expression. */
-  public abstract static class Expression extends Tree {}
+  public abstract static class Expression extends Tree {
+    public Expression(int position) {
+      super(position);
+    }
+  }
 
   /** A wildcard type, possibly with an upper or lower bound. */
   public static class WildTy extends Type {
     private final Optional<Type> upper;
     private final Optional<Type> lower;
 
-    public WildTy(Optional<Type> upper, Optional<Type> lower) {
+    public WildTy(int position, Optional<Type> upper, Optional<Type> lower) {
+      super(position);
       this.upper = upper;
       this.lower = lower;
     }
@@ -112,7 +132,8 @@ public abstract class Tree {
     private final Type elem;
     private final int dim;
 
-    public ArrTy(Type elem, int dim) {
+    public ArrTy(int position, Type elem, int dim) {
+      super(position);
       this.elem = elem;
       this.dim = dim;
     }
@@ -147,7 +168,8 @@ public abstract class Tree {
   public static class PrimTy extends Type {
     private final TurbineConstantTypeKind tykind;
 
-    public PrimTy(TurbineConstantTypeKind tykind) {
+    public PrimTy(int position, TurbineConstantTypeKind tykind) {
+      super(position);
       this.tykind = tykind;
     }
 
@@ -170,8 +192,6 @@ public abstract class Tree {
   /** The void type, used only for void-returning methods. */
   public static class VoidTy extends Type {
 
-    public static final VoidTy INSTANCE = new VoidTy();
-
     @Override
     public Kind kind() {
       return Kind.VOID_TY;
@@ -182,7 +202,9 @@ public abstract class Tree {
       return visitor.visitVoidTy(this, input);
     }
 
-    private VoidTy() {}
+    public VoidTy(int position) {
+      super(position);
+    }
   }
 
   /** A class, enum, interface, or annotation {@link Type}. */
@@ -191,7 +213,8 @@ public abstract class Tree {
     private final String name;
     private final ImmutableList<Type> tyargs;
 
-    public ClassTy(Optional<ClassTy> base, String name, ImmutableList<Type> tyargs) {
+    public ClassTy(int position, Optional<ClassTy> base, String name, ImmutableList<Type> tyargs) {
+      super(position);
       this.base = base;
       this.name = name;
       this.tyargs = tyargs;
@@ -232,7 +255,8 @@ public abstract class Tree {
     private final TurbineConstantTypeKind tykind;
     private final Const value;
 
-    public Literal(TurbineConstantTypeKind tykind, Const value) {
+    public Literal(int position, TurbineConstantTypeKind tykind, Const value) {
+      super(position);
       this.tykind = tykind;
       this.value = value;
     }
@@ -261,7 +285,8 @@ public abstract class Tree {
     private final Type ty;
     private final Expression expr;
 
-    public TypeCast(Type ty, Expression expr) {
+    public TypeCast(int position, Type ty, Expression expr) {
+      super(position);
       this.ty = ty;
       this.expr = expr;
     }
@@ -290,7 +315,8 @@ public abstract class Tree {
     private final Expression expr;
     private final TurbineOperatorKind op;
 
-    public Unary(Expression expr, TurbineOperatorKind op) {
+    public Unary(int position, Expression expr, TurbineOperatorKind op) {
+      super(position);
       this.expr = expr;
       this.op = op;
     }
@@ -320,7 +346,8 @@ public abstract class Tree {
     private final Expression rhs;
     private final TurbineOperatorKind op;
 
-    public Binary(Expression lhs, Expression rhs, TurbineOperatorKind op) {
+    public Binary(int position, Expression lhs, Expression rhs, TurbineOperatorKind op) {
+      super(position);
       this.lhs = lhs;
       this.rhs = rhs;
       this.op = op;
@@ -353,7 +380,8 @@ public abstract class Tree {
   public static class ConstVarName extends Expression {
     private final ImmutableList<String> name;
 
-    public ConstVarName(ImmutableList<String> name) {
+    public ConstVarName(int position, ImmutableList<String> name) {
+      super(position);
       this.name = name;
     }
 
@@ -377,7 +405,8 @@ public abstract class Tree {
 
     private final Type type;
 
-    public ClassLiteral(Type type) {
+    public ClassLiteral(int position, Type type) {
+      super(position);
       this.type = type;
     }
 
@@ -401,7 +430,8 @@ public abstract class Tree {
     private final String name;
     private final Expression expr;
 
-    public Assign(String name, Expression expr) {
+    public Assign(int position, String name, Expression expr) {
+      super(position);
       this.name = name;
       this.expr = expr;
     }
@@ -431,7 +461,8 @@ public abstract class Tree {
     private final Expression iftrue;
     private final Expression iffalse;
 
-    public Conditional(Expression cond, Expression iftrue, Expression iffalse) {
+    public Conditional(int position, Expression cond, Expression iftrue, Expression iffalse) {
+      super(position);
       this.cond = cond;
       this.iftrue = iftrue;
       this.iffalse = iffalse;
@@ -464,7 +495,8 @@ public abstract class Tree {
   public static class ArrayInit extends Expression {
     private final ImmutableList<Expression> exprs;
 
-    public ArrayInit(ImmutableList<Expression> exprs) {
+    public ArrayInit(int position, ImmutableList<Expression> exprs) {
+      super(position);
       this.exprs = exprs;
     }
 
@@ -488,17 +520,19 @@ public abstract class Tree {
     private final Optional<PkgDecl> pkg;
     private final ImmutableList<ImportDecl> imports;
     private final ImmutableList<TyDecl> decls;
-    private final String file;
+    private final SourceFile source;
 
     public CompUnit(
+        int position,
         Optional<PkgDecl> pkg,
         ImmutableList<ImportDecl> imports,
         ImmutableList<TyDecl> decls,
-        String file) {
+        SourceFile source) {
+      super(position);
       this.pkg = pkg;
       this.imports = imports;
       this.decls = decls;
-      this.file = file;
+      this.source = source;
     }
 
     @Override
@@ -523,8 +557,8 @@ public abstract class Tree {
       return decls;
     }
 
-    public String file() {
-      return file;
+    public SourceFile source() {
+      return source;
     }
   }
 
@@ -534,7 +568,8 @@ public abstract class Tree {
     private final boolean stat;
     private final boolean wild;
 
-    public ImportDecl(ImmutableList<String> type, boolean stat, boolean wild) {
+    public ImportDecl(int position, ImmutableList<String> type, boolean stat, boolean wild) {
+      super(position);
       this.type = type;
       this.stat = stat;
       this.wild = wild;
@@ -574,11 +609,13 @@ public abstract class Tree {
     private final Optional<Expression> init;
 
     public VarDecl(
+        int position,
         Set<TurbineModifier> mods,
         ImmutableList<Anno> annos,
         Tree ty,
         String name,
         Optional<Expression> init) {
+      super(position);
       this.mods = ImmutableSet.copyOf(mods);
       this.annos = annos;
       this.ty = ty;
@@ -629,6 +666,7 @@ public abstract class Tree {
     private final Optional<Tree> defaultValue;
 
     public MethDecl(
+        int position,
         Set<TurbineModifier> mods,
         ImmutableList<Anno> annos,
         ImmutableList<TyParam> typarams,
@@ -637,6 +675,7 @@ public abstract class Tree {
         ImmutableList<VarDecl> params,
         ImmutableList<ClassTy> exntys,
         Optional<Tree> defaultValue) {
+      super(position);
       this.mods = ImmutableSet.copyOf(mods);
       this.annos = annos;
       this.typarams = typarams;
@@ -695,7 +734,8 @@ public abstract class Tree {
     private final ImmutableList<String> name;
     private final ImmutableList<Expression> args;
 
-    public Anno(ImmutableList<String> name, ImmutableList<Expression> args) {
+    public Anno(int position, ImmutableList<String> name, ImmutableList<Expression> args) {
+      super(position);
       this.name = name;
       this.args = args;
     }
@@ -727,7 +767,8 @@ public abstract class Tree {
 
     private final Anno value;
 
-    public AnnoExpr(Anno value) {
+    public AnnoExpr(int position, Anno value) {
+      super(position);
       this.value = value;
     }
 
@@ -759,6 +800,7 @@ public abstract class Tree {
     private final TurbineTyKind tykind;
 
     public TyDecl(
+        int position,
         Set<TurbineModifier> mods,
         ImmutableList<Anno> annos,
         String name,
@@ -767,6 +809,7 @@ public abstract class Tree {
         ImmutableList<ClassTy> impls,
         ImmutableList<Tree> members,
         TurbineTyKind tykind) {
+      super(position);
       this.mods = ImmutableSet.copyOf(mods);
       this.annos = annos;
       this.name = name;
@@ -825,7 +868,8 @@ public abstract class Tree {
     private final String name;
     private final ImmutableList<Tree> bounds;
 
-    public TyParam(String name, ImmutableList<Tree> bounds) {
+    public TyParam(int position, String name, ImmutableList<Tree> bounds) {
+      super(position);
       this.name = name;
       this.bounds = bounds;
     }
@@ -853,7 +897,8 @@ public abstract class Tree {
   public static class PkgDecl extends Tree {
     private final ImmutableList<String> name;
 
-    public PkgDecl(ImmutableList<String> name) {
+    public PkgDecl(int position, ImmutableList<String> name) {
+      super(position);
       this.name = name;
     }
 

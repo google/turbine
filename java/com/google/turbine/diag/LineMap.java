@@ -18,7 +18,6 @@ package com.google.turbine.diag;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.Range;
 
@@ -62,30 +61,22 @@ public class LineMap {
     return new LineMap(source, builder.build());
   }
 
-  /** The zero-indexed column number of the given souce position. */
+  /** The zero-indexed column number of the given source position. */
   public int column(int position) {
-    checkArgument(0 <= position && position < source.length());
+    checkArgument(0 <= position && position < source.length(), "%s", position);
     return position - lines.getEntry(position).getKey().lowerEndpoint();
   }
 
-  /** The one-indexed line number of the given souce position. */
+  /** The one-indexed line number of the given source position. */
   public int lineNumber(int position) {
-    checkArgument(0 <= position && position < source.length());
+    checkArgument(0 <= position && position < source.length(), "%s", position);
     return lines.get(position);
   }
 
-  /** Formats a diagnostic at the given source position. */
-  public String formatDiagnostic(int position, String message) {
-    checkArgument(0 <= position && position < source.length());
+  /** The one-indexed line of the given source position. */
+  public String line(int position) {
+    checkArgument(0 <= position && position < source.length(), "%s", position);
     Range<Integer> range = lines.getEntry(position).getKey();
-    StringBuilder sb = new StringBuilder();
-    sb.append(lineNumber(position)).append(':');
-    int column = column(position);
-    sb.append(column).append(": ");
-    sb.append(message).append(System.lineSeparator());
-    String line = source.substring(range.lowerEndpoint(), range.upperEndpoint());
-    sb.append(line.trim()).append(System.lineSeparator());
-    sb.append(Strings.repeat(" ", column)).append('^');
-    return sb.toString();
+    return source.substring(range.lowerEndpoint(), range.upperEndpoint());
   }
 }

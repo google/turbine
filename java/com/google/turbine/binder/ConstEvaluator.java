@@ -32,6 +32,7 @@ import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
@@ -147,7 +148,8 @@ public class ConstEvaluator {
       case CLASS_TY:
         {
           ClassTy classTy = (ClassTy) t.type();
-          ClassSymbol classSym = HierarchyBinder.resolveClass(env, owner.scope(), sym, classTy);
+          ClassSymbol classSym =
+              HierarchyBinder.resolveClass(owner.source(), env, owner.scope(), sym, classTy);
           return new Const.ClassValue(Type.ClassTy.asNonParametricClassTy(classSym));
         }
       default:
@@ -809,6 +811,9 @@ public class ConstEvaluator {
         expr = arg;
       }
       Type ty = template.get(key);
+      if (ty == null) {
+        throw error(arg.position(), "cannot resolve %s", key);
+      }
       Const value = evalAnnotationValue(expr, ty);
       values.put(key, value);
     }
@@ -834,6 +839,9 @@ public class ConstEvaluator {
   }
 
   Const evalAnnotationValue(Tree tree, Type ty) {
+    if (ty == null) {
+      throw error(tree.position(), "could not evaluate");
+    }
     Const value = eval(tree);
     switch (ty.tyKind()) {
       case PRIM_TY:
@@ -852,5 +860,9 @@ public class ConstEvaluator {
       default:
         throw new AssertionError(ty.tyKind());
     }
+  }
+
+  private TurbineError error(int position, String message, Object... args) {
+    return TurbineError.format(owner.source(), position, message, args);
   }
 }

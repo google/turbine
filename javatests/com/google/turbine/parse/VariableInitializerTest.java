@@ -19,6 +19,7 @@ package com.google.turbine.parse;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
+import com.google.turbine.diag.SourceFile;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
@@ -130,7 +131,7 @@ public class VariableInitializerTest {
 
   @Test
   public void test() {
-    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(input));
+    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
     List<List<SavedToken>> initializers =
         new VariableInitializerParser(lexer.next(), lexer).parseInitializers();
     assertThat(Joiner.on(", ").join(initializers)).isEqualTo(expected);

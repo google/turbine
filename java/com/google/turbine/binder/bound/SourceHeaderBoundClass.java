@@ -22,6 +22,7 @@ import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 
@@ -95,5 +96,10 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   /** The static member import index for the enclosing compilation unit. */
   public MemberImportIndex memberImports() {
     return base.memberImports();
+  }
+
+  /** The source file. */
+  public SourceFile source() {
+    return base.source();
   }
 }

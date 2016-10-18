@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 
@@ -28,12 +29,17 @@ public class PackageSourceBoundClass implements BoundClass {
   private final SourceBoundClass base;
   private final CompoundScope scope;
   private final MemberImportIndex memberImports;
+  private final SourceFile source;
 
   public PackageSourceBoundClass(
-      SourceBoundClass base, CompoundScope scope, MemberImportIndex memberImports) {
+      SourceBoundClass base,
+      CompoundScope scope,
+      MemberImportIndex memberImports,
+      SourceFile source) {
     this.base = base;
     this.scope = scope;
     this.memberImports = memberImports;
+    this.source = source;
   }
 
   public Tree.TyDecl decl() {
@@ -62,5 +68,10 @@ public class PackageSourceBoundClass implements BoundClass {
   /** The static member import index for the enclosing compilation unit. */
   public MemberImportIndex memberImports() {
     return memberImports;
+  }
+
+  /** The source file. */
+  public SourceFile source() {
+    return source;
   }
 }

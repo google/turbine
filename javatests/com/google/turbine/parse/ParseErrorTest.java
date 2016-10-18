@@ -20,7 +20,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
-import com.google.turbine.diag.LineMap;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,7 +34,9 @@ public class ParseErrorTest {
   public void expression() {
     ConstExpressionParser parser =
         new ConstExpressionParser(
-            new StreamLexer(new UnicodeEscapePreprocessor(String.valueOf(Long.MAX_VALUE))));
+            new StreamLexer(
+                new UnicodeEscapePreprocessor(
+                    new SourceFile(null, String.valueOf(Long.MAX_VALUE)))));
     try {
       parser.expression();
       fail("expected parsing to fail");
@@ -48,15 +51,14 @@ public class ParseErrorTest {
     try {
       Parser.parse(input);
       fail("expected parsing to fail");
-    } catch (ParseError e) {
-      // TODO(cushon): the caret position is weird, see the TODO in StreamLexer#position
-      assertThat(LineMap.create(input).formatDiagnostic(e.position(), e.getMessage()))
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
           .isEqualTo(
               Joiner.on('\n')
                   .join(
-                      "1:18: unexpected token VOID",
+                      "<>: 1:14: unexpected token VOID",
                       "public static void main(String[] args) {}",
-                      "                  ^"));
+                      "              ^"));
     }
   }
 
@@ -66,14 +68,14 @@ public class ParseErrorTest {
     try {
       Parser.parse(input);
       fail("expected parsing to fail");
-    } catch (ParseError e) {
-      assertThat(LineMap.create(input).formatDiagnostic(e.position(), e.getMessage()))
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
           .isEqualTo(
               Joiner.on('\n')
                   .join(
-                      "1:11: unexpected identifier 'clas'", //
+                      "<>: 1:7: unexpected identifier 'clas'", //
                       "public clas Test {}",
-                      "           ^"));
+                      "       ^"));
     }
   }
 }

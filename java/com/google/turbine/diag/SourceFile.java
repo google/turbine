@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package com.google.turbine.parse;
+package com.google.turbine.diag;
 
-/** A parse error. */
-public class ParseError extends Error {
-  private final int position;
+/** A source file. */
+public class SourceFile {
 
-  /** @param position the character offset of the parser error. */
-  public ParseError(int position, String message) {
-    super(message);
-    this.position = position;
+  private final String path;
+  private final String source;
+
+  public SourceFile(String path, String source) {
+    this.path = path;
+    this.source = source;
   }
 
-  /** Returns the UTF-16 code unit offset of the error. */
-  public int position() {
-    return position;
+  /** The path. */
+  public String path() {
+    return path;
+  }
+
+  /** The source. */
+  public String source() {
+    return source;
   }
 }

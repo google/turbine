@@ -29,6 +29,8 @@ import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
@@ -44,6 +46,23 @@ public class HierarchyBinder {
       Symbol origin,
       PackageSourceBoundClass base,
       Env<ClassSymbol, ? extends HeaderBoundClass> env) {
+    return new HierarchyBinder(origin, base, env).bind();
+  }
+
+  private final Symbol owner;
+  private final PackageSourceBoundClass base;
+  private final Env<ClassSymbol, ? extends HeaderBoundClass> env;
+
+  private HierarchyBinder(
+      Symbol owner,
+      PackageSourceBoundClass base,
+      Env<ClassSymbol, ? extends HeaderBoundClass> env) {
+    this.owner = owner;
+    this.base = base;
+    this.env = env;
+  }
+
+  private SourceHeaderBoundClass bind() {
     Tree.TyDecl decl = base.decl();
 
     int access = 0;
@@ -68,11 +87,11 @@ public class HierarchyBinder {
     }
 
     // types declared in interfaces  annotations are implicitly public (JLS 9.5)
-    if (enclosedByInterface(env, base)) {
+    if (enclosedByInterface(base)) {
       access = TurbineVisibility.PUBLIC.setAccess(access);
     }
 
-    if ((access & TurbineFlag.ACC_STATIC) == 0 && implicitStatic(env, base)) {
+    if ((access & TurbineFlag.ACC_STATIC) == 0 && implicitStatic(base)) {
       access |= TurbineFlag.ACC_STATIC;
     }
 
@@ -82,7 +101,7 @@ public class HierarchyBinder {
 
     ClassSymbol superclass;
     if (decl.xtnds().isPresent()) {
-      superclass = resolveClass(env, base.scope(), base.owner(), decl.xtnds().get());
+      superclass = resolveClass(base.source(), env, base.scope(), base.owner(), decl.xtnds().get());
     } else {
       switch (decl.tykind()) {
         case ENUM:
@@ -107,7 +126,7 @@ public class HierarchyBinder {
     ImmutableList.Builder<ClassSymbol> interfaces = ImmutableList.builder();
     if (!decl.impls().isEmpty()) {
       for (Tree.ClassTy i : decl.impls()) {
-        ClassSymbol result = resolveClass(env, base.scope(), base.owner(), i);
+        ClassSymbol result = resolveClass(base.source(), env, base.scope(), base.owner(), i);
         if (result == null) {
           throw new AssertionError(i);
         }
@@ -121,7 +140,7 @@ public class HierarchyBinder {
 
     ImmutableMap.Builder<String, TyVarSymbol> typeParameters = ImmutableMap.builder();
     for (Tree.TyParam p : decl.typarams()) {
-      typeParameters.put(p.name(), new TyVarSymbol(origin, p.name()));
+      typeParameters.put(p.name(), new TyVarSymbol(owner, p.name()));
     }
 
     return new SourceHeaderBoundClass(
@@ -132,8 +151,7 @@ public class HierarchyBinder {
    * Nested enums (JLS 8.9) and types nested within interfaces and annotations (JLS 9.5) are
    * implicitly static
    */
-  private static boolean implicitStatic(
-      Env<ClassSymbol, ? extends HeaderBoundClass> env, BoundClass c) {
+  private boolean implicitStatic(BoundClass c) {
     if (c.kind() == TurbineTyKind.ENUM) {
       return true;
     }
@@ -154,8 +172,7 @@ public class HierarchyBinder {
   }
 
   /** Returns true if the given type is declared in an interface. */
-  private static boolean enclosedByInterface(
-      Env<ClassSymbol, ? extends HeaderBoundClass> env, BoundClass c) {
+  private boolean enclosedByInterface(BoundClass c) {
     while (c.owner() != null) {
       c = env.get(c.owner());
       switch (c.kind()) {
@@ -192,6 +209,7 @@ public class HierarchyBinder {
    * non-canonical qualified type names.
    */
   public static ClassSymbol resolveClass(
+      SourceFile source,
       Env<ClassSymbol, ? extends HeaderBoundClass> env,
       CompoundScope enclscope,
       ClassSymbol owner,
@@ -205,7 +223,7 @@ public class HierarchyBinder {
     // Resolve the base symbol in the qualified name.
     LookupResult result = lookup(env, enclscope, owner, new LookupKey(flat));
     if (result == null) {
-      return null;
+      throw TurbineError.format(source, ty.position(), String.format("symbol not found %s\n", ty));
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
@@ -213,7 +231,8 @@ public class HierarchyBinder {
     for (String bit : result.remaining()) {
       sym = Resolve.resolve(env, sym, bit);
       if (sym == null) {
-        return null;
+        throw TurbineError.format(
+            source, ty.position(), String.format("symbol not found %s\n", bit));
       }
     }
     return sym;
@@ -237,5 +256,9 @@ public class HierarchyBinder {
     // Fall back to the top-level scopes for the compilation unit (imports, same package, then
     // qualified name resolution).
     return parent.lookup(lookup);
+  }
+
+  private TurbineError error(int position, String message, Object... args) {
+    return TurbineError.format(base.source(), position, message, args);
   }
 }

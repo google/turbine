@@ -16,6 +16,8 @@
 
 package com.google.turbine.parse;
 
+import com.google.turbine.diag.SourceFile;
+
 /** A Java lexer. */
 public interface Lexer {
   /** Returns the next token in the input stream, or {@code EOF}. */
@@ -26,4 +28,7 @@ public interface Lexer {
 
   /** Returns the current position in the input. */
   int position();
+
+  /** Returns the source file for diagnostics. */
+  SourceFile source();
 }

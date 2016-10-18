@@ -67,7 +67,8 @@ public class CanonicalTypeBinder {
         base.scope(),
         base.memberImports(),
         base.retention(),
-        base.annotations());
+        base.annotations(),
+        base.source());
   }
 
   private static ImmutableList<FieldInfo> fields(

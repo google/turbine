@@ -16,6 +16,7 @@
 
 package com.google.turbine.parse;
 
+import com.google.turbine.diag.SourceFile;
 import java.util.Iterator;
 
 /**
@@ -25,11 +26,18 @@ import java.util.Iterator;
  */
 public class IteratorLexer implements Lexer {
 
+  private final SourceFile source;
   private final Iterator<SavedToken> it;
   private SavedToken curr;
 
-  public IteratorLexer(Iterator<SavedToken> it) {
+  public IteratorLexer(SourceFile source, Iterator<SavedToken> it) {
+    this.source = source;
     this.it = it;
+  }
+
+  @Override
+  public SourceFile source() {
+    return source;
   }
 
   @Override
@@ -48,6 +56,7 @@ public class IteratorLexer implements Lexer {
 
   @Override
   public int position() {
-    return curr.position;
+    // TODO(cushon): test expression position EOF handling
+    return curr != null ? curr.position : -1;
   }
 }

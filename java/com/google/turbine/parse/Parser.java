@@ -23,6 +23,8 @@ import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
@@ -56,9 +58,14 @@ public class Parser {
   private final Lexer lexer;
 
   private Token token;
+  private int position;
 
-  public static CompUnit parse(String input) {
-    return new Parser(new StreamLexer(new UnicodeEscapePreprocessor(input))).compilationUnit();
+  public static CompUnit parse(String source) {
+    return parse(new SourceFile(null, source));
+  }
+
+  public static CompUnit parse(SourceFile source) {
+    return new Parser(new StreamLexer(new UnicodeEscapePreprocessor(source))).compilationUnit();
   }
 
   private Parser(Lexer lexer) {
@@ -150,7 +157,7 @@ public class Parser {
           break;
         case EOF:
           // TODO(cushon): check for dangling modifiers?
-          return new CompUnit(pkg, imports.build(), decls.build(), null);
+          return new CompUnit(position, pkg, imports.build(), decls.build(), lexer.source());
         case SEMI:
           // TODO(cushon): check for dangling modifiers?
           next();
@@ -163,6 +170,7 @@ public class Parser {
 
   private void next() {
     token = lexer.next();
+    position = lexer.position();
   }
 
   private TyDecl interfaceDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
@@ -185,6 +193,7 @@ public class Parser {
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(
+        position,
         access,
         annos,
         name,
@@ -202,6 +211,7 @@ public class Parser {
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(
+        position,
         access,
         annos,
         name,
@@ -227,6 +237,7 @@ public class Parser {
         ImmutableList.<Tree>builder().addAll(enumMembers(name)).addAll(classMembers()).build();
     eat(Token.RBRACE);
     return new TyDecl(
+        position,
         access,
         annos,
         name,
@@ -265,9 +276,11 @@ public class Parser {
             maybe(Token.COMMA);
             result.add(
                 new VarDecl(
+                    position,
                     access,
                     annos.build(),
-                    new ClassTy(Optional.<ClassTy>absent(), enumName, ImmutableList.<Type>of()),
+                    new ClassTy(
+                        position, Optional.<ClassTy>absent(), enumName, ImmutableList.<Type>of()),
                     name,
                     Optional.<Expression>absent()));
             annos = ImmutableList.builder();
@@ -314,6 +327,7 @@ public class Parser {
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(
+        position,
         access,
         annos,
         name,
@@ -451,7 +465,7 @@ public class Parser {
     switch (token) {
       case VOID:
         {
-          result = Tree.VoidTy.INSTANCE;
+          result = new Tree.VoidTy(position);
           next();
           name = eatIdent();
           return memberRest(access, annos, typaram, result, name);
@@ -480,7 +494,9 @@ public class Parser {
               }
             case IDENT:
               {
-                result = new ClassTy(Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
+                result =
+                    new ClassTy(
+                        position, Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
                 name = eatIdent();
                 return memberRest(access, annos, typaram, result, name);
               }
@@ -494,26 +510,30 @@ public class Parser {
                 } while (maybe(Token.LBRACK));
                 result =
                     new ArrTy(
-                        new ClassTy(Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of()),
+                        position,
+                        new ClassTy(
+                            position, Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of()),
                         dim);
                 break;
               }
             case LT:
               {
-                Type ty = new ClassTy(Optional.<ClassTy>absent(), ident, tyargs());
+                Type ty = new ClassTy(position, Optional.<ClassTy>absent(), ident, tyargs());
                 int dim = 0;
                 while (maybe(Token.LBRACK)) {
                   eat(Token.RBRACK);
                   dim++;
                 }
                 if (dim > 0) {
-                  ty = new ArrTy(ty, dim);
+                  ty = new ArrTy(position, ty, dim);
                 }
                 result = ty;
                 break;
               }
             case DOT:
-              result = new ClassTy(Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
+              result =
+                  new ClassTy(
+                      position, Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
               break;
             default:
               throw error(token);
@@ -531,7 +551,7 @@ public class Parser {
               dim++;
             }
             if (dim > 0) {
-              result = new ArrTy(result, dim);
+              result = new ArrTy(position, result, dim);
             }
           }
           name = eatIdent();
@@ -544,7 +564,7 @@ public class Parser {
             case COMMA:
               {
                 if (!typaram.isEmpty()) {
-                  throw error(typaram);
+                  throw error("%s", typaram);
                 }
                 return fieldRest(access, annos, result, name);
               }
@@ -570,7 +590,7 @@ public class Parser {
       case COMMA:
         {
           if (!typaram.isEmpty()) {
-            throw error(typaram);
+            throw error("%s", typaram);
           }
           return fieldRest(access, annos, result, name);
         }
@@ -600,7 +620,7 @@ public class Parser {
         if (next.token == Token.IDENT) {
           name = next.value;
         } else {
-          throw error(next);
+          throw error("%s", next);
         }
       }
 
@@ -613,7 +633,7 @@ public class Parser {
           dim++;
           next = it.next();
           if (next.token != Token.RBRACK) {
-            throw error(next);
+            throw error("%s", next);
           }
           if (it.hasNext()) {
             next = it.next();
@@ -622,11 +642,12 @@ public class Parser {
         newty = expandDims(ty, dim);
       }
       // TODO(cushon): skip more fields that are definitely non-const
-      Expression init = new ConstExpressionParser(new IteratorLexer(it)).expression();
+      Expression init =
+          new ConstExpressionParser(new IteratorLexer(lexer.source(), it)).expression();
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
-      result.add(new VarDecl(access, annos, newty, name, Optional.fromNullable(init)));
+      result.add(new VarDecl(position, access, annos, newty, name, Optional.fromNullable(init)));
     }
     eat(Token.SEMI);
     return result.build();
@@ -683,6 +704,7 @@ public class Parser {
       name = CTOR_NAME;
     }
     return new MethDecl(
+        position,
         access,
         annos,
         typaram,
@@ -740,15 +762,15 @@ public class Parser {
         ty = parseDims(ty);
       }
     }
-    return new VarDecl(access, annos.build(), ty, name, Optional.<Expression>absent());
+    return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>absent());
   }
 
   private Type expandDims(Type ty, int extra) {
     if (ty.kind() == Tree.Kind.ARR_TY) {
       Type.ArrTy aty = (Type.ArrTy) ty;
-      return new ArrTy(aty.elem(), aty.dim() + extra);
+      return new ArrTy(position, aty.elem(), aty.dim() + extra);
     } else if (extra > 0) {
-      return new ArrTy(ty, extra);
+      return new ArrTy(position, ty, extra);
     } else {
       return ty;
     }
@@ -801,7 +823,7 @@ public class Parser {
         next();
         bounds = tybounds();
       }
-      acc.add(new TyParam(name, bounds));
+      acc.add(new TyParam(position, name, bounds));
       switch (token) {
         case COMMA:
           eat(Token.COMMA);
@@ -829,13 +851,14 @@ public class Parser {
   }
 
   private ClassTy classty(ClassTy ty) {
+    int pos = position;
     do {
       String name = eatIdent();
       ImmutableList<Type> tyargs = ImmutableList.of();
       if (token == Token.LT) {
         tyargs = tyargs();
       }
-      ty = new ClassTy(Optional.fromNullable(ty), name, tyargs);
+      ty = new ClassTy(pos, Optional.fromNullable(ty), name, tyargs);
     } while (maybe(Token.DOT));
     return ty;
   }
@@ -853,20 +876,20 @@ public class Parser {
               case EXTENDS:
                 next();
                 Type upper = referenceType();
-                acc.add(new WildTy(Optional.of(upper), Optional.<Type>absent()));
+                acc.add(new WildTy(position, Optional.of(upper), Optional.<Type>absent()));
                 break;
               case SUPER:
                 next();
                 Type lower = referenceType();
-                acc.add(new WildTy(Optional.<Type>absent(), Optional.of(lower)));
+                acc.add(new WildTy(position, Optional.<Type>absent(), Optional.of(lower)));
                 break;
               case COMMA:
-                acc.add(new WildTy(Optional.<Type>absent(), Optional.<Type>absent()));
+                acc.add(new WildTy(position, Optional.<Type>absent(), Optional.<Type>absent()));
                 continue OUTER;
               case GT:
               case GTGT:
               case GTGTGT:
-                acc.add(new WildTy(Optional.<Type>absent(), Optional.<Type>absent()));
+                acc.add(new WildTy(position, Optional.<Type>absent(), Optional.<Type>absent()));
                 break OUTER;
               default:
                 throw error(token);
@@ -912,35 +935,35 @@ public class Parser {
         break;
       case BOOLEAN:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.BOOLEAN);
+        ty = new PrimTy(position, TurbineConstantTypeKind.BOOLEAN);
         break;
       case BYTE:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.BYTE);
+        ty = new PrimTy(position, TurbineConstantTypeKind.BYTE);
         break;
       case SHORT:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.SHORT);
+        ty = new PrimTy(position, TurbineConstantTypeKind.SHORT);
         break;
       case INT:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.INT);
+        ty = new PrimTy(position, TurbineConstantTypeKind.INT);
         break;
       case LONG:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.LONG);
+        ty = new PrimTy(position, TurbineConstantTypeKind.LONG);
         break;
       case CHAR:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.CHAR);
+        ty = new PrimTy(position, TurbineConstantTypeKind.CHAR);
         break;
       case DOUBLE:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.DOUBLE);
+        ty = new PrimTy(position, TurbineConstantTypeKind.DOUBLE);
         break;
       case FLOAT:
         next();
-        ty = new PrimTy(TurbineConstantTypeKind.FLOAT);
+        ty = new PrimTy(position, TurbineConstantTypeKind.FLOAT);
         break;
       default:
         throw error(token);
@@ -951,7 +974,7 @@ public class Parser {
       dim++;
     }
     if (dim > 0) {
-      ty = new ArrTy(ty, dim);
+      ty = new ArrTy(position, ty, dim);
     }
     return ty;
   }
@@ -1035,11 +1058,11 @@ public class Parser {
       }
     }
     eat(Token.SEMI);
-    return new ImportDecl(type.build(), stat, wild);
+    return new ImportDecl(position, type.build(), stat, wild);
   }
 
   private PkgDecl packageDeclaration() {
-    PkgDecl result = new PkgDecl(qualIdent());
+    PkgDecl result = new PkgDecl(position, qualIdent());
     eat(Token.SEMI);
     return result;
   }
@@ -1066,7 +1089,7 @@ public class Parser {
       eat(Token.RPAREN);
     }
 
-    return new Anno(name, args.build());
+    return new Anno(position, name, args.build());
   }
 
   private String eatIdent() {
@@ -1090,7 +1113,7 @@ public class Parser {
     return false;
   }
 
-  ParseError error(Token token) {
+  TurbineError error(Token token) {
     String message;
     switch (token) {
       case IDENT:
@@ -1100,10 +1123,10 @@ public class Parser {
         message = String.format("unexpected token %s", token);
         break;
     }
-    return new ParseError(lexer.position(), message);
+    return TurbineError.format(lexer.source(), lexer.position(), message, new Object[] {});
   }
 
-  private ParseError error(Object message) {
-    return new ParseError(lexer.position(), String.valueOf(message));
+  private TurbineError error(String message, Object... args) {
+    return TurbineError.format(lexer.source(), lexer.position(), message, args);
   }
 }

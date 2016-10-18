@@ -175,7 +175,8 @@ public class Binder {
       CompoundScope scope = topLevel.append(packageScope).append(importScope);
 
       for (ClassSymbol sym : entry.getValue()) {
-        env.putIfAbsent(sym, new PackageSourceBoundClass(ienv.get(sym), scope, memberImports));
+        env.putIfAbsent(
+            sym, new PackageSourceBoundClass(ienv.get(sym), scope, memberImports, unit.source()));
       }
     }
     return env.build();

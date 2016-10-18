@@ -16,19 +16,24 @@
 
 package com.google.turbine.parse;
 
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+
 /** Preprocesses Unicode escape characters in Java source code, as described in JLS §3.3. */
 public class UnicodeEscapePreprocessor {
 
   public static final char ASCII_SUB = 0x1A;
 
+  private final SourceFile source;
   private final String input;
 
   private int idx = 0;
   private char ch;
   private boolean evenLeadingSlashes = true;
 
-  public UnicodeEscapePreprocessor(String input) {
-    this.input = input;
+  public UnicodeEscapePreprocessor(SourceFile source) {
+    this.source = source;
+    this.input = source.source();
   }
 
   /** Returns the current position in the input. */
@@ -109,9 +114,9 @@ public class UnicodeEscapePreprocessor {
       case 'f':
         return ((d - 'a') + 10);
       case ASCII_SUB:
-        throw new ParseError(position(), "unexpected end of input");
+        throw new AssertionError("unexpected end of input");
       default:
-        throw new ParseError(position(), String.format("0x%x", (int) d));
+        throw TurbineError.format(source, position(), "0x%x", (int) d);
     }
   }
 
@@ -125,5 +130,9 @@ public class UnicodeEscapePreprocessor {
   private void eat() {
     ch = done() ? ASCII_SUB : input.charAt(idx);
     idx++;
+  }
+
+  public SourceFile source() {
+    return source;
   }
 }

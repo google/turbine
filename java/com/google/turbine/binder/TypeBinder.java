@@ -39,6 +39,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -124,8 +125,22 @@ public class TypeBinder {
 
   /** Creates {@link SourceTypeBoundClass} nodes for a compilation. */
   public static SourceTypeBoundClass bind(
-      final Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym, SourceHeaderBoundClass base) {
+      Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym, SourceHeaderBoundClass base) {
+    return new TypeBinder(env, sym, base).bind();
+  }
 
+  private final Env<ClassSymbol, HeaderBoundClass> env;
+  private final ClassSymbol owner;
+  private final SourceHeaderBoundClass base;
+
+  public TypeBinder(
+      Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol owner, SourceHeaderBoundClass base) {
+    this.env = env;
+    this.owner = owner;
+    this.base = base;
+  }
+
+  private SourceTypeBoundClass bind() {
     // This method uses two scopes. This first one is built up as we process the signature
     // and its elements become visible to subsequent elements (e.g. type parameters can
     // refer to previous declared type parameters, the superclass type can refer to
@@ -133,12 +148,12 @@ public class TypeBinder {
     // once the signature is fully determined.
     CompoundScope enclosingScope = base.scope();
     enclosingScope = enclosingScope.append(new ClassMemberScope(base.owner(), env));
-    enclosingScope = enclosingScope.append(new SingletonScope(base.decl().name(), sym));
+    enclosingScope = enclosingScope.append(new SingletonScope(base.decl().name(), owner));
 
     // type parameters can refer to each other in f-bounds, so update the scope first
     enclosingScope = enclosingScope.append(new MapScope(base.typeParameters()));
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
-        bindTyParams(env, base.decl().typarams(), enclosingScope, base.typeParameters());
+        bindTyParams(base.decl().typarams(), enclosingScope, base.typeParameters());
 
     Type.ClassTy superClassType;
     switch (base.kind()) {
@@ -149,7 +164,7 @@ public class TypeBinder {
                     new Type.ClassTy.SimpleClassTy(
                         ClassSymbol.ENUM,
                         ImmutableList.of(
-                            new Type.ConcreteTyArg(Type.ClassTy.asNonParametricClassTy(sym))))));
+                            new Type.ConcreteTyArg(Type.ClassTy.asNonParametricClassTy(owner))))));
         break;
       case ANNOTATION:
         superClassType = Type.ClassTy.asNonParametricClassTy(ClassSymbol.ANNOTATION);
@@ -157,8 +172,7 @@ public class TypeBinder {
       case CLASS:
       case INTERFACE:
         if (base.decl().xtnds().isPresent()) {
-          superClassType =
-              (Type.ClassTy) bindClassTy(env, enclosingScope, base.decl().xtnds().get());
+          superClassType = (Type.ClassTy) bindClassTy(enclosingScope, base.decl().xtnds().get());
           // Members inherited from the superclass are visible to interface types.
           // (The same is not true for interface types declared before other interface
           // types, at least according to javac.)
@@ -184,18 +198,18 @@ public class TypeBinder {
 
     ImmutableList.Builder<Type.ClassTy> interfaceTypes = ImmutableList.builder();
     for (Tree.ClassTy i : base.decl().impls()) {
-      interfaceTypes.add((Type.ClassTy) bindClassTy(env, enclosingScope, i));
+      interfaceTypes.add((Type.ClassTy) bindClassTy(enclosingScope, i));
     }
 
-    CompoundScope scope = base.scope().append(new ClassMemberScope(sym, env));
+    CompoundScope scope = base.scope().append(new ClassMemberScope(owner, env));
 
-    List<MethodInfo> methods = bindMethods(base, env, scope, sym, base.decl().members());
-    addSyntheticMethods(sym, base, methods);
+    List<MethodInfo> methods = bindMethods(scope, base.decl().members());
+    addSyntheticMethods(methods);
 
-    ImmutableList<FieldInfo> fields = bindFields(base, env, scope, sym, base.decl().members());
+    ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
 
     ImmutableList<TypeBoundClass.AnnoInfo> annotations =
-        bindAnnotations(env, scope, base.decl().annos());
+        bindAnnotations(scope, base.decl().annos());
 
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
@@ -213,39 +227,38 @@ public class TypeBinder {
         scope,
         base.memberImports(),
         /*retention*/ null,
-        annotations);
+        annotations,
+        base.source());
   }
 
   /** Add synthetic and implicit methods, including default constructors and enum methods. */
-  static void addSyntheticMethods(
-      ClassSymbol sym, HeaderBoundClass base, List<MethodInfo> methods) {
+  void addSyntheticMethods(List<MethodInfo> methods) {
     switch (base.kind()) {
       case CLASS:
-        maybeAddDefaultConstructor(sym, base, methods);
+        maybeAddDefaultConstructor(methods);
         break;
       case ENUM:
-        addEnumMethods(sym, methods);
+        addEnumMethods(methods);
         break;
       default:
         break;
     }
   }
 
-  private static void maybeAddDefaultConstructor(
-      ClassSymbol owner, HeaderBoundClass info, List<MethodInfo> methods) {
+  private void maybeAddDefaultConstructor(List<MethodInfo> methods) {
     if (hasConstructor(methods)) {
       return;
     }
     ImmutableList<ParamInfo> formals;
-    if (hasEnclosingInstance(info)) {
+    if (hasEnclosingInstance(base)) {
       formals =
           ImmutableList.of(
               new ParamInfo(
-                  Type.ClassTy.asNonParametricClassTy(info.owner()), ImmutableList.of(), true));
+                  Type.ClassTy.asNonParametricClassTy(base.owner()), ImmutableList.of(), true));
     } else {
       formals = ImmutableList.of();
     }
-    int access = TurbineVisibility.fromAccess(info.access()).flag();
+    int access = TurbineVisibility.fromAccess(base.access()).flag();
     access |= TurbineFlag.ACC_SYNTH_CTOR;
     methods.add(
         new MethodInfo(
@@ -260,7 +273,7 @@ public class TypeBinder {
             ImmutableList.of()));
   }
 
-  private static void addEnumMethods(ClassSymbol owner, List<MethodInfo> methods) {
+  private void addEnumMethods(List<MethodInfo> methods) {
     if (!hasConstructor(methods)) {
       methods.add(
           new MethodInfo(
@@ -313,11 +326,8 @@ public class TypeBinder {
   }
 
   /** Bind type parameter types. */
-  private static ImmutableMap<TyVarSymbol, TyVarInfo> bindTyParams(
-      Env<ClassSymbol, HeaderBoundClass> env,
-      ImmutableList<Tree.TyParam> trees,
-      CompoundScope scope,
-      Map<String, TyVarSymbol> symbols) {
+  private ImmutableMap<TyVarSymbol, TyVarInfo> bindTyParams(
+      ImmutableList<Tree.TyParam> trees, CompoundScope scope, Map<String, TyVarSymbol> symbols) {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Tree.TyParam tree : trees) {
       TyVarSymbol sym = symbols.get(tree.name());
@@ -325,8 +335,8 @@ public class TypeBinder {
       ImmutableList.Builder<Type> interfaceBounds = ImmutableList.builder();
       boolean first = true;
       for (Tree bound : tree.bounds()) {
-        Type ty = bindTy(env, scope, bound);
-        if (first && !isInterface(env, ty)) {
+        Type ty = bindTy(scope, bound);
+        if (first && !isInterface(ty)) {
           classBound = ty;
         } else {
           interfaceBounds.add(ty);
@@ -338,7 +348,7 @@ public class TypeBinder {
     return result.build();
   }
 
-  private static boolean isInterface(Env<ClassSymbol, HeaderBoundClass> env, Type ty) {
+  private boolean isInterface(Type ty) {
     if (ty.tyKind() != Type.TyKind.CLASS_TY) {
       return false;
     }
@@ -346,27 +356,17 @@ public class TypeBinder {
     return hi.kind() == TurbineTyKind.INTERFACE;
   }
 
-  private static List<MethodInfo> bindMethods(
-      HeaderBoundClass base,
-      Env<ClassSymbol, HeaderBoundClass> env,
-      CompoundScope scope,
-      ClassSymbol sym,
-      ImmutableList<Tree> members) {
+  private List<MethodInfo> bindMethods(CompoundScope scope, ImmutableList<Tree> members) {
     List<MethodInfo> methods = new ArrayList<>();
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.METH_DECL) {
-        methods.add(bindMethod(base, env, scope, sym, (Tree.MethDecl) member));
+        methods.add(bindMethod(scope, (Tree.MethDecl) member));
       }
     }
     return methods;
   }
 
-  private static MethodInfo bindMethod(
-      HeaderBoundClass base,
-      Env<ClassSymbol, HeaderBoundClass> env,
-      CompoundScope scope,
-      ClassSymbol owner,
-      Tree.MethDecl t) {
+  private MethodInfo bindMethod(CompoundScope scope, Tree.MethDecl t) {
 
     MethodSymbol sym = new MethodSymbol(owner, t.name());
 
@@ -374,7 +374,7 @@ public class TypeBinder {
     {
       ImmutableMap.Builder<String, TyVarSymbol> builder = ImmutableMap.builder();
       for (Tree.TyParam pt : t.typarams()) {
-        builder.put(pt.name(), new TyVarSymbol(sym, pt.name()));
+        builder.put(pt.name(), new TyVarSymbol(owner, pt.name()));
       }
       typeParameters = builder.build();
     }
@@ -382,11 +382,11 @@ public class TypeBinder {
     // type parameters can refer to each other in f-bounds, so update the scope first
     scope = scope.append(new MapScope(typeParameters));
     ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
-        bindTyParams(env, t.typarams(), scope, typeParameters);
+        bindTyParams(t.typarams(), scope, typeParameters);
 
     Type returnType;
     if (t.ret().isPresent()) {
-      returnType = bindTy(env, scope, t.ret().get());
+      returnType = bindTy(scope, t.ret().get());
     } else {
       returnType = Type.VOID;
     }
@@ -412,13 +412,11 @@ public class TypeBinder {
     for (Tree.VarDecl p : t.params()) {
       parameters.add(
           new ParamInfo(
-              bindTy(env, scope, p.ty()),
-              bindAnnotations(env, scope, p.annos()),
-              /*synthetic*/ false));
+              bindTy(scope, p.ty()), bindAnnotations(scope, p.annos()), /*synthetic*/ false));
     }
     ImmutableList.Builder<Type> exceptions = ImmutableList.builder();
     for (Tree.ClassTy p : t.exntys()) {
-      exceptions.add(bindClassTy(env, scope, p));
+      exceptions.add(bindClassTy(scope, p));
     }
 
     int access = 0;
@@ -443,7 +441,7 @@ public class TypeBinder {
         break;
     }
 
-    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(env, scope, t.annos());
+    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(scope, t.annos());
     return new MethodInfo(
         sym,
         typeParameterTypes,
@@ -462,35 +460,25 @@ public class TypeBinder {
         && ((base.access() & TurbineFlag.ACC_STATIC) == 0);
   }
 
-  private static ImmutableList<FieldInfo> bindFields(
-      HeaderBoundClass base,
-      Env<ClassSymbol, HeaderBoundClass> env,
-      CompoundScope scope,
-      ClassSymbol sym,
-      ImmutableList<Tree> members) {
+  private ImmutableList<FieldInfo> bindFields(CompoundScope scope, ImmutableList<Tree> members) {
     ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.VAR_DECL) {
-        fields.add(bindField(base, env, scope, sym, (Tree.VarDecl) member));
+        fields.add(bindField(scope, (Tree.VarDecl) member));
       }
     }
     return fields.build();
   }
 
-  private static FieldInfo bindField(
-      HeaderBoundClass hi,
-      Env<ClassSymbol, HeaderBoundClass> env,
-      CompoundScope scope,
-      ClassSymbol owner,
-      Tree.VarDecl decl) {
+  private FieldInfo bindField(CompoundScope scope, Tree.VarDecl decl) {
     FieldSymbol sym = new FieldSymbol(owner, decl.name());
-    Type type = bindTy(env, scope, decl.ty());
-    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(env, scope, decl.annos());
+    Type type = bindTy(scope, decl.ty());
+    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(scope, decl.annos());
     int access = 0;
     for (TurbineModifier m : decl.mods()) {
       access |= m.flag();
     }
-    switch (hi.kind()) {
+    switch (base.kind()) {
       case INTERFACE:
       case ANNOTATION:
         access |= TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_STATIC;
@@ -501,8 +489,8 @@ public class TypeBinder {
     return new FieldInfo(sym, type, access, annotations, decl, null);
   }
 
-  private static ImmutableList<TypeBoundClass.AnnoInfo> bindAnnotations(
-      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, ImmutableList<Tree.Anno> trees) {
+  private ImmutableList<TypeBoundClass.AnnoInfo> bindAnnotations(
+      CompoundScope scope, ImmutableList<Tree.Anno> trees) {
     ImmutableList.Builder<TypeBoundClass.AnnoInfo> result = ImmutableList.builder();
     for (Tree.Anno tree : trees) {
       LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
@@ -515,33 +503,32 @@ public class TypeBinder {
     return result.build();
   }
 
-  private static ImmutableList<Type.TyArg> bindTyArgs(
-      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, ImmutableList<Tree.Type> targs) {
+  private ImmutableList<Type.TyArg> bindTyArgs(
+      CompoundScope scope, ImmutableList<Tree.Type> targs) {
     ImmutableList.Builder<Type.TyArg> result = ImmutableList.builder();
     for (Tree.Type ty : targs) {
-      result.add(bindTyArg(env, scope, ty));
+      result.add(bindTyArg(scope, ty));
     }
     return result.build();
   }
 
-  private static Type.TyArg bindTyArg(
-      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.Type ty) {
+  private Type.TyArg bindTyArg(CompoundScope scope, Tree.Type ty) {
     switch (ty.kind()) {
       case WILD_TY:
-        return bindWildTy(env, scope, (Tree.WildTy) ty);
+        return bindWildTy(scope, (Tree.WildTy) ty);
       default:
-        return new Type.ConcreteTyArg(bindTy(env, scope, ty));
+        return new Type.ConcreteTyArg(bindTy(scope, ty));
     }
   }
 
-  private static Type bindTy(Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree t) {
+  private Type bindTy(CompoundScope scope, Tree t) {
     switch (t.kind()) {
       case CLASS_TY:
-        return bindClassTy(env, scope, (Tree.ClassTy) t);
+        return bindClassTy(scope, (Tree.ClassTy) t);
       case PRIM_TY:
         return bindPrimTy((Tree.PrimTy) t);
       case ARR_TY:
-        return bindArrTy(env, scope, (Tree.ArrTy) t);
+        return bindArrTy(scope, (Tree.ArrTy) t);
       case VOID_TY:
         return Type.VOID;
       default:
@@ -549,8 +536,7 @@ public class TypeBinder {
     }
   }
 
-  private static Type bindClassTy(
-      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.ClassTy t) {
+  private Type bindClassTy(CompoundScope scope, Tree.ClassTy t) {
     // flatten the components of a qualified class type
     ArrayList<Tree.ClassTy> flat;
     {
@@ -567,12 +553,15 @@ public class TypeBinder {
     }
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
+    if (result == null) {
+      throw error(t.position(), "symbol not found %s", t);
+    }
     Verify.verifyNotNull(result, "%s", names);
     Symbol sym = result.sym();
     switch (sym.symKind()) {
       case CLASS:
         // resolve any remaining types in the qualified name, and their type arguments
-        return bindClassTyRest(env, scope, flat, names, result, (ClassSymbol) sym);
+        return bindClassTyRest(scope, flat, names, result, (ClassSymbol) sym);
       case TY_PARAM:
         Verify.verify(result.remaining().isEmpty(), "%s", result.remaining());
         return new Type.TyVar((TyVarSymbol) sym);
@@ -581,8 +570,7 @@ public class TypeBinder {
     }
   }
 
-  private static Type bindClassTyRest(
-      Env<ClassSymbol, HeaderBoundClass> env,
+  private Type bindClassTyRest(
       CompoundScope scope,
       ArrayList<Tree.ClassTy> flat,
       ArrayList<String> bits,
@@ -590,12 +578,11 @@ public class TypeBinder {
       ClassSymbol sym) {
     int idx = bits.size() - result.remaining().size() - 1;
     ImmutableList.Builder<Type.ClassTy.SimpleClassTy> classes = ImmutableList.builder();
-    classes.add(
-        new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(env, scope, flat.get(idx++).tyargs())));
+    classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, flat.get(idx++).tyargs())));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
       sym = Resolve.resolve(env, sym, curr.name());
-      classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(env, scope, curr.tyargs())));
+      classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs())));
     }
     return new Type.ClassTy(classes.build());
   }
@@ -604,20 +591,22 @@ public class TypeBinder {
     return new Type.PrimTy(t.tykind());
   }
 
-  private static Type bindArrTy(
-      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.ArrTy t) {
+  private Type bindArrTy(CompoundScope scope, Tree.ArrTy t) {
     verify(t.elem().kind() != Tree.Kind.ARR_TY);
-    return new Type.ArrayTy(t.dim(), bindTy(env, scope, t.elem()));
+    return new Type.ArrayTy(t.dim(), bindTy(scope, t.elem()));
   }
 
-  private static Type.TyArg bindWildTy(
-      Env<ClassSymbol, HeaderBoundClass> env, CompoundScope scope, Tree.WildTy t) {
+  private Type.TyArg bindWildTy(CompoundScope scope, Tree.WildTy t) {
     if (t.lower().isPresent()) {
-      return new Type.WildLowerBoundedTy(bindTy(env, scope, t.lower().get()));
+      return new Type.WildLowerBoundedTy(bindTy(scope, t.lower().get()));
     } else if (t.upper().isPresent()) {
-      return new Type.WildUpperBoundedTy(bindTy(env, scope, t.upper().get()));
+      return new Type.WildUpperBoundedTy(bindTy(scope, t.upper().get()));
     } else {
       return Type.WILD_TY;
     }
+  }
+
+  private TurbineError error(int position, String message, Object... args) {
+    return TurbineError.format(base.source(), position, message, args);
   }
 }

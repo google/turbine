@@ -152,7 +152,8 @@ public class LowerTest {
             null,
             null,
             null,
-            ImmutableList.of());
+            ImmutableList.of(),
+            null);
 
     SourceTypeBoundClass i =
         new SourceTypeBoundClass(
@@ -171,7 +172,8 @@ public class LowerTest {
             null,
             null,
             null,
-            ImmutableList.of());
+            ImmutableList.of(),
+            null);
 
     SimpleEnv.Builder<SourceTypeBoundClass> b = SimpleEnv.builder();
     b.putIfAbsent(new ClassSymbol("test/Test"), c);

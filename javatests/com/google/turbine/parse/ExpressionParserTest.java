@@ -18,6 +18,7 @@ package com.google.turbine.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.tree.Tree;
 import java.util.Arrays;
 import org.junit.Test;
@@ -142,7 +143,8 @@ public class ExpressionParserTest {
   @Test
   public void test() {
     Tree.Expression expression =
-        new ConstExpressionParser(new StreamLexer(new UnicodeEscapePreprocessor(input)))
+        new ConstExpressionParser(
+                new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input))))
             .expression();
     if (expected == null) {
       assertThat(expression).isNull();

@@ -22,8 +22,10 @@ import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.ClassTy;
 import java.lang.annotation.RetentionPolicy;
 import javax.annotation.Nullable;
 
@@ -48,10 +50,11 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final MemberImportIndex memberImports;
   private final RetentionPolicy retention;
   private final ImmutableList<AnnoInfo> annotations;
+  private final SourceFile source;
 
   public SourceTypeBoundClass(
-      ImmutableList<Type.ClassTy> interfaceTypes,
-      Type.ClassTy superClassType,
+      ImmutableList<ClassTy> interfaceTypes,
+      ClassTy superClassType,
       ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes,
       int access,
       ImmutableList<MethodInfo> methods,
@@ -65,7 +68,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       CompoundScope scope,
       MemberImportIndex memberImports,
       RetentionPolicy retention,
-      ImmutableList<AnnoInfo> annotations) {
+      ImmutableList<AnnoInfo> annotations,
+      SourceFile source) {
     this.interfaceTypes = interfaceTypes;
     this.superClassType = superClassType;
     this.typeParameterTypes = typeParameterTypes;
@@ -82,6 +86,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.memberImports = memberImports;
     this.retention = retention;
     this.annotations = annotations;
+    this.source = source;
   }
 
   @Override
@@ -166,5 +171,10 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   /** Declaration annotations. */
   public ImmutableList<AnnoInfo> annotations() {
     return annotations;
+  }
+
+  /** The source file. */
+  public SourceFile source() {
+    return source;
   }
 }
