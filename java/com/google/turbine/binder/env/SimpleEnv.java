@@ -17,31 +17,31 @@
 package com.google.turbine.binder.env;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.Symbol;
 import java.util.LinkedHashMap;
 
 /** A simple {@link ImmutableMap}-backed {@link Env}. */
-public class SimpleEnv<V> implements Env<ClassSymbol, V> {
+public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
 
-  private final ImmutableMap<ClassSymbol, V> map;
+  private final ImmutableMap<K, V> map;
 
-  public SimpleEnv(ImmutableMap<ClassSymbol, V> map) {
+  public SimpleEnv(ImmutableMap<K, V> map) {
     this.map = map;
   }
 
-  public static <V> Builder<V> builder() {
+  public static <K extends Symbol, V> Builder<K, V> builder() {
     return new Builder<>();
   }
 
-  public ImmutableMap<ClassSymbol, V> asMap() {
+  public ImmutableMap<K, V> asMap() {
     return map;
   }
 
   /** A builder for {@link SimpleEnv}static. */
-  public static class Builder<V> {
-    private final LinkedHashMap<ClassSymbol, V> map = new LinkedHashMap<>();
+  public static class Builder<K extends Symbol, V> {
+    private final LinkedHashMap<K, V> map = new LinkedHashMap<>();
 
-    public boolean putIfAbsent(ClassSymbol sym, V v) {
+    public boolean putIfAbsent(K sym, V v) {
       if (map.containsKey(sym)) {
         return false;
       }
@@ -49,13 +49,13 @@ public class SimpleEnv<V> implements Env<ClassSymbol, V> {
       return true;
     }
 
-    public SimpleEnv<V> build() {
+    public SimpleEnv<K, V> build() {
       return new SimpleEnv<>(ImmutableMap.copyOf(map));
     }
   }
 
   @Override
-  public V get(ClassSymbol sym) {
+  public V get(K sym) {
     return map.get(sym);
   }
 }

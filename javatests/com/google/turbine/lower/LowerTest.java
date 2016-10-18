@@ -175,7 +175,7 @@ public class LowerTest {
             ImmutableList.of(),
             null);
 
-    SimpleEnv.Builder<SourceTypeBoundClass> b = SimpleEnv.builder();
+    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> b = SimpleEnv.builder();
     b.putIfAbsent(new ClassSymbol("test/Test"), c);
     b.putIfAbsent(new ClassSymbol("test/Test$Inner"), i);
 

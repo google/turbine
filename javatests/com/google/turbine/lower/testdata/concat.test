@@ -1,0 +1,25 @@
+%%% Anno.java %%%
+public @interface Anno {
+  String[] bar() default {};
+  String[] foo() default {};
+}
+
+%%% A.java %%%
+import java.io.Serializable;
+public final class A implements Serializable {
+  public static final String X = "X";
+  public static final String Y = "Y" + X;
+}
+
+=== Test.java ===
+class Test {
+  @Anno(
+    foo ={
+      "a" + A.Y,
+    },
+    bar ={
+      "a" + A.Y,
+    }
+  )
+  int x;
+}

@@ -53,7 +53,7 @@ public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
   /** An underlying env of already-computed {@code T}s that can be queried during completion. */
   private final Env<S, T> rec;
 
-  public LazyEnv(ImmutableMap<S, Completer<S, T, V>> completers, CompoundEnv<S, ? extends T> base) {
+  public LazyEnv(ImmutableMap<S, Completer<S, T, V>> completers, Env<S, ? extends T> base) {
     this.completers = completers;
     this.rec = CompoundEnv.<S, T>of(base).append(this);
   }

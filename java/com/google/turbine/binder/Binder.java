@@ -68,7 +68,8 @@ public class Binder {
 
     // change data to better represent source binding info
     Multimap<CompUnit, ClassSymbol> toplevels = LinkedHashMultimap.create();
-    SimpleEnv<SourceBoundClass> ienv = bindSourceBoundClasses(toplevels, units, tliBuilder);
+    SimpleEnv<ClassSymbol, SourceBoundClass> ienv =
+        bindSourceBoundClasses(toplevels, units, tliBuilder);
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
@@ -82,7 +83,8 @@ public class Binder {
 
     TopLevelIndex tli = tliBuilder.build();
 
-    SimpleEnv<PackageSourceBoundClass> psenv = bindPackages(ienv, tli, toplevels, classPathEnv);
+    SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv =
+        bindPackages(ienv, tli, toplevels, classPathEnv);
 
     Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
 
@@ -105,11 +107,11 @@ public class Binder {
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
-  static SimpleEnv<SourceBoundClass> bindSourceBoundClasses(
+  static SimpleEnv<ClassSymbol, SourceBoundClass> bindSourceBoundClasses(
       Multimap<CompUnit, ClassSymbol> toplevels,
       List<CompUnit> units,
       TopLevelIndex.Builder tliBuilder) {
-    SimpleEnv.Builder<SourceBoundClass> envbuilder = SimpleEnv.builder();
+    SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envbuilder = SimpleEnv.builder();
     for (CompUnit unit : units) {
       String packagename;
       if (unit.pkg().isPresent()) {
@@ -133,7 +135,7 @@ public class Binder {
 
   /** Records member declarations within a top-level class. */
   private static ImmutableMap<String, ClassSymbol> bindSourceBoundClassMembers(
-      SimpleEnv.Builder<SourceBoundClass> env,
+      SimpleEnv.Builder<ClassSymbol, SourceBoundClass> env,
       ClassSymbol owner,
       ImmutableList<Tree> members,
       Multimap<CompUnit, ClassSymbol> toplevels,
@@ -154,13 +156,13 @@ public class Binder {
   }
 
   /** Initializes scopes for compilation unit and package-level lookup. */
-  private static SimpleEnv<PackageSourceBoundClass> bindPackages(
+  private static SimpleEnv<ClassSymbol, PackageSourceBoundClass> bindPackages(
       Env<ClassSymbol, SourceBoundClass> ienv,
       TopLevelIndex tli,
       Multimap<CompUnit, ClassSymbol> classes,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
 
-    SimpleEnv.Builder<PackageSourceBoundClass> env = SimpleEnv.builder();
+    SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
     Scope javaLang = verifyNotNull(tli.lookupPackage(ImmutableList.of("java", "lang")));
     CompoundScope topLevel = CompoundScope.base(tli).append(javaLang);
     for (Map.Entry<CompUnit, Collection<ClassSymbol>> entry : classes.asMap().entrySet()) {
@@ -185,7 +187,7 @@ public class Binder {
   /** Binds the type hierarchy (superclasses and interfaces) for all classes in the compilation. */
   private static Env<ClassSymbol, SourceHeaderBoundClass> bindHierarchy(
       Iterable<ClassSymbol> syms,
-      final SimpleEnv<PackageSourceBoundClass> psenv,
+      final SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
     ImmutableMap.Builder<
             ClassSymbol, LazyEnv.Completer<ClassSymbol, HeaderBoundClass, SourceHeaderBoundClass>>
@@ -208,7 +210,7 @@ public class Binder {
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
       Env<ClassSymbol, HeaderBoundClass> henv) {
-    SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
+    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, TypeBinder.bind(henv, sym, shenv.get(sym)));
     }
@@ -219,7 +221,7 @@ public class Binder {
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> stenv,
       Env<ClassSymbol, TypeBoundClass> tenv) {
-    SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
+    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
     }
@@ -268,26 +270,9 @@ public class Binder {
     // lazily evaluated fields in the current compilation unit with
     // constant fields in the classpath (which don't require evaluation).
     Env<FieldSymbol, Const.Value> constenv =
-        new LazyEnv<>(
-            completers.build(),
-            CompoundEnv.<FieldSymbol, Const.Value>of(
-                new Env<FieldSymbol, Const.Value>() {
-                  @Override
-                  public Const.Value get(FieldSymbol sym1) {
-                    TypeBoundClass info1 = baseEnv.get(sym1.owner());
-                    if (info1 == null) {
-                      return null;
-                    }
-                    for (FieldInfo fi : info1.fields()) {
-                      if (fi.name().equals(sym1.name())) {
-                        return fi.value();
-                      }
-                    }
-                    throw new AssertionError(sym1);
-                  }
-                }));
+        new LazyEnv<>(completers.build(), SimpleEnv.<FieldSymbol, Const.Value>builder().build());
 
-    SimpleEnv.Builder<SourceTypeBoundClass> builder = SimpleEnv.builder();
+    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
     }

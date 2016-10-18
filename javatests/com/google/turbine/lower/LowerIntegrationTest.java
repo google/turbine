@@ -217,6 +217,7 @@ public class LowerIntegrationTest {
       "wild3.test",
       "const_hiding.test",
       "interface_field.test",
+      "concat.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

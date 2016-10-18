@@ -163,6 +163,9 @@ public class ConstEvaluator {
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
       return new Const.EnumConstantValue(field.sym());
     }
+    if (field.value() != null) {
+      return field.value();
+    }
     return values.get(field.sym());
   }
 
