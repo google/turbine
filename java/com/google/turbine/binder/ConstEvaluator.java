@@ -176,19 +176,21 @@ public class ConstEvaluator {
       for (int i = 0; i < result.remaining().size() - 1; i++) {
         sym = Resolve.resolve(env, sym, result.remaining().get(i));
       }
-      field = inheritedField(env, sym, Iterables.getLast(result.remaining()));
+      field = Resolve.resolveField(env, sym, Iterables.getLast(result.remaining()));
       if (field != null) {
         return field;
       }
     }
     ClassSymbol classSymbol = owner.memberImports().singleMemberImport(simpleName);
-    field = inheritedField(env, classSymbol, simpleName);
-    if (field != null) {
-      return field;
+    if (classSymbol != null) {
+      field = Resolve.resolveField(env, classSymbol, simpleName);
+      if (field != null) {
+        return field;
+      }
     }
     Iterator<ClassSymbol> it = owner.memberImports().onDemandImports();
     while (it.hasNext()) {
-      field = inheritedField(env, it.next(), simpleName);
+      field = Resolve.resolveField(env, it.next(), simpleName);
       if (field != null) {
         return field;
       }
@@ -201,33 +203,11 @@ public class ConstEvaluator {
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, String name) {
     while (sym != null) {
       TypeBoundClass info = env.get(sym);
-      FieldInfo field = inheritedField(env, sym, name);
+      FieldInfo field = Resolve.resolveField(env, sym, name);
       if (field != null) {
         return field;
       }
       sym = info.owner();
-    }
-    return null;
-  }
-
-  private static FieldInfo inheritedField(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, String name) {
-    while (sym != null) {
-      TypeBoundClass info = env.get(sym);
-      FieldInfo field = getField(info, name);
-      if (field != null) {
-        return field;
-      }
-      sym = info.superclass();
-    }
-    return null;
-  }
-
-  private static FieldInfo getField(TypeBoundClass info, String name) {
-    for (FieldInfo f : info.fields()) {
-      if (f.name().equals(name)) {
-        return f;
-      }
     }
     return null;
   }

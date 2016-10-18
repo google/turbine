@@ -1,0 +1,14 @@
+%%% S.java %%%
+public interface S {
+  int X = 42;
+}
+
+
+%%% A.java %%%
+public class A implements S {
+}
+
+=== B.java ===
+public class B {
+  public static final int Y = A.X;
+}

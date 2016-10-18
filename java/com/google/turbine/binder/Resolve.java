@@ -18,6 +18,8 @@ package com.google.turbine.binder;
 
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
@@ -89,5 +91,33 @@ public class Resolve {
       }
       return sym;
     }
+  }
+
+  /**
+   * Performs qualified type name resolution of an instance variable with the given simple name,
+   * qualified by the given symbol. The search considers members that are inherited from
+   * superclasses or interfaces.
+   */
+  public static FieldInfo resolveField(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, String name) {
+    TypeBoundClass info = env.get(sym);
+    for (FieldInfo f : info.fields()) {
+      if (f.name().equals(name)) {
+        return f;
+      }
+    }
+    if (info.superclass() != null) {
+      FieldInfo field = resolveField(env, info.superclass(), name);
+      if (field != null) {
+        return field;
+      }
+    }
+    for (ClassSymbol i : info.interfaces()) {
+      FieldInfo field = resolveField(env, i, name);
+      if (field != null) {
+        return field;
+      }
+    }
+    return null;
   }
 }
