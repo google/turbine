@@ -261,11 +261,18 @@ public class ConstEvaluator {
   }
 
   private Const.Value evalConditional(Conditional t) {
-    return evalValue(t.cond()).asBoolean().value() ? evalValue(t.iftrue()) : evalValue(t.iffalse());
+    Const.Value condition = evalValue(t.cond());
+    if (condition == null) {
+      return null;
+    }
+    return condition.asBoolean().value() ? evalValue(t.iftrue()) : evalValue(t.iffalse());
   }
 
   private Const.Value evalUnary(Unary t) {
     Const.Value expr = evalValue(t.expr());
+    if (expr == null) {
+      return null;
+    }
     switch (t.op()) {
       case NOT:
         switch (expr.constantTypeKind()) {
@@ -334,6 +341,9 @@ public class ConstEvaluator {
 
   private Const.Value evalCast(TypeCast t) {
     Const.Value expr = evalValue(t.expr());
+    if (expr == null) {
+      return null;
+    }
     switch (t.ty().kind()) {
       case PRIM_TY:
         return coerce(expr, ((Tree.PrimTy) t.ty()).tykind());
@@ -679,6 +689,9 @@ public class ConstEvaluator {
   private Const.Value evalBinary(Binary t) {
     Const.Value lhs = evalValue(t.lhs());
     Const.Value rhs = evalValue(t.rhs());
+    if (lhs == null || rhs == null) {
+      return null;
+    }
     switch (t.op()) {
       case PLUS:
         return add(lhs, rhs);
@@ -836,7 +849,11 @@ public class ConstEvaluator {
   private Const.ArrayInitValue evalArrayInit(ArrayInit t) {
     ImmutableList.Builder<Const> elements = ImmutableList.builder();
     for (Expression e : t.exprs()) {
-      elements.add(eval(e));
+      Const arg = eval(e);
+      if (arg == null) {
+        return null;
+      }
+      elements.add(arg);
     }
     return new Const.ArrayInitValue(elements.build());
   }

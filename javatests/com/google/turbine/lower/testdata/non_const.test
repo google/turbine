@@ -1,0 +1,15 @@
+=== Anno.java ===
+public @interface Anno {
+  int[] value() default {};
+}
+
+=== Test.java ===
+class Test {
+  private static int[] xs = {};
+  public static final int A = xs.length;
+  public static final int B = 0 + xs.length;
+  public static final int C = (xs.length > 0) ? 1 : 0;
+  public static final int D = -xs.length;
+  public static final short E = (short) xs.length;
+  public static final int[] F = {xs.length};
+}
