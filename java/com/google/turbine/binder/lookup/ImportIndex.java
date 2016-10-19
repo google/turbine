@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ImportDecl;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -53,11 +54,9 @@ public class ImportIndex implements Scope {
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
     ImmutableList.Builder<Supplier<Scope>> packageScopes = ImmutableList.builder();
-    ImmutableMap.Builder<String, Supplier<ClassSymbol>> thunks = ImmutableMap.builder();
+    Map<String, Supplier<ClassSymbol>> thunks = new HashMap<>();
     for (final Tree.ImportDecl i : imports) {
       if (i.stat()) {
-        // static imports of compile-time constant fields are handled later; static imports of
-        // types are not supported
         continue;
       }
       if (i.wild()) {
@@ -87,21 +86,38 @@ public class ImportIndex implements Scope {
                   }
                 }));
       }
-      thunks.put(
-          getLast(i.type()),
-          Suppliers.memoize(
-              new Supplier<ClassSymbol>() {
-                @Override
-                public ClassSymbol get() {
-                  LookupResult result = cpi.lookup(new LookupKey(i.type()));
-                  if (result == null) {
-                    return null;
-                  }
-                  return resolve.resolve(result);
-                }
-              }));
+      thunks.put(getLast(i.type()), thunk(resolve, cpi, i));
     }
-    return new ImportIndex(thunks.build(), packageScopes.build());
+    // Best-effort static type import handling.
+    // Static imports that cannot be resolved to canonical types (either because they
+    // are field or method imports, or because they are non-canonical type imports)
+    // are silently ignored.
+    for (final Tree.ImportDecl i : imports) {
+      if (!i.stat()) {
+        continue;
+      }
+      String last = getLast(i.type());
+      if (thunks.containsKey(last)) {
+        continue;
+      }
+      thunks.put(last, thunk(resolve, cpi, i));
+    }
+    return new ImportIndex(ImmutableMap.copyOf(thunks), packageScopes.build());
+  }
+
+  private static Supplier<ClassSymbol> thunk(
+      final CanonicalSymbolResolver resolve, final TopLevelIndex cpi, final ImportDecl i) {
+    return Suppliers.memoize(
+        new Supplier<ClassSymbol>() {
+          @Override
+          public ClassSymbol get() {
+            LookupResult result = cpi.lookup(new LookupKey(i.type()));
+            if (result == null) {
+              return null;
+            }
+            return resolve.resolve(result);
+          }
+        });
   }
 
   @Override

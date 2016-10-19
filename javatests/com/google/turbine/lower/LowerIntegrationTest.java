@@ -218,6 +218,7 @@ public class LowerIntegrationTest {
       "const_hiding.test",
       "interface_field.test",
       "concat.test",
+      "static_type_import.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
