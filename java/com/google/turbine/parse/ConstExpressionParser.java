@@ -519,7 +519,7 @@ public class ConstExpressionParser {
     eat();
     Tree.Expression rhs = primary(false);
     if (rhs == null) {
-      throw new AssertionError();
+      return null;
     }
     return new Tree.TypeCast(position, new Tree.PrimTy(position, ty), rhs);
   }

@@ -1,0 +1,6 @@
+=== Test.java ===
+import java.util.concurrent.TimeUnit;
+class Test {
+  static int[] x;
+  public static final int X = (int) (TimeUnit.SECONDS.toMillis(0));
+}
