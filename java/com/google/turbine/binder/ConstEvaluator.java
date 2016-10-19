@@ -160,6 +160,9 @@ public class ConstEvaluator {
   /** Evaluates a reference to another constant variable. */
   Const evalConstVar(ConstVarName t) {
     FieldInfo field = resolveField(t);
+    if (field == null) {
+      return null;
+    }
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
       return new Const.EnumConstantValue(field.sym());
     }
@@ -180,6 +183,9 @@ public class ConstEvaluator {
       ClassSymbol sym = (ClassSymbol) result.sym();
       for (int i = 0; i < result.remaining().size() - 1; i++) {
         sym = Resolve.resolve(env, sym, result.remaining().get(i));
+        if (sym == null) {
+          return null;
+        }
       }
       field = Resolve.resolveField(env, sym, Iterables.getLast(result.remaining()));
       if (field != null) {
