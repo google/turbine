@@ -220,6 +220,7 @@ public class LowerIntegrationTest {
       "concat.test",
       "static_type_import.test",
       "non_const.test",
+      "bounds.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

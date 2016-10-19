@@ -20,7 +20,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.primitives.Ints;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
@@ -29,6 +28,7 @@ import com.google.turbine.tree.Tree.ClassLiteral;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.TurbineOperatorKind;
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 
 /** A parser for compile-time constant expressions. */
@@ -306,9 +306,16 @@ public class ConstExpressionParser {
             text = "-" + text;
           }
           long longValue = parseLong(text, radix);
-          value =
-              new Const.IntValue(
-                  radix != 10 && longValue == 0xffffffffL ? -1 : Ints.checkedCast(longValue));
+          if (radix == 10) {
+            if (longValue != (int) longValue) {
+              throw error("integer literal out of range", text);
+            }
+          } else {
+            if (Math.abs(longValue) >> 32 != 0) {
+              throw error("integer literal out of range", text);
+            }
+          }
+          value = new Const.IntValue((int) longValue);
           break;
         }
       case LONG:
@@ -545,6 +552,7 @@ public class ConstExpressionParser {
     return new Tree.AnnoExpr(position, new Tree.Anno(position, name, args.build()));
   }
 
+  @CheckReturnValue
   private TurbineError error(String message, Object... args) {
     return TurbineError.format(lexer.source(), lexer.position(), message, args);
   }

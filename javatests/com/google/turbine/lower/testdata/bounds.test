@@ -1,0 +1,27 @@
+=== Test.java ===
+public class Test {
+  public static final int MAX_INT_DEC = 2147483647;
+  public static final int MIN_INT_DEC = -2147483648;
+
+  public static final int MAX_INT_HEX = 0x7fff_ffff;
+  public static final int MIN_INT_HEX = 0x8000_0000;
+
+  public static final int MAX_INT_OCT = 0177_7777_7777;
+  public static final int MIN_INT_OCT = 0200_0000_0000;
+
+  public static final int MAX_INT_BIN = 0b0111_1111_1111_1111_1111_1111_1111_1111;
+  public static final int MIN_INT_BIN = 0b1000_0000_0000_0000_0000_0000_0000_0000;
+
+  public static final long MAX_LONG_DEC = 9223372036854775807L;
+  public static final long MIN_LONG_DEC = -9223372036854775808L;
+
+  public static final long MAX_LONG_HEX = 0x7fff_ffff_ffff_ffffL;
+  public static final long MIN_LONG_HEX = 0x8000_0000_0000_0000L;
+
+  public static final long MAX_LONG_OCT = 07_7777_7777_7777_7777_7777L;
+  public static final long MIN_LONG_OCT = 010_0000_0000_0000_0000_0000L;
+
+  public static final long MAX_LONG_BIN = 0b0111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111L;
+  public static final long MIN_LONG_BIN = 0b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000L;
+
+}

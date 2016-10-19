@@ -31,17 +31,28 @@ import org.junit.runners.JUnit4;
 public class ParseErrorTest {
 
   @Test
-  public void expression() {
+  public void intBound() {
     ConstExpressionParser parser =
         new ConstExpressionParser(
-            new StreamLexer(
-                new UnicodeEscapePreprocessor(
-                    new SourceFile(null, String.valueOf(Long.MAX_VALUE)))));
+            new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile("<>", "2147483648"))));
     try {
       parser.expression();
       fail("expected parsing to fail");
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).contains("Out of range:");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage()).contains("out of range");
+    }
+  }
+
+  @Test
+  public void hexIntBound() {
+    ConstExpressionParser parser =
+        new ConstExpressionParser(
+            new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile("<>", "0x100000000"))));
+    try {
+      parser.expression();
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage()).contains("out of range");
     }
   }
 
