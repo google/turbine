@@ -39,7 +39,7 @@ public class BinderErrorTest {
   private static final ImmutableList<Path> BOOTCLASSPATH =
       ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
 
-  @Parameters(name = "{index}: {0}")
+  @Parameters
   public static Iterable<Object[]> parameters() {
     String[][][] testCases = {
       {

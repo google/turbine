@@ -32,9 +32,10 @@ public class ParseErrorTest {
 
   @Test
   public void intBound() {
-    ConstExpressionParser parser =
-        new ConstExpressionParser(
-            new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile("<>", "2147483648"))));
+    StreamLexer lexer =
+        new StreamLexer(
+            new UnicodeEscapePreprocessor(new SourceFile("<>", String.valueOf("2147483648"))));
+    ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next());
     try {
       parser.expression();
       fail("expected parsing to fail");
@@ -45,9 +46,10 @@ public class ParseErrorTest {
 
   @Test
   public void hexIntBound() {
-    ConstExpressionParser parser =
-        new ConstExpressionParser(
-            new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile("<>", "0x100000000"))));
+    StreamLexer lexer =
+        new StreamLexer(
+            new UnicodeEscapePreprocessor(new SourceFile("<>", String.valueOf("0x100000000"))));
+    ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next());
     try {
       parser.expression();
       fail("expected parsing to fail");

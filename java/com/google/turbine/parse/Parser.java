@@ -16,7 +16,10 @@
 
 package com.google.turbine.parse;
 
+import static com.google.turbine.parse.Token.COMMA;
 import static com.google.turbine.parse.Token.INTERFACE;
+import static com.google.turbine.parse.Token.LPAREN;
+import static com.google.turbine.parse.Token.RPAREN;
 import static com.google.turbine.tree.TurbineModifier.PROTECTED;
 import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 
@@ -642,8 +645,8 @@ public class Parser {
         newty = expandDims(ty, dim);
       }
       // TODO(cushon): skip more fields that are definitely non-const
-      Expression init =
-          new ConstExpressionParser(new IteratorLexer(lexer.source(), it)).expression();
+      IteratorLexer lexer = new IteratorLexer(this.lexer.source(), it);
+      Expression init = new ConstExpressionParser(lexer, lexer.next()).expression();
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
@@ -683,7 +686,7 @@ public class Parser {
         break;
       case DEFAULT:
         {
-          ConstExpressionParser cparser = new ConstExpressionParser(lexer);
+          ConstExpressionParser cparser = new ConstExpressionParser(lexer, lexer.next());
           Tree expr = cparser.expression();
           token = cparser.token;
           if (expr == null && token == Token.AT) {
@@ -1081,11 +1084,15 @@ public class Parser {
 
     ImmutableList.Builder<Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {
-      do {
-        ConstExpressionParser cparser = new ConstExpressionParser(lexer);
+      eat(LPAREN);
+      while (token != RPAREN) {
+        ConstExpressionParser cparser = new ConstExpressionParser(lexer, token);
         args.add(cparser.expression());
         token = cparser.token;
-      } while (token == Token.COMMA);
+        if (!maybe(COMMA)) {
+          break;
+        }
+      }
       eat(Token.RPAREN);
     }
 

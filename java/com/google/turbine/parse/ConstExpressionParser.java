@@ -38,9 +38,10 @@ public class ConstExpressionParser {
   private int position;
   private final Lexer lexer;
 
-  public ConstExpressionParser(Lexer lexer) {
+  public ConstExpressionParser(Lexer lexer, Token token) {
     this.lexer = lexer;
-    eat();
+    this.token = token;
+    this.position = lexer.position();
   }
 
   private static TurbineOperatorKind operator(Token token) {
@@ -533,17 +534,16 @@ public class ConstExpressionParser {
     ImmutableList.Builder<Tree.Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {
       eat();
-      while (true) {
+      while (token != Token.RPAREN) {
         Tree.Expression expression = expression();
         if (expression == null) {
           throw new AssertionError("invalid annotation expression");
         }
         args.add(expression);
-        if (token == Token.COMMA) {
-          eat();
-          continue;
+        if (token != Token.COMMA) {
+          break;
         }
-        break;
+        eat();
       }
       if (token == Token.RPAREN) {
         eat();
