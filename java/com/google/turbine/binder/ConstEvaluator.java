@@ -137,8 +137,6 @@ public class ConstEvaluator {
   }
 
   /** Evaluates a class literal. */
-  // TODO(cushon): consider distinguishing between constant field and annotation values,
-  // and only allowing class literals / enum constants in the latter
   Const evalClassLiteral(ClassLiteral t) {
     switch (t.type().kind()) {
       case PRIM_TY:
@@ -263,7 +261,10 @@ public class ConstEvaluator {
   }
 
   private Const.Value evalValue(Expression tree) {
-    return (Const.Value) eval(tree);
+    Const result = eval(tree);
+    // TODO(cushon): consider distinguishing between constant field and annotation values,
+    // and only allowing class literals / enum constants in the latter
+    return (result instanceof Const.Value) ? (Const.Value) result : null;
   }
 
   private Const.Value evalConditional(Conditional t) {

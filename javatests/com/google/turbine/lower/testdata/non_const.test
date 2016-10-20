@@ -13,4 +13,5 @@ class Test {
   public static final short E = (short) xs.length;
   public static final int[] F = {xs.length};
   public static final int G = Test.xs.length;
+  public static final String H = "" + Test.class;
 }
