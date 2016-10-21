@@ -95,7 +95,7 @@ public class IntegrationTestSupport {
     // collect all inner classes attributes
     Map<String, InnerClassNode> infos = new HashMap<>();
     for (ClassNode n : classes) {
-      for (InnerClassNode innerClassNode : (List<InnerClassNode>) n.innerClasses) {
+      for (InnerClassNode innerClassNode : n.innerClasses) {
         infos.put(innerClassNode.name, innerClassNode);
       }
     }
@@ -134,13 +134,13 @@ public class IntegrationTestSupport {
   @SuppressWarnings("UnnecessaryCast") // external ASM uses raw collection types
   private static void removeImplementation(ClassNode n) {
     n.innerClasses =
-        ((List<InnerClassNode>) n.innerClasses)
+        n.innerClasses
             .stream()
             .filter(x -> (x.access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PRIVATE)) == 0)
             .collect(toList());
 
     n.methods =
-        ((List<MethodNode>) n.methods)
+        n.methods
             .stream()
             .filter(x -> (x.access & Opcodes.ACC_SYNTHETIC) == 0)
             .filter(x -> (x.access & Opcodes.ACC_PRIVATE) == 0 || x.name.equals("<init>"))
@@ -148,7 +148,7 @@ public class IntegrationTestSupport {
             .collect(toList());
 
     n.fields =
-        ((List<FieldNode>) n.fields)
+        n.fields
             .stream()
             .filter(x -> (x.access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PRIVATE)) == 0)
             .collect(toList());
@@ -192,20 +192,20 @@ public class IntegrationTestSupport {
       if (n.superName != null) {
         types.add(n.superName);
       }
-      types.addAll((List<String>) n.interfaces);
+      types.addAll(n.interfaces);
     }
-    for (MethodNode m : (List<MethodNode>) n.methods) {
+    for (MethodNode m : n.methods) {
       collectTypesFromSignature(types, m.desc);
       collectTypesFromSignature(types, m.signature);
-      types.addAll((List<String>) m.exceptions);
+      types.addAll(m.exceptions);
     }
-    for (FieldNode f : (List<FieldNode>) n.fields) {
+    for (FieldNode f : n.fields) {
       collectTypesFromSignature(types, f.desc);
       collectTypesFromSignature(types, f.signature);
     }
 
     List<InnerClassNode> used = new ArrayList<>();
-    for (InnerClassNode i : (List<InnerClassNode>) n.innerClasses) {
+    for (InnerClassNode i : n.innerClasses) {
       if (i.outerName != null && i.outerName.equals(n.name)) {
         // keep InnerClass attributes for any member classes
         used.add(i);
