@@ -60,11 +60,16 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
   private final ClassSymbol sym;
   private final Env<ClassSymbol, BytecodeBoundClass> env;
   private final Supplier<ClassFile> classFile;
+  private final String jarFile;
 
   public BytecodeBoundClass(
-      ClassSymbol sym, final Supplier<byte[]> bytes, Env<ClassSymbol, BytecodeBoundClass> env) {
+      ClassSymbol sym,
+      final Supplier<byte[]> bytes,
+      Env<ClassSymbol, BytecodeBoundClass> env,
+      String jarFile) {
     this.sym = sym;
     this.env = env;
+    this.jarFile = jarFile;
     this.classFile =
         Suppliers.memoize(
             new Supplier<ClassFile>() {
@@ -433,5 +438,10 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
         throw new AssertionError(input);
       }
     };
+  }
+
+  /** The jar file the symbol was loaded from. */
+  public String jarFile() {
+    return jarFile;
   }
 }

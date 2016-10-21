@@ -19,6 +19,7 @@ package com.google.turbine.lower;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
@@ -60,24 +61,49 @@ import javax.annotation.Nullable;
 /** Lowering from bound classes to bytecode. */
 public class Lower {
 
+  /** The lowered compilation output. */
+  public static class Lowered {
+    private final ImmutableMap<String, byte[]> bytes;
+    private final ImmutableSet<ClassSymbol> symbols;
+
+    public Lowered(ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
+      this.bytes = bytes;
+      this.symbols = symbols;
+    }
+
+    /** Returns the bytecode for classes in the compilation. */
+    public ImmutableMap<String, byte[]> bytes() {
+      return bytes;
+    }
+
+    /** Returns the set of all referenced symbols in the compilation. */
+    public ImmutableSet<ClassSymbol> symbols() {
+      return symbols;
+    }
+  }
+
   /** Lowers all given classes to bytecode. */
-  public static Map<String, byte[]> lowerAll(
+  public static Lowered lowerAll(
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classpath) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
+    Set<ClassSymbol> symbols = new LinkedHashSet<>();
     for (ClassSymbol sym : units.keySet()) {
-      result.put(sym.binaryName(), new Lower().lower(units.get(sym), env, sym));
+      result.put(sym.binaryName(), new Lower().lower(units.get(sym), env, sym, symbols));
     }
-    return result.build();
+    return new Lowered(result.build(), ImmutableSet.copyOf(symbols));
   }
 
   private final LowerSignature sig = new LowerSignature();
 
   /** Lowers a class to bytecode. */
   public byte[] lower(
-      SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
+      SourceTypeBoundClass info,
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol sym,
+      Set<ClassSymbol> symbols) {
 
     int access = classAccess(info);
     String name = sig.descriptor(sym);
@@ -122,6 +148,8 @@ public class Lower {
             fields.build(),
             annotations,
             inners);
+
+    symbols.addAll(sig.classes);
 
     return ClassWriter.writeClass(classfile);
   }

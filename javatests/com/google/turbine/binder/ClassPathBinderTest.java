@@ -108,6 +108,7 @@ public class ClassPathBinderTest {
                 throw new IOError(e);
               }
             },
+            null,
             null);
     try {
       c.owner();

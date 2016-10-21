@@ -190,8 +190,10 @@ public class LowerTest {
 
     Map<String, byte[]> bytes =
         Lower.lowerAll(
-            ImmutableMap.of(new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
-            classpath);
+                ImmutableMap.of(
+                    new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
+                classpath)
+            .bytes();
 
     assertThat(AsmUtils.textify(bytes.get("test/Test")))
         .isEqualTo(
@@ -222,7 +224,7 @@ public class LowerTest {
                             "}"))),
             ImmutableList.of(),
             BOOTCLASSPATH);
-    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
+    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
     List<String> attributes = new ArrayList<>();
     new org.objectweb.asm.ClassReader(lowered.get("Test$Inner$InnerMost"))
         .accept(

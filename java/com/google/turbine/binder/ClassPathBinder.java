@@ -85,7 +85,9 @@ public class ClassPathBinder {
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
       if (!env.containsKey(sym)) {
-        env.put(sym, new BytecodeBoundClass(sym, () -> toByteArrayOrDie(jf, je), benv));
+        env.put(
+            sym,
+            new BytecodeBoundClass(sym, () -> toByteArrayOrDie(jf, je), benv, path.toString()));
         tli.insert(sym);
       }
     }

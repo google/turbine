@@ -25,10 +25,14 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.deps.Dependencies;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.Lower;
+import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.options.TurbineOptions;
 import com.google.turbine.options.TurbineOptionsParser;
 import com.google.turbine.parse.Parser;
+import com.google.turbine.proto.DepsProto;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -50,11 +54,14 @@ public class Main {
   private static final int BUFFER_SIZE = 65536;
 
   public static void main(String[] args) throws IOException {
-
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(args));
+    compile(options);
+  }
 
+  public static void compile(TurbineOptions options) throws IOException {
     ImmutableList<CompUnit> units = parseAll(options);
 
+    // TODO(cushon): reduce classpath
     BindingResult bound =
         Binder.bind(
             units,
@@ -62,15 +69,18 @@ public class Main {
             Iterables.transform(options.bootClassPath(), TO_PATH));
 
     // TODO(cushon): parallelize
-    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
+    Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
 
-    writeOutput(Paths.get(options.outputFile()), lowered);
-
-    // TODO(cushon): jdeps
-    // for now just touch the output file, since Bazel expects it to be created
     if (options.outputDeps().isPresent()) {
-      Files.write(Paths.get(options.outputDeps().get()), new byte[0]);
+      DepsProto.Dependencies deps =
+          Dependencies.collectDeps(options.targetLabel(), options.bootClassPath(), bound, lowered);
+      try (OutputStream os =
+          new BufferedOutputStream(Files.newOutputStream(Paths.get(options.outputDeps().get())))) {
+        deps.writeTo(os);
+      }
     }
+
+    writeOutput(Paths.get(options.outputFile()), lowered.bytes());
   }
 
   /** Parse all source files and source jars. */
@@ -78,7 +88,9 @@ public class Main {
   private static ImmutableList<CompUnit> parseAll(TurbineOptions options) throws IOException {
     ImmutableList.Builder<CompUnit> units = ImmutableList.builder();
     for (String source : options.sources()) {
-      units.add(Parser.parse(new String(Files.readAllBytes(Paths.get(source)), UTF_8)));
+      units.add(
+          Parser.parse(
+              new SourceFile(source, new String(Files.readAllBytes(Paths.get(source)), UTF_8))));
     }
     for (String sourceJar : options.sourceJars()) {
       try (JarFile jf = new JarFile(sourceJar)) {
@@ -93,7 +105,10 @@ public class Main {
             continue;
           }
           units.add(
-              Parser.parse(new String(ByteStreams.toByteArray(jf.getInputStream(je)), UTF_8)));
+              Parser.parse(
+                  new SourceFile(
+                      sourceJar + "!" + je.getName(),
+                      new String(ByteStreams.toByteArray(jf.getInputStream(je)), UTF_8))));
         }
       }
     }

@@ -277,10 +277,10 @@ public class IntegrationTestSupport {
             .collect(toList());
 
     Binder.BindingResult bound = Binder.bind(units, classpath, bootclasspath);
-    return Lower.lowerAll(bound.units(), bound.classPathEnv());
+    return Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
   }
 
-  static Map<String, byte[]> runJavac(
+  public static Map<String, byte[]> runJavac(
       Map<String, String> sources, Iterable<Path> classpath, Iterable<? extends Path> bootclasspath)
       throws Exception {
 

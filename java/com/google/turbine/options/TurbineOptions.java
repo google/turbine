@@ -29,7 +29,7 @@ public class TurbineOptions {
 
   private final String output;
   private final ImmutableList<String> classPath;
-  private final ImmutableList<String> bootClassPath;
+  private final ImmutableSet<String> bootClassPath;
   private final ImmutableList<String> sources;
   private final ImmutableList<String> processorPath;
   private final ImmutableSet<String> processors;
@@ -47,7 +47,7 @@ public class TurbineOptions {
   private TurbineOptions(
       String output,
       ImmutableList<String> classPath,
-      ImmutableList<String> bootClassPath,
+      ImmutableSet<String> bootClassPath,
       ImmutableList<String> sources,
       ImmutableList<String> processorPath,
       ImmutableSet<String> processors,
@@ -93,7 +93,7 @@ public class TurbineOptions {
   }
 
   /** Paths to compilation bootclasspath artifacts. */
-  public ImmutableList<String> bootClassPath() {
+  public ImmutableSet<String> bootClassPath() {
     return bootClassPath;
   }
 
@@ -180,7 +180,7 @@ public class TurbineOptions {
     private final ImmutableSet.Builder<String> blacklistedProcessors = ImmutableSet.builder();
     private String tempDir;
     private final ImmutableList.Builder<String> sourceJars = ImmutableList.builder();
-    private final ImmutableList.Builder<String> bootClassPath = ImmutableList.builder();
+    private final ImmutableSet.Builder<String> bootClassPath = ImmutableSet.builder();
     private String outputDeps;
     private final ImmutableMap.Builder<String, String> directJarsToTargets = ImmutableMap.builder();
     private final ImmutableMap.Builder<String, String> indirectJarsToTargets =
