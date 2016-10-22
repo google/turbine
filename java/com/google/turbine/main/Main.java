@@ -54,11 +54,19 @@ public class Main {
   private static final int BUFFER_SIZE = 65536;
 
   public static void main(String[] args) throws IOException {
-    TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(args));
-    compile(options);
+    compile(args);
   }
 
-  public static void compile(TurbineOptions options) throws IOException {
+  public static boolean compile(String[] args) throws IOException {
+    TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(args));
+    return compile(options);
+  }
+
+  public static boolean compile(TurbineOptions options) throws IOException {
+    if (!options.processors().isEmpty()) {
+      return false;
+    }
+
     ImmutableList<CompUnit> units = parseAll(options);
 
     // TODO(cushon): reduce classpath
@@ -81,6 +89,7 @@ public class Main {
     }
 
     writeOutput(Paths.get(options.outputFile()), lowered.bytes());
+    return true;
   }
 
   /** Parse all source files and source jars. */
