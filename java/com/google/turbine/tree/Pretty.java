@@ -226,15 +226,10 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     }
     for (Tree.ImportDecl i : compUnit.imports()) {
       i.accept(this, null);
-      printLine();
     }
-    boolean first = true;
     for (Tree.TyDecl decl : compUnit.decls()) {
-      if (!first) {
-        printLine();
-      }
+      printLine();
       decl.accept(this, null);
-      first = false;
     }
     return null;
   }
@@ -245,7 +240,11 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     if (importDecl.stat()) {
       append("static ");
     }
-    append(Joiner.on('.').join(importDecl.type())).append(";").append('\n');
+    append(Joiner.on('.').join(importDecl.type()));
+    if (importDecl.wild()) {
+      append(".*");
+    }
+    append(";").append('\n');
     return null;
   }
 

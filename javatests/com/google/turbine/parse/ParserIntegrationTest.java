@@ -57,8 +57,7 @@ public class ParserIntegrationTest {
       "class6.input",
       "class7.input",
       "enum1.input",
-      // TODO(cushon): wildcard import
-      // "import1.input",
+      "import1.input",
       "member1.input",
       "member2.input",
       "member3.input",
