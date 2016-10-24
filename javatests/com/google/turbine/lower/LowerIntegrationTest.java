@@ -223,6 +223,7 @@ public class LowerIntegrationTest {
       "bounds.test",
       "cast_tail.test",
       "marker.test",
+      "interface_method.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
