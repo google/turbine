@@ -79,6 +79,9 @@ public class Canonicalize {
 
   /** Canonicalize a qualified class type, excluding type arguments. */
   private static ClassTy canon(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
+    if (isRaw(env, ty)) {
+      return ClassTy.asNonParametricClassTy(ty.sym());
+    }
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
     // for the enclosing declarations
     Iterator<ClassTy.SimpleClassTy> it = ty.classes.iterator();
@@ -93,6 +96,22 @@ public class Canonicalize {
       canon = canonOne(env, canon, it.next());
     }
     return canon;
+  }
+
+  /**
+   * Qualified type names cannot be partially raw; if any elements are raw erase the entire type.
+   */
+  private static boolean isRaw(Env<ClassSymbol, TypeBoundClass> env, ClassTy ty) {
+    for (ClassTy.SimpleClassTy s : ty.classes.reverse()) {
+      TypeBoundClass info = env.get(s.sym());
+      if (s.targs().isEmpty() && !info.typeParameters().isEmpty()) {
+        return true;
+      }
+      if ((info.access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
+        break;
+      }
+    }
+    return false;
   }
 
   /** Given a base symbol to canonicalize, find any implicit enclosing instances. */
