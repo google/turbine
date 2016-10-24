@@ -30,6 +30,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
 import javax.annotation.Nullable;
 
@@ -165,6 +166,17 @@ public class ConstBinder {
     }
     if ((base.access() & TurbineFlag.ACC_FINAL) == 0) {
       return null;
+    }
+    switch (base.type().tyKind()) {
+      case PRIM_TY:
+        break;
+      case CLASS_TY:
+        if (((Type.ClassTy) base.type()).sym().equals(ClassSymbol.STRING)) {
+          break;
+        }
+        // falls through
+      default:
+        return null;
     }
     Value value = constantEnv.get(base.sym());
     if (value != null) {

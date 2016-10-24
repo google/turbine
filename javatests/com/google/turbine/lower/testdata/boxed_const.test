@@ -1,0 +1,12 @@
+=== Test.java ===
+class Test {
+  public static final Integer A = 42;
+  public final Integer B = 42;
+  public static Integer C = 42;
+  public Integer D = 42;
+
+  public static final int E = 42;
+  public final int F = 42;
+  public static int G = 42;
+  public int H = 42;
+}
