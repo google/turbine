@@ -1,0 +1,4 @@
+=== Test.java ===
+interface Test {
+  long NANOS = (long) 1e9;
+}

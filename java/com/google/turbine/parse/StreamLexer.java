@@ -474,6 +474,8 @@ public class StreamLexer implements Lexer {
   private Token decimalLiteral() {
     readDigits();
     switch (ch) {
+      case 'e':
+      case 'E':
       case '.':
         eat();
         return floatLiteral();
