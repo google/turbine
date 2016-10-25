@@ -69,8 +69,7 @@ public class ParserIntegrationTest {
       "methoddecl5.input",
       "package1.input",
       "package2.input",
-      // TODO(cushon): package-info.java
-      // "packinfo1.input",
+      "packinfo1.input",
       "weirdstring.input",
     };
     return Iterables.transform(

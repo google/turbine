@@ -483,6 +483,10 @@ public class Pretty implements Tree.Visitor<Void, Void> {
 
   @Override
   public Void visitPkgDecl(Tree.PkgDecl pkgDecl, Void input) {
+    for (Tree.Anno anno : pkgDecl.annos()) {
+      anno.accept(this, null);
+      printLine();
+    }
     append("package ").append(Joiner.on('.').join(pkgDecl.name())).append(';');
     return null;
   }

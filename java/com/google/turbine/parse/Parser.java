@@ -90,7 +90,8 @@ public class Parser {
         case PACKAGE:
           {
             next();
-            pkg = Optional.of(packageDeclaration());
+            pkg = Optional.of(packageDeclaration(annos.build()));
+            annos = ImmutableList.builder();
             break;
           }
         case IMPORT:
@@ -1064,8 +1065,8 @@ public class Parser {
     return new ImportDecl(position, type.build(), stat, wild);
   }
 
-  private PkgDecl packageDeclaration() {
-    PkgDecl result = new PkgDecl(position, qualIdent());
+  private PkgDecl packageDeclaration(ImmutableList<Anno> annos) {
+    PkgDecl result = new PkgDecl(position, qualIdent(), annos);
     eat(Token.SEMI);
     return result;
   }

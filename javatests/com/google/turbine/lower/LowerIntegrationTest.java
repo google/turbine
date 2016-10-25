@@ -227,6 +227,7 @@ public class LowerIntegrationTest {
       "raw_canon.test",
       "float_exponent.test",
       "boxed_const.test",
+      "package_info.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

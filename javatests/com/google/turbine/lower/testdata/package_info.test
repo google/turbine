@@ -1,0 +1,12 @@
+=== Anno.java ==
+package p;
+public @interface Anno {}
+
+=== package-info.java ==
+@Anno
+package p;
+
+=== Test.java ==
+package p;
+class Test {}
+

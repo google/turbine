@@ -896,10 +896,12 @@ public abstract class Tree {
   /** A JLS 7.4 package declaration. */
   public static class PkgDecl extends Tree {
     private final ImmutableList<String> name;
+    private final ImmutableList<Anno> annos;
 
-    public PkgDecl(int position, ImmutableList<String> name) {
+    public PkgDecl(int position, ImmutableList<String> name, ImmutableList<Anno> annos) {
       super(position);
       this.name = name;
+      this.annos = annos;
     }
 
     @Override
@@ -914,6 +916,10 @@ public abstract class Tree {
 
     public ImmutableList<String> name() {
       return name;
+    }
+
+    public ImmutableList<Anno> annos() {
+      return annos;
     }
   }
 

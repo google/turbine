@@ -23,6 +23,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.turbine.binder.Resolve.CanonicalResolver;
@@ -48,8 +49,12 @@ import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
+import com.google.turbine.tree.Tree.PkgDecl;
+import com.google.turbine.tree.Tree.TyDecl;
+import com.google.turbine.tree.TurbineModifier;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -113,13 +118,21 @@ public class Binder {
       TopLevelIndex.Builder tliBuilder) {
     SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envbuilder = SimpleEnv.builder();
     for (CompUnit unit : units) {
+      Iterable<TyDecl> decls = unit.decls();
       String packagename;
       if (unit.pkg().isPresent()) {
-        packagename = Joiner.on('/').join(unit.pkg().get().name()) + '/';
+        PkgDecl pkgDecl = unit.pkg().get();
+        packagename = Joiner.on('/').join(pkgDecl.name()) + '/';
+        if (!pkgDecl.annos().isEmpty()) {
+          // "While the file could technically contain the source code
+          // for one or more package-private (default-access) classes,
+          // it would be very bad form." -- JLS 7.4.1
+          decls = Iterables.concat(decls, ImmutableList.of(packageInfoTree(pkgDecl)));
+        }
       } else {
         packagename = "";
       }
-      for (Tree.TyDecl decl : unit.decls()) {
+      for (Tree.TyDecl decl : decls) {
         ClassSymbol sym = new ClassSymbol(packagename + decl.name());
         ImmutableMap<String, ClassSymbol> children =
             bindSourceBoundClassMembers(envbuilder, sym, decl.members(), toplevels, unit);
@@ -131,6 +144,20 @@ public class Binder {
       }
     }
     return envbuilder.build();
+  }
+
+  /** Fakes up the synthetic type declaration for a package-info.java file. */
+  private static TyDecl packageInfoTree(PkgDecl pkgDecl) {
+    return new TyDecl(
+        pkgDecl.position(),
+        ImmutableSet.of(TurbineModifier.ACC_SYNTHETIC),
+        pkgDecl.annos(),
+        "package-info",
+        ImmutableList.of(),
+        Optional.absent(),
+        ImmutableList.of(),
+        ImmutableList.of(),
+        TurbineTyKind.INTERFACE);
   }
 
   /** Records member declarations within a top-level class. */
