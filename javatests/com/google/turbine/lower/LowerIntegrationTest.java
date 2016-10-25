@@ -240,6 +240,7 @@ public class LowerIntegrationTest {
       "private_member.test",
       "visible_nested.test",
       "visible_qualified.test",
+      "ascii_sub.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

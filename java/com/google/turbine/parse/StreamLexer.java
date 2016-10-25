@@ -376,8 +376,7 @@ public class StreamLexer implements Lexer {
                   if (reader.done()) {
                     return Token.EOF;
                   }
-                  eat();
-                  continue STRING;
+                  // falls through
                 default:
                   sb.append(ch);
                   eat();

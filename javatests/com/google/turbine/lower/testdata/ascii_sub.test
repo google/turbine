@@ -1,0 +1,4 @@
+=== Test.java ===
+class Test {
+  public static final String S = "\u001a";
+}
