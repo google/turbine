@@ -1,4 +1,5 @@
 === Test.java ===
 interface Test {
   long NANOS = (long) 1e9;
+  double VERY_SMALL_NUMBER = 1e-6;
 }

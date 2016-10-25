@@ -476,6 +476,7 @@ public class StreamLexer implements Lexer {
     switch (ch) {
       case 'e':
       case 'E':
+        return floatLiteral();
       case '.':
         eat();
         return floatLiteral();
