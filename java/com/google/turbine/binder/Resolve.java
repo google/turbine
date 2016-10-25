@@ -25,6 +25,8 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.model.TurbineVisibility;
+import java.util.Objects;
 
 /** Qualified name resolution. */
 public class Resolve {
@@ -35,7 +37,10 @@ public class Resolve {
    * superclasses or interfaces.
    */
   public static ClassSymbol resolve(
-      Env<ClassSymbol, ? extends HeaderBoundClass> env, ClassSymbol sym, String simpleName) {
+      Env<ClassSymbol, ? extends HeaderBoundClass> env,
+      ClassSymbol origin,
+      ClassSymbol sym,
+      String simpleName) {
     ClassSymbol result;
     HeaderBoundClass bound = env.get(sym);
     if (bound == null) {
@@ -46,14 +51,14 @@ public class Resolve {
       return result;
     }
     if (bound.superclass() != null) {
-      result = resolve(env, bound.superclass(), simpleName);
-      if (result != null) {
+      result = resolve(env, origin, bound.superclass(), simpleName);
+      if (result != null && visible(origin, result, env.get(result))) {
         return result;
       }
     }
     for (ClassSymbol i : bound.interfaces()) {
-      result = resolve(env, i, simpleName);
-      if (result != null) {
+      result = resolve(env, origin, i, simpleName);
+      if (result != null && visible(origin, result, env.get(result))) {
         return result;
       }
     }
@@ -99,7 +104,7 @@ public class Resolve {
    * superclasses or interfaces.
    */
   public static FieldInfo resolveField(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, String name) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol origin, ClassSymbol sym, String name) {
     TypeBoundClass info = env.get(sym);
     for (FieldInfo f : info.fields()) {
       if (f.name().equals(name)) {
@@ -107,17 +112,55 @@ public class Resolve {
       }
     }
     if (info.superclass() != null) {
-      FieldInfo field = resolveField(env, info.superclass(), name);
-      if (field != null) {
+      FieldInfo field = resolveField(env, origin, info.superclass(), name);
+      if (field != null && visible(origin, field)) {
         return field;
       }
     }
     for (ClassSymbol i : info.interfaces()) {
-      FieldInfo field = resolveField(env, i, name);
-      if (field != null) {
+      FieldInfo field = resolveField(env, origin, i, name);
+      if (field != null && visible(origin, field)) {
         return field;
       }
     }
     return null;
+  }
+
+  /** Is the given field visible when inherited into class origin? */
+  private static boolean visible(ClassSymbol origin, FieldInfo info) {
+    return visible(origin, info.sym().owner(), info.access());
+  }
+
+  /** Is the given type visible when inherited into class origin? */
+  private static boolean visible(ClassSymbol origin, ClassSymbol sym, HeaderBoundClass info) {
+    return visible(origin, sym, info.access());
+  }
+
+  private static boolean visible(ClassSymbol origin, ClassSymbol owner, int access) {
+    TurbineVisibility visibility = TurbineVisibility.fromAccess(access);
+    switch (visibility) {
+      case PUBLIC:
+      case PROTECTED:
+        return true;
+      case PACKAGE:
+        return Objects.equals(packageName(owner), packageName(origin));
+      case PRIVATE:
+        // Private members of lexically enclosing declarations are not handled,
+        // since this visibility check is only used for inherited members.
+        return owner.equals(origin);
+      default:
+        throw new AssertionError(visibility);
+    }
+  }
+
+  private static String packageName(ClassSymbol sym) {
+    if (sym == null) {
+      return null;
+    }
+    int idx = sym.binaryName().lastIndexOf('/');
+    if (idx == -1) {
+      return null;
+    }
+    return sym.binaryName().substring(0, idx);
   }
 }

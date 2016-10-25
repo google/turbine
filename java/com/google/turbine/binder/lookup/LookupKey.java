@@ -26,7 +26,7 @@ import java.util.NoSuchElementException;
  */
 @Immutable
 public class LookupKey {
-  final ImmutableList<String> simpleNames;
+  private final ImmutableList<String> simpleNames;
 
   public LookupKey(Iterable<String> simpleNames) {
     this.simpleNames = ImmutableList.copyOf(simpleNames);
@@ -49,9 +49,9 @@ public class LookupKey {
    * remaining nested type names (which may not be canonical).
    *
    * <ul>
-   * <li>{@code ((PACKAGE java) (KEY util.HashMap.Entry))}
-   * <li>{@code ((PACKAGE java.util) (KEY HashMap.Entry))}
-   * <li>{@code ((CLASS java.util.HashMap) (KEY Entry))}
+   *   <li>{@code ((PACKAGE java) (KEY util.HashMap.Entry))}
+   *   <li>{@code ((PACKAGE java.util) (KEY HashMap.Entry))}
+   *   <li>{@code ((CLASS java.util.HashMap) (KEY Entry))}
    * </ul>
    */
   public LookupKey rest() {

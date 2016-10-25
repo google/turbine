@@ -113,7 +113,7 @@ public class TypeBinder {
         if (result != null) {
           return new LookupResult(result, lookup);
         }
-        result = Resolve.resolve(env, curr, lookup.first());
+        result = Resolve.resolve(env, sym, curr, lookup.first());
         if (result != null) {
           return new LookupResult(result, lookup);
         }
@@ -180,7 +180,8 @@ public class TypeBinder {
                   new Scope() {
                     @Override
                     public LookupResult lookup(LookupKey lookup) {
-                      ClassSymbol result = Resolve.resolve(env, base.superclass(), lookup.first());
+                      ClassSymbol result =
+                          Resolve.resolve(env, owner, base.superclass(), lookup.first());
                       if (result != null) {
                         return new LookupResult(result, lookup);
                       }
@@ -497,7 +498,7 @@ public class TypeBinder {
       LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
       for (String name : lookupResult.remaining()) {
-        sym = Resolve.resolve(env, sym, name);
+        sym = Resolve.resolve(env, owner, sym, name);
       }
       result.add(new TypeBoundClass.AnnoInfo(sym, tree.args(), null));
     }
@@ -581,7 +582,7 @@ public class TypeBinder {
     classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, flat.get(idx++).tyargs())));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
-      sym = Resolve.resolve(env, sym, curr.name());
+      sym = Resolve.resolve(env, owner, sym, curr.name());
       classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs())));
     }
     return new Type.ClassTy(classes.build());

@@ -56,10 +56,10 @@ import java.util.Map;
 public class ConstEvaluator {
 
   /** The symbol of the enclosing class. */
-  private final ClassSymbol sym;
+  private final ClassSymbol owner;
 
   /** The bound node of the enclosing class. */
-  private final SourceTypeBoundClass owner;
+  private final SourceTypeBoundClass base;
 
   /** The constant variable environment. */
   private final Env<FieldSymbol, Const.Value> values;
@@ -68,13 +68,13 @@ public class ConstEvaluator {
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
 
   public ConstEvaluator(
-      ClassSymbol sym,
-      SourceTypeBoundClass owner,
+      ClassSymbol owner,
+      SourceTypeBoundClass base,
       Env<FieldSymbol, Const.Value> values,
       CompoundEnv<ClassSymbol, TypeBoundClass> env) {
 
-    this.sym = sym;
     this.owner = owner;
+    this.base = base;
     this.values = values;
     this.env = env;
   }
@@ -147,7 +147,7 @@ public class ConstEvaluator {
         {
           ClassTy classTy = (ClassTy) t.type();
           ClassSymbol classSym =
-              HierarchyBinder.resolveClass(owner.source(), env, owner.scope(), sym, classTy);
+              HierarchyBinder.resolveClass(base.source(), env, base.scope(), owner, classTy);
           return new Const.ClassValue(Type.ClassTy.asNonParametricClassTy(classSym));
         }
       default:
@@ -172,34 +172,34 @@ public class ConstEvaluator {
 
   FieldInfo resolveField(ConstVarName t) {
     String simpleName = t.name().get(0);
-    FieldInfo field = lexicalField(env, sym, simpleName);
+    FieldInfo field = lexicalField(env, owner, simpleName);
     if (field != null) {
       return field;
     }
-    LookupResult result = owner.scope().lookup(new LookupKey(t.name()));
+    LookupResult result = base.scope().lookup(new LookupKey(t.name()));
     if (result != null) {
       ClassSymbol sym = (ClassSymbol) result.sym();
       for (int i = 0; i < result.remaining().size() - 1; i++) {
-        sym = Resolve.resolve(env, sym, result.remaining().get(i));
+        sym = Resolve.resolve(env, sym, sym, result.remaining().get(i));
         if (sym == null) {
           return null;
         }
       }
-      field = Resolve.resolveField(env, sym, Iterables.getLast(result.remaining()));
+      field = Resolve.resolveField(env, owner, sym, Iterables.getLast(result.remaining()));
       if (field != null) {
         return field;
       }
     }
-    ClassSymbol classSymbol = owner.memberImports().singleMemberImport(simpleName);
+    ClassSymbol classSymbol = base.memberImports().singleMemberImport(simpleName);
     if (classSymbol != null) {
-      field = Resolve.resolveField(env, classSymbol, simpleName);
+      field = Resolve.resolveField(env, owner, classSymbol, simpleName);
       if (field != null) {
         return field;
       }
     }
-    Iterator<ClassSymbol> it = owner.memberImports().onDemandImports();
+    Iterator<ClassSymbol> it = base.memberImports().onDemandImports();
     while (it.hasNext()) {
-      field = Resolve.resolveField(env, it.next(), simpleName);
+      field = Resolve.resolveField(env, owner, it.next(), simpleName);
       if (field != null) {
         return field;
       }
@@ -208,11 +208,11 @@ public class ConstEvaluator {
   }
 
   /** Search for constant variables in lexically enclosing scopes. */
-  private static FieldInfo lexicalField(
+  private FieldInfo lexicalField(
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, String name) {
     while (sym != null) {
       TypeBoundClass info = env.get(sym);
-      FieldInfo field = Resolve.resolveField(env, sym, name);
+      FieldInfo field = Resolve.resolveField(env, owner, sym, name);
       if (field != null) {
         return field;
       }
@@ -844,10 +844,10 @@ public class ConstEvaluator {
   }
 
   private Const.AnnotationValue evalAnno(Tree.Anno t) {
-    LookupResult result = owner.scope().lookup(new LookupKey(t.name()));
+    LookupResult result = base.scope().lookup(new LookupKey(t.name()));
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String name : result.remaining()) {
-      sym = Resolve.resolve(env, sym, name);
+      sym = Resolve.resolve(env, sym, sym, name);
     }
     AnnoInfo annoInfo = evaluateAnnotation(sym, t.args());
     return new Const.AnnotationValue(annoInfo.sym(), annoInfo.values());
@@ -890,6 +890,6 @@ public class ConstEvaluator {
   }
 
   private TurbineError error(int position, String message, Object... args) {
-    return TurbineError.format(owner.source(), position, message, args);
+    return TurbineError.format(base.source(), position, message, args);
   }
 }

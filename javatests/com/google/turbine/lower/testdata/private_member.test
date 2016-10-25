@@ -1,0 +1,10 @@
+=== Test.java ===
+class Test {
+  private static class I {}
+  private static final int CONST = 42;
+
+  public Test(I i) {}
+  public void f(I i) {}
+  public static final int X = CONST;
+}
+

@@ -1,0 +1,13 @@
+=== Test.java ===
+public class Test {
+  private class Private {}
+  private static final int CONST = 42;
+  private class Inner {
+    private class InnerMost {
+      // access private member of enclosing instance
+      Private p;
+      static final int X = CONST;
+    }
+  }
+}
+

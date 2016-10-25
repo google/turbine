@@ -1,0 +1,22 @@
+=== a/A.java ===
+package a;
+public class A {
+  public static final int CONST = 2;
+}
+
+=== b/B.java ===
+package b;
+public class B {
+  static final int CONST = 1;
+  static class A {}
+}
+
+=== Package.java ===
+package p;
+import a.A;
+import b.B;
+import static a.A.CONST;
+public class Package extends B {
+  void f(A i) {}
+  final int x = CONST;
+}

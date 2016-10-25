@@ -228,7 +228,7 @@ public class HierarchyBinder {
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      sym = Resolve.resolve(env, sym, bit);
+      sym = Resolve.resolve(env, owner, sym, bit);
       if (sym == null) {
         throw TurbineError.format(
             source, ty.position(), String.format("symbol not found %s\n", bit));
@@ -241,13 +241,13 @@ public class HierarchyBinder {
   public static LookupResult lookup(
       Env<ClassSymbol, ? extends HeaderBoundClass> env,
       CompoundScope parent,
-      ClassSymbol sym,
+      ClassSymbol owner,
       LookupKey lookup) {
     // Handle any lexically enclosing class declarations (if we're binding a member class).
     // We could build out scopes for this, but it doesn't seem worth it. (And sharing the scopes
     // with other members of the same enclosing declaration would be complicated.)
-    for (ClassSymbol curr = sym; curr != null; curr = env.get(curr).owner()) {
-      ClassSymbol result = Resolve.resolve(env, curr, lookup.first());
+    for (ClassSymbol curr = owner; curr != null; curr = env.get(curr).owner()) {
+      ClassSymbol result = Resolve.resolve(env, owner, curr, lookup.first());
       if (result != null) {
         return new LookupResult(result, lookup);
       }
