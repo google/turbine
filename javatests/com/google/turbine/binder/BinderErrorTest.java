@@ -110,9 +110,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>: 2:12: invalid float literal", //
+          "<>: 2:14: unexpected input: f", //
           "  float x = 1ef;",
-          "            ^",
+          "              ^",
         },
       },
       {
@@ -122,9 +122,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>: 2:13: invalid double literal", //
+          "<>: 2:15: unexpected input: ;", //
           "  double x = 1e;",
-          "             ^",
+          "               ^",
         },
       },
     };
