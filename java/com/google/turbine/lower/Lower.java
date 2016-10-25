@@ -108,7 +108,7 @@ public class Lower {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info);
-    String superName = sig.descriptor(info.superclass());
+    String superName = info.superclass() != null ? sig.descriptor(info.superclass()) : null;
     List<String> interfaces = new ArrayList<>();
     for (ClassSymbol i : info.interfaces()) {
       interfaces.add(sig.descriptor(i));

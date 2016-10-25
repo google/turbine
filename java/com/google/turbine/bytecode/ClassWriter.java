@@ -41,7 +41,7 @@ public class ClassWriter {
     ByteArrayDataOutput output = ByteStreams.newDataOutput();
     output.writeShort(classfile.access());
     output.writeShort(pool.classInfo(classfile.name()));
-    output.writeShort(pool.classInfo(classfile.superName()));
+    output.writeShort(classfile.superName() != null ? pool.classInfo(classfile.superName()) : 0);
     output.writeShort(classfile.interfaces().size());
     for (String i : classfile.interfaces()) {
       output.writeShort(pool.classInfo(i));

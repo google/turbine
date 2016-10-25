@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /** A constant pool builder, used when writing class files. */
 public class ConstantPool {
@@ -89,6 +90,7 @@ public class ConstantPool {
 
   /** Adds a CONSTANT_Class_info entry to the pool. */
   short classInfo(String value) {
+    Objects.requireNonNull(value);
     short utf8 = utf8(value);
     if (classInfoPool.containsKey(utf8)) {
       return classInfoPool.get(utf8);
@@ -100,6 +102,7 @@ public class ConstantPool {
 
   /** Adds a CONSTANT_Utf8_info entry to the pool. */
   short utf8(String value) {
+    Objects.requireNonNull(value);
     if (utf8Pool.containsKey(value)) {
       return utf8Pool.get(value);
     }
@@ -145,6 +148,7 @@ public class ConstantPool {
   }
 
   short string(String value) {
+    Objects.requireNonNull(value);
     short utf8 = utf8(value);
     if (stringPool.containsKey(utf8)) {
       return stringPool.get(utf8);

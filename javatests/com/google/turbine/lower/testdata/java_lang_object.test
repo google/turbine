@@ -1,0 +1,36 @@
+=== Object.java ===
+package java.lang;
+public class Object {
+public Object() {}
+  public final Class<?> getClass() {
+    return null;
+  }
+
+  public int hashCode() {
+    return -1;
+  }
+
+  public boolean equals(Object o) {
+    return false;
+  }
+
+  protected Object clone() throws CloneNotSupportedException {
+    return null;
+  }
+
+  public String toString() {
+    return "";
+  }
+
+  protected void finalize() throws Throwable {}
+
+  public final void notify() {}
+
+  public final void notifyAll() {}
+
+  public final void wait(long timeout) throws InterruptedException {}
+
+  public final void wait(long timeout, int nanos) throws InterruptedException {}
+
+  public final void wait() throws InterruptedException {}
+}

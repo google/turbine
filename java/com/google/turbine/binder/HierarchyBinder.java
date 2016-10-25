@@ -115,8 +115,7 @@ public class HierarchyBinder {
         case INTERFACE:
         case ANNOTATION:
         case CLASS:
-          // TODO(b/31185757): this doesn't handle compiling Object
-          superclass = ClassSymbol.OBJECT;
+          superclass = !owner.equals(ClassSymbol.OBJECT) ? ClassSymbol.OBJECT : null;
           break;
         default:
           throw new AssertionError(decl.tykind());
