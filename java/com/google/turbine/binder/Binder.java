@@ -46,6 +46,7 @@ import com.google.turbine.binder.lookup.ImportIndex;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.lookup.TopLevelIndex;
+import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
@@ -200,8 +201,10 @@ public class Binder {
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv));
       Scope importScope = ImportIndex.create(importResolver, tli, unit.imports());
+      Scope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
       MemberImportIndex memberImports = new MemberImportIndex(importResolver, tli, unit.imports());
-      CompoundScope scope = topLevel.append(packageScope).append(importScope);
+      CompoundScope scope =
+          topLevel.append(wildImportScope).append(packageScope).append(importScope);
 
       for (ClassSymbol sym : entry.getValue()) {
         env.putIfAbsent(

@@ -1,0 +1,15 @@
+=== a/A.java ===
+package a;
+public class A {}
+
+=== p/A.java ===
+package p;
+public class A {}
+
+=== p/Test.java ===
+package p;
+import a.*;
+// on-demand import of a.A does not hide p.A
+class Test extends A {
+}
+

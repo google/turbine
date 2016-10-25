@@ -40,12 +40,9 @@ import java.util.Map;
 public class ImportIndex implements Scope {
 
   private final Map<String, Supplier<ClassSymbol>> thunks;
-  private final ImmutableList<Supplier<Scope>> packages;
 
-  public ImportIndex(
-      ImmutableMap<String, Supplier<ClassSymbol>> thunks, ImmutableList<Supplier<Scope>> packages) {
+  public ImportIndex(ImmutableMap<String, Supplier<ClassSymbol>> thunks) {
     this.thunks = thunks;
-    this.packages = packages;
   }
 
   /** Creates an import index for the given top-level environment. */
@@ -53,38 +50,10 @@ public class ImportIndex implements Scope {
       final CanonicalSymbolResolver resolve,
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
-    ImmutableList.Builder<Supplier<Scope>> packageScopes = ImmutableList.builder();
     Map<String, Supplier<ClassSymbol>> thunks = new HashMap<>();
     for (final Tree.ImportDecl i : imports) {
-      if (i.stat()) {
+      if (i.stat() || i.wild()) {
         continue;
-      }
-      if (i.wild()) {
-        packageScopes.add(
-            Suppliers.memoize(
-                new Supplier<Scope>() {
-                  @Override
-                  public Scope get() {
-                    Scope packageIndex = cpi.lookupPackage(i.type());
-                    if (packageIndex != null) {
-                      // a wildcard import of a package
-                      return packageIndex;
-                    }
-                    LookupResult result = cpi.lookup(new LookupKey(i.type()));
-                    if (result == null) {
-                      return null;
-                    }
-                    // a wildcard import of a type's members
-                    return new Scope() {
-                      @Override
-                      public LookupResult lookup(LookupKey lookupKey) {
-                        ClassSymbol member =
-                            resolve.resolveOne((ClassSymbol) result.sym(), lookupKey.first());
-                        return member != null ? new LookupResult(member, lookupKey) : null;
-                      }
-                    };
-                  }
-                }));
       }
       thunks.put(getLast(i.type()), thunk(resolve, cpi, i));
     }
@@ -102,7 +71,7 @@ public class ImportIndex implements Scope {
       }
       thunks.put(last, thunk(resolve, cpi, i));
     }
-    return new ImportIndex(ImmutableMap.copyOf(thunks), packageScopes.build());
+    return new ImportIndex(ImmutableMap.copyOf(thunks));
   }
 
   private static Supplier<ClassSymbol> thunk(
@@ -124,12 +93,6 @@ public class ImportIndex implements Scope {
   public LookupResult lookup(LookupKey lookup) {
     Supplier<ClassSymbol> thunk = thunks.get(lookup.first());
     if (thunk == null) {
-      for (Supplier<Scope> packageScope : packages) {
-        LookupResult result = packageScope.get().lookup(lookup);
-        if (result != null) {
-          return result;
-        }
-      }
       return null;
     }
     ClassSymbol sym = thunk.get();
