@@ -346,10 +346,18 @@ public class ConstExpressionParser {
         value = new Const.CharValue(text.charAt(0));
         break;
       case FLOAT:
-        value = new Const.FloatValue(Float.parseFloat(text));
+        try {
+          value = new Const.FloatValue(Float.parseFloat(text));
+        } catch (NumberFormatException e) {
+          throw error("invalid float literal");
+        }
         break;
       case DOUBLE:
-        value = new Const.DoubleValue(Double.parseDouble(text));
+        try {
+          value = new Const.DoubleValue(Double.parseDouble(text));
+        } catch (NumberFormatException e) {
+          throw error("invalid double literal");
+        }
         break;
       case STRING:
         value = new Const.StringValue(text);

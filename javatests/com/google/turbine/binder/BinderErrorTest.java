@@ -103,6 +103,30 @@ public class BinderErrorTest {
           "               ^",
         },
       },
+      {
+        {
+          "interface Test {", //
+          "  float x = 1ef;",
+          "}",
+        },
+        {
+          "<>: 2:12: invalid float literal", //
+          "  float x = 1ef;",
+          "            ^",
+        },
+      },
+      {
+        {
+          "interface Test {", //
+          "  double x = 1e;",
+          "}",
+        },
+        {
+          "<>: 2:13: invalid double literal", //
+          "  double x = 1e;",
+          "             ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
