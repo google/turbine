@@ -20,11 +20,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.sig.Sig;
+import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
+import com.google.turbine.bytecode.sig.Sig.WildTySig;
 import com.google.turbine.type.Type;
-import com.google.turbine.type.Type.ConcreteTyArg;
 import com.google.turbine.type.Type.TyVar;
-import com.google.turbine.type.Type.WildLowerBoundedTy;
-import com.google.turbine.type.Type.WildUpperBoundedTy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -41,9 +40,9 @@ public class BytecodeBinder {
       sb.append(s.simpleName());
       ClassSymbol sym = new ClassSymbol(sb.toString());
 
-      ImmutableList.Builder<Type.TyArg> tyArgs = ImmutableList.builder();
-      for (Sig.TyArgSig sig1 : s.tyArgs()) {
-        tyArgs.add(bindTyArg(sig1, scope));
+      ImmutableList.Builder<Type> tyArgs = ImmutableList.builder();
+      for (Sig.TySig arg : s.tyArgs()) {
+        tyArgs.add(bindTy(arg, scope));
       }
 
       classes.add(new Type.ClassTy.SimpleClassTy(sym, tyArgs.build()));
@@ -52,18 +51,16 @@ public class BytecodeBinder {
     return new Type.ClassTy(classes);
   }
 
-  private static Type.TyArg bindTyArg(Sig.TyArgSig sig, Function<String, TyVarSymbol> scope) {
-    switch (sig.kind()) {
-      case UNBOUNDED:
+  private static Type wildTy(WildTySig sig, Function<String, TyVarSymbol> scope) {
+    switch (sig.boundKind()) {
+      case NONE:
         return Type.WILD_TY;
-      case LOWER_BOUNDED:
-        return new WildLowerBoundedTy(bindTy(((Sig.LowerBoundTyArgSig) sig).bound(), scope));
-      case UPPER_BOUNDED:
-        return new WildUpperBoundedTy(bindTy(((Sig.UpperBoundTyArgSig) sig).bound(), scope));
-      case CONCRETE:
-        return new ConcreteTyArg(bindTy(((Sig.ConcreteTyArgSig) sig).type(), scope));
+      case LOWER:
+        return new Type.WildLowerBoundedTy(bindTy(((UpperBoundTySig) sig).bound(), scope));
+      case UPPER:
+        return new Type.WildUpperBoundedTy(bindTy(((UpperBoundTySig) sig).bound(), scope));
       default:
-        throw new AssertionError(sig.kind());
+        throw new AssertionError(sig.boundKind());
     }
   }
 
@@ -77,6 +74,8 @@ public class BytecodeBinder {
         return new TyVar(scope.apply(((Sig.TyVarSig) sig).name()));
       case ARRAY_TY_SIG:
         return bindArrayTy((Sig.ArrayTySig) sig, scope);
+      case WILD_TY_SIG:
+        return wildTy((WildTySig) sig, scope);
       default:
         throw new AssertionError(sig.kind());
     }

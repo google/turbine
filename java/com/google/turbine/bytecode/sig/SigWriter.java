@@ -20,13 +20,14 @@ import com.google.turbine.bytecode.sig.Sig.ArrayTySig;
 import com.google.turbine.bytecode.sig.Sig.BaseTySig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
 import com.google.turbine.bytecode.sig.Sig.ClassTySig;
-import com.google.turbine.bytecode.sig.Sig.ConcreteTyArgSig;
+import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
 import com.google.turbine.bytecode.sig.Sig.SimpleClassTySig;
-import com.google.turbine.bytecode.sig.Sig.TyArgSig;
 import com.google.turbine.bytecode.sig.Sig.TyParamSig;
 import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.Sig.TyVarSig;
+import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
+import com.google.turbine.bytecode.sig.Sig.WildTySig;
 
 /** Writes {@link Sig}s to their serialized string equivalents. */
 public class SigWriter {
@@ -92,31 +93,28 @@ public class SigWriter {
     sb.append(simpleClassTySig.simpleName());
     if (!simpleClassTySig.tyArgs().isEmpty()) {
       sb.append('<');
-      for (Sig.TyArgSig x : simpleClassTySig.tyArgs()) {
-        ppTyArgSig(x);
+      for (Sig.TySig x : simpleClassTySig.tyArgs()) {
+        writeTySig(x);
       }
       sb.append('>');
     }
   }
 
-  private void ppTyArgSig(TyArgSig x) {
-    switch (x.kind()) {
-      case UNBOUNDED:
+  private void wildTyArgSig(WildTySig sig) {
+    switch (sig.boundKind()) {
+      case NONE:
         sb.append('*');
         break;
-      case LOWER_BOUNDED:
+      case LOWER:
         sb.append('-');
-        writeTySig(((Sig.LowerBoundTyArgSig) x).bound());
+        writeTySig(((LowerBoundTySig) sig).bound());
         break;
-      case UPPER_BOUNDED:
+      case UPPER:
         sb.append('+');
-        writeTySig(((Sig.UpperBoundTyArgSig) x).bound());
-        break;
-      case CONCRETE:
-        writeTySig(((ConcreteTyArgSig) x).type());
+        writeTySig(((UpperBoundTySig) sig).bound());
         break;
       default:
-        throw new AssertionError(x.kind());
+        throw new AssertionError(sig.kind());
     }
   }
 
@@ -198,6 +196,9 @@ public class SigWriter {
         break;
       case TY_VAR_SIG:
         writeTyVarSig((TyVarSig) p);
+        break;
+      case WILD_TY_SIG:
+        wildTyArgSig((WildTySig) p);
         break;
       default:
         throw new AssertionError(p.kind());

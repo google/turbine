@@ -36,6 +36,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.AsmUtils;
+import com.google.turbine.bytecode.JavapUtils;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -71,9 +72,7 @@ public class LowerTest {
                     new Type.ClassTy.SimpleClassTy(
                         new ClassSymbol("java/util/List"),
                         ImmutableList.of(
-                            new Type.ConcreteTyArg(
-                                new Type.TyVar(
-                                    new TyVarSymbol(new ClassSymbol("test/Test"), "V"))))))));
+                            new Type.TyVar(new TyVarSymbol(new ClassSymbol("test/Test"), "V")))))));
     Type.ClassTy xtnds = Type.ClassTy.OBJECT;
     ImmutableMap<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> tps =
         ImmutableMap.of(
@@ -239,5 +238,30 @@ public class LowerTest {
     assertThat(attributes)
         .containsExactly("Test$Inner Test Inner", "Test$Inner$InnerMost Test$Inner InnerMost")
         .inOrder();
+  }
+
+  @Test
+  public void wildArrayElement() throws Exception {
+    IntegrationTestSupport.TestInput input =
+        IntegrationTestSupport.TestInput.parse(
+            new String(
+                ByteStreams.toByteArray(
+                    getClass().getResourceAsStream("testdata/canon_array.test")),
+                UTF_8));
+
+    Map<String, byte[]> actual =
+        IntegrationTestSupport.runTurbine(input.sources, ImmutableList.of(), BOOTCLASSPATH);
+
+    assertThat(JavapUtils.dump("Test", actual.get("Test")))
+        .isEqualTo(
+            Joiner.on('\n')
+                .join(
+                    "class Test {",
+                    "  A<?[]>.I i;",
+                    "    descriptor: LA$I;",
+                    "  Test();",
+                    "    descriptor: ()V",
+                    "}",
+                    ""));
   }
 }

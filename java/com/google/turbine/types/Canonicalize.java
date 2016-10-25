@@ -24,7 +24,12 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.TyKind;
+import com.google.turbine.type.Type.TyVar;
+import com.google.turbine.type.Type.WildTy;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,6 +69,8 @@ public class Canonicalize {
       case VOID_TY:
       case TY_VAR:
         return type;
+      case WILD_TY:
+        return canonicalizeWildTy(env, base, (WildTy) type);
       case ARRAY_TY:
         {
           Type.ArrayTy arrayTy = (Type.ArrayTy) type;
@@ -138,9 +145,9 @@ public class Canonicalize {
 
   private static ClassTy.SimpleClassTy uninstantiated(
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol owner) {
-    ImmutableList.Builder<Type.TyArg> targs = ImmutableList.builder();
+    ImmutableList.Builder<Type> targs = ImmutableList.builder();
     for (TyVarSymbol p : env.get(owner).typeParameterTypes().keySet()) {
-      targs.add(new Type.ConcreteTyArg(new Type.TyVar(p)));
+      targs.add(new Type.TyVar(p));
     }
     return new ClassTy.SimpleClassTy(owner, targs.build());
   }
@@ -178,7 +185,7 @@ public class Canonicalize {
     // ... otherwise, find the supertype the class was inherited from
     // and instantiate it as a member of the current class
     ClassTy curr = base;
-    Map<TyVarSymbol, Type.TyArg> mapping = new LinkedHashMap<>();
+    Map<TyVarSymbol, Type> mapping = new LinkedHashMap<>();
     while (curr != null) {
       for (ClassTy.SimpleClassTy s : curr.classes) {
         addInstantiation(env, mapping, s);
@@ -198,7 +205,7 @@ public class Canonicalize {
   /** Add the type arguments of a simple class type to a type mapping. */
   static void addInstantiation(
       Env<ClassSymbol, TypeBoundClass> env,
-      Map<TyVarSymbol, Type.TyArg> mapping,
+      Map<TyVarSymbol, Type> mapping,
       ClassTy.SimpleClassTy simpleType) {
     Collection<TyVarSymbol> symbols = env.get(simpleType.sym()).typeParameters().values();
     if (simpleType.targs().isEmpty()) {
@@ -210,9 +217,9 @@ public class Canonicalize {
     }
     // otherwise, it is an instantiated generic type
     Verify.verify(symbols.size() == simpleType.targs().size());
-    Iterator<Type.TyArg> typeArguments = simpleType.targs().iterator();
+    Iterator<Type> typeArguments = simpleType.targs().iterator();
     for (TyVarSymbol sym : symbols) {
-      Type.TyArg argument = typeArguments.next();
+      Type argument = typeArguments.next();
       if (Objects.equals(tyVarSym(argument), sym)) {
         continue;
       }
@@ -223,15 +230,15 @@ public class Canonicalize {
   /** Instantiate a simple class type for the given symbol, and with the given type mapping. */
   static ClassTy.SimpleClassTy instantiate(
       Env<ClassSymbol, TypeBoundClass> env,
-      Map<TyVarSymbol, Type.TyArg> mapping,
+      Map<TyVarSymbol, Type> mapping,
       ClassSymbol classSymbol) {
-    List<Type.TyArg> args = new ArrayList<>();
+    List<Type> args = new ArrayList<>();
     for (TyVarSymbol sym : env.get(classSymbol).typeParameterTypes().keySet()) {
       if (!mapping.containsKey(sym)) {
-        args.add(new Type.ConcreteTyArg(new Type.TyVar(sym)));
+        args.add(new Type.TyVar(sym));
         continue;
       }
-      Type.TyArg arg = instantiate(mapping, mapping.get(sym));
+      Type arg = instantiate(mapping, mapping.get(sym));
       if (arg == null) {
         // raw types
         args.clear();
@@ -243,16 +250,56 @@ public class Canonicalize {
   }
 
   /** Instantiates a type argument using the given mapping. */
-  private static Type.TyArg instantiate(
-      Map<TyVarSymbol, Type.TyArg> mapping, Type.TyArg typeArgument) {
-    if (typeArgument == null) {
+  private static Type instantiate(Map<TyVarSymbol, Type> mapping, Type type) {
+    if (type == null) {
       return null;
     }
-    TyVarSymbol sym = tyVarSym(typeArgument);
-    if (!mapping.containsKey(sym)) {
-      return typeArgument;
+    switch (type.tyKind()) {
+      case WILD_TY:
+        return instantiateWildTy(mapping, (WildTy) type);
+      case PRIM_TY:
+      case VOID_TY:
+        return type;
+      case CLASS_TY:
+        return instantiateClassTy(mapping, (ClassTy) type);
+      case ARRAY_TY:
+        ArrayTy arrayTy = (ArrayTy) type;
+        Type elem = instantiate(mapping, arrayTy.elementType());
+        return new ArrayTy(arrayTy.dimension(), elem);
+      case TY_VAR:
+        TyVar tyVar = (TyVar) type;
+        if (mapping.containsKey(tyVar.sym())) {
+          return instantiate(mapping, mapping.get(tyVar.sym()));
+        }
+        return type;
+      default:
+        throw new AssertionError(type.tyKind());
     }
-    return instantiate(mapping, mapping.get(sym));
+  }
+
+  private static Type instantiateWildTy(Map<TyVarSymbol, Type> mapping, WildTy type) {
+    switch (type.boundKind()) {
+      case NONE:
+        return type;
+      case UPPER:
+        return new Type.WildUpperBoundedTy(instantiate(mapping, type.bound()));
+      case LOWER:
+        return new Type.WildLowerBoundedTy(instantiate(mapping, type.bound()));
+      default:
+        throw new AssertionError(type.boundKind());
+    }
+  }
+
+  private static Type instantiateClassTy(Map<TyVarSymbol, Type> mapping, ClassTy type) {
+    ImmutableList.Builder<SimpleClassTy> simples = ImmutableList.builder();
+    for (SimpleClassTy simple : type.classes) {
+      ImmutableList.Builder<Type> args = ImmutableList.builder();
+      for (Type arg : simple.targs()) {
+        args.add(instantiate(mapping, arg));
+      }
+      simples.add(new SimpleClassTy(simple.sym(), args.build()));
+    }
+    return new ClassTy(simples.build());
   }
 
   /**
@@ -260,15 +307,11 @@ public class Canonicalize {
    * reference, or else {@code null}.
    */
   @Nullable
-  static TyVarSymbol tyVarSym(Type.TyArg typeArgument) {
-    if (typeArgument.tyArgKind() != Type.TyArg.TyArgKind.CONCRETE) {
-      return null;
+  private static TyVarSymbol tyVarSym(Type type) {
+    if (type.tyKind() == TyKind.TY_VAR) {
+      return ((TyVar) type).sym();
     }
-    Type.ConcreteTyArg concrete = (Type.ConcreteTyArg) typeArgument;
-    if (concrete.type().tyKind() != Type.TyKind.TY_VAR) {
-      return null;
-    }
-    return ((Type.TyVar) concrete.type()).sym();
+    return null;
   }
 
   public static ClassTy canonicalizeClassTy(
@@ -276,36 +319,32 @@ public class Canonicalize {
     // canonicalize type arguments first
     ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
     for (ClassTy.SimpleClassTy s : ty.classes) {
-      args.add(new ClassTy.SimpleClassTy(s.sym(), canonicalizeTyArgs(s.targs(), base, env)));
+      args.add(new ClassTy.SimpleClassTy(s.sym(), canonicalize(s.targs(), base, env)));
     }
     ty = new ClassTy(args.build());
     return canon(env, base, ty);
   }
 
-  private static ImmutableList<Type.TyArg> canonicalizeTyArgs(
-      ImmutableList<Type.TyArg> targs, ClassSymbol base, Env<ClassSymbol, TypeBoundClass> env) {
-    ImmutableList.Builder<Type.TyArg> result = ImmutableList.builder();
-    for (Type.TyArg a : targs) {
-      result.add(canonicalizeTyArg(a, base, env));
+  private static ImmutableList<Type> canonicalize(
+      ImmutableList<Type> targs, ClassSymbol base, Env<ClassSymbol, TypeBoundClass> env) {
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    for (Type a : targs) {
+      result.add(canonicalize(env, base, a));
     }
     return result.build();
   }
 
-  private static Type.TyArg canonicalizeTyArg(
-      Type.TyArg tyArg, ClassSymbol base, Env<ClassSymbol, TypeBoundClass> env) {
-    switch (tyArg.tyArgKind()) {
-      case CONCRETE:
-        return new Type.ConcreteTyArg(canonicalize(env, base, ((Type.ConcreteTyArg) tyArg).type()));
-      case WILD:
-        return tyArg;
-      case LOWER_WILD:
-        return new Type.WildLowerBoundedTy(
-            canonicalize(env, base, ((Type.WildLowerBoundedTy) tyArg).bound()));
-      case UPPER_WILD:
-        return new Type.WildUpperBoundedTy(
-            canonicalize(env, base, ((Type.WildUpperBoundedTy) tyArg).bound()));
+  private static Type canonicalizeWildTy(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, WildTy type) {
+    switch (type.boundKind()) {
+      case NONE:
+        return type;
+      case LOWER:
+        return new Type.WildLowerBoundedTy(canonicalize(env, base, type.bound()));
+      case UPPER:
+        return new Type.WildUpperBoundedTy(canonicalize(env, base, type.bound()));
       default:
-        throw new AssertionError(tyArg.tyArgKind());
+        throw new AssertionError(type.boundKind());
     }
   }
 }

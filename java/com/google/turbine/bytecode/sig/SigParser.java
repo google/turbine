@@ -21,15 +21,13 @@ import com.google.turbine.bytecode.sig.Sig.ArrayTySig;
 import com.google.turbine.bytecode.sig.Sig.BaseTySig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
 import com.google.turbine.bytecode.sig.Sig.ClassTySig;
-import com.google.turbine.bytecode.sig.Sig.ConcreteTyArgSig;
-import com.google.turbine.bytecode.sig.Sig.LowerBoundTyArgSig;
+import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
 import com.google.turbine.bytecode.sig.Sig.SimpleClassTySig;
-import com.google.turbine.bytecode.sig.Sig.TyArgSig;
 import com.google.turbine.bytecode.sig.Sig.TyParamSig;
 import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.Sig.TyVarSig;
-import com.google.turbine.bytecode.sig.Sig.UpperBoundTyArgSig;
+import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.WildTyArgSig;
 import com.google.turbine.model.TurbineConstantTypeKind;
 
@@ -69,6 +67,15 @@ public class SigParser {
         return parseTyVar();
       case 'L':
         return parseClassTySig();
+      case '+':
+        eat();
+        return new UpperBoundTySig(parseFieldSig());
+      case '-':
+        eat();
+        return new LowerBoundTySig(parseFieldSig());
+      case '*':
+        eat();
+        return new WildTyArgSig();
       default:
         throw new AssertionError(peek());
     }
@@ -197,7 +204,7 @@ public class SigParser {
     ImmutableList.Builder<SimpleClassTySig> simples = ImmutableList.builder();
     StringBuilder name = new StringBuilder();
     StringBuilder pkg = new StringBuilder();
-    ImmutableList.Builder<TyArgSig> tyArgs = ImmutableList.builder();
+    ImmutableList.Builder<TySig> tyArgs = ImmutableList.builder();
     OUTER:
     while (true) {
       switch (peek()) {
@@ -213,7 +220,7 @@ public class SigParser {
           {
             eat();
             do {
-              tyArgs.add(parseTypeArg());
+              tyArgs.add(parseFieldSig());
             } while (peek() != '>');
             eat();
             break;
@@ -236,21 +243,5 @@ public class SigParser {
     simples.add(new SimpleClassTySig(name.toString(), tyArgs.build()));
     eat();
     return new ClassTySig(pkg.toString(), simples.build());
-  }
-
-  private TyArgSig parseTypeArg() {
-    switch (peek()) {
-      case '+':
-        eat();
-        return new UpperBoundTyArgSig(parseFieldSig());
-      case '-':
-        eat();
-        return new LowerBoundTyArgSig(parseFieldSig());
-      case '*':
-        eat();
-        return new WildTyArgSig();
-      default:
-        return new ConcreteTyArgSig(parseFieldSig());
-    }
   }
 }

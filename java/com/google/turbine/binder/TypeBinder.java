@@ -163,8 +163,7 @@ public class TypeBinder {
                 ImmutableList.of(
                     new Type.ClassTy.SimpleClassTy(
                         ClassSymbol.ENUM,
-                        ImmutableList.of(
-                            new Type.ConcreteTyArg(Type.ClassTy.asNonParametricClassTy(owner))))));
+                        ImmutableList.of(Type.ClassTy.asNonParametricClassTy(owner)))));
         break;
       case ANNOTATION:
         superClassType = Type.ClassTy.asNonParametricClassTy(ClassSymbol.ANNOTATION);
@@ -505,21 +504,20 @@ public class TypeBinder {
     return result.build();
   }
 
-  private ImmutableList<Type.TyArg> bindTyArgs(
-      CompoundScope scope, ImmutableList<Tree.Type> targs) {
-    ImmutableList.Builder<Type.TyArg> result = ImmutableList.builder();
+  private ImmutableList<Type> bindTyArgs(CompoundScope scope, ImmutableList<Tree.Type> targs) {
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
     for (Tree.Type ty : targs) {
       result.add(bindTyArg(scope, ty));
     }
     return result.build();
   }
 
-  private Type.TyArg bindTyArg(CompoundScope scope, Tree.Type ty) {
+  private Type bindTyArg(CompoundScope scope, Tree.Type ty) {
     switch (ty.kind()) {
       case WILD_TY:
         return bindWildTy(scope, (Tree.WildTy) ty);
       default:
-        return new Type.ConcreteTyArg(bindTy(scope, ty));
+        return bindTy(scope, ty);
     }
   }
 
@@ -598,7 +596,7 @@ public class TypeBinder {
     return new Type.ArrayTy(t.dim(), bindTy(scope, t.elem()));
   }
 
-  private Type.TyArg bindWildTy(CompoundScope scope, Tree.WildTy t) {
+  private Type bindWildTy(CompoundScope scope, Tree.WildTy t) {
     if (t.lower().isPresent()) {
       return new Type.WildLowerBoundedTy(bindTy(scope, t.lower().get()));
     } else if (t.upper().isPresent()) {

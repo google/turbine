@@ -64,7 +64,7 @@ public class Erasure {
       if (c.targs().isEmpty()) {
         classes.add(c);
       } else {
-        classes.add(new Type.ClassTy.SimpleClassTy(c.sym(), ImmutableList.<Type.TyArg>of()));
+        classes.add(new Type.ClassTy.SimpleClassTy(c.sym(), ImmutableList.<Type>of()));
       }
     }
     return new Type.ClassTy(classes.build());

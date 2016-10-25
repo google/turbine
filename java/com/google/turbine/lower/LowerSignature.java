@@ -25,9 +25,11 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
 import com.google.turbine.bytecode.sig.Sig.ClassTySig;
+import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
 import com.google.turbine.bytecode.sig.Sig.SimpleClassTySig;
-import com.google.turbine.bytecode.sig.Sig.TyArgSig;
+import com.google.turbine.bytecode.sig.Sig.TySig;
+import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
 import com.google.turbine.bytecode.sig.SigWriter;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.type.Type;
@@ -35,10 +37,8 @@ import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.PrimTy;
-import com.google.turbine.type.Type.TyArg;
 import com.google.turbine.type.Type.TyVar;
-import com.google.turbine.type.Type.WildLowerBoundedTy;
-import com.google.turbine.type.Type.WildUpperBoundedTy;
+import com.google.turbine.type.Type.WildTy;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -62,6 +62,8 @@ public class LowerSignature {
         return refBaseTy((PrimTy) ty);
       case VOID_TY:
         return Sig.VOID;
+      case WILD_TY:
+        return wildTy((WildTy) ty);
       default:
         throw new AssertionError(ty.tyKind());
     }
@@ -107,26 +109,24 @@ public class LowerSignature {
     return new ClassTySig(pkg, classes.build());
   }
 
-  private ImmutableList<TyArgSig> tyArgSigs(SimpleClassTy part) {
-    ImmutableList.Builder<TyArgSig> tyargs = ImmutableList.builder();
-    for (TyArg targ : part.targs()) {
-      tyargs.add(tyArgSig(targ));
+  private ImmutableList<TySig> tyArgSigs(SimpleClassTy part) {
+    ImmutableList.Builder<TySig> tyargs = ImmutableList.builder();
+    for (Type targ : part.targs()) {
+      tyargs.add(signature(targ));
     }
     return tyargs.build();
   }
 
-  private TyArgSig tyArgSig(TyArg targ) {
-    switch (targ.tyArgKind()) {
-      case CONCRETE:
-        return new Sig.ConcreteTyArgSig(signature(((Type.ConcreteTyArg) targ).type()));
-      case WILD:
+  private TySig wildTy(WildTy ty) {
+    switch (ty.boundKind()) {
+      case NONE:
         return new Sig.WildTyArgSig();
-      case UPPER_WILD:
-        return new Sig.UpperBoundTyArgSig(signature(((WildUpperBoundedTy) targ).bound()));
-      case LOWER_WILD:
-        return new Sig.LowerBoundTyArgSig(signature(((WildLowerBoundedTy) targ).bound()));
+      case UPPER:
+        return new UpperBoundTySig(signature(((Type.WildUpperBoundedTy) ty).bound()));
+      case LOWER:
+        return new LowerBoundTySig(signature(((Type.WildLowerBoundedTy) ty).bound()));
       default:
-        throw new AssertionError(targ.tyArgKind());
+        throw new AssertionError(ty.boundKind());
     }
   }
 

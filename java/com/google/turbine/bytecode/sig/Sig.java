@@ -125,15 +125,15 @@ public class Sig {
   public static class SimpleClassTySig {
 
     private final String simpleName;
-    private final ImmutableList<TyArgSig> tyArgs;
+    private final ImmutableList<TySig> tyArgs;
 
-    public SimpleClassTySig(String simpleName, ImmutableList<TyArgSig> tyArgs) {
+    public SimpleClassTySig(String simpleName, ImmutableList<TySig> tyArgs) {
       this.tyArgs = tyArgs;
       this.simpleName = simpleName;
     }
 
     /** Type arguments. */
-    public ImmutableList<TyArgSig> tyArgs() {
+    public ImmutableList<TySig> tyArgs() {
       return tyArgs;
     }
 
@@ -143,30 +143,39 @@ public class Sig {
     }
   }
 
-  /** A JVMS 4.7.9.1 TypeArgument. */
-  public abstract static class TyArgSig {
-
-    /** The type argument kind. */
-    public enum Kind {
+  /**
+   * A wildcard type.
+   *
+   * <p>Wildcard are represented as first class types, instead only allowing them as top-level type
+   * arguments. This diverges from the buggy grammar in JVMS 4.7.9.1, see:
+   * http://mail.openjdk.java.net/pipermail/compiler-dev/2016-October/010450.html
+   */
+  public abstract static class WildTySig extends TySig {
+    /** A wildcard bound kind. */
+    public enum BoundKind {
       /** An unbounded wildcard. */
-      UNBOUNDED,
+      NONE,
       /** A lower-bounded wildcard. */
-      LOWER_BOUNDED,
+      LOWER,
       /** An upper-bounded wildcard. */
-      UPPER_BOUNDED,
-      /** A concrete type argument. */
-      CONCRETE
+      UPPER
     }
 
-    public abstract Kind kind();
+    /** Returns the wildcard bound kind. */
+    public abstract BoundKind boundKind();
+
+    @Override
+    public TySigKind kind() {
+      return TySigKind.WILD_TY_SIG;
+    }
   }
 
-  /** A JVMS 4.7.9.1 TypeArgument with an upper-bound WildcardIndicator. */
-  public static class UpperBoundTyArgSig extends TyArgSig {
+  /** An upper-bounded wildcard. */
+  public static class UpperBoundTySig extends WildTySig {
 
     private final TySig bound;
 
-    public UpperBoundTyArgSig(TySig bound) {
+    public UpperBoundTySig(TySig bound) {
       this.bound = bound;
     }
 
@@ -176,17 +185,17 @@ public class Sig {
     }
 
     @Override
-    public Kind kind() {
-      return Kind.UPPER_BOUNDED;
+    public BoundKind boundKind() {
+      return BoundKind.UPPER;
     }
   }
 
-  /** A JVMS 4.7.9.1 TypeArgument with a lower-bound WildcardIndicator. */
-  public static class LowerBoundTyArgSig extends TyArgSig {
+  /** An lower-bounded wildcard. */
+  public static class LowerBoundTySig extends WildTySig {
 
     private final TySig bound;
 
-    public LowerBoundTyArgSig(TySig bound) {
+    public LowerBoundTySig(TySig bound) {
       this.bound = bound;
     }
 
@@ -196,35 +205,16 @@ public class Sig {
     }
 
     @Override
-    public Kind kind() {
-      return Kind.LOWER_BOUNDED;
+    public BoundKind boundKind() {
+      return BoundKind.LOWER;
     }
   }
 
-  /** A JVMS 4.7.9.1 TypeArgument for an unbounded wildcard. */
-  public static class WildTyArgSig extends TyArgSig {
+  /** An unbounded wildcard. */
+  public static class WildTyArgSig extends WildTySig {
     @Override
-    public Kind kind() {
-      return Kind.UNBOUNDED;
-    }
-  }
-
-  /** A JVMS 4.7.9.1 TypeArgument with no WildcardIndicator and a concrete type. */
-  public static class ConcreteTyArgSig extends TyArgSig {
-    private final TySig type;
-
-    public ConcreteTyArgSig(TySig type) {
-      this.type = type;
-    }
-
-    /** The type. */
-    public TySig type() {
-      return type;
-    }
-
-    @Override
-    public Kind kind() {
-      return Kind.CONCRETE;
+    public BoundKind boundKind() {
+      return BoundKind.NONE;
     }
   }
 
@@ -285,6 +275,7 @@ public class Sig {
       CLASS_TY_SIG,
       ARRAY_TY_SIG,
       TY_VAR_SIG,
+      WILD_TY_SIG
     }
 
     /** The type kind. */

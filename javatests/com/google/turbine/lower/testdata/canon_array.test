@@ -1,0 +1,17 @@
+=== A.java ===
+class A<K> {
+  class I {}
+}
+
+=== B.java ===
+class B<S> extends A<S[]> {}
+
+=== Test.java ===
+class Test {
+  class One extends B<Integer> {
+    void f(I i) {}
+  }
+  class Two<Z> extends B<Z> {
+  }
+  Two<?>.I i;
+}

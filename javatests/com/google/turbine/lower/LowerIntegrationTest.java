@@ -229,6 +229,10 @@ public class LowerIntegrationTest {
       "boxed_const.test",
       "package_info.test",
       "import_wild_order.test",
+      "canon_recursive.test",
+      // TODO(cushon): crashes ASM, see:
+      // http://forge.ow2.org/tracker/?func=detail&aid=317776&group_id=23&atid=100023
+      // "canon_array.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

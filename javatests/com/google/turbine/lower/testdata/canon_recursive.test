@@ -1,0 +1,14 @@
+=== A.java ===
+class A<K, V> {
+  class I {}
+}
+
+=== B.java ===
+import java.util.Map;
+import java.util.List;
+class B<S extends Number, T extends Number> extends A<Map<List<S>, S>, Map<List<T>, T>> {}
+
+=== C.java ===
+class C extends B<Integer, Long> {
+  void f(I c) {}
+}

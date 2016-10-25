@@ -19,6 +19,7 @@ package com.google.turbine.bytecode.sig;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.Iterables;
+import com.google.turbine.bytecode.sig.Sig.TySig.TySigKind;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -48,12 +49,9 @@ public class SigRegressionTest {
     Sig.SimpleClassTySig simple = Iterables.getOnlyElement(i.classes());
     assertThat(simple.simpleName()).isEqualTo("Collection");
 
-    Sig.TyArgSig tyArg = Iterables.getOnlyElement(simple.tyArgs());
-    assertThat(tyArg.kind()).isEqualTo(Sig.TyArgSig.Kind.CONCRETE);
-    Sig.TySig concrete = ((Sig.ConcreteTyArgSig) tyArg).type();
-    assertThat(concrete.kind()).isEqualTo(Sig.TySig.TySigKind.TY_VAR_SIG);
-
-    Sig.TyVarSig tyVar = (Sig.TyVarSig) concrete;
+    Sig.TySig tyArg = Iterables.getOnlyElement(simple.tyArgs());
+    assertThat(tyArg.kind()).isEqualTo(TySigKind.TY_VAR_SIG);
+    Sig.TyVarSig tyVar = (Sig.TyVarSig) tyArg;
     assertThat(tyVar.name()).isEqualTo("E");
 
     assertThat(SigWriter.classSig(sig)).isEqualTo(input);
@@ -90,5 +88,19 @@ public class SigRegressionTest {
     String input = "Ljava/lang/Enum<Lsun/util/logging/PlatformLogger.Level;>;";
     Sig.ClassSig sig = new SigParser(input).parseClassSig();
     assertThat(SigWriter.classSig(sig)).isEqualTo(input);
+  }
+
+  @Test
+  public void wildArray() {
+    String input = "LA<[*>.I;";
+    Sig.ClassSig sig = new SigParser(input).parseClassSig();
+    assertThat(SigWriter.classSig(sig)).isEqualTo(input);
+
+    input = "LA<[+[Z>.I;";
+    sig = new SigParser(input).parseClassSig();
+    assertThat(SigWriter.classSig(sig)).isEqualTo(input);
+
+    input = "LA<[-[Z>.I;";
+    sig = new SigParser(input).parseClassSig();
   }
 }

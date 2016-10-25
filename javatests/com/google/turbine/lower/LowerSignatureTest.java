@@ -61,11 +61,9 @@ public class LowerSignatureTest {
         new Type.ClassTy(
             ImmutableList.of(
                 new Type.ClassTy.SimpleClassTy(
-                    new ClassSymbol("test/Outer"),
-                    ImmutableList.of(new Type.ConcreteTyArg(Type.ClassTy.OBJECT))),
+                    new ClassSymbol("test/Outer"), ImmutableList.of(Type.ClassTy.OBJECT)),
                 new Type.ClassTy.SimpleClassTy(
-                    new ClassSymbol("test/Outer$Inner"),
-                    ImmutableList.of(new Type.ConcreteTyArg(Type.ClassTy.OBJECT)))));
+                    new ClassSymbol("test/Outer$Inner"), ImmutableList.of(Type.ClassTy.OBJECT))));
     assertThat(SigWriter.type(new LowerSignature().signature(type)))
         .isEqualTo("Ltest/Outer<Ljava/lang/Object;>.Inner<Ljava/lang/Object;>;");
     // Type#toString is only for debugging

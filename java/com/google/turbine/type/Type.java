@@ -42,7 +42,9 @@ public interface Type {
     /** An array type. */
     ARRAY_TY,
     /** A type variable type. */
-    TY_VAR
+    TY_VAR,
+    /** A wildcard type. */
+    WILD_TY
   }
 
   /** The type kind. */
@@ -121,9 +123,9 @@ public interface Type {
     public static class SimpleClassTy {
 
       private final ClassSymbol sym;
-      private final ImmutableList<TyArg> targs;
+      private final ImmutableList<Type> targs;
 
-      public SimpleClassTy(ClassSymbol sym, ImmutableList<TyArg> targs) {
+      public SimpleClassTy(ClassSymbol sym, ImmutableList<Type> targs) {
         Preconditions.checkNotNull(sym);
         Preconditions.checkNotNull(targs);
         this.sym = sym;
@@ -136,7 +138,7 @@ public interface Type {
       }
 
       /** The type arguments. */
-      public ImmutableList<TyArg> targs() {
+      public ImmutableList<Type> targs() {
         return targs;
       }
     }
@@ -214,48 +216,27 @@ public interface Type {
     }
   }
 
-  /** A type argument. */
-  abstract class TyArg {
+  /** A wildcard type, valid only inside (possibly nested) type arguments. */
+  abstract class WildTy implements Type {
 
-    /** A type argument kind. */
-    public enum TyArgKind {
-      WILD,
-      CONCRETE,
-      UPPER_WILD,
-      LOWER_WILD,
+    public enum BoundKind {
+      NONE,
+      UPPER,
+      LOWER
     }
 
-    /** The type argument kind. */
-    public abstract TyArgKind tyArgKind();
-  }
+    public abstract BoundKind boundKind();
 
-  /** A concrete type argument, e.g. some class or type variable, not a wildcard. */
-  class ConcreteTyArg extends TyArg {
-
-    private final Type type;
-
-    public ConcreteTyArg(Type type) {
-      this.type = type;
-    }
-
-    /** The type. */
-    public Type type() {
-      return type;
-    }
+    public abstract Type bound();
 
     @Override
-    public TyArgKind tyArgKind() {
-      return TyArgKind.CONCRETE;
-    }
-
-    @Override
-    public String toString() {
-      return type.toString();
+    public TyKind tyKind() {
+      return TyKind.WILD_TY;
     }
   }
 
   /** An upper-bounded wildcard type. */
-  class WildUpperBoundedTy extends TyArg {
+  class WildUpperBoundedTy extends WildTy {
 
     public final Type bound;
 
@@ -264,18 +245,19 @@ public interface Type {
     }
 
     /** The upper bound. */
+    @Override
     public Type bound() {
       return bound;
     }
 
     @Override
-    public TyArgKind tyArgKind() {
-      return TyArgKind.UPPER_WILD;
+    public BoundKind boundKind() {
+      return BoundKind.UPPER;
     }
   }
 
   /** An lower-bounded wildcard type. */
-  class WildLowerBoundedTy extends TyArg {
+  class WildLowerBoundedTy extends WildTy {
 
     public final Type bound;
 
@@ -284,22 +266,28 @@ public interface Type {
     }
 
     /** The lower bound. */
+    @Override
     public Type bound() {
       return bound;
     }
 
     @Override
-    public TyArgKind tyArgKind() {
-      return TyArgKind.LOWER_WILD;
+    public BoundKind boundKind() {
+      return BoundKind.LOWER;
     }
   }
 
   /** An unbounded wildcard type. */
-  TyArg WILD_TY =
-      new TyArg() {
+  WildTy WILD_TY =
+      new WildTy() {
         @Override
-        public TyArgKind tyArgKind() {
-          return TyArgKind.WILD;
+        public BoundKind boundKind() {
+          return BoundKind.NONE;
+        }
+
+        @Override
+        public Type bound() {
+          throw new IllegalStateException();
         }
       };
 }
