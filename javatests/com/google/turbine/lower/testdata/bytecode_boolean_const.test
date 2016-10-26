@@ -1,0 +1,10 @@
+%%% A.java %%%
+class A {
+  public static final boolean CONST = false;
+}
+
+=== B.java ===
+class B {
+  public static final boolean ONE = A.CONST;
+  public static final boolean TWO = !A.CONST;
+}
