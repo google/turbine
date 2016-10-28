@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
@@ -44,6 +43,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.TurbineModifier;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -206,8 +206,7 @@ public class TypeBinder {
 
     ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
 
-    ImmutableList<TypeBoundClass.AnnoInfo> annotations =
-        bindAnnotations(scope, base.decl().annos());
+    ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, base.decl().annos());
 
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
@@ -441,7 +440,7 @@ public class TypeBinder {
         break;
     }
 
-    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(scope, t.annos());
+    ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, t.annos());
     return new MethodInfo(
         sym,
         typeParameterTypes,
@@ -473,7 +472,7 @@ public class TypeBinder {
   private FieldInfo bindField(CompoundScope scope, Tree.VarDecl decl) {
     FieldSymbol sym = new FieldSymbol(owner, decl.name());
     Type type = bindTy(scope, decl.ty());
-    ImmutableList<TypeBoundClass.AnnoInfo> annotations = bindAnnotations(scope, decl.annos());
+    ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, decl.annos());
     int access = 0;
     for (TurbineModifier m : decl.mods()) {
       access |= m.flag();
@@ -489,16 +488,16 @@ public class TypeBinder {
     return new FieldInfo(sym, type, access, annotations, decl, null);
   }
 
-  private ImmutableList<TypeBoundClass.AnnoInfo> bindAnnotations(
+  private ImmutableList<AnnoInfo> bindAnnotations(
       CompoundScope scope, ImmutableList<Tree.Anno> trees) {
-    ImmutableList.Builder<TypeBoundClass.AnnoInfo> result = ImmutableList.builder();
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (Tree.Anno tree : trees) {
       LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
       for (String name : lookupResult.remaining()) {
         sym = Resolve.resolve(env, owner, sym, name);
       }
-      result.add(new TypeBoundClass.AnnoInfo(sym, tree.args(), null));
+      result.add(new AnnoInfo(sym, tree.args(), null));
     }
     return result.build();
   }

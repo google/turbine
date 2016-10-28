@@ -17,10 +17,6 @@
 package com.google.turbine.model;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.binder.sym.FieldSymbol;
-import com.google.turbine.type.Type;
 
 /**
  * Compile-time constant expressions, including literals of primitive or String type, class
@@ -204,7 +200,6 @@ public abstract class Const {
     public long value() {
       return value;
     }
-
 
     @Override
     public IntValue asInteger() {
@@ -602,82 +597,6 @@ public abstract class Const {
 
     public ImmutableList<Const> elements() {
       return elements;
-    }
-  }
-
-  /** An enum constant. */
-  public static class EnumConstantValue extends Const {
-
-    private final FieldSymbol sym;
-
-    public EnumConstantValue(FieldSymbol sym) {
-      this.sym = sym;
-    }
-
-    public FieldSymbol sym() {
-      return sym;
-    }
-
-    @Override
-    public Kind kind() {
-      return Kind.ENUM_CONSTANT;
-    }
-  }
-
-  /** A class literal constant. */
-  public static class ClassValue extends Const {
-
-    private final Type type;
-
-    public ClassValue(Type type) {
-      this.type = type;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("%s.class", type);
-    }
-
-    @Override
-    public Kind kind() {
-      return Kind.CLASS_LITERAL;
-    }
-
-    /** The class name. */
-    public Type type() {
-      return type;
-    }
-  }
-
-  /** An annotation literal constant. */
-  public static class AnnotationValue extends Const {
-
-    private final ClassSymbol sym;
-    private final ImmutableMap<String, Const> values;
-
-    public AnnotationValue(ClassSymbol sym, ImmutableMap<String, Const> values) {
-      this.sym = sym;
-      this.values = values;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("@%s", sym);
-    }
-
-    @Override
-    public Kind kind() {
-      return Kind.ANNOTATION;
-    }
-
-    /** The annotation declaration. */
-    public ClassSymbol sym() {
-      return sym;
-    }
-
-    /** The annotation literal's element-value pairs. */
-    public ImmutableMap<String, Const> values() {
-      return values;
     }
   }
 }

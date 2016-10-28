@@ -17,9 +17,9 @@
 package com.google.turbine.binder;
 
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
-import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -30,6 +30,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
 import javax.annotation.Nullable;
@@ -123,7 +124,7 @@ public class ConstBinder {
         if (value.kind() != Const.Kind.ENUM_CONSTANT) {
           break;
         }
-        Const.EnumConstantValue enumValue = (Const.EnumConstantValue) value;
+        EnumConstantValue enumValue = (EnumConstantValue) value;
         if (!enumValue.sym().owner().toString().equals("java/lang/annotation/RetentionPolicy")) {
           break;
         }

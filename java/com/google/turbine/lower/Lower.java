@@ -20,9 +20,11 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.binder.bound.AnnotationValue;
+import com.google.turbine.binder.bound.ClassValue;
+import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
-import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
@@ -46,6 +48,7 @@ import com.google.turbine.bytecode.sig.SigWriter;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.types.Erasure;
@@ -399,12 +402,12 @@ public class Lower {
     switch (value.kind()) {
       case CLASS_LITERAL:
         {
-          Const.ClassValue classValue = (Const.ClassValue) value;
+          ClassValue classValue = (ClassValue) value;
           return new ElementValue.ConstClassValue(SigWriter.type(sig.signature(classValue.type())));
         }
       case ENUM_CONSTANT:
         {
-          Const.EnumConstantValue enumValue = (Const.EnumConstantValue) value;
+          EnumConstantValue enumValue = (EnumConstantValue) value;
           return new ElementValue.EnumConstValue(
               descriptor(enumValue.sym().owner().binaryName()), enumValue.sym().name());
         }
@@ -419,7 +422,7 @@ public class Lower {
         }
       case ANNOTATION:
         {
-          Const.AnnotationValue annotationValue = (Const.AnnotationValue) value;
+          AnnotationValue annotationValue = (AnnotationValue) value;
           Boolean visible = isVisible(env, annotationValue.sym());
           if (visible == null) {
             visible = true;

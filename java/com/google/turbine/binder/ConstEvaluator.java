@@ -21,9 +21,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import com.google.turbine.binder.bound.AnnotationValue;
+import com.google.turbine.binder.bound.ClassValue;
+import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
-import com.google.turbine.binder.bound.TypeBoundClass.AnnoInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -47,6 +49,7 @@ import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -140,15 +143,15 @@ public class ConstEvaluator {
   Const evalClassLiteral(ClassLiteral t) {
     switch (t.type().kind()) {
       case PRIM_TY:
-        return new Const.ClassValue(new Type.PrimTy(((PrimTy) t.type()).tykind()));
+        return new ClassValue(new Type.PrimTy(((PrimTy) t.type()).tykind()));
       case VOID_TY:
-        return new Const.ClassValue(Type.VOID);
+        return new ClassValue(Type.VOID);
       case CLASS_TY:
         {
           ClassTy classTy = (ClassTy) t.type();
           ClassSymbol classSym =
               HierarchyBinder.resolveClass(base.source(), env, base.scope(), owner, classTy);
-          return new Const.ClassValue(Type.ClassTy.asNonParametricClassTy(classSym));
+          return new ClassValue(Type.ClassTy.asNonParametricClassTy(classSym));
         }
       default:
         throw new AssertionError(t.type().kind());
@@ -162,7 +165,7 @@ public class ConstEvaluator {
       return null;
     }
     if ((field.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
-      return new Const.EnumConstantValue(field.sym());
+      return new EnumConstantValue(field.sym());
     }
     if (field.value() != null) {
       return field.value();
@@ -843,14 +846,14 @@ public class ConstEvaluator {
     return new AnnoInfo(sym, args, values.build());
   }
 
-  private Const.AnnotationValue evalAnno(Tree.Anno t) {
+  private AnnotationValue evalAnno(Tree.Anno t) {
     LookupResult result = base.scope().lookup(new LookupKey(t.name()));
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);
     }
     AnnoInfo annoInfo = evaluateAnnotation(sym, t.args());
-    return new Const.AnnotationValue(annoInfo.sym(), annoInfo.values());
+    return new AnnotationValue(annoInfo.sym(), annoInfo.values());
   }
 
   private Const.ArrayInitValue evalArrayInit(ArrayInit t) {

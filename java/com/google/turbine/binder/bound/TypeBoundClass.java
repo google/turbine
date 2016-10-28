@@ -18,13 +18,13 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
 
@@ -124,35 +124,6 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** Declaration annotations. */
     public ImmutableList<AnnoInfo> annotations() {
       return annotations;
-    }
-  }
-
-  /** An annotation use. */
-  class AnnoInfo {
-    private final ClassSymbol sym;
-    private final ImmutableList<Tree.Expression> args;
-    private final ImmutableMap<String, Const> values;
-
-    public AnnoInfo(
-        ClassSymbol sym, ImmutableList<Tree.Expression> args, ImmutableMap<String, Const> values) {
-      this.sym = sym;
-      this.args = args;
-      this.values = values;
-    }
-
-    /** Arguments, either assignments or a single expression. */
-    public ImmutableList<Tree.Expression> args() {
-      return args;
-    }
-
-    /** Bound element-value pairs. */
-    public ImmutableMap<String, Const> values() {
-      return values;
-    }
-
-    /** The annotation's declaration. */
-    public ClassSymbol sym() {
-      return sym;
     }
   }
 
