@@ -1,0 +1,9 @@
+=== Test.java ===
+import java.io.Serializable;
+import java.util.List;
+import java.util.ArrayList;
+class Test<T extends Serializable & List> {
+  <X extends ArrayList & Serializable & List> X f() {
+    return null;
+  }
+}

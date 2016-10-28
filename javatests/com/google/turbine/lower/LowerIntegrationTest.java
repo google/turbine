@@ -242,6 +242,7 @@ public class LowerIntegrationTest {
       "visible_qualified.test",
       "ascii_sub.test",
       "bytecode_boolean_const.test",
+      "tyvar_bound.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
