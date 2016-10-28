@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder;
 
-import static com.google.common.base.Verify.verify;
-
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -593,8 +591,13 @@ public class TypeBinder {
   }
 
   private Type bindArrTy(CompoundScope scope, Tree.ArrTy t) {
-    verify(t.elem().kind() != Tree.Kind.ARR_TY);
-    return new Type.ArrayTy(t.dim(), bindTy(scope, t.elem()));
+    int dim = 1;
+    Tree.Type base = t.elem();
+    while (base instanceof Tree.ArrTy) {
+      dim++;
+      base = ((Tree.ArrTy) base).elem();
+    }
+    return new Type.ArrayTy(dim, bindTy(scope, base));
   }
 
   private Type bindWildTy(CompoundScope scope, Tree.WildTy t) {

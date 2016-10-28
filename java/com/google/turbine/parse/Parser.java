@@ -284,7 +284,11 @@ public class Parser {
                     access,
                     annos.build(),
                     new ClassTy(
-                        position, Optional.<ClassTy>absent(), enumName, ImmutableList.<Type>of()),
+                        position,
+                        Optional.<ClassTy>absent(),
+                        enumName,
+                        ImmutableList.<Type>of(),
+                        ImmutableList.of()),
                     name,
                     Optional.<Expression>absent()));
             annos = ImmutableList.builder();
@@ -466,10 +470,12 @@ public class Parser {
       typaram = typarams();
     }
 
+    ImmutableList<Anno> typeAnnos = maybeAnnos();
+
     switch (token) {
       case VOID:
         {
-          result = new Tree.VoidTy(position);
+          result = new Tree.VoidTy(position, typeAnnos);
           next();
           name = eatIdent();
           return memberRest(access, annos, typaram, result, name);
@@ -483,7 +489,7 @@ public class Parser {
       case DOUBLE:
       case FLOAT:
         {
-          result = referenceType();
+          result = referenceType(typeAnnos);
           name = eatIdent();
           return memberRest(access, annos, typaram, result, name);
         }
@@ -500,44 +506,48 @@ public class Parser {
               {
                 result =
                     new ClassTy(
-                        position, Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
+                        position,
+                        Optional.<ClassTy>absent(),
+                        ident,
+                        ImmutableList.<Type>of(),
+                        typeAnnos);
                 name = eatIdent();
                 return memberRest(access, annos, typaram, result, name);
               }
             case LBRACK:
               {
                 eat(Token.LBRACK);
-                int dim = 0;
+                result =
+                    new ClassTy(
+                        position,
+                        Optional.<ClassTy>absent(),
+                        ident,
+                        ImmutableList.<Type>of(),
+                        typeAnnos);
                 do {
-                  dim++;
+                  result = new ArrTy(position, typeAnnos, result);
                   eat(Token.RBRACK);
                 } while (maybe(Token.LBRACK));
-                result =
-                    new ArrTy(
-                        position,
-                        new ClassTy(
-                            position, Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of()),
-                        dim);
                 break;
               }
             case LT:
               {
-                Type ty = new ClassTy(position, Optional.<ClassTy>absent(), ident, tyargs());
-                int dim = 0;
+                result =
+                    new ClassTy(position, Optional.<ClassTy>absent(), ident, tyargs(), typeAnnos);
                 while (maybe(Token.LBRACK)) {
                   eat(Token.RBRACK);
-                  dim++;
+                  result = new ArrTy(position, typeAnnos, result);
                 }
-                if (dim > 0) {
-                  ty = new ArrTy(position, ty, dim);
-                }
-                result = ty;
                 break;
               }
             case DOT:
               result =
                   new ClassTy(
-                      position, Optional.<ClassTy>absent(), ident, ImmutableList.<Type>of());
+                      position,
+                      Optional.<ClassTy>absent(),
+                      ident,
+                      ImmutableList.<Type>of(),
+                      typeAnnos);
               break;
             default:
               throw error(token);
@@ -549,13 +559,9 @@ public class Parser {
             next();
             // TODO(cushon): is this cast OK?
             result = classty((ClassTy) result);
-            int dim = 0;
             while (maybe(Token.LBRACK)) {
               eat(Token.RBRACK);
-              dim++;
-            }
-            if (dim > 0) {
-              result = new ArrTy(position, result, dim);
+              result = new ArrTy(position, typeAnnos, result);
             }
           }
           name = eatIdent();
@@ -579,6 +585,19 @@ public class Parser {
       default:
         throw error(token);
     }
+  }
+
+  private ImmutableList<Anno> maybeAnnos() {
+    ImmutableList<Anno> typeAnnos = ImmutableList.of();
+    if (token == Token.AT) {
+      ImmutableList.Builder<Anno> builder = ImmutableList.builder();
+      while (token == Token.AT) {
+        next();
+        builder.add(annotation());
+      }
+      typeAnnos = builder.build();
+    }
+    return typeAnnos;
   }
 
   private ImmutableList<Tree> memberRest(
@@ -606,7 +625,7 @@ public class Parser {
   }
 
   private ImmutableList<Tree> fieldRest(
-      EnumSet<TurbineModifier> access, ImmutableList<Anno> annos, Type ty, String name) {
+      EnumSet<TurbineModifier> access, ImmutableList<Anno> annos, Type baseTy, String name) {
     ImmutableList.Builder<Tree> result = ImmutableList.builder();
     VariableInitializerParser initializerParser = new VariableInitializerParser(token, lexer);
     List<List<SavedToken>> bits = initializerParser.parseInitializers();
@@ -628,13 +647,12 @@ public class Parser {
         }
       }
 
-      Type newty = ty;
-
-      int dim = 0;
+      Type ty = baseTy;
       if (it.hasNext()) {
         SavedToken next = it.next();
         while (next.token == Token.LBRACK) {
-          dim++;
+          // TODO(cushon): type annotations on c-style array dims
+          ty = new ArrTy(position, ImmutableList.of(), ty);
           next = it.next();
           if (next.token != Token.RBRACK) {
             throw error("%s", next);
@@ -643,7 +661,6 @@ public class Parser {
             next = it.next();
           }
         }
-        newty = expandDims(ty, dim);
       }
       // TODO(cushon): skip more fields that are definitely non-const
       IteratorLexer lexer = new IteratorLexer(this.lexer.source(), it);
@@ -651,7 +668,7 @@ public class Parser {
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
-      result.add(new VarDecl(position, access, annos, newty, name, Optional.fromNullable(init)));
+      result.add(new VarDecl(position, access, annos, ty, name, Optional.fromNullable(init)));
     }
     eat(Token.SEMI);
     return result.build();
@@ -669,7 +686,11 @@ public class Parser {
     eat(Token.RPAREN);
 
     if (token == Token.LBRACK) {
-      result = parseDims(result);
+      // TODO(cushon): support type annotations here. or not.
+      while (maybe(Token.LBRACK)) {
+        eat(Token.RBRACK);
+        result = new ArrTy(position, ImmutableList.of(), result);
+      }
     }
 
     ImmutableList.Builder<ClassTy> exceptions = ImmutableList.builder();
@@ -719,15 +740,6 @@ public class Parser {
         Optional.fromNullable(defaultValue));
   }
 
-  private Type parseDims(Type result) {
-    int dim = 0;
-    while (maybe(Token.LBRACK)) {
-      eat(Token.RBRACK);
-      dim++;
-    }
-    return expandDims(result, dim);
-  }
-
   private ImmutableList<ClassTy> exceptions() {
     ImmutableList.Builder<ClassTy> result = ImmutableList.builder();
     result.add(classty());
@@ -755,29 +767,20 @@ public class Parser {
   private VarDecl formalParam() {
     ImmutableList.Builder<Anno> annos = ImmutableList.builder();
     EnumSet<TurbineModifier> access = modifiers(annos);
-    Type ty = referenceType();
+    Type ty = referenceType(maybeAnnos());
+    ImmutableList<Anno> typeAnnos = maybeAnnos();
     if (maybe(Token.ELLIPSIS)) {
       access.add(TurbineModifier.VARARGS);
-      ty = expandDims(ty, 1);
+      ty = new ArrTy(position, typeAnnos, ty);
+    }
+    while (token == Token.LBRACK) {
+      eat(Token.LBRACK);
+      eat(Token.RBRACK);
+      ty = new ArrTy(position, typeAnnos, ty);
+      typeAnnos = maybeAnnos();
     }
     String name = eatIdent();
-    {
-      if (token == Token.LBRACK) {
-        ty = parseDims(ty);
-      }
-    }
     return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>absent());
-  }
-
-  private Type expandDims(Type ty, int extra) {
-    if (ty.kind() == Tree.Kind.ARR_TY) {
-      Type.ArrTy aty = (Type.ArrTy) ty;
-      return new ArrTy(position, aty.elem(), aty.dim() + extra);
-    } else if (extra > 0) {
-      return new ArrTy(position, ty, extra);
-    } else {
-      return ty;
-    }
   }
 
   private void dropParens() {
@@ -821,13 +824,14 @@ public class Parser {
     eat(Token.LT);
     OUTER:
     while (true) {
+      ImmutableList<Anno> annotations = maybeAnnos();
       String name = eatIdent();
       ImmutableList<Tree> bounds = ImmutableList.of();
       if (token == Token.EXTENDS) {
         next();
         bounds = tybounds();
       }
-      acc.add(new TyParam(position, name, bounds));
+      acc.add(new TyParam(position, name, bounds, annotations));
       switch (token) {
         case COMMA:
           eat(Token.COMMA);
@@ -855,6 +859,10 @@ public class Parser {
   }
 
   private ClassTy classty(ClassTy ty) {
+    return classty(ty, maybeAnnos());
+  }
+
+  private ClassTy classty(ClassTy ty, ImmutableList<Anno> typeAnnos) {
     int pos = position;
     do {
       String name = eatIdent();
@@ -862,7 +870,7 @@ public class Parser {
       if (token == Token.LT) {
         tyargs = tyargs();
       }
-      ty = new ClassTy(pos, Optional.fromNullable(ty), name, tyargs);
+      ty = new ClassTy(pos, Optional.fromNullable(ty), name, tyargs, typeAnnos);
     } while (maybe(Token.DOT));
     return ty;
   }
@@ -872,6 +880,7 @@ public class Parser {
     eat(Token.LT);
     OUTER:
     do {
+      ImmutableList<Anno> typeAnnos = maybeAnnos();
       switch (token) {
         case COND:
           {
@@ -879,21 +888,27 @@ public class Parser {
             switch (token) {
               case EXTENDS:
                 next();
-                Type upper = referenceType();
-                acc.add(new WildTy(position, Optional.of(upper), Optional.<Type>absent()));
+                Type upper = referenceType(maybeAnnos());
+                acc.add(
+                    new WildTy(position, typeAnnos, Optional.of(upper), Optional.<Type>absent()));
                 break;
               case SUPER:
                 next();
-                Type lower = referenceType();
-                acc.add(new WildTy(position, Optional.<Type>absent(), Optional.of(lower)));
+                Type lower = referenceType(maybeAnnos());
+                acc.add(
+                    new WildTy(position, typeAnnos, Optional.<Type>absent(), Optional.of(lower)));
                 break;
               case COMMA:
-                acc.add(new WildTy(position, Optional.<Type>absent(), Optional.<Type>absent()));
+                acc.add(
+                    new WildTy(
+                        position, typeAnnos, Optional.<Type>absent(), Optional.<Type>absent()));
                 continue OUTER;
               case GT:
               case GTGT:
               case GTGTGT:
-                acc.add(new WildTy(position, Optional.<Type>absent(), Optional.<Type>absent()));
+                acc.add(
+                    new WildTy(
+                        position, typeAnnos, Optional.<Type>absent(), Optional.<Type>absent()));
                 break OUTER;
               default:
                 throw error(token);
@@ -909,7 +924,7 @@ public class Parser {
         case CHAR:
         case DOUBLE:
         case FLOAT:
-          acc.add(referenceType());
+          acc.add(referenceType(typeAnnos));
           break;
         default:
           throw error(token);
@@ -931,54 +946,50 @@ public class Parser {
     return acc.build();
   }
 
-  private Type referenceType() {
+  private Type referenceType(ImmutableList<Anno> typeAnnos) {
     Type ty;
     switch (token) {
       case IDENT:
-        ty = classty();
+        ty = classty(null, typeAnnos);
         break;
       case BOOLEAN:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.BOOLEAN);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.BOOLEAN);
         break;
       case BYTE:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.BYTE);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.BYTE);
         break;
       case SHORT:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.SHORT);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.SHORT);
         break;
       case INT:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.INT);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.INT);
         break;
       case LONG:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.LONG);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.LONG);
         break;
       case CHAR:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.CHAR);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.CHAR);
         break;
       case DOUBLE:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.DOUBLE);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.DOUBLE);
         break;
       case FLOAT:
         next();
-        ty = new PrimTy(position, TurbineConstantTypeKind.FLOAT);
+        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.FLOAT);
         break;
       default:
         throw error(token);
     }
-    int dim = 0;
     while (maybe(Token.LBRACK)) {
       eat(Token.RBRACK);
-      dim++;
-    }
-    if (dim > 0) {
-      ty = new ArrTy(position, ty, dim);
+      ty = new ArrTy(position, typeAnnos, ty);
     }
     return ty;
   }

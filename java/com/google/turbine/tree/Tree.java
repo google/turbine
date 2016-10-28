@@ -47,6 +47,7 @@ public abstract class Tree {
     return Pretty.pretty(this);
   }
 
+  /** Tree kind. */
   public enum Kind {
     WILD_TY,
     ARR_TY,
@@ -75,8 +76,15 @@ public abstract class Tree {
 
   /** A type use. */
   public abstract static class Type extends Tree {
-    public Type(int position) {
+    private final ImmutableList<Anno> annos;
+
+    public Type(int position, ImmutableList<Anno> annos) {
       super(position);
+      this.annos = annos;
+    }
+
+    public ImmutableList<Anno> annos() {
+      return annos;
     }
   }
 
@@ -92,8 +100,9 @@ public abstract class Tree {
     private final Optional<Type> upper;
     private final Optional<Type> lower;
 
-    public WildTy(int position, Optional<Type> upper, Optional<Type> lower) {
-      super(position);
+    public WildTy(
+        int position, ImmutableList<Anno> annos, Optional<Type> upper, Optional<Type> lower) {
+      super(position, annos);
       this.upper = upper;
       this.lower = lower;
     }
@@ -130,12 +139,10 @@ public abstract class Tree {
   /** An array type. */
   public static class ArrTy extends Type {
     private final Type elem;
-    private final int dim;
 
-    public ArrTy(int position, Type elem, int dim) {
-      super(position);
+    public ArrTy(int position, ImmutableList<Anno> annos, Type elem) {
+      super(position, annos);
       this.elem = elem;
-      this.dim = dim;
     }
 
     @Override
@@ -151,16 +158,10 @@ public abstract class Tree {
     /**
      * The element type of the array.
      *
-     * <p>This will never be another array; multi-dimensional arrays are represented as a single
-     * {@link ArrTy} with {@link #dim} > 1.
+     * <p>Multi-dimensional arrays are represented as nested {@link ArrTy}s.
      */
     public Type elem() {
       return elem;
-    }
-
-    /** The array dimension. */
-    public int dim() {
-      return dim;
     }
   }
 
@@ -168,8 +169,8 @@ public abstract class Tree {
   public static class PrimTy extends Type {
     private final TurbineConstantTypeKind tykind;
 
-    public PrimTy(int position, TurbineConstantTypeKind tykind) {
-      super(position);
+    public PrimTy(int position, ImmutableList<Anno> annos, TurbineConstantTypeKind tykind) {
+      super(position, annos);
       this.tykind = tykind;
     }
 
@@ -202,8 +203,8 @@ public abstract class Tree {
       return visitor.visitVoidTy(this, input);
     }
 
-    public VoidTy(int position) {
-      super(position);
+    public VoidTy(int position, ImmutableList<Anno> annos) {
+      super(position, annos);
     }
   }
 
@@ -213,8 +214,13 @@ public abstract class Tree {
     private final String name;
     private final ImmutableList<Type> tyargs;
 
-    public ClassTy(int position, Optional<ClassTy> base, String name, ImmutableList<Type> tyargs) {
-      super(position);
+    public ClassTy(
+        int position,
+        Optional<ClassTy> base,
+        String name,
+        ImmutableList<Type> tyargs,
+        ImmutableList<Anno> annos) {
+      super(position, annos);
       this.base = base;
       this.name = name;
       this.tyargs = tyargs;
@@ -867,11 +873,14 @@ public abstract class Tree {
   public static class TyParam extends Tree {
     private final String name;
     private final ImmutableList<Tree> bounds;
+    private final ImmutableList<Anno> annos;
 
-    public TyParam(int position, String name, ImmutableList<Tree> bounds) {
+    public TyParam(
+        int position, String name, ImmutableList<Tree> bounds, ImmutableList<Anno> annos) {
       super(position);
       this.name = name;
       this.bounds = bounds;
+      this.annos = annos;
     }
 
     @Override
@@ -890,6 +899,10 @@ public abstract class Tree {
 
     public ImmutableList<Tree> bounds() {
       return bounds;
+    }
+
+    public ImmutableList<Anno> annos() {
+      return annos;
     }
   }
 

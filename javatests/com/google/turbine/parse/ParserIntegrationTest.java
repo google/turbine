@@ -71,6 +71,7 @@ public class ParserIntegrationTest {
       "package2.input",
       "packinfo1.input",
       "weirdstring.input",
+      "type_annotations.input",
     };
     return Iterables.transform(
         Arrays.asList(tests),

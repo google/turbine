@@ -18,7 +18,9 @@ package com.google.turbine.tree;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassLiteral;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,6 +74,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
 
   @Override
   public Void visitWildTy(Tree.WildTy wildTy, Void input) {
+    printAnnos(wildTy.annos());
     append('?');
     if (wildTy.lower().isPresent()) {
       append(" super ");
@@ -87,7 +90,11 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   @Override
   public Void visitArrTy(Tree.ArrTy arrTy, Void input) {
     arrTy.elem().accept(this, null);
-    append(Strings.repeat("[]", arrTy.dim()));
+    if (!arrTy.annos().isEmpty()) {
+      append(' ');
+      printAnnos(arrTy.annos());
+    }
+    append("[]");
     return null;
   }
 
@@ -109,6 +116,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       classTy.base().get().accept(this, null);
       append('.');
     }
+    printAnnos(classTy.annos());
     append(classTy.name());
     if (!classTy.tyargs().isEmpty()) {
       append('<');
@@ -256,16 +264,20 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   }
 
   private void printVarDecl(Tree.VarDecl varDecl) {
-    for (Tree.Anno anno : varDecl.annos()) {
-      anno.accept(this, null);
-      append(' ');
-    }
+    printAnnos(varDecl.annos());
     printModifiers(varDecl.mods());
     varDecl.ty().accept(this, null);
     append(' ').append(varDecl.name());
     if (varDecl.init().isPresent()) {
       append(" = ");
       varDecl.init().get().accept(this, null);
+    }
+  }
+
+  private void printAnnos(ImmutableList<Anno> annos) {
+    for (Tree.Anno anno : annos) {
+      anno.accept(this, null);
+      append(' ');
     }
   }
 
@@ -304,6 +316,17 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       first = false;
     }
     append(')');
+    if (!methDecl.exntys().isEmpty()) {
+      append(" throws ");
+      first = true;
+      for (Tree.Type e : methDecl.exntys()) {
+        if (!first) {
+          append(", ");
+        }
+        e.accept(this, null);
+        first = false;
+      }
+    }
     if (methDecl.defaultValue().isPresent()) {
       append(" default ");
       methDecl.defaultValue().get().accept(this, null);
@@ -466,6 +489,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
 
   @Override
   public Void visitTyParam(Tree.TyParam tyParam, Void input) {
+    printAnnos(tyParam.annos());
     append(tyParam.name());
     if (!tyParam.bounds().isEmpty()) {
       append(" extends ");

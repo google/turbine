@@ -152,7 +152,7 @@ public class ConstExpressionParser {
       case BOOLEAN:
         return primitiveClassLiteral(TurbineConstantTypeKind.BOOLEAN);
       case VOID:
-        return primitiveClassLiteral(new Tree.VoidTy(position));
+        return primitiveClassLiteral(new Tree.VoidTy(position, ImmutableList.of()));
       case AT:
         return annotation();
       default:
@@ -161,7 +161,7 @@ public class ConstExpressionParser {
   }
 
   private Expression primitiveClassLiteral(TurbineConstantTypeKind type) {
-    return primitiveClassLiteral(new Tree.PrimTy(position, type));
+    return primitiveClassLiteral(new Tree.PrimTy(position, ImmutableList.of(), type));
   }
 
   private Expression primitiveClassLiteral(Tree.Type type) {
@@ -242,7 +242,9 @@ public class ConstExpressionParser {
   private ClassTy asClassTy(ImmutableList<String> names) {
     ClassTy cty = null;
     for (String bit : names) {
-      cty = new ClassTy(position, Optional.fromNullable(cty), bit, ImmutableList.<Tree.Type>of());
+      cty =
+          new ClassTy(
+              position, Optional.fromNullable(cty), bit, ImmutableList.of(), ImmutableList.of());
     }
     return cty;
   }
@@ -530,7 +532,7 @@ public class ConstExpressionParser {
     if (rhs == null) {
       return null;
     }
-    return new Tree.TypeCast(position, new Tree.PrimTy(position, ty), rhs);
+    return new Tree.TypeCast(position, new Tree.PrimTy(position, ImmutableList.of(), ty), rhs);
   }
 
   private Tree.AnnoExpr annotation() {

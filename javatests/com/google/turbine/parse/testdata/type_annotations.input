@@ -1,0 +1,14 @@
+public class Test<@A T extends @B List<@C ?>> extends @D Object implements @E I {
+  <@A X extends @A Object> @A @B X f(int @C [] @D [] @E [] x) throws @E Exception {}
+  List<@A ? extends @B Object> x;
+  List<@A ? super @B Object> y;
+  List<@A ?> z;
+  class One<A, B> {
+    class Two<C, D> {
+      class Three<E, F> {
+      }
+    }
+  }
+
+  One<@A Object, @B Object>.Two<@C Object, @D Object>.Three<@E Object, @F Object> n;
+}
