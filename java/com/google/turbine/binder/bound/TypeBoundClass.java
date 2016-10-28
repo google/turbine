@@ -49,10 +49,15 @@ public interface TypeBoundClass extends HeaderBoundClass {
   class TyVarInfo {
     private final Type superClassBound;
     private final ImmutableList<Type> interfaceBounds;
+    private final ImmutableList<AnnoInfo> annotations;
 
-    public TyVarInfo(Type superClassBound, ImmutableList<Type> interfaceBounds) {
+    public TyVarInfo(
+        Type superClassBound,
+        ImmutableList<Type> interfaceBounds,
+        ImmutableList<AnnoInfo> annotations) {
       this.superClassBound = superClassBound;
       this.interfaceBounds = interfaceBounds;
+      this.annotations = annotations;
     }
 
     /** A class bound, or {@code null}. */
@@ -63,6 +68,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** Interface type bounds. */
     public ImmutableList<Type> interfaceBounds() {
       return interfaceBounds;
+    }
+
+    /** Type parameter declaration annotations. */
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
     }
   }
 

@@ -23,7 +23,9 @@ import com.google.turbine.bytecode.Attribute.ConstantValue;
 import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.Signature;
+import com.google.turbine.bytecode.Attribute.TypeAnnotations;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const;
 import java.util.List;
 
@@ -54,22 +56,22 @@ public class AttributeWriter {
         writeConstantValue((ConstantValue) attribute);
         break;
       case RUNTIME_VISIBLE_ANNOTATIONS:
-        writeAnnotation((Attribute.RuntimeVisibleAnnotations) attribute);
-        break;
       case RUNTIME_INVISIBLE_ANNOTATIONS:
-        writeAnnotation((Attribute.RuntimeInvisibleAnnotations) attribute);
+        writeAnnotation((Attribute.Annotations) attribute);
         break;
       case ANNOTATION_DEFAULT:
         writeAnnotationDefault((Attribute.AnnotationDefault) attribute);
         break;
       case RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS:
-        writeParameterAnnotations((Attribute.RuntimeVisibleParameterAnnotations) attribute);
-        break;
       case RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS:
-        writeParameterAnnotations((Attribute.RuntimeInvisibleParameterAnnotations) attribute);
+        writeParameterAnnotations((Attribute.ParameterAnnotations) attribute);
         break;
       case DEPRECATED:
         writeDeprecated(attribute);
+        break;
+      case RUNTIME_INVISIBLE_TYPE_ANNOTATIONS:
+      case RUNTIME_VISIBLE_TYPE_ANNOTATIONS:
+        writeTypeAnnotation((Attribute.TypeAnnotations) attribute);
         break;
       default:
         throw new AssertionError(attribute.kind());
@@ -173,5 +175,17 @@ public class AttributeWriter {
   private void writeDeprecated(Attribute attribute) {
     output.writeShort(pool.utf8(attribute.kind().signature()));
     output.writeInt(0);
+  }
+
+  private void writeTypeAnnotation(TypeAnnotations attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    ByteArrayDataOutput tmp = ByteStreams.newDataOutput();
+    tmp.writeShort(attribute.annotations().size());
+    for (TypeAnnotationInfo annotation : attribute.annotations()) {
+      new AnnotationWriter(pool, tmp).writeTypeAnnotation(annotation);
+    }
+    byte[] data = tmp.toByteArray();
+    output.writeInt(data.length);
+    output.write(data);
   }
 }

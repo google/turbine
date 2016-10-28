@@ -74,7 +74,7 @@ public class LowerSignature {
   }
 
   private Sig.ArrayTySig arrayTySig(ArrayTy t) {
-    return new Sig.ArrayTySig(t.dimension(), signature(t.elementType()));
+    return new Sig.ArrayTySig(signature(t.elementType()));
   }
 
   private Sig.TyVarSig tyVarSig(TyVar t) {

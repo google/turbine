@@ -1,0 +1,36 @@
+=== Test.java ===
+import static java.lang.annotation.ElementType.TYPE_PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.List;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({TYPE_USE, TYPE_PARAMETER}) @interface A {
+  int[] value() default 0;
+}
+@Target({TYPE_USE, TYPE_PARAMETER}) @interface B {}
+@Target({TYPE_USE, TYPE_PARAMETER}) @interface C {}
+@Target({TYPE_USE, TYPE_PARAMETER}) @interface D {}
+@Target({TYPE_USE, TYPE_PARAMETER}) @interface E {}
+@Target({TYPE_USE, TYPE_PARAMETER}) @interface F {}
+
+interface I {}
+
+public class Test<@A(1) T extends @B List<@C ?>> extends @D Object implements @E I {
+  <@A(value=1) X extends @A(value={1}) Object> @A({1}) @B X f(int @C [] @D [] @E [] x) throws @E Exception { return null; }
+  List<@A ? extends @B Object> x;
+  List<@A ? super @B Object> y;
+  List<@A ?> z;
+
+  class One<A, B> {
+    class Two<C, D> {
+      class Three<E, F> {
+      }
+    }
+  }
+
+  One<@A Object, @B Object>.Two<@C Object, @D Object>.Three<@E Object, @F Object> n;
+}

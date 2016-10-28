@@ -73,7 +73,8 @@ public interface Type {
 
     /** Returns a {@link ClassTy} with no type arguments for the given {@link ClassSymbol}. */
     public static ClassTy asNonParametricClassTy(ClassSymbol i) {
-      return new ClassTy(Arrays.asList(new SimpleClassTy(i, ImmutableList.of())));
+      return new ClassTy(
+          Arrays.asList(new SimpleClassTy(i, ImmutableList.of(), ImmutableList.of())));
     }
 
     public final ImmutableList<SimpleClassTy> classes;
@@ -124,12 +125,15 @@ public interface Type {
 
       private final ClassSymbol sym;
       private final ImmutableList<Type> targs;
+      private final ImmutableList<AnnoInfo> annos;
 
-      public SimpleClassTy(ClassSymbol sym, ImmutableList<Type> targs) {
+      public SimpleClassTy(
+          ClassSymbol sym, ImmutableList<Type> targs, ImmutableList<AnnoInfo> annos) {
         Preconditions.checkNotNull(sym);
         Preconditions.checkNotNull(targs);
         this.sym = sym;
         this.targs = targs;
+        this.annos = annos;
       }
 
       /** The class symbol of the element. */
@@ -141,23 +145,23 @@ public interface Type {
       public ImmutableList<Type> targs() {
         return targs;
       }
+
+      /** The type annotations. */
+      public ImmutableList<AnnoInfo> annos() {
+        return annos;
+      }
     }
   }
 
   /** An array type. */
   class ArrayTy implements Type {
 
-    private final int dim;
     private final Type elem;
+    private final ImmutableList<AnnoInfo> annos;
 
-    public ArrayTy(int dim, Type elem) {
-      this.dim = dim;
+    public ArrayTy(Type elem, ImmutableList<AnnoInfo> annos) {
       this.elem = elem;
-    }
-
-    /** The array dimension. */
-    public int dimension() {
-      return dim;
+      this.annos = annos;
     }
 
     /** The element type of the array. */
@@ -169,15 +173,22 @@ public interface Type {
     public TyKind tyKind() {
       return TyKind.ARRAY_TY;
     }
+
+    /** The type annotations. */
+    public ImmutableList<AnnoInfo> annos() {
+      return annos;
+    }
   }
 
   /** A type variable. */
   class TyVar implements Type {
 
-    final TyVarSymbol sym;
+    private final TyVarSymbol sym;
+    private final ImmutableList<AnnoInfo> annos;
 
-    public TyVar(TyVarSymbol sym) {
+    public TyVar(TyVarSymbol sym, ImmutableList<AnnoInfo> annos) {
       this.sym = sym;
+      this.annos = annos;
     }
 
     /** The type variable's symbol. */
@@ -193,6 +204,11 @@ public interface Type {
     @Override
     public String toString() {
       return sym.owner() + "#" + sym.name();
+    }
+
+    /** The type annotations. */
+    public ImmutableList<AnnoInfo> annos() {
+      return annos;
     }
   }
 
@@ -229,6 +245,9 @@ public interface Type {
 
     public abstract Type bound();
 
+    /** The type annotations. */
+    public abstract ImmutableList<AnnoInfo> annotations();
+
     @Override
     public TyKind tyKind() {
       return TyKind.WILD_TY;
@@ -239,15 +258,22 @@ public interface Type {
   class WildUpperBoundedTy extends WildTy {
 
     public final Type bound;
+    private final ImmutableList<AnnoInfo> annotations;
 
-    public WildUpperBoundedTy(Type bound) {
+    public WildUpperBoundedTy(Type bound, ImmutableList<AnnoInfo> annotations) {
       this.bound = bound;
+      this.annotations = annotations;
     }
 
     /** The upper bound. */
     @Override
     public Type bound() {
       return bound;
+    }
+
+    @Override
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
     }
 
     @Override
@@ -260,9 +286,11 @@ public interface Type {
   class WildLowerBoundedTy extends WildTy {
 
     public final Type bound;
+    private final ImmutableList<AnnoInfo> annotations;
 
-    public WildLowerBoundedTy(Type bound) {
+    public WildLowerBoundedTy(Type bound, ImmutableList<AnnoInfo> annotations) {
       this.bound = bound;
+      this.annotations = annotations;
     }
 
     /** The lower bound. */
@@ -275,19 +303,35 @@ public interface Type {
     public BoundKind boundKind() {
       return BoundKind.LOWER;
     }
+
+    @Override
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
+    }
   }
 
   /** An unbounded wildcard type. */
-  WildTy WILD_TY =
-      new WildTy() {
-        @Override
-        public BoundKind boundKind() {
-          return BoundKind.NONE;
-        }
+  class WildUnboundedTy extends WildTy {
 
-        @Override
-        public Type bound() {
-          throw new IllegalStateException();
-        }
-      };
+    private final ImmutableList<AnnoInfo> annotations;
+
+    public WildUnboundedTy(ImmutableList<AnnoInfo> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public BoundKind boundKind() {
+      return BoundKind.NONE;
+    }
+
+    @Override
+    public Type bound() {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
+    }
+  }
 }

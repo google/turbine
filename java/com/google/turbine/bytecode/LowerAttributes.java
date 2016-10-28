@@ -23,6 +23,7 @@ import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.Signature;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class LowerAttributes {
       attributes.add(new InnerClasses(classfile.innerClasses()));
     }
     addAllAnnotations(attributes, classfile.annotations());
+    addAllTypeAnnotations(attributes, classfile.typeAnnotations());
     if (classfile.signature() != null) {
       attributes.add(new Signature(classfile.signature()));
     }
@@ -46,6 +48,7 @@ public class LowerAttributes {
   static List<Attribute> methodAttributes(ClassFile.MethodInfo method) {
     List<Attribute> attributes = new ArrayList<>();
     addAllAnnotations(attributes, method.annotations());
+    addAllTypeAnnotations(attributes, method.typeAnnotations());
     if (method.signature() != null) {
       attributes.add(new Signature(method.signature()));
     }
@@ -69,6 +72,7 @@ public class LowerAttributes {
       attributes.add(new ConstantValue(field.value()));
     }
     addAllAnnotations(attributes, field.annotations());
+    addAllTypeAnnotations(attributes, field.typeAnnotations());
     return attributes;
   }
 
@@ -86,6 +90,22 @@ public class LowerAttributes {
     }
     if (!invisible.isEmpty()) {
       attributes.add(new Attribute.RuntimeInvisibleAnnotations(invisible));
+    }
+  }
+
+  private static void addAllTypeAnnotations(
+      List<Attribute> attributes, ImmutableList<TypeAnnotationInfo> annotations) {
+    List<TypeAnnotationInfo> visible = new ArrayList<>();
+    List<TypeAnnotationInfo> invisible = new ArrayList<>();
+    for (TypeAnnotationInfo annotation : annotations) {
+      (annotation.anno().isRuntimeVisible() ? visible : invisible).add(annotation);
+    }
+    if (!visible.isEmpty()) {
+      attributes.add(new Attribute.RuntimeVisibleTypeAnnotations(ImmutableList.copyOf(visible)));
+    }
+    if (!invisible.isEmpty()) {
+      attributes.add(
+          new Attribute.RuntimeInvisibleTypeAnnotations(ImmutableList.copyOf(invisible)));
     }
   }
 

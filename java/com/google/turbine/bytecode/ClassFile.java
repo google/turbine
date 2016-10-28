@@ -17,7 +17,11 @@
 package com.google.turbine.bytecode;
 
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.Value;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -34,6 +38,7 @@ public class ClassFile {
   private final List<FieldInfo> fields;
   private final List<AnnotationInfo> annotations;
   private final List<InnerClass> innerClasses;
+  private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
 
   public ClassFile(
       int access,
@@ -44,7 +49,8 @@ public class ClassFile {
       List<MethodInfo> methods,
       List<FieldInfo> fields,
       List<AnnotationInfo> annotations,
-      List<InnerClass> innerClasses) {
+      List<InnerClass> innerClasses,
+      ImmutableList<TypeAnnotationInfo> typeAnnotations) {
     this.access = access;
     this.name = name;
     this.signature = signature;
@@ -54,6 +60,7 @@ public class ClassFile {
     this.fields = fields;
     this.annotations = annotations;
     this.innerClasses = innerClasses;
+    this.typeAnnotations = typeAnnotations;
   }
 
   /** Class access and property flags. */
@@ -101,6 +108,11 @@ public class ClassFile {
     return innerClasses;
   }
 
+  /** Type annotations. */
+  public ImmutableList<TypeAnnotationInfo> typeAnnotations() {
+    return typeAnnotations;
+  }
+
   /** The contents of a JVMS §4.5 field_info structure. */
   public static class FieldInfo {
 
@@ -110,20 +122,23 @@ public class ClassFile {
     @Nullable private final String signature;
     @Nullable private final Const.Value value;
     private final List<AnnotationInfo> annotations;
+    private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
 
     public FieldInfo(
         int access,
         String name,
         String descriptor,
         @Nullable String signature,
-        Const.Value value,
-        List<AnnotationInfo> annotations) {
+        Value value,
+        List<AnnotationInfo> annotations,
+        ImmutableList<TypeAnnotationInfo> typeAnnotations) {
       this.access = access;
       this.name = name;
       this.descriptor = descriptor;
       this.signature = signature;
       this.value = value;
       this.annotations = annotations;
+      this.typeAnnotations = typeAnnotations;
     }
 
     /** Field access and property flags. */
@@ -156,6 +171,11 @@ public class ClassFile {
     /** Declaration annotations of the field. */
     public List<AnnotationInfo> annotations() {
       return annotations;
+    }
+
+    /** Type annotations. */
+    public ImmutableList<TypeAnnotationInfo> typeAnnotations() {
+      return typeAnnotations;
     }
   }
 
@@ -206,6 +226,7 @@ public class ClassFile {
     @Nullable private final AnnotationInfo.ElementValue defaultValue;
     private final List<AnnotationInfo> annotations;
     private final ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations;
+    private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
 
     public MethodInfo(
         int access,
@@ -213,9 +234,10 @@ public class ClassFile {
         String descriptor,
         @Nullable String signature,
         List<String> exceptions,
-        @Nullable AnnotationInfo.ElementValue defaultValue,
+        @Nullable ElementValue defaultValue,
         List<AnnotationInfo> annotations,
-        ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations) {
+        ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations,
+        ImmutableList<TypeAnnotationInfo> typeAnnotations) {
       this.access = access;
       this.name = name;
       this.descriptor = descriptor;
@@ -224,6 +246,7 @@ public class ClassFile {
       this.defaultValue = defaultValue;
       this.annotations = annotations;
       this.parameterAnnotations = parameterAnnotations;
+      this.typeAnnotations = typeAnnotations;
     }
 
     /** Method access and property flags. */
@@ -267,10 +290,14 @@ public class ClassFile {
     public ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations() {
       return parameterAnnotations;
     }
+
+    /** Type annotations. */
+    public ImmutableList<TypeAnnotationInfo> typeAnnotations() {
+      return typeAnnotations;
+    }
   }
 
   /** The contents of a JVMS §4.7.16 annotation structure. */
-  // TODO(cushon): RuntimeVisibleTypeAnnotations (JVMS 4.7.20) will need to be modelled separately
   public static class AnnotationInfo {
 
     private final String typeName;
@@ -420,6 +447,269 @@ public class ClassFile {
         public AnnotationInfo annotation() {
           return annotation;
         }
+      }
+    }
+  }
+
+  /** The contents of a JVMS §4.7.20 type annotation structure. */
+  public static class TypeAnnotationInfo {
+    private final TargetType targetType;
+    private final Target target;
+    private final TypePath path;
+    private final AnnotationInfo anno;
+
+    public TypeAnnotationInfo(
+        TargetType targetType, Target target, TypePath path, AnnotationInfo anno) {
+      this.targetType = targetType;
+      this.target = target;
+      this.path = path;
+      this.anno = anno;
+    }
+
+    /**
+     * The underlying annotation info (type, visibility, element-value pairs); shared with
+     * declaration annotations.
+     */
+    public AnnotationInfo anno() {
+      return anno;
+    }
+
+    /** A JVMS 4.7.20 target_type kind, denotes the type context where the annotation appears. */
+    public TargetType targetType() {
+      return targetType;
+    }
+
+    /** A JVMS 4.7.20 target_info structure. */
+    public Target target() {
+      return target;
+    }
+
+    /**
+     * A JVMS 4.7.20 type_path structure, denotes which part of the type the annotation applies to.
+     */
+    public TypePath path() {
+      return path;
+    }
+
+    /** A JVMS 4.7.20 target_type kind. */
+    public enum TargetType {
+      CLASS_TYPE_PARAMETER(0x00),
+      METHOD_TYPE_PARAMETER(0x01),
+      SUPERTYPE(0x10),
+      CLASS_TYPE_PARAMETER_BOUND(0x11),
+      METHOD_TYPE_PARAMETER_BOUND(0x12),
+      FIELD(0x13),
+      METHOD_RETURN(0x14),
+      METHOD_RECEIVER_PARAMETER(0x15),
+      METHOD_FORMAL_PARAMETER(0x16),
+      METHOD_THROWS(0x17);
+
+      private final int tag;
+
+      TargetType(int tag) {
+        this.tag = tag;
+      }
+
+      public int tag() {
+        return tag;
+      }
+    }
+
+    /** A JVMS 4.7.20 target_info. */
+    public abstract static class Target {
+      /** Target info kind. */
+      public enum Kind {
+        TYPE_PARAMETER,
+        SUPERTYPE,
+        TYPE_PARAMETER_BOUND,
+        EMPTY,
+        FORMAL_PARAMETER,
+        THROWS;
+      }
+
+      /** Returns the target info kind. */
+      public abstract Kind kind();
+    }
+
+    /** A JVMS 4.7.20.1 type_parameter_target. */
+    public static class TypeParameterTarget extends Target {
+      private final int index;
+
+      public TypeParameterTarget(int index) {
+        this.index = index;
+      }
+
+      public int index() {
+        return index;
+      }
+
+      @Override
+      public Kind kind() {
+        return Kind.TYPE_PARAMETER;
+      }
+    }
+
+    /** A JVMS 4.7.20.1 supertype_target. */
+    public static class SuperTypeTarget extends Target {
+      private final int index;
+
+      public SuperTypeTarget(int index) {
+        this.index = index;
+      }
+
+      @Override
+      public Kind kind() {
+        return Kind.SUPERTYPE;
+      }
+
+      public int index() {
+        return index;
+      }
+    }
+
+    /** A JVMS 4.7.20.1 type_parameter_bound_target. */
+    public static class TypeParameterBoundTarget extends Target {
+      private final int typeParameterIndex;
+      private final int boundIndex;
+
+      public TypeParameterBoundTarget(int typeParameterIndex, int boundIndex) {
+        this.typeParameterIndex = typeParameterIndex;
+        this.boundIndex = boundIndex;
+      }
+
+      @Override
+      public Kind kind() {
+        return Kind.TYPE_PARAMETER_BOUND;
+      }
+
+      public int typeParameterIndex() {
+        return typeParameterIndex;
+      }
+
+      public int boundIndex() {
+        return boundIndex;
+      }
+    }
+
+    /** A JVMS 4.7.20.1 empty_target. */
+    public static final Target EMPTY_TARGET =
+        new Target() {
+          @Override
+          public Kind kind() {
+            return Kind.EMPTY;
+          }
+        };
+
+    /** A JVMS 4.7.20.1 formal_parameter_target. */
+    public static class FormalParameterTarget extends Target {
+      private final int index;
+
+      public FormalParameterTarget(int index) {
+        this.index = index;
+      }
+
+      @Override
+      public Kind kind() {
+        return Kind.FORMAL_PARAMETER;
+      }
+
+      public int index() {
+        return index;
+      }
+    }
+
+    /** A JVMS 4.7.20.1 throws_target. */
+    public static class ThrowsTarget extends Target {
+      private final int index;
+
+      public ThrowsTarget(int index) {
+        this.index = index;
+      }
+
+      @Override
+      public Kind kind() {
+        return Kind.THROWS;
+      }
+
+      public int index() {
+        return index;
+      }
+    }
+
+    /**
+     * A JVMS 4.7.20.2 type_path.
+     *
+     * <p>Represented as an immutable linked-list of nodes, which is built out by {@code Lower}
+     * while recursively searching for type annotations to process.
+     */
+    public static class TypePath {
+
+      /** The root type_path_kind, used for initialization. */
+      public static TypePath root() {
+        return new TypePath(-1, null, null);
+      }
+
+      /** Adds an array type_path_kind entry. */
+      public TypePath array() {
+        return new TypePath(-1, Kind.ARRAY, this);
+      }
+
+      /** Adds a nested type type_path_kind entry. */
+      public TypePath nested() {
+        return new TypePath(-1, Kind.NESTED, this);
+      }
+
+      /** Adds a wildcard bound type_path_kind entry. */
+      public TypePath wild() {
+        return new TypePath(-1, Kind.WILDCARD_BOUND, this);
+      }
+
+      /** Adds a type argument type_path_kind entry. */
+      public TypePath typeArgument(int idx) {
+        return new TypePath(idx, Kind.TYPE_ARGUMENT, this);
+      }
+
+      /** A type_path_kind. */
+      enum Kind {
+        ARRAY(0),
+        NESTED(1),
+        WILDCARD_BOUND(2),
+        TYPE_ARGUMENT(3);
+
+        final int tag;
+
+        Kind(int tag) {
+          this.tag = tag;
+        }
+      }
+
+      private final TypePath parent;
+      private final Kind kind;
+      private final int index;
+
+      private TypePath(int index, Kind kind, TypePath parent) {
+        this.index = index;
+        this.kind = kind;
+        this.parent = parent;
+      }
+
+      /** The type argument index; set only if the kind is {@code TYPE_ARGUMENT}. */
+      public int typeArgumentIndex() {
+        return index;
+      }
+
+      /** The JVMS 4.7.20.2-A serialized value of the type_path_kind. */
+      public byte tag() {
+        return (byte) kind.tag;
+      }
+
+      /** Returns a flattened view of the type path. */
+      public ImmutableList<TypePath> flatten() {
+        Deque<TypePath> flat = new ArrayDeque<>();
+        for (TypePath curr = this; curr.kind != null; curr = curr.parent) {
+          flat.addFirst(curr);
+        }
+        return ImmutableList.copyOf(flat);
       }
     }
   }

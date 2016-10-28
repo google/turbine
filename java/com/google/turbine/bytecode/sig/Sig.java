@@ -221,17 +221,10 @@ public class Sig {
   /** A JVMS 4.7.9.1 ArrayTypeSignature. */
   public static class ArrayTySig extends TySig {
 
-    private final int dimension;
     private final TySig elementType;
 
-    public ArrayTySig(int dimension, TySig elementType) {
-      this.dimension = dimension;
+    public ArrayTySig(TySig elementType) {
       this.elementType = elementType;
-    }
-
-    /** The dimension of the array. */
-    public int dimension() {
-      return dimension;
     }
 
     /** The element type. */

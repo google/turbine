@@ -74,8 +74,7 @@ public class Canonicalize {
       case ARRAY_TY:
         {
           Type.ArrayTy arrayTy = (Type.ArrayTy) type;
-          return new Type.ArrayTy(
-              arrayTy.dimension(), canonicalize(env, base, arrayTy.elementType()));
+          return new Type.ArrayTy(canonicalize(env, base, arrayTy.elementType()), arrayTy.annos());
         }
       case CLASS_TY:
         return canonicalizeClassTy(env, base, (ClassTy) type);
@@ -147,9 +146,9 @@ public class Canonicalize {
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol owner) {
     ImmutableList.Builder<Type> targs = ImmutableList.builder();
     for (TyVarSymbol p : env.get(owner).typeParameterTypes().keySet()) {
-      targs.add(new Type.TyVar(p));
+      targs.add(new Type.TyVar(p, ImmutableList.of()));
     }
-    return new ClassTy.SimpleClassTy(owner, targs.build());
+    return new ClassTy.SimpleClassTy(owner, targs.build(), ImmutableList.of());
   }
 
   // is s a subclass (not interface) of t?
@@ -235,7 +234,7 @@ public class Canonicalize {
     List<Type> args = new ArrayList<>();
     for (TyVarSymbol sym : env.get(classSymbol).typeParameterTypes().keySet()) {
       if (!mapping.containsKey(sym)) {
-        args.add(new Type.TyVar(sym));
+        args.add(new Type.TyVar(sym, ImmutableList.of()));
         continue;
       }
       Type arg = instantiate(mapping, mapping.get(sym));
@@ -246,7 +245,7 @@ public class Canonicalize {
       }
       args.add(arg);
     }
-    return new ClassTy.SimpleClassTy(classSymbol, ImmutableList.copyOf(args));
+    return new ClassTy.SimpleClassTy(classSymbol, ImmutableList.copyOf(args), ImmutableList.of());
   }
 
   /** Instantiates a type argument using the given mapping. */
@@ -265,7 +264,7 @@ public class Canonicalize {
       case ARRAY_TY:
         ArrayTy arrayTy = (ArrayTy) type;
         Type elem = instantiate(mapping, arrayTy.elementType());
-        return new ArrayTy(arrayTy.dimension(), elem);
+        return new ArrayTy(elem, arrayTy.annos());
       case TY_VAR:
         TyVar tyVar = (TyVar) type;
         if (mapping.containsKey(tyVar.sym())) {
@@ -282,9 +281,9 @@ public class Canonicalize {
       case NONE:
         return type;
       case UPPER:
-        return new Type.WildUpperBoundedTy(instantiate(mapping, type.bound()));
+        return new Type.WildUpperBoundedTy(instantiate(mapping, type.bound()), type.annotations());
       case LOWER:
-        return new Type.WildLowerBoundedTy(instantiate(mapping, type.bound()));
+        return new Type.WildLowerBoundedTy(instantiate(mapping, type.bound()), type.annotations());
       default:
         throw new AssertionError(type.boundKind());
     }
@@ -297,7 +296,7 @@ public class Canonicalize {
       for (Type arg : simple.targs()) {
         args.add(instantiate(mapping, arg));
       }
-      simples.add(new SimpleClassTy(simple.sym(), args.build()));
+      simples.add(new SimpleClassTy(simple.sym(), args.build(), simple.annos()));
     }
     return new ClassTy(simples.build());
   }
@@ -319,7 +318,7 @@ public class Canonicalize {
     // canonicalize type arguments first
     ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
     for (ClassTy.SimpleClassTy s : ty.classes) {
-      args.add(new ClassTy.SimpleClassTy(s.sym(), canonicalize(s.targs(), base, env)));
+      args.add(new ClassTy.SimpleClassTy(s.sym(), canonicalize(s.targs(), base, env), s.annos()));
     }
     ty = new ClassTy(args.build());
     return canon(env, base, ty);
@@ -340,9 +339,11 @@ public class Canonicalize {
       case NONE:
         return type;
       case LOWER:
-        return new Type.WildLowerBoundedTy(canonicalize(env, base, type.bound()));
+        return new Type.WildLowerBoundedTy(
+            canonicalize(env, base, type.bound()), type.annotations());
       case UPPER:
-        return new Type.WildUpperBoundedTy(canonicalize(env, base, type.bound()));
+        return new Type.WildUpperBoundedTy(
+            canonicalize(env, base, type.bound()), type.annotations());
       default:
         throw new AssertionError(type.boundKind());
     }

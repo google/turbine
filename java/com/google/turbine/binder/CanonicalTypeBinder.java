@@ -127,7 +127,7 @@ public class CanonicalTypeBinder {
         superClassBound = Canonicalize.canonicalize(env, sym, info.superClassBound());
       }
       ImmutableList<Type> interfaceBounds = canonicalizeList(env, sym, info.interfaceBounds());
-      result.put(e.getKey(), new TyVarInfo(superClassBound, interfaceBounds));
+      result.put(e.getKey(), new TyVarInfo(superClassBound, interfaceBounds, info.annotations()));
     }
     return result.build();
   }

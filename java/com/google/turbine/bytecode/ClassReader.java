@@ -102,7 +102,8 @@ public class ClassReader {
         methodinfos,
         fieldinfos,
         annotations,
-        innerclasses);
+        innerclasses,
+        ImmutableList.of());
   }
 
   /** Reads a JVMS 4.7.9 Signature attribute. */
@@ -269,6 +270,7 @@ public class ClassReader {
               exceptions,
               null,
               ImmutableList.of(),
+              ImmutableList.of(),
               ImmutableList.of()));
     }
     return methods;
@@ -316,7 +318,8 @@ public class ClassReader {
               desc,
               /*signature*/ null,
               value,
-              Collections.<ClassFile.AnnotationInfo>emptyList()));
+              ImmutableList.of(),
+              ImmutableList.of()));
     }
     return fields;
   }

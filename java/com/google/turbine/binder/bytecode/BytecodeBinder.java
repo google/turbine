@@ -23,6 +23,7 @@ import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.WildTySig;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.TyVar;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class BytecodeBinder {
         tyArgs.add(bindTy(arg, scope));
       }
 
-      classes.add(new Type.ClassTy.SimpleClassTy(sym, tyArgs.build()));
+      classes.add(new Type.ClassTy.SimpleClassTy(sym, tyArgs.build(), ImmutableList.of()));
       first = false;
     }
     return new Type.ClassTy(classes);
@@ -54,11 +55,13 @@ public class BytecodeBinder {
   private static Type wildTy(WildTySig sig, Function<String, TyVarSymbol> scope) {
     switch (sig.boundKind()) {
       case NONE:
-        return Type.WILD_TY;
+        return new Type.WildUnboundedTy(ImmutableList.of());
       case LOWER:
-        return new Type.WildLowerBoundedTy(bindTy(((UpperBoundTySig) sig).bound(), scope));
+        return new Type.WildLowerBoundedTy(
+            bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
       case UPPER:
-        return new Type.WildUpperBoundedTy(bindTy(((UpperBoundTySig) sig).bound(), scope));
+        return new Type.WildUpperBoundedTy(
+            bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
       default:
         throw new AssertionError(sig.boundKind());
     }
@@ -71,7 +74,7 @@ public class BytecodeBinder {
       case CLASS_TY_SIG:
         return bindClassTy((Sig.ClassTySig) sig, scope);
       case TY_VAR_SIG:
-        return new TyVar(scope.apply(((Sig.TyVarSig) sig).name()));
+        return new TyVar(scope.apply(((Sig.TyVarSig) sig).name()), ImmutableList.of());
       case ARRAY_TY_SIG:
         return bindArrayTy((Sig.ArrayTySig) sig, scope);
       case WILD_TY_SIG:
@@ -82,6 +85,6 @@ public class BytecodeBinder {
   }
 
   private static Type bindArrayTy(Sig.ArrayTySig arrayTySig, Function<String, TyVarSymbol> scope) {
-    return new Type.ArrayTy(arrayTySig.dimension(), bindTy(arrayTySig.elementType(), scope));
+    return new ArrayTy(bindTy(arrayTySig.elementType(), scope), ImmutableList.of());
   }
 }

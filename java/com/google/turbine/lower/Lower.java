@@ -18,6 +18,7 @@ package com.google.turbine.lower;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.AnnotationValue;
@@ -40,6 +41,11 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.Target;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TargetType;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.ThrowsTarget;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypePath;
 import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
@@ -50,11 +56,17 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.TyVar;
+import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.types.Erasure;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -94,20 +106,28 @@ public class Lower {
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     for (ClassSymbol sym : units.keySet()) {
-      result.put(sym.binaryName(), new Lower().lower(units.get(sym), env, sym, symbols));
+      result.put(sym.binaryName(), lower(units.get(sym), env, sym, symbols));
     }
     return new Lowered(result.build(), ImmutableSet.copyOf(symbols));
   }
 
-  private final LowerSignature sig = new LowerSignature();
-
   /** Lowers a class to bytecode. */
-  public byte[] lower(
+  public static byte[] lower(
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       Set<ClassSymbol> symbols) {
+    return new Lower(env).lower(info, sym, symbols);
+  }
 
+  private final LowerSignature sig = new LowerSignature();
+  private final Env<ClassSymbol, TypeBoundClass> env;
+
+  public Lower(Env<ClassSymbol, TypeBoundClass> env) {
+    this.env = env;
+  }
+
+  private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info);
@@ -124,7 +144,7 @@ public class Lower {
         // TODO(cushon): drop private members earlier?
         continue;
       }
-      methods.add(lowerMethod(env, m, sym));
+      methods.add(lowerMethod(m, sym));
     }
 
     ImmutableList.Builder<ClassFile.FieldInfo> fields = ImmutableList.builder();
@@ -133,12 +153,14 @@ public class Lower {
         // TODO(cushon): drop private members earlier?
         continue;
       }
-      fields.add(lowerField(env, f));
+      fields.add(lowerField(f));
     }
 
-    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(env, info.annotations());
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(info.annotations());
 
-    ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(sym, info, env);
+    ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(sym, info);
+
+    ImmutableList<TypeAnnotationInfo> typeAnnotations = classTypeAnnotations(info);
 
     ClassFile classfile =
         new ClassFile(
@@ -150,17 +172,17 @@ public class Lower {
             methods,
             fields.build(),
             annotations,
-            inners);
+            inners,
+            typeAnnotations);
 
     symbols.addAll(sig.classes);
 
     return ClassWriter.writeClass(classfile);
   }
 
-  private ClassFile.MethodInfo lowerMethod(
-      final Env<ClassSymbol, TypeBoundClass> env, final MethodInfo m, final ClassSymbol sym) {
+  private ClassFile.MethodInfo lowerMethod(final MethodInfo m, final ClassSymbol sym) {
     int access = m.access();
-    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(m.tyParams(), env);
+    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(m.tyParams());
     String name = m.name();
     String desc = methodDescriptor(m, tenv);
     String signature = sig.methodSignature(env, m, sym);
@@ -171,12 +193,13 @@ public class Lower {
       }
     }
 
-    ElementValue defaultValue =
-        m.defaultValue() != null ? annotationValue(m.defaultValue(), env) : null;
+    ElementValue defaultValue = m.defaultValue() != null ? annotationValue(m.defaultValue()) : null;
 
-    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(env, m.annotations());
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(m.annotations());
 
-    ImmutableList<ImmutableList<AnnotationInfo>> paramAnnotations = parameterAnnotations(env, m);
+    ImmutableList<ImmutableList<AnnotationInfo>> paramAnnotations = parameterAnnotations(m);
+
+    ImmutableList<TypeAnnotationInfo> typeAnnotations = methodTypeAnnotations(m);
 
     return new ClassFile.MethodInfo(
         access,
@@ -186,11 +209,11 @@ public class Lower {
         exceptions.build(),
         defaultValue,
         annotations,
-        paramAnnotations);
+        paramAnnotations,
+        typeAnnotations);
   }
 
-  private ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations(
-      Env<ClassSymbol, TypeBoundClass> env, MethodInfo m) {
+  private ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations(MethodInfo m) {
     ImmutableList.Builder<ImmutableList<AnnotationInfo>> annotations = ImmutableList.builder();
     for (ParamInfo parameter : m.parameters()) {
       if (parameter.synthetic()) {
@@ -202,13 +225,13 @@ public class Lower {
       }
       ImmutableList.Builder<AnnotationInfo> parameterAnnotations = ImmutableList.builder();
       for (AnnoInfo annotation : parameter.annotations()) {
-        Boolean visible = isVisible(env, annotation.sym());
+        Boolean visible = isVisible(annotation.sym());
         if (visible == null) {
           continue;
         }
         String desc = descriptor(sig.descriptor(annotation.sym()));
         parameterAnnotations.add(
-            new AnnotationInfo(desc, visible, annotationValues(annotation.values(), env)));
+            new AnnotationInfo(desc, visible, annotationValues(annotation.values())));
       }
       annotations.add(parameterAnnotations.build());
     }
@@ -226,18 +249,25 @@ public class Lower {
     return SigWriter.method(new MethodSig(typarams, fparams.build(), result, excns));
   }
 
-  private ClassFile.FieldInfo lowerField(final Env<ClassSymbol, TypeBoundClass> env, FieldInfo f) {
+  private ClassFile.FieldInfo lowerField(FieldInfo f) {
     final String name = f.name();
-    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(Collections.emptyMap(), env);
+    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(Collections.emptyMap());
     String desc = SigWriter.type(sig.signature(Erasure.erase(f.type(), tenv)));
     String signature = sig.fieldSignature(f.type());
-    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(env, f.annotations());
-    return new ClassFile.FieldInfo(f.access(), name, desc, signature, f.value(), annotations);
+
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(f.annotations());
+
+    ImmutableList.Builder<TypeAnnotationInfo> typeAnnotations = ImmutableList.builder();
+    lowerTypeAnnotations(
+        typeAnnotations, f.type(), TargetType.FIELD, TypeAnnotationInfo.EMPTY_TARGET);
+
+    return new ClassFile.FieldInfo(
+        f.access(), name, desc, signature, f.value(), annotations, typeAnnotations.build());
   }
 
   /** Creates inner class attributes for all referenced inner classes. */
   private ImmutableList<ClassFile.InnerClass> collectInnerClasses(
-      ClassSymbol origin, SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env) {
+      ClassSymbol origin, SourceTypeBoundClass info) {
     Set<ClassSymbol> all = new LinkedHashSet<>();
     addEnclosing(env, all, origin);
     for (ClassSymbol sym : info.children().values()) {
@@ -302,18 +332,13 @@ public class Lower {
    *
    * <p>We could generalize {@link Scope} instead, but this isn't needed anywhere else.
    */
-  static class TyVarEnv implements Function<TyVarSymbol, TyVarInfo> {
+  class TyVarEnv implements Function<TyVarSymbol, TyVarInfo> {
 
-    private final Env<ClassSymbol, TypeBoundClass> env;
     private final Map<TyVarSymbol, TyVarInfo> tyParams;
 
-    /**
-     * @param tyParams the initial lookup scope, e.g. a method's formal type parameters.
-     * @param env the environment to look up a type variable's owning declaration in.
-     */
-    public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams, Env<ClassSymbol, TypeBoundClass> env) {
+    /** @param tyParams the initial lookup scope, e.g. a method's formal type parameters. */
+    public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams) {
       this.tyParams = tyParams;
-      this.env = env;
     }
 
     @Override
@@ -340,12 +365,11 @@ public class Lower {
     }
   }
 
-  private ImmutableList<AnnotationInfo> lowerAnnotations(
-      Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
+  private ImmutableList<AnnotationInfo> lowerAnnotations(ImmutableList<AnnoInfo> annotations) {
     ImmutableList.Builder<AnnotationInfo> lowered = ImmutableList.builder();
     outer:
     for (AnnoInfo annotation : annotations) {
-      AnnotationInfo anno = lowerAnnotation(env, annotation);
+      AnnotationInfo anno = lowerAnnotation(annotation);
       if (anno == null) {
         continue outer;
       }
@@ -354,16 +378,15 @@ public class Lower {
     return lowered.build();
   }
 
-  private AnnotationInfo lowerAnnotation(
-      Env<ClassSymbol, TypeBoundClass> env, AnnoInfo annotation) {
-    Boolean visible = isVisible(env, annotation.sym());
+  private AnnotationInfo lowerAnnotation(AnnoInfo annotation) {
+    Boolean visible = isVisible(annotation.sym());
     if (visible == null) {
       return null;
     }
     return new AnnotationInfo(
         descriptor(sig.descriptor(annotation.sym())),
         visible,
-        annotationValues(annotation.values(), env));
+        annotationValues(annotation.values()));
   }
 
   private static String descriptor(String descriptor) {
@@ -375,7 +398,7 @@ public class Lower {
    * and {@code null} if it should not be retained in bytecode.
    */
   @Nullable
-  private static Boolean isVisible(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
+  private Boolean isVisible(ClassSymbol sym) {
     RetentionPolicy retention = env.get(sym).retention();
     switch (retention) {
       case CLASS:
@@ -389,16 +412,15 @@ public class Lower {
     }
   }
 
-  private ImmutableMap<String, ElementValue> annotationValues(
-      ImmutableMap<String, Const> values, Env<ClassSymbol, TypeBoundClass> env) {
+  private ImmutableMap<String, ElementValue> annotationValues(ImmutableMap<String, Const> values) {
     ImmutableMap.Builder<String, ElementValue> result = ImmutableMap.builder();
     for (Map.Entry<String, Const> entry : values.entrySet()) {
-      result.put(entry.getKey(), annotationValue(entry.getValue(), env));
+      result.put(entry.getKey(), annotationValue(entry.getValue()));
     }
     return result.build();
   }
 
-  private ElementValue annotationValue(Const value, Env<ClassSymbol, TypeBoundClass> env) {
+  private ElementValue annotationValue(Const value) {
     switch (value.kind()) {
       case CLASS_LITERAL:
         {
@@ -416,14 +438,14 @@ public class Lower {
           Const.ArrayInitValue arrayValue = (Const.ArrayInitValue) value;
           List<ElementValue> values = new ArrayList<>();
           for (Const element : arrayValue.elements()) {
-            values.add(annotationValue(element, env));
+            values.add(annotationValue(element));
           }
           return new ElementValue.ArrayValue(values);
         }
       case ANNOTATION:
         {
           AnnotationValue annotationValue = (AnnotationValue) value;
-          Boolean visible = isVisible(env, annotationValue.sym());
+          Boolean visible = isVisible(annotationValue.sym());
           if (visible == null) {
             visible = true;
           }
@@ -431,12 +453,201 @@ public class Lower {
               new AnnotationInfo(
                   descriptor(annotationValue.sym().binaryName()),
                   visible,
-                  annotationValues(annotationValue.values(), env)));
+                  annotationValues(annotationValue.values())));
         }
       case PRIMITIVE:
         return new ElementValue.ConstValue((Const.Value) value);
       default:
         throw new AssertionError(value.kind());
+    }
+  }
+
+  /** Lower type annotations in a class declaration's signature. */
+  private ImmutableList<TypeAnnotationInfo> classTypeAnnotations(SourceTypeBoundClass info) {
+    ImmutableList.Builder<TypeAnnotationInfo> result = ImmutableList.builder();
+    {
+      if (info.superClassType() != null) {
+        lowerTypeAnnotations(
+            result,
+            info.superClassType(),
+            TargetType.SUPERTYPE,
+            new TypeAnnotationInfo.SuperTypeTarget(-1));
+      }
+      int idx = 0;
+      for (Type i : info.interfaceTypes()) {
+        lowerTypeAnnotations(
+            result, i, TargetType.SUPERTYPE, new TypeAnnotationInfo.SuperTypeTarget(idx++));
+      }
+    }
+    typeParameterAnnotations(
+        result,
+        info.typeParameterTypes().values(),
+        TargetType.CLASS_TYPE_PARAMETER,
+        TargetType.CLASS_TYPE_PARAMETER_BOUND);
+    return result.build();
+  }
+
+  /** Lower type annotations in a method declaration's signature. */
+  private ImmutableList<TypeAnnotationInfo> methodTypeAnnotations(MethodInfo m) {
+    ImmutableList.Builder<TypeAnnotationInfo> result = ImmutableList.builder();
+
+    typeParameterAnnotations(
+        result,
+        m.tyParams().values(),
+        TargetType.METHOD_TYPE_PARAMETER,
+        TargetType.METHOD_TYPE_PARAMETER_BOUND);
+
+    {
+      int idx = 0;
+      for (Type e : m.exceptions()) {
+        lowerTypeAnnotations(result, e, TargetType.METHOD_THROWS, new ThrowsTarget(idx++));
+      }
+    }
+
+    lowerTypeAnnotations(
+        result, m.returnType(), TargetType.METHOD_RETURN, TypeAnnotationInfo.EMPTY_TARGET);
+
+    {
+      int idx = 0;
+      for (ParamInfo p : m.parameters()) {
+        lowerTypeAnnotations(
+            result,
+            p.type(),
+            TargetType.METHOD_FORMAL_PARAMETER,
+            new TypeAnnotationInfo.FormalParameterTarget(idx));
+      }
+    }
+
+    return result.build();
+  }
+
+  /**
+   * Lower type annotations on class or method type parameters, either on the parameters themselves
+   * or on bounds.
+   */
+  private void typeParameterAnnotations(
+      Builder<TypeAnnotationInfo> result,
+      Iterable<TyVarInfo> typeParameters,
+      TargetType targetType,
+      TargetType boundTargetType) {
+    int typeParameterIndex = 0;
+    for (TyVarInfo p : typeParameters) {
+      for (AnnoInfo anno : p.annotations()) {
+        result.add(
+            new TypeAnnotationInfo(
+                targetType,
+                new TypeAnnotationInfo.TypeParameterTarget(typeParameterIndex),
+                TypePath.root(),
+                lowerAnnotation(anno)));
+      }
+      if (p.superClassBound() != null) {
+        lowerTypeAnnotations(
+            result,
+            p.superClassBound(),
+            boundTargetType,
+            new TypeAnnotationInfo.TypeParameterBoundTarget(typeParameterIndex, 0));
+      }
+      int boundIndex = 1; // super class bound index is always 0; interface bounds start at 1
+      for (Type i : p.interfaceBounds()) {
+        lowerTypeAnnotations(
+            result,
+            i,
+            boundTargetType,
+            new TypeAnnotationInfo.TypeParameterBoundTarget(typeParameterIndex, boundIndex++));
+      }
+      typeParameterIndex++;
+    }
+  }
+
+  private void lowerTypeAnnotations(
+      Builder<TypeAnnotationInfo> result, Type type, TargetType targetType, Target target) {
+    new LowerTypeAnnotations(result, targetType, target)
+        .lowerTypeAnnotations(type, TypePath.root());
+  }
+
+  class LowerTypeAnnotations {
+    private final ImmutableList.Builder<TypeAnnotationInfo> result;
+    private final TargetType targetType;
+    private final Target target;
+
+    public LowerTypeAnnotations(
+        Builder<TypeAnnotationInfo> result, TargetType targetType, Target target) {
+      this.result = result;
+      this.targetType = targetType;
+      this.target = target;
+    }
+
+    /**
+     * Lower all type annotations present in a type.
+     *
+     * <p>Recursively descends into nested types, and accumulates a type path structure to locate
+     * the annotation in the signature.
+     */
+    private void lowerTypeAnnotations(Type type, TypePath path) {
+      switch (type.tyKind()) {
+        case TY_VAR:
+          lowerTypeAnnotations(((TyVar) type).annos(), path);
+          break;
+        case CLASS_TY:
+          lowerClassTypeTypeAnnotations((ClassTy) type, path);
+          break;
+        case ARRAY_TY:
+          lowerArrayTypeAnnotations(type, path);
+          break;
+        case WILD_TY:
+          lowerWildTyTypeAnnotations((WildTy) type, path);
+          break;
+        default:
+          break;
+      }
+    }
+
+    /** Lower a list of type annotations. */
+    private void lowerTypeAnnotations(ImmutableList<AnnoInfo> annos, TypePath path) {
+      for (AnnoInfo anno : annos) {
+        result.add(new TypeAnnotationInfo(targetType, target, path, lowerAnnotation(anno)));
+      }
+    }
+
+    private void lowerWildTyTypeAnnotations(WildTy type, TypePath path) {
+      switch (type.boundKind()) {
+        case NONE:
+          lowerTypeAnnotations(type.annotations(), path);
+          break;
+        case UPPER:
+        case LOWER:
+          lowerTypeAnnotations(type.annotations(), path);
+          lowerTypeAnnotations(type.bound(), path.wild());
+          break;
+        default:
+          throw new AssertionError(type.boundKind());
+      }
+    }
+
+    private void lowerArrayTypeAnnotations(Type type, TypePath path) {
+      Type base = type;
+      Deque<ArrayTy> flat = new ArrayDeque<>();
+      while (base instanceof ArrayTy) {
+        ArrayTy arrayTy = (ArrayTy) base;
+        flat.addFirst(arrayTy);
+        base = arrayTy.elementType();
+      }
+      for (ArrayTy arrayTy : flat) {
+        lowerTypeAnnotations(arrayTy.annos(), path);
+        path = path.array();
+      }
+      lowerTypeAnnotations(base, path.array());
+    }
+
+    private void lowerClassTypeTypeAnnotations(ClassTy type, TypePath path) {
+      for (SimpleClassTy simple : type.classes) {
+        lowerTypeAnnotations(simple.annos(), path);
+        int idx = 0;
+        for (Type a : simple.targs()) {
+          lowerTypeAnnotations(a, path.typeArgument(idx++));
+        }
+        path = path.nested();
+      }
     }
   }
 }

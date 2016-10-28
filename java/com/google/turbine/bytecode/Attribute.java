@@ -16,7 +16,9 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const.Value;
 import java.util.List;
 
@@ -33,7 +35,9 @@ interface Attribute {
     ANNOTATION_DEFAULT("AnnotationDefault"),
     RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS("RuntimeVisibleParameterAnnotations"),
     RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS("RuntimeInvisibleParameterAnnotations"),
-    DEPRECATED("Deprecated");
+    DEPRECATED("Deprecated"),
+    RUNTIME_VISIBLE_TYPE_ANNOTATIONS("RuntimeVisibleTypeAnnotations"),
+    RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations");
 
     private final String signature;
 
@@ -221,4 +225,46 @@ interface Attribute {
           return Kind.DEPRECATED;
         }
       };
+
+  interface TypeAnnotations extends Attribute {
+    ImmutableList<TypeAnnotationInfo> annotations();
+  }
+
+  /** A JVMS §4.7.20 RuntimeInvisibleTypeAnnotations attribute. */
+  class RuntimeInvisibleTypeAnnotations implements TypeAnnotations {
+    final ImmutableList<TypeAnnotationInfo> annotations;
+
+    public RuntimeInvisibleTypeAnnotations(ImmutableList<TypeAnnotationInfo> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS;
+    }
+
+    @Override
+    public ImmutableList<TypeAnnotationInfo> annotations() {
+      return annotations;
+    }
+  }
+
+  /** A JVMS §4.7.20 RuntimeVisibleTypeAnnotations attribute. */
+  class RuntimeVisibleTypeAnnotations implements TypeAnnotations {
+    final ImmutableList<TypeAnnotationInfo> annotations;
+
+    public RuntimeVisibleTypeAnnotations(ImmutableList<TypeAnnotationInfo> annotations) {
+      this.annotations = annotations;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RUNTIME_VISIBLE_TYPE_ANNOTATIONS;
+    }
+
+    @Override
+    public ImmutableList<TypeAnnotationInfo> annotations() {
+      return annotations;
+    }
+  }
 }

@@ -119,9 +119,7 @@ public class SigWriter {
   }
 
   public void writeArrayTySig(ArrayTySig arrayTySig) {
-    for (int i = 0; i < arrayTySig.dimension(); ++i) {
-      sb.append('[');
-    }
+    sb.append('[');
     writeTySig(arrayTySig.elementType());
   }
 

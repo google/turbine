@@ -16,6 +16,7 @@
 
 package com.google.turbine.bytecode;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
@@ -24,6 +25,14 @@ import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayVa
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.FormalParameterTarget;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.SuperTypeTarget;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.Target;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.ThrowsTarget;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypeParameterBoundTarget;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypeParameterTarget;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypePath;
 import com.google.turbine.model.Const.Value;
 import java.util.Map.Entry;
 
@@ -130,5 +139,47 @@ public class AnnotationWriter {
   private void writeAnnotationElementValue(AnnotationValue value) {
     output.writeByte('@');
     writeAnnotation(value.annotation());
+  }
+
+  public void writeTypeAnnotation(TypeAnnotationInfo annotation) {
+    output.writeByte(annotation.targetType().tag());
+    writeTypeAnnotationTarget(annotation.target());
+    writePath(annotation.path());
+    writeAnnotation(annotation.anno());
+  }
+
+  private void writePath(TypePath path) {
+    ImmutableList<TypePath> flat = path.flatten();
+    output.writeByte(flat.size());
+    for (TypePath curr : flat) {
+      output.writeByte(curr.tag());
+      output.writeByte(curr.typeArgumentIndex());
+    }
+  }
+
+  private void writeTypeAnnotationTarget(Target target) {
+    switch (target.kind()) {
+      case EMPTY:
+        break;
+      case TYPE_PARAMETER:
+        output.writeByte(((TypeParameterTarget) target).index());
+        break;
+      case FORMAL_PARAMETER:
+        output.writeByte(((FormalParameterTarget) target).index());
+        break;
+      case THROWS:
+        output.writeShort(((ThrowsTarget) target).index());
+        break;
+      case SUPERTYPE:
+        output.writeShort(((SuperTypeTarget) target).index());
+        break;
+      case TYPE_PARAMETER_BOUND:
+        TypeParameterBoundTarget typeParameterBoundTarget = (TypeParameterBoundTarget) target;
+        output.writeByte(typeParameterBoundTarget.typeParameterIndex());
+        output.writeByte(typeParameterBoundTarget.boundIndex());
+        break;
+      default:
+        throw new AssertionError(target.kind());
+    }
   }
 }

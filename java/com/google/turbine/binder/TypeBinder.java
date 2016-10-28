@@ -42,6 +42,7 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -161,7 +162,8 @@ public class TypeBinder {
                 ImmutableList.of(
                     new Type.ClassTy.SimpleClassTy(
                         ClassSymbol.ENUM,
-                        ImmutableList.of(Type.ClassTy.asNonParametricClassTy(owner)))));
+                        ImmutableList.of(Type.ClassTy.asNonParametricClassTy(owner)),
+                        ImmutableList.of())));
         break;
       case ANNOTATION:
         superClassType = Type.ClassTy.asNonParametricClassTy(ClassSymbol.ANNOTATION);
@@ -304,7 +306,7 @@ public class TypeBinder {
         new MethodInfo(
             new MethodSymbol(owner, "values"),
             ImmutableMap.of(),
-            new Type.ArrayTy(1, Type.ClassTy.asNonParametricClassTy(owner)),
+            new Type.ArrayTy(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
             ImmutableList.of(),
             ImmutableList.of(),
             TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
@@ -340,7 +342,8 @@ public class TypeBinder {
         }
         first = false;
       }
-      result.put(sym, new TyVarInfo(classBound, interfaceBounds.build()));
+      ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, tree.annos());
+      result.put(sym, new TyVarInfo(classBound, interfaceBounds.build(), annotations));
     }
     return result.build();
   }
@@ -556,13 +559,14 @@ public class TypeBinder {
     }
     Verify.verifyNotNull(result, "%s", names);
     Symbol sym = result.sym();
+    ImmutableList<AnnoInfo> annos = bindAnnotations(scope, t.annos());
     switch (sym.symKind()) {
       case CLASS:
         // resolve any remaining types in the qualified name, and their type arguments
-        return bindClassTyRest(scope, flat, names, result, (ClassSymbol) sym);
+        return bindClassTyRest(scope, flat, names, result, (ClassSymbol) sym, annos);
       case TY_PARAM:
         Verify.verify(result.remaining().isEmpty(), "%s", result.remaining());
-        return new Type.TyVar((TyVarSymbol) sym);
+        return new Type.TyVar((TyVarSymbol) sym, annos);
       default:
         throw new AssertionError(sym.symKind());
     }
@@ -570,17 +574,22 @@ public class TypeBinder {
 
   private Type bindClassTyRest(
       CompoundScope scope,
-      ArrayList<Tree.ClassTy> flat,
+      ArrayList<ClassTy> flat,
       ArrayList<String> bits,
       LookupResult result,
-      ClassSymbol sym) {
+      ClassSymbol sym,
+      ImmutableList<AnnoInfo> annotations) {
     int idx = bits.size() - result.remaining().size() - 1;
     ImmutableList.Builder<Type.ClassTy.SimpleClassTy> classes = ImmutableList.builder();
-    classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, flat.get(idx++).tyargs())));
+    classes.add(
+        new Type.ClassTy.SimpleClassTy(
+            sym, bindTyArgs(scope, flat.get(idx++).tyargs()), annotations));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
       sym = Resolve.resolve(env, owner, sym, curr.name());
-      classes.add(new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs())));
+      annotations = bindAnnotations(scope, curr.annos());
+      classes.add(
+          new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs()), annotations));
     }
     return new Type.ClassTy(classes.build());
   }
@@ -590,22 +599,17 @@ public class TypeBinder {
   }
 
   private Type bindArrTy(CompoundScope scope, Tree.ArrTy t) {
-    int dim = 1;
-    Tree.Type base = t.elem();
-    while (base instanceof Tree.ArrTy) {
-      dim++;
-      base = ((Tree.ArrTy) base).elem();
-    }
-    return new Type.ArrayTy(dim, bindTy(scope, base));
+    return new Type.ArrayTy(bindTy(scope, t.elem()), bindAnnotations(scope, t.annos()));
   }
 
   private Type bindWildTy(CompoundScope scope, Tree.WildTy t) {
+    ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, t.annos());
     if (t.lower().isPresent()) {
-      return new Type.WildLowerBoundedTy(bindTy(scope, t.lower().get()));
+      return new Type.WildLowerBoundedTy(bindTy(scope, t.lower().get()), annotations);
     } else if (t.upper().isPresent()) {
-      return new Type.WildUpperBoundedTy(bindTy(scope, t.upper().get()));
+      return new Type.WildUpperBoundedTy(bindTy(scope, t.upper().get()), annotations);
     } else {
-      return Type.WILD_TY;
+      return new Type.WildUnboundedTy(annotations);
     }
   }
 

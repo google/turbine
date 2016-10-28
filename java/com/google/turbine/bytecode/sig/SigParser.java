@@ -182,11 +182,7 @@ public class SigParser {
   private ArrayTySig parseArraySig() {
     eat();
     TySig elementType = parseType();
-    if (elementType.kind() == TySig.TySigKind.ARRAY_TY_SIG) {
-      ArrayTySig other = (ArrayTySig) elementType;
-      return new ArrayTySig(other.dimension() + 1, other.elementType());
-    }
-    return new ArrayTySig(1, elementType);
+    return new ArrayTySig(elementType);
   }
 
   private TyVarSig parseTyVar() {

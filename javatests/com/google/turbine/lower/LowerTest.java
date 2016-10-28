@@ -72,7 +72,10 @@ public class LowerTest {
                     new Type.ClassTy.SimpleClassTy(
                         new ClassSymbol("java/util/List"),
                         ImmutableList.of(
-                            new Type.TyVar(new TyVarSymbol(new ClassSymbol("test/Test"), "V")))))));
+                            new Type.TyVar(
+                                new TyVarSymbol(new ClassSymbol("test/Test"), "V"),
+                                ImmutableList.of())),
+                        ImmutableList.of()))));
     Type.ClassTy xtnds = Type.ClassTy.OBJECT;
     ImmutableMap<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> tps =
         ImmutableMap.of(
@@ -81,7 +84,10 @@ public class LowerTest {
                 new Type.ClassTy(
                     ImmutableList.of(
                         new Type.ClassTy.SimpleClassTy(
-                            new ClassSymbol("test/Test$Inner"), ImmutableList.of()))),
+                            new ClassSymbol("test/Test$Inner"),
+                            ImmutableList.of(),
+                            ImmutableList.of()))),
+                ImmutableList.of(),
                 ImmutableList.of()));
     int access = TurbineFlag.ACC_SUPER | TurbineFlag.ACC_PUBLIC;
     ImmutableList<SourceTypeBoundClass.MethodInfo> methods =
@@ -107,13 +113,18 @@ public class LowerTest {
                                 ImmutableList.of(
                                     new Type.ClassTy.SimpleClassTy(
                                         new ClassSymbol("java/lang/Runnable"),
-                                        ImmutableList.of()))))),
+                                        ImmutableList.of(),
+                                        ImmutableList.of())))),
+                        ImmutableList.of()),
                     new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
                         new Type.ClassTy(
                             ImmutableList.of(
                                 new Type.ClassTy.SimpleClassTy(
-                                    new ClassSymbol("java/lang/Error"), ImmutableList.of()))),
+                                    new ClassSymbol("java/lang/Error"),
+                                    ImmutableList.of(),
+                                    ImmutableList.of()))),
+                        ImmutableList.of(),
                         ImmutableList.of())),
                 Type.VOID,
                 ImmutableList.of(
@@ -121,7 +132,8 @@ public class LowerTest {
                         new Type.PrimTy(TurbineConstantTypeKind.INT), ImmutableList.of(), false)),
                 ImmutableList.of(
                     new Type.TyVar(
-                        new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"))),
+                        new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
+                        ImmutableList.of())),
                 TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
