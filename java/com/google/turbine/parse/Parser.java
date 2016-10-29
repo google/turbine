@@ -514,9 +514,9 @@ public class Parser {
                 name = eatIdent();
                 return memberRest(access, annos, typaram, result, name);
               }
+            case AT:
             case LBRACK:
               {
-                eat(Token.LBRACK);
                 result =
                     new ClassTy(
                         position,
@@ -524,9 +524,12 @@ public class Parser {
                         ident,
                         ImmutableList.<Type>of(),
                         typeAnnos);
+                typeAnnos = maybeAnnos();
+                eat(Token.LBRACK);
                 do {
                   result = new ArrTy(position, typeAnnos, result);
                   eat(Token.RBRACK);
+                  typeAnnos = maybeAnnos();
                 } while (maybe(Token.LBRACK));
                 break;
               }

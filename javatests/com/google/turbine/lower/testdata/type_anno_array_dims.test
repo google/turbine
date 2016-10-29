@@ -1,0 +1,10 @@
+=== Test.java ===
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE_USE) @interface A {}
+@Target(ElementType.TYPE_USE) @interface B {}
+
+class Test<T> {
+  private T @A [] [] @B [] values;
+}
