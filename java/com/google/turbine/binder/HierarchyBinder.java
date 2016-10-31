@@ -23,13 +23,11 @@ import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.env.Env;
-import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
-import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -101,7 +99,7 @@ public class HierarchyBinder {
 
     ClassSymbol superclass;
     if (decl.xtnds().isPresent()) {
-      superclass = resolveClass(base.source(), env, base.scope(), base.owner(), decl.xtnds().get());
+      superclass = resolveClass(decl.xtnds().get());
     } else {
       switch (decl.tykind()) {
         case ENUM:
@@ -125,7 +123,7 @@ public class HierarchyBinder {
     ImmutableList.Builder<ClassSymbol> interfaces = ImmutableList.builder();
     if (!decl.impls().isEmpty()) {
       for (Tree.ClassTy i : decl.impls()) {
-        ClassSymbol result = resolveClass(base.source(), env, base.scope(), base.owner(), i);
+        ClassSymbol result = resolveClass(i);
         if (result == null) {
           throw new AssertionError(i);
         }
@@ -207,12 +205,7 @@ public class HierarchyBinder {
    * Resolves the {@link ClassSymbol} for the given {@link Tree.ClassTy}, with handling for
    * non-canonical qualified type names.
    */
-  public static ClassSymbol resolveClass(
-      SourceFile source,
-      Env<ClassSymbol, ? extends HeaderBoundClass> env,
-      CompoundScope enclscope,
-      ClassSymbol owner,
-      Tree.ClassTy ty) {
+  private ClassSymbol resolveClass(Tree.ClassTy ty) {
     // flatten a left-recursive qualified type name to its component simple names
     // e.g. Foo<Bar>.Baz -> ["Foo", "Bar"]
     ArrayDeque<String> flat = new ArrayDeque<>();
@@ -220,41 +213,37 @@ public class HierarchyBinder {
       flat.addFirst(curr.name());
     }
     // Resolve the base symbol in the qualified name.
-    LookupResult result = lookup(env, enclscope, owner, new LookupKey(flat));
+    LookupResult result = lookup(new LookupKey(flat));
     if (result == null) {
-      throw TurbineError.format(source, ty.position(), String.format("symbol not found %s\n", ty));
+      throw TurbineError.format(
+          base.source(), ty.position(), String.format("symbol not found %s\n", ty));
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      sym = Resolve.resolve(env, owner, sym, bit);
+      sym = Resolve.resolve(env, base.owner(), sym, bit);
       if (sym == null) {
-        throw TurbineError.format(
-            source, ty.position(), String.format("symbol not found %s\n", bit));
+        throw error(ty.position(), "symbol not found %s\n", bit);
       }
     }
     return sym;
   }
 
   /** Resolve a qualified type name to a symbol. */
-  public static LookupResult lookup(
-      Env<ClassSymbol, ? extends HeaderBoundClass> env,
-      CompoundScope parent,
-      ClassSymbol owner,
-      LookupKey lookup) {
+  private LookupResult lookup(LookupKey lookup) {
     // Handle any lexically enclosing class declarations (if we're binding a member class).
     // We could build out scopes for this, but it doesn't seem worth it. (And sharing the scopes
     // with other members of the same enclosing declaration would be complicated.)
-    for (ClassSymbol curr = owner; curr != null; curr = env.get(curr).owner()) {
-      ClassSymbol result = Resolve.resolve(env, owner, curr, lookup.first());
+    for (ClassSymbol curr = base.owner(); curr != null; curr = env.get(curr).owner()) {
+      ClassSymbol result = Resolve.resolve(env, base.owner(), curr, lookup.first());
       if (result != null) {
         return new LookupResult(result, lookup);
       }
     }
     // Fall back to the top-level scopes for the compilation unit (imports, same package, then
     // qualified name resolution).
-    return parent.lookup(lookup);
+    return base.scope().lookup(lookup);
   }
 
   private TurbineError error(int position, String message, Object... args) {

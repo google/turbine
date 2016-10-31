@@ -49,6 +49,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableList<Type.ClassTy> interfaceTypes;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
+  private final CompoundScope enclosingScope;
   private final CompoundScope scope;
   private final MemberImportIndex memberImports;
   private final RetentionPolicy retention;
@@ -69,6 +70,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       ClassSymbol superclass,
       ImmutableList<ClassSymbol> interfaces,
       ImmutableMap<String, TyVarSymbol> typeParameters,
+      CompoundScope enclosingScope,
       CompoundScope scope,
       MemberImportIndex memberImports,
       RetentionPolicy retention,
@@ -87,6 +89,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.superclass = superclass;
     this.interfaces = interfaces;
     this.typeParameters = typeParameters;
+    this.enclosingScope = enclosingScope;
     this.scope = scope;
     this.memberImports = memberImports;
     this.retention = retention;
@@ -170,6 +173,12 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return typeParameterTypes;
   }
 
+  /** The scope of the enclosing declaration or compilation unit. */
+  public CompoundScope enclosingScope() {
+    return enclosingScope;
+  }
+
+  /** The scope of the current class, including its members. */
   public CompoundScope scope() {
     return scope;
   }

@@ -1,0 +1,20 @@
+=== As.java ===
+package a;
+public @interface As {
+  Class<?>[] value() default {};
+}
+
+=== A.java ===
+package a;
+public @interface A {}
+
+=== Test.java ===
+import a.As;
+import a.A;
+@As({A.class /* a.A */, Test.class /* Test is in scope */})
+public class Test {
+  public @interface A {}
+
+  @As(A.class /* Test$A */)
+  void f() {}
+}

@@ -30,6 +30,7 @@ import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -51,6 +52,7 @@ import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -70,9 +72,12 @@ public class ConstEvaluator {
   /** The class environment. */
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
 
+  private final CompoundScope scope;
+
   public ConstEvaluator(
       ClassSymbol owner,
       SourceTypeBoundClass base,
+      CompoundScope scope,
       Env<FieldSymbol, Const.Value> values,
       CompoundEnv<ClassSymbol, TypeBoundClass> env) {
 
@@ -80,6 +85,7 @@ public class ConstEvaluator {
     this.base = base;
     this.values = values;
     this.env = env;
+    this.scope = scope;
   }
 
   /** Evaluates the given expression's value. */
@@ -147,15 +153,39 @@ public class ConstEvaluator {
       case VOID_TY:
         return new ClassValue(Type.VOID);
       case CLASS_TY:
-        {
-          ClassTy classTy = (ClassTy) t.type();
-          ClassSymbol classSym =
-              HierarchyBinder.resolveClass(base.source(), env, base.scope(), owner, classTy);
-          return new ClassValue(Type.ClassTy.asNonParametricClassTy(classSym));
-        }
+        return new ClassValue(
+            Type.ClassTy.asNonParametricClassTy(resolveClass((ClassTy) t.type())));
       default:
         throw new AssertionError(t.type().kind());
     }
+  }
+
+  /**
+   * Resolves the {@link ClassSymbol} for the given {@link Tree.ClassTy}, with handling for
+   * non-canonical qualified type names.
+   *
+   * <p>Similar to {@link HierarchyBinder#resolveClass}, except we can't unconditionally consider
+   * members of the current class (e.g. when binding constants inside annotations on that class),
+   * and when we do want to consider members we can rely on them being in the current scope (it
+   * isn't completed during the hierarchy phase).
+   */
+  private ClassSymbol resolveClass(ClassTy classTy) {
+    ArrayDeque<String> flat = new ArrayDeque<>();
+    for (ClassTy curr = classTy; curr != null; curr = curr.base().orNull()) {
+      flat.addFirst(curr.name());
+    }
+    LookupResult result = scope.lookup(new LookupKey(flat));
+    if (result == null) {
+      throw error(classTy.position(), String.format("symbol not found %s\n", flat.peekFirst()));
+    }
+    ClassSymbol classSym = (ClassSymbol) result.sym();
+    for (String bit : result.remaining()) {
+      classSym = Resolve.resolve(env, owner, classSym, bit);
+      if (classSym == null) {
+        throw error(classTy.position(), String.format("symbol not found %s\n", bit));
+      }
+    }
+    return classSym;
   }
 
   /** Evaluates a reference to another constant variable. */
@@ -179,7 +209,7 @@ public class ConstEvaluator {
     if (field != null) {
       return field;
     }
-    LookupResult result = base.scope().lookup(new LookupKey(t.name()));
+    LookupResult result = scope.lookup(new LookupKey(t.name()));
     if (result != null) {
       ClassSymbol sym = (ClassSymbol) result.sym();
       for (int i = 0; i < result.remaining().size() - 1; i++) {
@@ -847,7 +877,7 @@ public class ConstEvaluator {
   }
 
   private AnnotationValue evalAnno(Tree.Anno t) {
-    LookupResult result = base.scope().lookup(new LookupKey(t.name()));
+    LookupResult result = scope.lookup(new LookupKey(t.name()));
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);

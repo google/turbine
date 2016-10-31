@@ -22,11 +22,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -56,8 +58,9 @@ import javax.annotation.Nullable;
 public class ConstBinder {
 
   private final Env<FieldSymbol, Value> constantEnv;
+  private final ClassSymbol sym;
   private final SourceTypeBoundClass base;
-  private final ConstEvaluator constEvaluator;
+  private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
 
   public ConstBinder(
       Env<FieldSymbol, Value> constantEnv,
@@ -65,14 +68,15 @@ public class ConstBinder {
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       SourceTypeBoundClass base) {
     this.constantEnv = constantEnv;
+    this.sym = sym;
     this.base = base;
-    this.constEvaluator = new ConstEvaluator(sym, base, constantEnv, env);
+    this.env = env;
   }
 
   public SourceTypeBoundClass bind() {
-    ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
-    ImmutableList<MethodInfo> methods = bindMethods(base.methods());
-    ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations());
+    ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations(), base.enclosingScope());
+    ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields(), base.scope());
+    ImmutableList<MethodInfo> methods = bindMethods(base.methods(), base.scope());
     return new SourceTypeBoundClass(
         bindClassTypes(base.interfaceTypes()),
         base.superClassType() != null ? bindClassType(base.superClassType()) : null,
@@ -86,6 +90,7 @@ public class ConstBinder {
         base.superclass(),
         base.interfaces(),
         base.typeParameters(),
+        base.enclosingScope(),
         base.scope(),
         base.memberImports(),
         bindRetention(base.kind(), annos),
@@ -94,37 +99,40 @@ public class ConstBinder {
         base.source());
   }
 
-  private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> methods) {
+  private ImmutableList<MethodInfo> bindMethods(
+      ImmutableList<MethodInfo> methods, CompoundScope scope) {
     ImmutableList.Builder<MethodInfo> result = ImmutableList.builder();
     for (MethodInfo f : methods) {
-      result.add(bindMethod(f));
+      result.add(bindMethod(f, scope));
     }
     return result.build();
   }
 
-  private MethodInfo bindMethod(MethodInfo base) {
+  private MethodInfo bindMethod(MethodInfo base, CompoundScope scope) {
     Const value = null;
     if (base.decl() != null && base.decl().defaultValue().isPresent()) {
       value =
-          constEvaluator.evalAnnotationValue(base.decl().defaultValue().get(), base.returnType());
+          new ConstEvaluator(sym, this.base, scope, constantEnv, env)
+              .evalAnnotationValue(base.decl().defaultValue().get(), base.returnType());
     }
 
     return new MethodInfo(
         base.sym(),
         bindTypeParameters(base.tyParams()),
         bindType(base.returnType()),
-        bindParameters(base.parameters()),
+        bindParameters(base.parameters(), scope),
         bindTypes(base.exceptions()),
         base.access(),
         value,
         base.decl(),
-        bindAnnotations(base.annotations()));
+        bindAnnotations(base.annotations(), scope));
   }
 
-  private ImmutableList<ParamInfo> bindParameters(ImmutableList<ParamInfo> formals) {
+  private ImmutableList<ParamInfo> bindParameters(
+      ImmutableList<ParamInfo> formals, CompoundScope scope) {
     ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
     for (ParamInfo base : formals) {
-      ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations());
+      ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations(), scope);
       result.add(new ParamInfo(bindType(base.type()), annos, base.synthetic()));
     }
     return result.build();
@@ -200,7 +208,7 @@ public class ConstBinder {
   }
 
   private ImmutableList<TypeBoundClass.FieldInfo> fields(
-      ImmutableList<TypeBoundClass.FieldInfo> fields) {
+      ImmutableList<FieldInfo> fields, CompoundScope scope) {
     ImmutableList.Builder<TypeBoundClass.FieldInfo> result = ImmutableList.builder();
     for (TypeBoundClass.FieldInfo base : fields) {
       Value value = fieldValue(base);
@@ -209,19 +217,22 @@ public class ConstBinder {
               base.sym(),
               bindType(base.type()),
               base.access(),
-              bindAnnotations(base.annotations()),
+              bindAnnotations(base.annotations(), scope),
               base.decl(),
               value));
     }
     return result.build();
   }
 
-  private ImmutableList<AnnoInfo> bindAnnotations(ImmutableList<AnnoInfo> annotations) {
+  private ImmutableList<AnnoInfo> bindAnnotations(
+      ImmutableList<AnnoInfo> annotations, CompoundScope scope) {
     // TODO(cushon): Java 8 repeated annotations
     // TODO(cushon): disallow duplicate non-repeated annotations
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (AnnoInfo annotation : annotations) {
-      result.add(constEvaluator.evaluateAnnotation(annotation.sym(), annotation.args()));
+      result.add(
+          new ConstEvaluator(sym, base, scope, constantEnv, env)
+              .evaluateAnnotation(annotation.sym(), annotation.args()));
     }
     return result.build();
   }
@@ -277,7 +288,7 @@ public class ConstBinder {
           new TyVarInfo(
               info.superClassBound() != null ? bindType(info.superClassBound()) : null,
               bindTypes(info.interfaceBounds()),
-              bindAnnotations(info.annotations())));
+              bindAnnotations(info.annotations(), base.enclosingScope())));
     }
     return result.build();
   }
@@ -286,24 +297,29 @@ public class ConstBinder {
     switch (type.tyKind()) {
       case TY_VAR:
         TyVar tyVar = (TyVar) type;
-        return new TyVar(tyVar.sym(), bindAnnotations(tyVar.annos()));
+        return new TyVar(tyVar.sym(), bindAnnotations(tyVar.annos(), base.enclosingScope()));
       case CLASS_TY:
         return bindClassType((ClassTy) type);
       case ARRAY_TY:
         ArrayTy arrayTy = (ArrayTy) type;
-        return new ArrayTy(bindType(arrayTy.elementType()), bindAnnotations(arrayTy.annos()));
+        return new ArrayTy(
+            bindType(arrayTy.elementType()),
+            bindAnnotations(arrayTy.annos(), base.enclosingScope()));
       case WILD_TY:
         {
           WildTy wildTy = (WildTy) type;
           switch (wildTy.boundKind()) {
             case NONE:
-              return new WildUnboundedTy(bindAnnotations(wildTy.annotations()));
+              return new WildUnboundedTy(
+                  bindAnnotations(wildTy.annotations(), base.enclosingScope()));
             case UPPER:
               return new WildUpperBoundedTy(
-                  bindType(wildTy.bound()), bindAnnotations(wildTy.annotations()));
+                  bindType(wildTy.bound()),
+                  bindAnnotations(wildTy.annotations(), base.enclosingScope()));
             case LOWER:
               return new WildLowerBoundedTy(
-                  bindType(wildTy.bound()), bindAnnotations(wildTy.annotations()));
+                  bindType(wildTy.bound()),
+                  bindAnnotations(wildTy.annotations(), base.enclosingScope()));
             default:
               throw new AssertionError(wildTy.boundKind());
           }
@@ -320,7 +336,9 @@ public class ConstBinder {
     ClassTy classTy = type;
     ImmutableList.Builder<SimpleClassTy> classes = ImmutableList.builder();
     for (SimpleClassTy c : classTy.classes) {
-      classes.add(new SimpleClassTy(c.sym(), bindTypes(c.targs()), bindAnnotations(c.annos())));
+      classes.add(
+          new SimpleClassTy(
+              c.sym(), bindTypes(c.targs()), bindAnnotations(c.annos(), base.enclosingScope())));
     }
     return new ClassTy(classes.build());
   }

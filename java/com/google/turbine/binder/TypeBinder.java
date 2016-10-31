@@ -147,14 +147,17 @@ public class TypeBinder {
     // refer to previous declared type parameters, the superclass type can refer to
     // type parameters, ...). A second scope is created for finding methods and fields
     // once the signature is fully determined.
-    CompoundScope enclosingScope = base.scope();
-    enclosingScope = enclosingScope.append(new ClassMemberScope(base.owner(), env));
-    enclosingScope = enclosingScope.append(new SingletonScope(base.decl().name(), owner));
+    CompoundScope enclosingScope = base.scope().append(new ClassMemberScope(base.owner(), env));
+
+    ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
+
+    CompoundScope bindingScope =
+        enclosingScope.append(new SingletonScope(base.decl().name(), owner));
 
     // type parameters can refer to each other in f-bounds, so update the scope first
-    enclosingScope = enclosingScope.append(new MapScope(base.typeParameters()));
+    bindingScope = bindingScope.append(new MapScope(base.typeParameters()));
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
-        bindTyParams(base.decl().typarams(), enclosingScope, base.typeParameters());
+        bindTyParams(base.decl().typarams(), bindingScope, base.typeParameters());
 
     Type.ClassTy superClassType;
     switch (base.kind()) {
@@ -173,12 +176,12 @@ public class TypeBinder {
       case CLASS:
       case INTERFACE:
         if (base.decl().xtnds().isPresent()) {
-          superClassType = (Type.ClassTy) bindClassTy(enclosingScope, base.decl().xtnds().get());
+          superClassType = (Type.ClassTy) bindClassTy(bindingScope, base.decl().xtnds().get());
           // Members inherited from the superclass are visible to interface types.
           // (The same is not true for interface types declared before other interface
           // types, at least according to javac.)
-          enclosingScope =
-              enclosingScope.append(
+          bindingScope =
+              bindingScope.append(
                   new Scope() {
                     @Override
                     public LookupResult lookup(LookupKey lookup) {
@@ -200,7 +203,7 @@ public class TypeBinder {
 
     ImmutableList.Builder<Type.ClassTy> interfaceTypes = ImmutableList.builder();
     for (Tree.ClassTy i : base.decl().impls()) {
-      interfaceTypes.add((Type.ClassTy) bindClassTy(enclosingScope, i));
+      interfaceTypes.add((Type.ClassTy) bindClassTy(bindingScope, i));
     }
 
     CompoundScope scope = base.scope().append(new ClassMemberScope(owner, env));
@@ -209,8 +212,6 @@ public class TypeBinder {
     addSyntheticMethods(methods);
 
     ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
-
-    ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, base.decl().annos());
 
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
@@ -225,6 +226,7 @@ public class TypeBinder {
         base.superclass(),
         base.interfaces(),
         base.typeParameters(),
+        enclosingScope,
         scope,
         base.memberImports(),
         /*retention*/ null,
