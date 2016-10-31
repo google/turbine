@@ -1,0 +1,5 @@
+=== Test.java ===
+import java.util.concurrent.TimeUnit;
+class Test {
+  public static final int M = -((int) TimeUnit.DAYS.toMinutes(1)); 
+}

@@ -406,6 +406,9 @@ public class ConstExpressionParser {
   private Tree.Expression unaryRest(TurbineOperatorKind op) {
     boolean negate = op == TurbineOperatorKind.NEG;
     Tree.Expression expr = primary(negate);
+    if (expr == null) {
+      return null;
+    }
     if (negate && expr.kind() == Tree.Kind.LITERAL) {
       Tree.Literal lit = (Tree.Literal) expr;
       switch (lit.tykind()) {
@@ -415,9 +418,6 @@ public class ConstExpressionParser {
         default:
           break;
       }
-    }
-    if (expr == null) {
-      return null;
     }
     return new Tree.Unary(position, expr, op);
   }

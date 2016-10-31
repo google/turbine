@@ -245,6 +245,7 @@ public class LowerIntegrationTest {
       "tyvar_bound.test",
       "type_anno_hello.test",
       "type_anno_array_dims.test",
+      "nonconst_unary_expression.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
