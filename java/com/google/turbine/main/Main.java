@@ -111,10 +111,6 @@ public class Main {
           if (!je.getName().endsWith(".java")) {
             continue;
           }
-          if (je.getName().equals("package-info.java")) {
-            // TODO(cushon): package-info.java files
-            continue;
-          }
           // overwrite existing entries for bug-compatibility with JavaBuilder (see b/26688023)
           String source = new String(ByteStreams.toByteArray(jf.getInputStream(je)), UTF_8);
           sources.put(je.getName(), new SourceFile(je.getName(), source));

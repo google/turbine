@@ -90,6 +90,51 @@ public class MainTest {
     assertThat(fields).containsEntry("CONST", "TWO");
   }
 
+  @Test
+  public void packageInfo() throws IOException {
+    Path src = temporaryFolder.newFile("package-info.jar").toPath();
+    Files.write(src, "@Deprecated package test;".getBytes(UTF_8));
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    boolean ok =
+        Main.compile(
+            TurbineOptions.builder()
+                .addSources(ImmutableList.of(src.toString()))
+                .addBootClassPathEntries(BOOTCLASSPATH)
+                .setOutput(output.toString())
+                .setTempDir("")
+                .build());
+    assertThat(ok).isTrue();
+
+    Map<String, byte[]> data = readJar(output);
+    assertThat(data.keySet()).containsExactly("test/package-info.class");
+  }
+
+  @Test
+  public void packageInfoSrcjar() throws IOException {
+    Path srcjar = temporaryFolder.newFile("lib.srcjar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(srcjar))) {
+      jos.putNextEntry(new JarEntry("package-info.java"));
+      jos.write("@Deprecated package test;".getBytes(UTF_8));
+    }
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    boolean ok =
+        Main.compile(
+            TurbineOptions.builder()
+                .setSourceJars(ImmutableList.of(srcjar.toString()))
+                .addBootClassPathEntries(BOOTCLASSPATH)
+                .setOutput(output.toString())
+                .setTempDir("")
+                .build());
+    assertThat(ok).isTrue();
+
+    Map<String, byte[]> data = readJar(output);
+    assertThat(data.keySet()).containsExactly("test/package-info.class");
+  }
+
   private Map<String, byte[]> readJar(Path output) throws IOException {
     Map<String, byte[]> data = new LinkedHashMap<>();
     try (JarFile jf = new JarFile(output.toFile())) {
