@@ -1,0 +1,5 @@
+=== Test.java ===
+class Test {
+  public static final double π = 3.14;
+  public static final double _π = 3.14;
+}

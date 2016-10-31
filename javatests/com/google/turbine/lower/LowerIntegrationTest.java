@@ -248,6 +248,7 @@ public class LowerIntegrationTest {
       "nonconst_unary_expression.test",
       "type_anno_ambiguous.test",
       "type_anno_ambiguous_param.test",
+      "unicode.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
