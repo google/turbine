@@ -203,11 +203,13 @@ public class Pretty implements Tree.Visitor<Void, Void> {
 
   @Override
   public Void visitConditional(Tree.Conditional conditional, Void input) {
+    append("(");
     conditional.cond().accept(this, null);
     append(" ? ");
     conditional.iftrue().accept(this, null);
     append(" : ");
     conditional.iffalse().accept(this, null);
+    append(")");
     return null;
   }
 

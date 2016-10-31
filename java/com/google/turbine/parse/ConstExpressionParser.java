@@ -516,7 +516,7 @@ public class ConstExpressionParser {
       return null;
     }
     eat();
-    Tree.Expression elseExpr = expression(TurbineOperatorKind.Precedence.TERNARY);
+    Tree.Expression elseExpr = expression();
     if (elseExpr == null) {
       return null;
     }

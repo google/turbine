@@ -106,7 +106,7 @@ public class ExpressionParserTest {
             "((MyType) 42 + c)", "((MyType) 42 + c)",
           },
           {
-            "true || false ? 1 + 2 : 3 + 4", "(true || false) ? (1 + 2) : (3 + 4)",
+            "true || false ? 1 + 2 : 3 + 4", "((true || false) ? (1 + 2) : (3 + 4))",
           },
           {
             "{1, 2, 3,},", "{1, 2, 3}",
@@ -128,7 +128,10 @@ public class ExpressionParserTest {
           },
           {
             "0xffffffff", "-1",
-          }
+          },
+          {
+            "A ? B : C ? D : E;", "(A ? B : (C ? D : E))",
+          },
         });
   }
 
