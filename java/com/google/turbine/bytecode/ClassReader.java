@@ -140,8 +140,8 @@ public class ClassReader {
   /**
    * Processes a JVMS 4.7.16 RuntimeVisibleAnnotations attribute.
    *
-   * <p>The only annotation that affects header compilation is {@link @Retention} on annotation
-   * declarations.
+   * <p>The only annotations that affect header compilation are {@link @Retention} and
+   * {@link @Target} on annotation declarations.
    */
   private List<ClassFile.AnnotationInfo> readAnnotations(
       ConstantPoolReader constantPool, short accessFlags) {
@@ -162,19 +162,28 @@ public class ClassReader {
   }
 
   /**
-   * Extracts an {@link @Retention} {@link ClassFile.AnnotationInfo}, or else skips over the
-   * annotation.
+   * Extracts an {@link @Retention} or {@link ElementType} {@link ClassFile.AnnotationInfo}, or else
+   * skips over the annotation.
    */
   private ClassFile.AnnotationInfo readAnnotation(ConstantPoolReader constantPool) {
     int typeIndex = reader.u2();
     String annotationType = constantPool.utf8(typeIndex);
-    boolean retention = annotationType.equals("Ljava/lang/annotation/Retention;");
+    boolean read;
+    switch (annotationType) {
+      case "Ljava/lang/annotation/Retention;":
+      case "Ljava/lang/annotation/Target;":
+        read = true;
+        break;
+      default:
+        read = false;
+        break;
+    }
     int numElementValuePairs = reader.u2();
     ClassFile.AnnotationInfo result = null;
     for (int e = 0; e < numElementValuePairs; e++) {
       int elementNameIndex = reader.u2();
       String key = constantPool.utf8(elementNameIndex);
-      boolean value = retention && key.equals("value");
+      boolean value = read && key.equals("value");
       ElementValue tmp = readElementValue(constantPool, value);
       if (tmp != null) {
         result = new ClassFile.AnnotationInfo(annotationType, true, ImmutableMap.of(key, tmp));
@@ -207,9 +216,13 @@ public class ClassReader {
           int constNameIndex = reader.u2();
           if (value) {
             String typeName = constantPool.utf8(typeNameIndex);
-            if (typeName.equals("Ljava/lang/annotation/RetentionPolicy;")) {
-              String constName = constantPool.utf8(constNameIndex);
-              return new EnumConstValue(typeName, constName);
+            switch (typeName) {
+              case "Ljava/lang/annotation/RetentionPolicy;":
+              case "Ljava/lang/annotation/ElementType;":
+                String constName = constantPool.utf8(constNameIndex);
+                return new EnumConstValue(typeName, constName);
+              default:
+                break;
             }
           }
           break;
@@ -223,8 +236,16 @@ public class ClassReader {
       case '[':
         {
           int numValues = reader.u2();
-          for (int i = 0; i < numValues; i++) {
-            readElementValue(constantPool, false);
+          if (value) {
+            ImmutableList.Builder<ElementValue> elements = ImmutableList.builder();
+            for (int i = 0; i < numValues; i++) {
+              elements.add(readElementValue(constantPool, true));
+            }
+            return new ElementValue.ArrayValue(elements.build());
+          } else {
+            for (int i = 0; i < numValues; i++) {
+              readElementValue(constantPool, false);
+            }
           }
           break;
         }

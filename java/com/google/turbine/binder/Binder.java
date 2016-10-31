@@ -99,10 +99,13 @@ public class Binder {
             syms, henv, CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
 
     tenv =
-        canonicalizeTypes(
+        constants(
             syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
     tenv =
-        constants(
+        disambiguateTypeAnnotations(
+            syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
+    tenv =
+        canonicalizeTypes(
             syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
 
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
@@ -305,6 +308,21 @@ public class Binder {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       builder.putIfAbsent(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
+    }
+    return builder.build();
+  }
+
+  /**
+   * Disambiguate annotations on field types and method return types that could be declaration or
+   * type annotations.
+   */
+  private static Env<ClassSymbol, SourceTypeBoundClass> disambiguateTypeAnnotations(
+      ImmutableSet<ClassSymbol> syms,
+      Env<ClassSymbol, SourceTypeBoundClass> stenv,
+      Env<ClassSymbol, TypeBoundClass> tenv) {
+    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
+    for (ClassSymbol sym : syms) {
+      builder.putIfAbsent(sym, DisambiguateTypeAnnotations.bind(stenv.get(sym), tenv));
     }
     return builder.build();
   }

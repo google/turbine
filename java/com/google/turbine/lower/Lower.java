@@ -399,7 +399,7 @@ public class Lower {
    */
   @Nullable
   private Boolean isVisible(ClassSymbol sym) {
-    RetentionPolicy retention = env.get(sym).retention();
+    RetentionPolicy retention = env.get(sym).annotationRetention();
     switch (retention) {
       case CLASS:
         return false;
@@ -597,8 +597,13 @@ public class Lower {
         case WILD_TY:
           lowerWildTyTypeAnnotations((WildTy) type, path);
           break;
-        default:
+        case PRIM_TY:
+          lowerTypeAnnotations(((Type.PrimTy) type).annos(), path);
           break;
+        case VOID_TY:
+          break;
+        default:
+          throw new AssertionError(type.tyKind());
       }
     }
 
@@ -636,7 +641,7 @@ public class Lower {
         lowerTypeAnnotations(arrayTy.annos(), path);
         path = path.array();
       }
-      lowerTypeAnnotations(base, path.array());
+      lowerTypeAnnotations(base, path);
     }
 
     private void lowerClassTypeTypeAnnotations(ClassTy type, TypePath path) {

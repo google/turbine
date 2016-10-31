@@ -1,0 +1,15 @@
+=== Test.java ===
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.ElementType.PARAMETER;
+import java.lang.annotation.Target;
+
+@Target({TYPE_USE, PARAMETER}) @interface A {}
+@Target(TYPE_USE) @interface B {}
+@Target(PARAMETER) @interface C {}
+
+public class Test {
+  void f(@A @B @C int x) {}
+  void g(final @A @B @C int x) {}
+  void h(@A @B @C final int x) {}
+  void i(@A @B @C final int[] x) {}
+}

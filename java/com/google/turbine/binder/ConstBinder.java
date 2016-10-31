@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -30,6 +31,8 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.ArrayInitValue;
+import com.google.turbine.model.Const.Kind;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -43,7 +46,9 @@ import com.google.turbine.type.Type.WildLowerBoundedTy;
 import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.type.Type.WildUnboundedTy;
 import com.google.turbine.type.Type.WildUpperBoundedTy;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
+import java.util.EnumSet;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -84,6 +89,7 @@ public class ConstBinder {
         base.scope(),
         base.memberImports(),
         bindRetention(base.kind(), annos),
+        bindTarget(base.kind(), annos),
         annos,
         base.source());
   }
@@ -144,6 +150,53 @@ public class ConstBinder {
       }
     }
     return RetentionPolicy.CLASS;
+  }
+
+  /** Returns the target {@link ElementType}s for an annotation declaration, or {@code null}. */
+  @Nullable
+  static ImmutableSet<ElementType> bindTarget(TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
+    if (kind != TurbineTyKind.ANNOTATION) {
+      return null;
+    }
+    for (AnnoInfo annotation : annotations) {
+      switch (annotation.sym().binaryName()) {
+        case "java/lang/annotation/Target":
+          return bindTarget(annotation);
+        default:
+          break;
+      }
+    }
+    EnumSet<ElementType> target = EnumSet.allOf(ElementType.class);
+    target.remove(ElementType.TYPE_USE);
+    target.remove(ElementType.TYPE_PARAMETER);
+    return ImmutableSet.copyOf(target);
+  }
+
+  private static ImmutableSet<ElementType> bindTarget(AnnoInfo annotation) {
+    ImmutableSet.Builder<ElementType> result = ImmutableSet.builder();
+    Const val = annotation.values().get("value");
+    switch (val.kind()) {
+      case ARRAY:
+        for (Const element : ((ArrayInitValue) val).elements()) {
+          if (element.kind() == Kind.ENUM_CONSTANT) {
+            bindTargetElement(result, (EnumConstantValue) element);
+          }
+        }
+        break;
+      case ENUM_CONSTANT:
+        bindTargetElement(result, (EnumConstantValue) val);
+        break;
+      default:
+        break;
+    }
+    return result.build();
+  }
+
+  private static void bindTargetElement(
+      ImmutableSet.Builder<ElementType> target, EnumConstantValue enumVal) {
+    if (enumVal.sym().owner().binaryName().equals("java/lang/annotation/ElementType")) {
+      target.add(ElementType.valueOf(enumVal.sym().name()));
+    }
   }
 
   private ImmutableList<TypeBoundClass.FieldInfo> fields(

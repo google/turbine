@@ -19,6 +19,7 @@ package com.google.turbine.binder;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -43,6 +44,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
+import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -226,6 +228,7 @@ public class TypeBinder {
         scope,
         base.memberImports(),
         /*retention*/ null,
+        /*target*/ ImmutableSet.of(),
         annotations,
         base.source());
   }
@@ -282,7 +285,9 @@ public class TypeBinder {
               ImmutableList.of(
                   new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), true),
                   new ParamInfo(
-                      new Type.PrimTy(TurbineConstantTypeKind.INT), ImmutableList.of(), true)),
+                      new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
+                      ImmutableList.of(),
+                      true)),
               ImmutableList.of(),
               TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
               null,
@@ -404,7 +409,7 @@ public class TypeBinder {
         parameters.add(new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), /*synthetic*/ true));
         parameters.add(
             new ParamInfo(
-                new Type.PrimTy(TurbineConstantTypeKind.INT),
+                new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
                 ImmutableList.of(),
                 /*synthetic*/ true));
       }
@@ -527,7 +532,7 @@ public class TypeBinder {
       case CLASS_TY:
         return bindClassTy(scope, (Tree.ClassTy) t);
       case PRIM_TY:
-        return bindPrimTy((Tree.PrimTy) t);
+        return bindPrimTy(scope, (Tree.PrimTy) t);
       case ARR_TY:
         return bindArrTy(scope, (Tree.ArrTy) t);
       case VOID_TY:
@@ -594,8 +599,8 @@ public class TypeBinder {
     return new Type.ClassTy(classes.build());
   }
 
-  private static Type.PrimTy bindPrimTy(Tree.PrimTy t) {
-    return new Type.PrimTy(t.tykind());
+  private Type.PrimTy bindPrimTy(CompoundScope scope, PrimTy t) {
+    return new Type.PrimTy(t.tykind(), bindAnnotations(scope, t.annos()));
   }
 
   private Type bindArrTy(CompoundScope scope, Tree.ArrTy t) {

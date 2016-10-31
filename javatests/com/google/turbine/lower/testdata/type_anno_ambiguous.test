@@ -1,0 +1,45 @@
+%%% Annos.java %%%
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import java.lang.annotation.Target;
+
+@Target(TYPE_USE) @interface A {}
+@Target({TYPE_USE, FIELD}) @interface B {}
+@Target({FIELD}) @interface C {}
+@interface G {}
+
+=== Test.java ===
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import java.lang.annotation.Target;
+
+@Target({TYPE_USE, METHOD}) @interface D {}
+@Target(METHOD) @interface E {}
+@interface F {}
+
+public class Test {
+  @A @B @C @G public int a;
+  @A @B @C @G public String b;
+  @A @B @C @G public int[] c;
+  @A @B @C @G public Inner.InnerMost d;
+
+  public @A @B @C @G int e;
+  public @A @B @C @G String f;
+  public @A @B @C @G int[] g;
+
+  @A @B @C @G Inner.InnerMost h;
+  @A @B @C @G Test.Inner.InnerMost i;
+  @A @B @C @G StaticInner j;
+
+  @A @D @E @F public int f() { return 1; }
+  public @A @D @E @F int g() { return 1; }
+  public @A @D @E @F Inner.InnerMost h() { return null; }
+
+  class Inner {
+    class InnerMost {}
+  }
+
+  static class StaticInner {}
+}

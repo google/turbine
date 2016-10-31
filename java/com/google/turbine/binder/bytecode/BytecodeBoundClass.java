@@ -23,6 +23,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -32,7 +33,11 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.Kind;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
@@ -42,7 +47,9 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -408,8 +415,63 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
           });
 
   @Override
-  public RetentionPolicy retention() {
+  public RetentionPolicy annotationRetention() {
     return retention.get();
+  }
+
+  final Supplier<ImmutableSet<ElementType>> target =
+      Suppliers.memoize(
+          new Supplier<ImmutableSet<ElementType>>() {
+            @Override
+            public ImmutableSet<ElementType> get() {
+              if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
+                return null;
+              }
+              for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
+                switch (annotation.typeName()) {
+                  case "Ljava/lang/annotation/Target;":
+                    return bindTarget(annotation);
+                  default:
+                    break;
+                }
+              }
+              EnumSet<ElementType> target = EnumSet.allOf(ElementType.class);
+              target.remove(ElementType.TYPE_USE);
+              target.remove(ElementType.TYPE_PARAMETER);
+              return ImmutableSet.copyOf(target);
+            }
+          });
+
+  private static ImmutableSet<ElementType> bindTarget(AnnotationInfo annotation) {
+    ImmutableSet.Builder<ElementType> result = ImmutableSet.builder();
+    ElementValue val = annotation.elementValuePairs().get("value");
+    switch (val.kind()) {
+      case ARRAY:
+        for (ElementValue element : ((ArrayValue) val).elements()) {
+          if (element.kind() == Kind.ENUM) {
+            bindTargetElement(result, (EnumConstValue) element);
+          }
+        }
+        break;
+      case ENUM:
+        bindTargetElement(result, (EnumConstValue) val);
+        break;
+      default:
+        break;
+    }
+    return result.build();
+  }
+
+  private static void bindTargetElement(
+      ImmutableSet.Builder<ElementType> target, EnumConstValue enumVal) {
+    if (enumVal.typeName().equals("Ljava/lang/annotation/ElementType;")) {
+      target.add(ElementType.valueOf(enumVal.constName()));
+    }
+  }
+
+  @Override
+  public ImmutableSet<ElementType> annotationTarget() {
+    return target.get();
   }
 
   /**

@@ -216,9 +216,11 @@ public interface Type {
   class PrimTy implements Type {
 
     private final TurbineConstantTypeKind primtkind;
+    private final ImmutableList<AnnoInfo> annos;
 
-    public PrimTy(TurbineConstantTypeKind tykind) {
+    public PrimTy(TurbineConstantTypeKind tykind, ImmutableList<AnnoInfo> annos) {
       this.primtkind = tykind;
+      this.annos = annos;
     }
 
     /** The primtive type kind. */
@@ -229,6 +231,11 @@ public interface Type {
     @Override
     public TyKind tyKind() {
       return TyKind.PRIM_TY;
+    }
+
+    /** The type annotations. */
+    public ImmutableList<AnnoInfo> annos() {
+      return annos;
     }
   }
 

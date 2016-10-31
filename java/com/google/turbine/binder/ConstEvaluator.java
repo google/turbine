@@ -143,7 +143,7 @@ public class ConstEvaluator {
   Const evalClassLiteral(ClassLiteral t) {
     switch (t.type().kind()) {
       case PRIM_TY:
-        return new ClassValue(new Type.PrimTy(((PrimTy) t.type()).tykind()));
+        return new ClassValue(new Type.PrimTy(((PrimTy) t.type()).tykind(), ImmutableList.of()));
       case VOID_TY:
         return new ClassValue(Type.VOID);
       case CLASS_TY:

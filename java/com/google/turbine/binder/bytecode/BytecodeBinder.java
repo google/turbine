@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.sig.Sig;
+import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.WildTySig;
 import com.google.turbine.type.Type;
@@ -58,7 +59,7 @@ public class BytecodeBinder {
         return new Type.WildUnboundedTy(ImmutableList.of());
       case LOWER:
         return new Type.WildLowerBoundedTy(
-            bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
+            bindTy(((LowerBoundTySig) sig).bound(), scope), ImmutableList.of());
       case UPPER:
         return new Type.WildUpperBoundedTy(
             bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
@@ -70,7 +71,7 @@ public class BytecodeBinder {
   static Type bindTy(Sig.TySig sig, Function<String, TyVarSymbol> scope) {
     switch (sig.kind()) {
       case BASE_TY_SIG:
-        return new Type.PrimTy(((Sig.BaseTySig) sig).type());
+        return new Type.PrimTy(((Sig.BaseTySig) sig).type(), ImmutableList.of());
       case CLASS_TY_SIG:
         return bindClassTy((Sig.ClassTySig) sig, scope);
       case TY_VAR_SIG:

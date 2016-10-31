@@ -133,7 +133,9 @@ public class LowerSignatureTest {
   public void primitive() {
     assertThat(
             SigWriter.type(
-                new LowerSignature().signature(new Type.PrimTy(TurbineConstantTypeKind.BOOLEAN))))
+                new LowerSignature()
+                    .signature(
+                        new Type.PrimTy(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()))))
         .isEqualTo("Z");
   }
 
@@ -151,7 +153,8 @@ public class LowerSignatureTest {
                         new Type.ArrayTy(
                             new ArrayTy(
                                 new ArrayTy(
-                                    new Type.PrimTy(TurbineConstantTypeKind.BOOLEAN),
+                                    new Type.PrimTy(
+                                        TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
                                     ImmutableList.of()),
                                 ImmutableList.of()),
                             ImmutableList.of()))))
