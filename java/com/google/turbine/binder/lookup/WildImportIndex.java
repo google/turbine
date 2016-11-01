@@ -45,12 +45,14 @@ public class WildImportIndex implements Scope {
       ImmutableList<ImportDecl> imports) {
     ImmutableList.Builder<Supplier<Scope>> packageScopes = ImmutableList.builder();
     for (final ImportDecl i : imports) {
-      if (i.stat()) {
-        continue;
-      }
       if (!i.wild()) {
         continue;
       }
+
+      // Speculatively include static wildcard imports, in case the import is needed
+      // to resolve children of a static-imported canonical type.
+      // TODO(cushon): consider locking down static wildcard imports of types and backing this out
+
       packageScopes.add(
           Suppliers.memoize(
               new Supplier<Scope>() {
