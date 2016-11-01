@@ -49,6 +49,7 @@ import com.google.turbine.tree.TurbineModifier;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * A parser for the subset of Java required for header compilation.
@@ -881,18 +882,22 @@ public class Parser {
   }
 
   private ClassTy classty(ClassTy ty) {
-    return classty(ty, maybeAnnos());
+    return classty(ty, null);
   }
 
-  private ClassTy classty(ClassTy ty, ImmutableList<Anno> typeAnnos) {
+  private ClassTy classty(ClassTy ty, @Nullable ImmutableList<Anno> typeAnnos) {
     int pos = position;
     do {
+      if (typeAnnos == null) {
+        typeAnnos = maybeAnnos();
+      }
       String name = eatIdent();
       ImmutableList<Type> tyargs = ImmutableList.of();
       if (token == Token.LT) {
         tyargs = tyargs();
       }
       ty = new ClassTy(pos, Optional.fromNullable(ty), name, tyargs, typeAnnos);
+      typeAnnos = null;
     } while (maybe(Token.DOT));
     return ty;
   }
