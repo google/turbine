@@ -1,0 +1,21 @@
+=== Test.java ===
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE_USE)
+@interface A {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+@interface B {}
+
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.TYPE_USE)
+@interface C {}
+
+class Test {
+  @A @B @C int x;
+}

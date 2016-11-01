@@ -541,12 +541,16 @@ public class Lower {
     int typeParameterIndex = 0;
     for (TyVarInfo p : typeParameters) {
       for (AnnoInfo anno : p.annotations()) {
+        AnnotationInfo info = lowerAnnotation(anno);
+        if (info == null) {
+          continue;
+        }
         result.add(
             new TypeAnnotationInfo(
                 targetType,
                 new TypeAnnotationInfo.TypeParameterTarget(typeParameterIndex),
                 TypePath.root(),
-                lowerAnnotation(anno)));
+                info));
       }
       if (p.superClassBound() != null) {
         lowerTypeAnnotations(
@@ -618,7 +622,11 @@ public class Lower {
     /** Lower a list of type annotations. */
     private void lowerTypeAnnotations(ImmutableList<AnnoInfo> annos, TypePath path) {
       for (AnnoInfo anno : annos) {
-        result.add(new TypeAnnotationInfo(targetType, target, path, lowerAnnotation(anno)));
+        AnnotationInfo info = lowerAnnotation(anno);
+        if (info == null) {
+          continue;
+        }
+        result.add(new TypeAnnotationInfo(targetType, target, path, info));
       }
     }
 
