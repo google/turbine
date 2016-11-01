@@ -255,6 +255,7 @@ public class LowerIntegrationTest {
       "static_member_type_import.test",
       "type_anno_qual.test",
       "array_class_literal.test",
+      "underscore_literal.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

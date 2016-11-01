@@ -338,14 +338,14 @@ public class ConstExpressionParser {
         break;
       case FLOAT:
         try {
-          value = new Const.FloatValue(Float.parseFloat(text));
+          value = new Const.FloatValue(Float.parseFloat(text.replace("_", "")));
         } catch (NumberFormatException e) {
           throw error("invalid float literal");
         }
         break;
       case DOUBLE:
         try {
-          value = new Const.DoubleValue(Double.parseDouble(text));
+          value = new Const.DoubleValue(Double.parseDouble(text.replace("_", "")));
         } catch (NumberFormatException e) {
           throw error("invalid double literal");
         }

@@ -751,6 +751,7 @@ public class StreamLexer implements Lexer {
       case '5':
       case '6':
       case '7':
+      case '_':
         eat();
         break;
       default:

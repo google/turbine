@@ -1,0 +1,14 @@
+=== Test.java ===
+class Test {
+  static final double A1 = 1_000.0d;
+  static final double A2 = 1__000.0d;
+  static final double A3 = 1_0__00.0d;
+
+  static final float B1 = 1_000.0f;
+  static final float B2 = 1__000.0f;
+  static final float B3 = 1_0__00.0f;
+
+  static final long C1 = 0_000_000L;
+  static final long C2 = 0___000_000L;
+  static final long C3 = 0_000___000L;
+}
