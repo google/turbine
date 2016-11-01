@@ -1,0 +1,15 @@
+=== A.java ===
+package p;
+public class A implements Base.Nested {}
+
+
+=== Base.java ===
+package p;
+public class Base extends Super {}
+
+
+=== Super.java ===
+package p;
+public class Super {
+  interface Nested {}
+}

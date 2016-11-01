@@ -26,7 +26,6 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineFlag;
@@ -41,21 +40,21 @@ public class HierarchyBinder {
 
   /** Binds the type hierarchy (superclasses and interfaces) for a single class. */
   public static SourceHeaderBoundClass bind(
-      Symbol origin,
+      ClassSymbol origin,
       PackageSourceBoundClass base,
       Env<ClassSymbol, ? extends HeaderBoundClass> env) {
     return new HierarchyBinder(origin, base, env).bind();
   }
 
-  private final Symbol owner;
+  private final ClassSymbol origin;
   private final PackageSourceBoundClass base;
   private final Env<ClassSymbol, ? extends HeaderBoundClass> env;
 
   private HierarchyBinder(
-      Symbol owner,
+      ClassSymbol origin,
       PackageSourceBoundClass base,
       Env<ClassSymbol, ? extends HeaderBoundClass> env) {
-    this.owner = owner;
+    this.origin = origin;
     this.base = base;
     this.env = env;
   }
@@ -113,7 +112,7 @@ public class HierarchyBinder {
         case INTERFACE:
         case ANNOTATION:
         case CLASS:
-          superclass = !owner.equals(ClassSymbol.OBJECT) ? ClassSymbol.OBJECT : null;
+          superclass = !origin.equals(ClassSymbol.OBJECT) ? ClassSymbol.OBJECT : null;
           break;
         default:
           throw new AssertionError(decl.tykind());
@@ -137,7 +136,7 @@ public class HierarchyBinder {
 
     ImmutableMap.Builder<String, TyVarSymbol> typeParameters = ImmutableMap.builder();
     for (Tree.TyParam p : decl.typarams()) {
-      typeParameters.put(p.name(), new TyVarSymbol(owner, p.name()));
+      typeParameters.put(p.name(), new TyVarSymbol(origin, p.name()));
     }
 
     return new SourceHeaderBoundClass(
@@ -222,7 +221,7 @@ public class HierarchyBinder {
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      sym = Resolve.resolve(env, base.owner(), sym, bit);
+      sym = Resolve.resolve(env, origin, sym, bit);
       if (sym == null) {
         throw error(ty.position(), "symbol not found %s\n", bit);
       }
@@ -236,7 +235,7 @@ public class HierarchyBinder {
     // We could build out scopes for this, but it doesn't seem worth it. (And sharing the scopes
     // with other members of the same enclosing declaration would be complicated.)
     for (ClassSymbol curr = base.owner(); curr != null; curr = env.get(curr).owner()) {
-      ClassSymbol result = Resolve.resolve(env, base.owner(), curr, lookup.first());
+      ClassSymbol result = Resolve.resolve(env, origin, curr, lookup.first());
       if (result != null) {
         return new LookupResult(result, lookup);
       }
