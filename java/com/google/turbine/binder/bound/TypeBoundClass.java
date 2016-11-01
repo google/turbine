@@ -153,6 +153,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final Const defaultValue;
     private final MethDecl decl;
     private final ImmutableList<AnnoInfo> annotations;
+    private final ParamInfo receiver;
 
     public MethodInfo(
         MethodSymbol sym,
@@ -163,7 +164,8 @@ public interface TypeBoundClass extends HeaderBoundClass {
         int access,
         Const defaultValue,
         MethDecl decl,
-        ImmutableList<AnnoInfo> annotations) {
+        ImmutableList<AnnoInfo> annotations,
+        ParamInfo receiver) {
       this.sym = sym;
       this.tyParams = tyParams;
       this.returnType = returnType;
@@ -173,6 +175,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
       this.defaultValue = defaultValue;
       this.decl = decl;
       this.annotations = annotations;
+      this.receiver = receiver;
     }
 
     /** The method symbol. */
@@ -223,6 +226,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** Declaration annotations. */
     public ImmutableList<AnnoInfo> annotations() {
       return annotations;
+    }
+
+    /** Receiver parameter. */
+    public ParamInfo receiver() {
+      return receiver;
     }
   }
 

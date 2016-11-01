@@ -380,7 +380,8 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
         m.access(),
         null /*defaultValue*/,
         null /*decl*/,
-        ImmutableList.of());
+        ImmutableList.of(),
+        null);
   }
 
   @Override

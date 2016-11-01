@@ -125,17 +125,22 @@ public class ConstBinder {
         base.access(),
         value,
         base.decl(),
-        bindAnnotations(base.annotations(), scope));
+        bindAnnotations(base.annotations(), scope),
+        base.receiver() != null ? bindParameter(base.receiver(), scope) : null);
   }
 
   private ImmutableList<ParamInfo> bindParameters(
       ImmutableList<ParamInfo> formals, CompoundScope scope) {
     ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
     for (ParamInfo base : formals) {
-      ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations(), scope);
-      result.add(new ParamInfo(bindType(base.type()), annos, base.synthetic()));
+      result.add(bindParameter(base, scope));
     }
     return result.build();
+  }
+
+  private ParamInfo bindParameter(ParamInfo base, CompoundScope scope) {
+    ImmutableList<AnnoInfo> annos = bindAnnotations(base.annotations(), scope);
+    return new ParamInfo(bindType(base.type()), annos, base.synthetic());
   }
 
   /** Returns the {@link RetentionPolicy} for an annotation declaration, or {@code null}. */

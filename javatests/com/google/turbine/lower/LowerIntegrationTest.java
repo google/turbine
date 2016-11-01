@@ -251,6 +251,7 @@ public class LowerIntegrationTest {
       "unicode.test",
       "annotation_scope.test",
       "visible_package_private_toplevel.test",
+      "receiver_param.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

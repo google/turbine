@@ -504,6 +504,14 @@ public class Lower {
       }
     }
 
+    if (m.receiver() != null) {
+      lowerTypeAnnotations(
+          result,
+          m.receiver().type(),
+          TargetType.METHOD_RECEIVER_PARAMETER,
+          TypeAnnotationInfo.EMPTY_TARGET);
+    }
+
     lowerTypeAnnotations(
         result, m.returnType(), TargetType.METHOD_RETURN, TypeAnnotationInfo.EMPTY_TARGET);
 

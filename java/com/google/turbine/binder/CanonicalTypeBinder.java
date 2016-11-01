@@ -114,7 +114,8 @@ public class CanonicalTypeBinder {
               base.access(),
               base.defaultValue(),
               base.decl(),
-              base.annotations()));
+              base.annotations(),
+              base.receiver()));
     }
     return result.build();
   }

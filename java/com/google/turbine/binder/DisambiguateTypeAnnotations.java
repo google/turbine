@@ -102,7 +102,8 @@ public class DisambiguateTypeAnnotations {
         base.access(),
         base.defaultValue(),
         base.decl(),
-        declarationAnnotations.build());
+        declarationAnnotations.build(),
+        base.receiver() != null ? bindParam(env, base.receiver()) : null);
   }
 
   private static ImmutableList<ParamInfo> bindParameters(

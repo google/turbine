@@ -782,8 +782,27 @@ public class Parser {
       ty = new ArrTy(position, typeAnnos, ty);
       typeAnnos = maybeAnnos();
     }
-    String name = eatIdent();
+    // the parameter name is `this` for receiver parameters, and a qualified this expression
+    // for inner classes
+    String name = identOrThis();
+    while (token == Token.DOT) {
+      eat(Token.DOT);
+      // Overwrite everything up to the terminal 'this' for inner classes; we don't need it
+      name = identOrThis();
+    }
     return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>absent());
+  }
+
+  private String identOrThis() {
+    switch (token) {
+      case IDENT:
+        return eatIdent();
+      case THIS:
+        eat(Token.THIS);
+        return "this";
+      default:
+        throw error(token);
+    }
   }
 
   private void dropParens() {
@@ -1122,7 +1141,7 @@ public class Parser {
 
   private void eat(Token kind) {
     if (token != kind) {
-      throw error(token);
+      throw error("expected %s, was %s", kind, token);
     }
     next();
   }

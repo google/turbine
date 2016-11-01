@@ -274,7 +274,8 @@ public class TypeBinder {
             access,
             null,
             null,
-            ImmutableList.of()));
+            ImmutableList.of(),
+            null));
   }
 
   private void addEnumMethods(List<MethodInfo> methods) {
@@ -294,7 +295,8 @@ public class TypeBinder {
               TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
               null,
               null,
-              ImmutableList.of()));
+              ImmutableList.of(),
+              null));
     }
 
     methods.add(
@@ -307,7 +309,8 @@ public class TypeBinder {
             TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
             null,
-            ImmutableList.of()));
+            ImmutableList.of(),
+            null));
 
     methods.add(
         new MethodInfo(
@@ -319,7 +322,8 @@ public class TypeBinder {
             TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
             null,
-            ImmutableList.of()));
+            ImmutableList.of(),
+            null));
   }
 
   private static boolean hasConstructor(List<MethodInfo> methods) {
@@ -416,10 +420,16 @@ public class TypeBinder {
                 /*synthetic*/ true));
       }
     }
+    ParamInfo receiver = null;
     for (Tree.VarDecl p : t.params()) {
-      parameters.add(
+      ParamInfo param =
           new ParamInfo(
-              bindTy(scope, p.ty()), bindAnnotations(scope, p.annos()), /*synthetic*/ false));
+              bindTy(scope, p.ty()), bindAnnotations(scope, p.annos()), /*synthetic*/ false);
+      if (p.name().equals("this")) {
+        receiver = param;
+        continue;
+      }
+      parameters.add(param);
     }
     ImmutableList.Builder<Type> exceptions = ImmutableList.builder();
     for (Tree.ClassTy p : t.exntys()) {
@@ -460,7 +470,8 @@ public class TypeBinder {
         access,
         null,
         t,
-        annotations);
+        annotations,
+        receiver);
   }
 
   private static boolean hasEnclosingInstance(HeaderBoundClass base) {

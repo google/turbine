@@ -105,7 +105,8 @@ public class LowerTest {
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
-                ImmutableList.of()),
+                ImmutableList.of(),
+                null),
             new SourceTypeBoundClass.MethodInfo(
                 new MethodSymbol(new ClassSymbol("test/Test"), "g"),
                 ImmutableMap.of(
@@ -143,7 +144,8 @@ public class LowerTest {
                 TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
-                ImmutableList.of()));
+                ImmutableList.of(),
+                null));
     ImmutableList<SourceTypeBoundClass.FieldInfo> fields =
         ImmutableList.of(
             new SourceTypeBoundClass.FieldInfo(
