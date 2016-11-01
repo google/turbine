@@ -69,6 +69,11 @@ public class UnicodeEscapePreprocessorTest {
     }
   }
 
+  @Test
+  public void escapeEscape() {
+    assertThat(readAll("\\u005C\\\\u005C")).containsExactly('\\', '\\', '\\');
+  }
+
   private List<Character> readAll(String input) {
     UnicodeEscapePreprocessor reader = new UnicodeEscapePreprocessor(new SourceFile(null, input));
     List<Character> result = new ArrayList<>();

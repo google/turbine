@@ -82,7 +82,7 @@ public class UnicodeEscapePreprocessor {
     eat();
     acc |= (char) (hexDigit(ch) & 0xff);
     ch = acc;
-    evenLeadingSlashes = true;
+    evenLeadingSlashes = ch != '\\';
   }
 
   /** Consumes a hex digit. */
