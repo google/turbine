@@ -147,16 +147,22 @@ public class ConstEvaluator {
 
   /** Evaluates a class literal. */
   Const evalClassLiteral(ClassLiteral t) {
-    switch (t.type().kind()) {
+    return new ClassValue(evalClassLiteralType(t.type()));
+  }
+
+  private Type evalClassLiteralType(Tree.Type type) {
+    switch (type.kind()) {
       case PRIM_TY:
-        return new ClassValue(new Type.PrimTy(((PrimTy) t.type()).tykind(), ImmutableList.of()));
+        return new Type.PrimTy(((PrimTy) type).tykind(), ImmutableList.of());
       case VOID_TY:
-        return new ClassValue(Type.VOID);
+        return Type.VOID;
       case CLASS_TY:
-        return new ClassValue(
-            Type.ClassTy.asNonParametricClassTy(resolveClass((ClassTy) t.type())));
+        return Type.ClassTy.asNonParametricClassTy(resolveClass((ClassTy) type));
+      case ARR_TY:
+        return new Type.ArrayTy(
+            evalClassLiteralType(((Tree.ArrTy) type).elem()), ImmutableList.of());
       default:
-        throw new AssertionError(t.type().kind());
+        throw new AssertionError(type.kind());
     }
   }
 

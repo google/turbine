@@ -1126,7 +1126,11 @@ public class Parser {
       eat(LPAREN);
       while (token != RPAREN) {
         ConstExpressionParser cparser = new ConstExpressionParser(lexer, token);
-        args.add(cparser.expression());
+        Expression arg = cparser.expression();
+        if (arg == null) {
+          throw error("invalid annotation argument");
+        }
+        args.add(arg);
         token = cparser.token;
         if (!maybe(COMMA)) {
           break;

@@ -152,7 +152,8 @@ public class ConstExpressionParser {
       case BOOLEAN:
         return primitiveClassLiteral(TurbineConstantTypeKind.BOOLEAN);
       case VOID:
-        return primitiveClassLiteral(new Tree.VoidTy(position, ImmutableList.of()));
+        eat();
+        return finishClassLiteral(position, new Tree.VoidTy(position, ImmutableList.of()));
       case AT:
         return annotation();
       default:
@@ -161,20 +162,8 @@ public class ConstExpressionParser {
   }
 
   private Expression primitiveClassLiteral(TurbineConstantTypeKind type) {
-    return primitiveClassLiteral(new Tree.PrimTy(position, ImmutableList.of(), type));
-  }
-
-  private Expression primitiveClassLiteral(Tree.Type type) {
     eat();
-    if (token != Token.DOT) {
-      return null;
-    }
-    eat();
-    if (token != Token.CLASS) {
-      return null;
-    }
-    eat();
-    return new ClassLiteral(position, type);
+    return finishClassLiteral(position, new Tree.PrimTy(position, ImmutableList.of(), type));
   }
 
   private Tree.Expression maybeCast() {
@@ -428,6 +417,9 @@ public class ConstExpressionParser {
     ImmutableList.Builder<String> bits = ImmutableList.builder();
     bits.add(lexer.stringValue());
     eat();
+    if (token == Token.LBRACK) {
+      return finishClassLiteral(pos, asClassTy(bits.build()));
+    }
     while (token == Token.DOT) {
       eat();
       switch (token) {
@@ -444,6 +436,26 @@ public class ConstExpressionParser {
       eat();
     }
     return new Tree.ConstVarName(pos, bits.build());
+  }
+
+  private Expression finishClassLiteral(int pos, Tree.Type type) {
+    while (token == Token.LBRACK) {
+      eat();
+      if (token != Token.RBRACK) {
+        return null;
+      }
+      eat();
+      type = new Tree.ArrTy(position, ImmutableList.of(), type);
+    }
+    if (token != Token.DOT) {
+      return null;
+    }
+    eat();
+    if (token != Token.CLASS) {
+      return null;
+    }
+    eat();
+    return new ClassLiteral(pos, type);
   }
 
   public Tree.Expression expression() {

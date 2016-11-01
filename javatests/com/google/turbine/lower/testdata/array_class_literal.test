@@ -1,0 +1,11 @@
+=== Test.java ===
+@interface Anno {
+  Class<?> value() default Object.class;
+}
+
+class Test {
+  @Anno(byte[].class) int a;
+  @Anno(byte[][].class) int b;
+  @Anno(int[][].class) int c;
+  @Anno(Object[].class) int d;
+}
