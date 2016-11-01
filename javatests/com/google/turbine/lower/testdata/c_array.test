@@ -1,0 +1,20 @@
+=== Test.java ===
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+@Target({ElementType.TYPE_USE, ElementType.PARAMETER})
+@interface A {}
+@Target(ElementType.TYPE_USE)
+@interface B {}
+@Target(ElementType.TYPE_USE)
+@interface C {}
+
+class Test {
+  public static void main(@A String args[]) {}
+  void f(@A String @B [] args []) {}
+  void g(@A String args [] []) {}
+  void h(@A String @B [] @C [] args) {}
+  void i(@A String @B [] args [] []) {}
+  void j(@A String @B [] @C [] args []) {}
+}
+

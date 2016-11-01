@@ -37,6 +37,7 @@ import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.Tree.ImportDecl;
+import com.google.turbine.tree.Tree.Kind;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.PkgDecl;
 import com.google.turbine.tree.Tree.PrimTy;
@@ -654,9 +655,9 @@ public class Parser {
       Type ty = baseTy;
       if (it.hasNext()) {
         SavedToken next = it.next();
+        int extra = 0;
         while (next.token == Token.LBRACK) {
-          // TODO(cushon): type annotations on c-style array dims
-          ty = new ArrTy(position, ImmutableList.of(), ty);
+          extra++;
           next = it.next();
           if (next.token != Token.RBRACK) {
             throw error("%s", next);
@@ -665,6 +666,7 @@ public class Parser {
             next = it.next();
           }
         }
+        ty = extraDims(ty, extra);
       }
       // TODO(cushon): skip more fields that are definitely non-const
       IteratorLexer lexer = new IteratorLexer(this.lexer.source(), it);
@@ -690,11 +692,12 @@ public class Parser {
     eat(Token.RPAREN);
 
     if (token == Token.LBRACK) {
-      // TODO(cushon): support type annotations here. or not.
+      int extra = 0;
       while (maybe(Token.LBRACK)) {
         eat(Token.RBRACK);
-        result = new ArrTy(position, ImmutableList.of(), result);
+        extra++;
       }
+      result = extraDims(result, extra);
     }
 
     ImmutableList.Builder<ClassTy> exceptions = ImmutableList.builder();
@@ -744,6 +747,25 @@ public class Parser {
         Optional.fromNullable(defaultValue));
   }
 
+  /**
+   * Given a base {@code type} and some number of {@code extra} c-style array dimension specifiers,
+   * construct a new array type.
+   *
+   * <p>For reasons that are unclear from the spec, {@code int @A [] x []} is equivalent to {@code
+   * int [] @A [] x}, not {@code int @A [] [] x}.
+   */
+  // TODO(cushon): support type annotations here. or not.
+  private Type extraDims(Type type, int extra) {
+    if (extra == 0) {
+      return type;
+    }
+    if (type.kind() == Kind.ARR_TY) {
+      ArrTy arrTy = (ArrTy) type;
+      return new ArrTy(arrTy.position(), arrTy.annos(), extraDims(arrTy.elem(), extra));
+    }
+    return new ArrTy(type.position(), ImmutableList.of(), extraDims(type, extra - 1));
+  }
+
   private ImmutableList<ClassTy> exceptions() {
     ImmutableList.Builder<ClassTy> result = ImmutableList.builder();
     result.add(classty());
@@ -791,6 +813,12 @@ public class Parser {
       // Overwrite everything up to the terminal 'this' for inner classes; we don't need it
       name = identOrThis();
     }
+    int extra = 0;
+    while (maybe(Token.LBRACK)) {
+      eat(Token.RBRACK);
+      extra++;
+    }
+    ty = extraDims(ty, extra);
     return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>absent());
   }
 
