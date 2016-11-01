@@ -646,22 +646,22 @@ public class ClassFile {
 
       /** The root type_path_kind, used for initialization. */
       public static TypePath root() {
-        return new TypePath(-1, null, null);
+        return new TypePath(null, null);
       }
 
       /** Adds an array type_path_kind entry. */
       public TypePath array() {
-        return new TypePath(-1, Kind.ARRAY, this);
+        return new TypePath(Kind.ARRAY, this);
       }
 
       /** Adds a nested type type_path_kind entry. */
       public TypePath nested() {
-        return new TypePath(-1, Kind.NESTED, this);
+        return new TypePath(Kind.NESTED, this);
       }
 
       /** Adds a wildcard bound type_path_kind entry. */
       public TypePath wild() {
-        return new TypePath(-1, Kind.WILDCARD_BOUND, this);
+        return new TypePath(Kind.WILDCARD_BOUND, this);
       }
 
       /** Adds a type argument type_path_kind entry. */
@@ -686,6 +686,11 @@ public class ClassFile {
       private final TypePath parent;
       private final Kind kind;
       private final int index;
+
+      private TypePath(Kind kind, TypePath parent) {
+        // JVMS 4.7.20.2: type_argument_index is 0 if the bound kind is not TYPE_ARGUMENT
+        this(0, kind, parent);
+      }
 
       private TypePath(int index, Kind kind, TypePath parent) {
         this.index = index;

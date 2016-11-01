@@ -51,8 +51,12 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.TypePath;
 
 @RunWith(JUnit4.class)
 public class LowerTest {
@@ -281,5 +285,48 @@ public class LowerTest {
                     "    descriptor: ()V",
                     "}",
                     ""));
+  }
+
+  @Test
+  public void typePath() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    Joiner.on('\n')
+                        .join(
+                            "import java.lang.annotation.ElementType;",
+                            "import java.lang.annotation.Target;",
+                            "import java.util.List;",
+                            "@Target({ElementType.TYPE_USE}) @interface Anno {}",
+                            "class Test {",
+                            "  public @Anno int[][] xs;",
+                            "}"))),
+            ImmutableList.of(),
+            BOOTCLASSPATH);
+    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
+    TypePath[] path = new TypePath[1];
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM5) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String desc, String signature, Object value) {
+                return new FieldVisitor(Opcodes.ASM5) {
+                  @Override
+                  public AnnotationVisitor visitTypeAnnotation(
+                      int typeRef, TypePath typePath, String desc, boolean visible) {
+                    path[0] = typePath;
+                    return null;
+                  };
+                };
+              }
+            },
+            0);
+    assertThat(path[0].getLength()).isEqualTo(2);
+    assertThat(path[0].getStep(0)).isEqualTo(TypePath.ARRAY_ELEMENT);
+    assertThat(path[0].getStepArgument(0)).isEqualTo(0);
+    assertThat(path[0].getStep(1)).isEqualTo(TypePath.ARRAY_ELEMENT);
+    assertThat(path[0].getStepArgument(1)).isEqualTo(0);
   }
 }
