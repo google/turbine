@@ -181,7 +181,6 @@ public class LowerTest {
             null,
             null,
             null,
-            null,
             ImmutableList.of(),
             null);
 
@@ -199,7 +198,6 @@ public class LowerTest {
             ClassSymbol.OBJECT,
             ImmutableList.of(),
             ImmutableMap.of(),
-            null,
             null,
             null,
             null,

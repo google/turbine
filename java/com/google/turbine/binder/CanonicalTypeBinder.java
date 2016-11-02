@@ -67,8 +67,7 @@ public class CanonicalTypeBinder {
         base.enclosingScope(),
         base.scope(),
         base.memberImports(),
-        base.annotationRetention(),
-        base.annotationTarget(),
+        base.annotationMetadata(),
         base.annotations(),
         base.source());
   }

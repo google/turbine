@@ -19,6 +19,8 @@ package com.google.turbine.binder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.binder.bound.AnnotationMetadata;
+import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -43,6 +45,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildLowerBoundedTy;
 import com.google.turbine.type.Type.WildTy;
@@ -50,9 +53,7 @@ import com.google.turbine.type.Type.WildUnboundedTy;
 import com.google.turbine.type.Type.WildUpperBoundedTy;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
-import java.util.EnumSet;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /** Binding pass to evaluate constant expressions. */
 public class ConstBinder {
@@ -93,8 +94,7 @@ public class ConstBinder {
         base.enclosingScope(),
         base.scope(),
         base.memberImports(),
-        bindRetention(base.kind(), annos),
-        bindTarget(base.kind(), annos),
+        bindAnnotationMetadata(base.kind(), annos),
         annos,
         base.source());
   }
@@ -143,46 +143,42 @@ public class ConstBinder {
     return new ParamInfo(bindType(base.type()), annos, base.synthetic());
   }
 
-  /** Returns the {@link RetentionPolicy} for an annotation declaration, or {@code null}. */
-  @Nullable
-  static RetentionPolicy bindRetention(TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
+  static AnnotationMetadata bindAnnotationMetadata(
+      TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
     if (kind != TurbineTyKind.ANNOTATION) {
       return null;
     }
-    for (AnnoInfo annotation : annotations) {
-      if (annotation.sym().toString().equals("java/lang/annotation/Retention")) {
-        Const value = annotation.values().get("value");
-        if (value.kind() != Const.Kind.ENUM_CONSTANT) {
-          break;
-        }
-        EnumConstantValue enumValue = (EnumConstantValue) value;
-        if (!enumValue.sym().owner().toString().equals("java/lang/annotation/RetentionPolicy")) {
-          break;
-        }
-        return RetentionPolicy.valueOf(enumValue.sym().name());
-      }
-    }
-    return RetentionPolicy.CLASS;
-  }
-
-  /** Returns the target {@link ElementType}s for an annotation declaration, or {@code null}. */
-  @Nullable
-  static ImmutableSet<ElementType> bindTarget(TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
-    if (kind != TurbineTyKind.ANNOTATION) {
-      return null;
-    }
+    RetentionPolicy retention = null;
+    ImmutableSet<ElementType> target = null;
+    ClassSymbol repeatable = null;
     for (AnnoInfo annotation : annotations) {
       switch (annotation.sym().binaryName()) {
+        case "java/lang/annotation/Retention":
+          retention = bindRetention(annotation);
+          break;
         case "java/lang/annotation/Target":
-          return bindTarget(annotation);
+          target = bindTarget(annotation);
+          break;
+        case "java/lang/annotation/Repeatable":
+          repeatable = bindRepeatable(annotation);
+          break;
         default:
           break;
       }
     }
-    EnumSet<ElementType> target = EnumSet.allOf(ElementType.class);
-    target.remove(ElementType.TYPE_USE);
-    target.remove(ElementType.TYPE_PARAMETER);
-    return ImmutableSet.copyOf(target);
+    return new AnnotationMetadata(retention, target, repeatable);
+  }
+
+  private static RetentionPolicy bindRetention(AnnoInfo annotation) {
+    Const value = annotation.values().get("value");
+    if (value.kind() != Kind.ENUM_CONSTANT) {
+      return null;
+    }
+    EnumConstantValue enumValue = (EnumConstantValue) value;
+    if (!enumValue.sym().owner().toString().equals("java/lang/annotation/RetentionPolicy")) {
+      return null;
+    }
+    return RetentionPolicy.valueOf(enumValue.sym().name());
   }
 
   private static ImmutableSet<ElementType> bindTarget(AnnoInfo annotation) {
@@ -203,6 +199,18 @@ public class ConstBinder {
         break;
     }
     return result.build();
+  }
+
+  private static ClassSymbol bindRepeatable(AnnoInfo annotation) {
+    Const value = annotation.values().get("value");
+    if (value.kind() != Kind.CLASS_LITERAL) {
+      return null;
+    }
+    Type type = ((ClassValue) value).type();
+    if (type.tyKind() != TyKind.CLASS_TY) {
+      return null;
+    }
+    return ((ClassTy) type).sym();
   }
 
   private static void bindTargetElement(

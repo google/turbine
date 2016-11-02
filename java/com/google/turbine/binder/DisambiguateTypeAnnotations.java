@@ -16,8 +16,14 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -25,6 +31,7 @@ import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.model.Const;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -33,6 +40,8 @@ import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import java.lang.annotation.ElementType;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -73,9 +82,8 @@ public class DisambiguateTypeAnnotations {
         base.enclosingScope(),
         base.scope(),
         base.memberImports(),
-        base.annotationRetention(),
-        base.annotationTarget(),
-        base.annotations(),
+        base.annotationMetadata(),
+        groupRepeated(env, base.annotations()),
         base.source());
   }
 
@@ -133,9 +141,12 @@ public class DisambiguateTypeAnnotations {
       Type type,
       ImmutableList<AnnoInfo> annotations,
       Builder<AnnoInfo> declarationAnnotations) {
+    // desugar @Repeatable annotations before disambiguating: annotation containers may target
+    // a subset of the types targeted by their element annotation
+    annotations = groupRepeated(env, annotations);
     ImmutableList.Builder<AnnoInfo> typeAnnotations = ImmutableList.builder();
     for (AnnoInfo anno : annotations) {
-      Set<ElementType> target = env.get(anno.sym()).annotationTarget();
+      Set<ElementType> target = env.get(anno.sym()).annotationMetadata().target();
       if (target.contains(ElementType.TYPE_USE)) {
         typeAnnotations.add(anno);
       }
@@ -218,7 +229,7 @@ public class DisambiguateTypeAnnotations {
       Builder<AnnoInfo> removed) {
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (AnnoInfo anno : annos) {
-      Set<ElementType> target = env.get(anno.sym()).annotationTarget();
+      Set<ElementType> target = env.get(anno.sym()).annotationMetadata().target();
       if (target.contains(ElementType.TYPE_USE)) {
         result.add(anno);
       } else {
@@ -226,6 +237,46 @@ public class DisambiguateTypeAnnotations {
       }
     }
     result.addAll(extra);
+    return result.build();
+  }
+
+  /**
+   * Group repeated annotations and wrap them in their container annotation.
+   *
+   * <p>For example, convert {@code @Foo @Foo} to {@code @Foos({@Foo, @Foo})}.
+   *
+   * <p>This method is used by {@link DisambiguateTypeAnnotations} for declaration annotations, and
+   * by {@link Lower} for type annotations. We could group type annotations here, but it would
+   * require another rewrite pass.
+   */
+  public static ImmutableList<AnnoInfo> groupRepeated(
+      Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
+    Multimap<ClassSymbol, AnnoInfo> repeated = LinkedHashMultimap.create();
+    for (AnnoInfo anno : annotations) {
+      repeated.put(anno.sym(), anno);
+    }
+    Builder<AnnoInfo> result = ImmutableList.builder();
+    for (Map.Entry<ClassSymbol, Collection<AnnoInfo>> entry : repeated.asMap().entrySet()) {
+      ClassSymbol symbol = entry.getKey();
+      Collection<AnnoInfo> infos = entry.getValue();
+      if (infos.size() > 1) {
+        Builder<Const> elements = ImmutableList.builder();
+        for (AnnoInfo element : infos) {
+          elements.add(new AnnotationValue(element.sym(), element.values()));
+        }
+        ClassSymbol container = env.get(symbol).annotationMetadata().repeatable();
+        if (container == null) {
+          throw new AssertionError(symbol);
+        }
+        result.add(
+            new AnnoInfo(
+                container,
+                null,
+                ImmutableMap.of("value", new Const.ArrayInitValue(elements.build()))));
+      } else {
+        result.add(getOnlyElement(infos));
+      }
+    }
     return result.build();
   }
 }

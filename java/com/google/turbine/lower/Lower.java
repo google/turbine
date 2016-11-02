@@ -16,6 +16,8 @@
 
 package com.google.turbine.lower;
 
+import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeated;
+
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -356,22 +358,17 @@ public class Lower {
       // anything that lexically encloses the class being lowered
       // must be in the same compilation unit, so we have source
       // information for it
-      // TODO(cushon): remove this cast once we're reading type parameters from bytecode
       TypeBoundClass owner = env.get((ClassSymbol) ownerSym);
-      if (!(owner instanceof SourceTypeBoundClass)) {
-        throw new AssertionError(sym);
-      }
-      return ((SourceTypeBoundClass) owner).typeParameterTypes().get(sym);
+      return owner.typeParameterTypes().get(sym);
     }
   }
 
   private ImmutableList<AnnotationInfo> lowerAnnotations(ImmutableList<AnnoInfo> annotations) {
     ImmutableList.Builder<AnnotationInfo> lowered = ImmutableList.builder();
-    outer:
     for (AnnoInfo annotation : annotations) {
       AnnotationInfo anno = lowerAnnotation(annotation);
       if (anno == null) {
-        continue outer;
+        continue;
       }
       lowered.add(anno);
     }
@@ -399,7 +396,7 @@ public class Lower {
    */
   @Nullable
   private Boolean isVisible(ClassSymbol sym) {
-    RetentionPolicy retention = env.get(sym).annotationRetention();
+    RetentionPolicy retention = env.get(sym).annotationMetadata().retention();
     switch (retention) {
       case CLASS:
         return false;
@@ -540,7 +537,7 @@ public class Lower {
       TargetType boundTargetType) {
     int typeParameterIndex = 0;
     for (TyVarInfo p : typeParameters) {
-      for (AnnoInfo anno : p.annotations()) {
+      for (AnnoInfo anno : groupRepeated(env, p.annotations())) {
         AnnotationInfo info = lowerAnnotation(anno);
         if (info == null) {
           continue;
@@ -621,7 +618,7 @@ public class Lower {
 
     /** Lower a list of type annotations. */
     private void lowerTypeAnnotations(ImmutableList<AnnoInfo> annos, TypePath path) {
-      for (AnnoInfo anno : annos) {
+      for (AnnoInfo anno : groupRepeated(env, annos)) {
         AnnotationInfo info = lowerAnnotation(anno);
         if (info == null) {
           continue;

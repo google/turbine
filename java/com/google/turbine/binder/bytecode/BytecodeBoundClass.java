@@ -24,6 +24,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -36,6 +37,7 @@ import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.Kind;
 import com.google.turbine.bytecode.ClassReader;
@@ -49,7 +51,6 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -389,59 +390,47 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return methods.get();
   }
 
-  final Supplier<RetentionPolicy> retention =
+  final Supplier<AnnotationMetadata> annotationMetadata =
       Suppliers.memoize(
-          new Supplier<RetentionPolicy>() {
+          new Supplier<AnnotationMetadata>() {
             @Override
-            public RetentionPolicy get() {
+            public AnnotationMetadata get() {
               if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
                 return null;
               }
-              for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
-                if (!annotation.typeName().equals("Ljava/lang/annotation/Retention;")) {
-                  continue;
-                }
-                ElementValue val = annotation.elementValuePairs().get("value");
-                if (val.kind() != ElementValue.Kind.ENUM) {
-                  continue;
-                }
-                ElementValue.EnumConstValue enumVal = (ElementValue.EnumConstValue) val;
-                if (!enumVal.typeName().equals("Ljava/lang/annotation/RetentionPolicy;")) {
-                  continue;
-                }
-                return RetentionPolicy.valueOf(enumVal.constName());
-              }
-              return RetentionPolicy.CLASS;
-            }
-          });
-
-  @Override
-  public RetentionPolicy annotationRetention() {
-    return retention.get();
-  }
-
-  final Supplier<ImmutableSet<ElementType>> target =
-      Suppliers.memoize(
-          new Supplier<ImmutableSet<ElementType>>() {
-            @Override
-            public ImmutableSet<ElementType> get() {
-              if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
-                return null;
-              }
+              RetentionPolicy retention = null;
+              ImmutableSet<ElementType> target = null;
+              ClassSymbol repeatable = null;
               for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
                 switch (annotation.typeName()) {
+                  case "Ljava/lang/annotation/Retention;":
+                    retention = bindRetention(annotation);
+                    break;
                   case "Ljava/lang/annotation/Target;":
-                    return bindTarget(annotation);
+                    target = bindTarget(annotation);
+                    break;
+                  case "Ljava/lang/annotation/Repeatable;":
+                    repeatable = bindRepeatable(annotation);
+                    break;
                   default:
                     break;
                 }
               }
-              EnumSet<ElementType> target = EnumSet.allOf(ElementType.class);
-              target.remove(ElementType.TYPE_USE);
-              target.remove(ElementType.TYPE_PARAMETER);
-              return ImmutableSet.copyOf(target);
+              return new AnnotationMetadata(retention, target, repeatable);
             }
           });
+
+  private RetentionPolicy bindRetention(AnnotationInfo annotation) {
+    ElementValue val = annotation.elementValuePairs().get("value");
+    if (val.kind() != Kind.ENUM) {
+      return null;
+    }
+    EnumConstValue enumVal = (EnumConstValue) val;
+    if (!enumVal.typeName().equals("Ljava/lang/annotation/RetentionPolicy;")) {
+      return null;
+    }
+    return RetentionPolicy.valueOf(enumVal.constName());
+  }
 
   private static ImmutableSet<ElementType> bindTarget(AnnotationInfo annotation) {
     ImmutableSet.Builder<ElementType> result = ImmutableSet.builder();
@@ -470,9 +459,21 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     }
   }
 
+  private static ClassSymbol bindRepeatable(AnnotationInfo annotation) {
+    ElementValue val = annotation.elementValuePairs().get("value");
+    switch (val.kind()) {
+      case CLASS:
+        String className = ((ConstClassValue) val).className();
+        return new ClassSymbol(className.substring(1, className.length() - 1));
+      default:
+        break;
+    }
+    return null;
+  }
+
   @Override
-  public ImmutableSet<ElementType> annotationTarget() {
-    return target.get();
+  public AnnotationMetadata annotationMetadata() {
+    return annotationMetadata.get();
   }
 
   /**

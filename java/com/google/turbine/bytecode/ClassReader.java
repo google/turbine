@@ -19,6 +19,7 @@ package com.google.turbine.bytecode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
@@ -172,6 +173,7 @@ public class ClassReader {
     switch (annotationType) {
       case "Ljava/lang/annotation/Retention;":
       case "Ljava/lang/annotation/Target;":
+      case "Ljava/lang/annotation/Repeatable;":
         read = true;
         break;
       default:
@@ -193,8 +195,8 @@ public class ClassReader {
   }
 
   /**
-   * Extracts the value of an {@link @Retention} annotation, or else skips over the element value
-   * pair.
+   * Extracts the value of an annotation declaration meta-annotation, or else skips over the element
+   * value pair.
    */
   private ElementValue readElementValue(ConstantPoolReader constantPool, boolean value) {
     int tag = reader.u1();
@@ -228,8 +230,9 @@ public class ClassReader {
           break;
         }
       case 'c':
-        reader.u2(); // classInfoIndex
-        break;
+        int classInfoIndex = reader.u2();
+        String className = constantPool.utf8(classInfoIndex);
+        return new ConstClassValue(className);
       case '@':
         readAnnotation(constantPool);
         break;

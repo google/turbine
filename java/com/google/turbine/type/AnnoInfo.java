@@ -16,6 +16,8 @@
 
 package com.google.turbine.type;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -30,7 +32,7 @@ public class AnnoInfo {
 
   public AnnoInfo(
       ClassSymbol sym, ImmutableList<Expression> args, ImmutableMap<String, Const> values) {
-    this.sym = sym;
+    this.sym = requireNonNull(sym);
     this.args = args;
     this.values = values;
   }

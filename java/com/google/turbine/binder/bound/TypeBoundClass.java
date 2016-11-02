@@ -18,7 +18,6 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -27,8 +26,6 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.RetentionPolicy;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
 public interface TypeBoundClass extends HeaderBoundClass {
@@ -44,11 +41,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
   /** Declared methods. */
   ImmutableList<MethodInfo> methods();
 
-  /** Retention policy for annotation declarations, {@code null} for other declarations. */
-  RetentionPolicy annotationRetention();
-
-  /** Target element types for annotation declarations, {@code null} for other declarations. */
-  ImmutableSet<ElementType> annotationTarget();
+  /**
+   * Annotation metadata, e.g. from {@link @java.lang.annotation.Target}, {@link
+   * java.lang.annotation.Retention}, and {@link java.lang.annotation.Repeatable}.
+   */
+  AnnotationMetadata annotationMetadata();
 
   /** A type parameter declaration. */
   class TyVarInfo {

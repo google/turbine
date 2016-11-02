@@ -1,0 +1,51 @@
+=== A.java ===
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Target;
+
+@Target({
+  ElementType.TYPE_USE, 
+  ElementType.FIELD, 
+  ElementType.TYPE_PARAMETER,
+  ElementType.PARAMETER,
+})
+@interface As {
+  A[] value() default {};
+}
+
+@Repeatable(As.class)
+@Target({
+  ElementType.TYPE_USE, 
+  ElementType.FIELD, 
+  ElementType.TYPE_PARAMETER,
+  ElementType.PARAMETER,
+})
+@interface A {}
+
+%%% B.java %%%
+import java.lang.annotation.Repeatable;
+
+@interface Bs {
+  B[] value() default {};
+}
+
+@Repeatable(Bs.class)
+@interface B {}
+
+=== C.java ===
+import java.lang.annotation.Repeatable;
+
+@interface Cs {
+  C[] value() default {};
+}
+
+@Repeatable(Cs.class)
+@interface C {}
+
+=== Test.java ===
+import java.util.Map;
+class Test {
+  @A @A @B @B int x;
+  Map<@A @A Integer, @A String> y;
+  <@A @A X> @A X f(@A @A int x) { return null; }
+}

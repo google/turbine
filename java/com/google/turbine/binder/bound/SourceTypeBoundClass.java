@@ -18,7 +18,6 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -28,8 +27,6 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.RetentionPolicy;
 import javax.annotation.Nullable;
 
 /** A HeaderBoundClass for classes compiled from source. */
@@ -52,8 +49,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final CompoundScope enclosingScope;
   private final CompoundScope scope;
   private final MemberImportIndex memberImports;
-  private final RetentionPolicy retention;
-  private final ImmutableSet<ElementType> annotationTarget;
+  private final AnnotationMetadata annotationMetadata;
   private final ImmutableList<AnnoInfo> annotations;
   private final SourceFile source;
 
@@ -73,8 +69,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       CompoundScope enclosingScope,
       CompoundScope scope,
       MemberImportIndex memberImports,
-      RetentionPolicy retention,
-      ImmutableSet<ElementType> annotationTarget,
+      AnnotationMetadata annotationMetadata,
       ImmutableList<AnnoInfo> annotations,
       SourceFile source) {
     this.interfaceTypes = interfaceTypes;
@@ -92,8 +87,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.enclosingScope = enclosingScope;
     this.scope = scope;
     this.memberImports = memberImports;
-    this.retention = retention;
-    this.annotationTarget = annotationTarget;
+    this.annotationMetadata = annotationMetadata;
     this.annotations = annotations;
     this.source = source;
   }
@@ -152,13 +146,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public RetentionPolicy annotationRetention() {
-    return retention;
-  }
-
-  @Override
-  public ImmutableSet<ElementType> annotationTarget() {
-    return annotationTarget;
+  public AnnotationMetadata annotationMetadata() {
+    return annotationMetadata;
   }
 
   /** Declared fields. */

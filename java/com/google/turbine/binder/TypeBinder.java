@@ -19,7 +19,6 @@ package com.google.turbine.binder;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -229,8 +228,7 @@ public class TypeBinder {
         enclosingScope,
         scope,
         base.memberImports(),
-        /*retention*/ null,
-        /*target*/ ImmutableSet.of(),
+        /* annotation metadata */ null,
         annotations,
         base.source());
   }
