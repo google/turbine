@@ -215,19 +215,9 @@ public class ConstEvaluator {
     if (field != null) {
       return field;
     }
-    LookupResult result = scope.lookup(new LookupKey(t.name()));
-    if (result != null) {
-      ClassSymbol sym = (ClassSymbol) result.sym();
-      for (int i = 0; i < result.remaining().size() - 1; i++) {
-        sym = Resolve.resolve(env, sym, sym, result.remaining().get(i));
-        if (sym == null) {
-          return null;
-        }
-      }
-      field = Resolve.resolveField(env, owner, sym, Iterables.getLast(result.remaining()));
-      if (field != null) {
-        return field;
-      }
+    field = resolveQualifiedField(t);
+    if (field != null) {
+      return field;
     }
     ClassSymbol classSymbol = base.memberImports().singleMemberImport(simpleName);
     if (classSymbol != null) {
@@ -244,6 +234,24 @@ public class ConstEvaluator {
       }
     }
     return null;
+  }
+
+  private FieldInfo resolveQualifiedField(ConstVarName t) {
+    if (t.name().size() <= 1) {
+      return null;
+    }
+    LookupResult result = scope.lookup(new LookupKey(t.name()));
+    if (result == null) {
+      return null;
+    }
+    ClassSymbol sym = (ClassSymbol) result.sym();
+    for (int i = 0; i < result.remaining().size() - 1; i++) {
+      sym = Resolve.resolve(env, sym, sym, result.remaining().get(i));
+      if (sym == null) {
+        return null;
+      }
+    }
+    return Resolve.resolveField(env, owner, sym, Iterables.getLast(result.remaining()));
   }
 
   /** Search for constant variables in lexically enclosing scopes. */

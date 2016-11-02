@@ -1,0 +1,26 @@
+=== e/E.java ===
+package e;
+public enum E {
+  ONE, TWO
+}
+
+=== two/TWO.java ===
+package two;
+public class TWO {}
+
+=== a/A.java ===
+package a;
+import e.E;
+import static e.E.ONE;
+public @interface A {
+  E[] value() default ONE;
+}
+
+=== Test.java ===
+import static e.E.TWO;
+import two.TWO;
+import a.A;
+@A({TWO}) // TWO is a field
+public class Test {
+  TWO two; // TWO is a type
+}
