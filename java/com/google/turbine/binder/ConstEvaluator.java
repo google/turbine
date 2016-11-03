@@ -939,4 +939,12 @@ public class ConstEvaluator {
   private TurbineError error(int position, String message, Object... args) {
     return TurbineError.format(base.source(), position, message, args);
   }
+
+  public Const.Value evalFieldInitializer(Expression expression, Type type) {
+    Const value = eval(expression);
+    if (value == null || value.kind() != Const.Kind.PRIMITIVE) {
+      return null;
+    }
+    return (Const.Value) cast(type, value);
+  }
 }

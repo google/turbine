@@ -1,0 +1,11 @@
+=== Test.java ===
+class Test {
+  static final long DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+  static final long HUNDRED_YEARS_IN_MILLISECONDS =
+    100 * 365 * DAY_IN_MILLISECONDS;
+  static final long A = Long.MAX_VALUE;
+  static final long B = A - HUNDRED_YEARS_IN_MILLISECONDS;
+
+  static final long OVERFLOW = 24 * 60 * 60 * 1000 * 1000 * 1000L;
+  static final long NO_OVERFLOW = 24L * 60 * 60 * 1000 * 1000 * 1000;
+}
