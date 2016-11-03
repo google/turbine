@@ -34,7 +34,9 @@ import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.nio.JavacPathFileManager;
 import com.sun.tools.javac.util.Context;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
@@ -85,7 +87,6 @@ public class IntegrationTestSupport {
    * same normalization as {@link #sortMembers}, as well as removing everything not produced by the
    * header compiler (code, debug info, etc.)
    */
-  @SuppressWarnings("UnnecessaryCast") // external ASM uses raw collection types
   public static Map<String, byte[]> canonicalize(Map<String, byte[]> in) {
     List<ClassNode> classes = toClassNodes(in);
 
@@ -131,12 +132,11 @@ public class IntegrationTestSupport {
   }
 
   /** Remove elements that are omitted by turbine, e.g. private and synthetic members. */
-  @SuppressWarnings("UnnecessaryCast") // external ASM uses raw collection types
   private static void removeImplementation(ClassNode n) {
     n.innerClasses =
         n.innerClasses
             .stream()
-            .filter(x -> (x.access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PRIVATE)) == 0)
+            .filter(x -> (x.access & Opcodes.ACC_SYNTHETIC) == 0 && x.innerName != null)
             .collect(toList());
 
     n.methods =
@@ -182,7 +182,6 @@ public class IntegrationTestSupport {
    * Remove InnerClass attributes that are no longer needed after member pruning. This requires
    * visiting all descriptors and signatures in the bytecode to find references to inner classes.
    */
-  @SuppressWarnings("UnnecessaryCast") // external ASM uses raw collection types
   private static void removeUnusedInnerClassAttributes(
       Map<String, InnerClassNode> infos, ClassNode n) {
     Set<String> types = new HashSet<>();
@@ -310,7 +309,7 @@ public class IntegrationTestSupport {
 
     JavacTask task =
         compiler.getTask(
-            new PrintWriter(System.err, true),
+            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             fileManager,
             collector,
             ImmutableList.of(),
@@ -342,7 +341,6 @@ public class IntegrationTestSupport {
 
   /** Normalizes and stringifies a collection of class files. */
   public static String dump(Map<String, byte[]> compiled) throws Exception {
-    compiled = canonicalize(compiled);
     StringBuilder sb = new StringBuilder();
     List<String> keys = new ArrayList<>(compiled.keySet());
     Collections.sort(keys);
