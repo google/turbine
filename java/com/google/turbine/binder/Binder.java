@@ -50,6 +50,7 @@ import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
@@ -274,6 +275,9 @@ public class Binder {
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass info = env.get(sym);
       for (FieldInfo field : info.fields()) {
+        if ((field.access() & TurbineFlag.ACC_FINAL) == 0) {
+          continue;
+        }
         if (field.decl() == null) {
           continue;
         }

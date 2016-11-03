@@ -261,6 +261,7 @@ public class LowerIntegrationTest {
       "member_import_clash.test",
       "anno_repeated.test",
       "long_expression.test",
+      "const_nonfinal.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

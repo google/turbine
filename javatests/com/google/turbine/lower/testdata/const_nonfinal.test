@@ -1,0 +1,11 @@
+=== A.java ===
+public class A {
+  // non-final
+  public static int CONST = 42;
+}
+
+=== Test.java ===
+class Test {
+  // not a constant
+  public static final int X = A.CONST;
+}
