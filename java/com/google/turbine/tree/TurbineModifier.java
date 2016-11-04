@@ -44,8 +44,7 @@ public enum TurbineModifier {
   ACC_ANNOTATION(TurbineFlag.ACC_ANNOTATION),
   ACC_SYNTHETIC(TurbineFlag.ACC_SYNTHETIC),
   ACC_BRIDGE(TurbineFlag.ACC_BRIDGE),
-  DEFAULT(TurbineFlag.ACC_DEFAULT),
-  ENUM_IMPL(TurbineFlag.ACC_ENUM_IMPL);
+  DEFAULT(TurbineFlag.ACC_DEFAULT);
 
   private final int flag;
 

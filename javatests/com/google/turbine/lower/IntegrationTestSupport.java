@@ -104,10 +104,25 @@ public class IntegrationTestSupport {
     for (ClassNode n : classes) {
       removeImplementation(n);
       removeUnusedInnerClassAttributes(infos, n);
+      makeEnumsFinal(n);
       sortMembersAndAttributes(n);
     }
 
     return toByteCode(classes);
+  }
+
+  private static void makeEnumsFinal(ClassNode n) {
+    n.innerClasses.forEach(
+        x -> {
+          if ((x.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
+            x.access &= ~Opcodes.ACC_ABSTRACT;
+            x.access |= Opcodes.ACC_FINAL;
+          }
+        });
+    if ((n.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
+      n.access &= ~Opcodes.ACC_ABSTRACT;
+      n.access |= Opcodes.ACC_FINAL;
+    }
   }
 
   private static Map<String, byte[]> toByteCode(List<ClassNode> classes) {

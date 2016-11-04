@@ -48,8 +48,5 @@ public class TurbineFlag {
   public static final int ACC_DEFAULT = 1 << 16;
 
   /** Synthetic constructors (e.g. of inner classes and enums). */
-  public static final int ACC_ENUM_IMPL = 1 << 17;
-
-  /** Synthetic constructors (e.g. of inner classes and enums). */
   public static final int ACC_SYNTH_CTOR = 1 << 18;
 }

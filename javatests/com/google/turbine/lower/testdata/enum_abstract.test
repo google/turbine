@@ -1,0 +1,13 @@
+=== Test.java ===
+class Test {
+  enum E {
+    ONE,
+    TWO {
+      // javac drops the inaccessible member f() and doesn't generate
+      // an instance class for ONE, so E doesn't need to be abstract.
+      public void f() {
+        System.err.println("hello");
+      }
+    };
+  }
+}

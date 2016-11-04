@@ -122,40 +122,6 @@ public class BinderTest {
   }
 
   @Test
-  public void enums() throws Exception {
-    List<Tree.CompUnit> units = new ArrayList<>();
-    units.add(
-        parseLines(
-            "package test;", //
-            "public enum E1 {",
-            "  ONE,",
-            "  TWO {",
-            "    @Override public void f() {}",
-            "  },",
-            "  THREE;",
-            "  public void f() {}",
-            "}"));
-    units.add(
-        parseLines(
-            "package test;", //
-            "public enum E2 {",
-            "  ONE, TWO, THREE;",
-            "  public void g() {}",
-            "}"));
-
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
-
-    SourceTypeBoundClass e1 = bound.get(new ClassSymbol("test/E1"));
-    assertThat((e1.access() & TurbineFlag.ACC_ABSTRACT) == TurbineFlag.ACC_ABSTRACT).isTrue();
-    assertThat(e1.superclass()).isEqualTo(new ClassSymbol("java/lang/Enum"));
-    assertThat(e1.interfaces()).isEmpty();
-
-    SourceTypeBoundClass e2 = bound.get(new ClassSymbol("test/E2"));
-    assertThat((e2.access() & TurbineFlag.ACC_ABSTRACT) == 0).isTrue();
-  }
-
-  @Test
   public void imports() throws Exception {
     List<Tree.CompUnit> units = new ArrayList<>();
     units.add(

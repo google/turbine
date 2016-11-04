@@ -103,11 +103,11 @@ public class HierarchyBinder {
       switch (decl.tykind()) {
         case ENUM:
           superclass = ClassSymbol.ENUM;
-          if (isEnumAbstract(decl)) {
-            access |= TurbineFlag.ACC_ABSTRACT;
-          } else {
-            access |= TurbineFlag.ACC_FINAL;
-          }
+          // Assuming all enums are final is safe, because nothing outside
+          // the compilation unit can extend abstract enums anyways, and
+          // refactoring an existing enum to implement methods in the container
+          // class instead of the constants is not a breaking change.
+          access |= TurbineFlag.ACC_FINAL;
           break;
         case INTERFACE:
         case ANNOTATION:
@@ -178,24 +178,6 @@ public class HierarchyBinder {
         default:
           break;
       }
-    }
-    return false;
-  }
-
-  /**
-   * If any enum constants have a class body (which is recorded in the parser by setting ENUM_IMPL),
-   * the class generated for the enum needs to have ACC_ABSTRACT set.
-   */
-  private static boolean isEnumAbstract(Tree.TyDecl decl) {
-    for (Tree t : decl.members()) {
-      if (t.kind() != Tree.Kind.VAR_DECL) {
-        continue;
-      }
-      Tree.VarDecl var = (Tree.VarDecl) t;
-      if (!var.mods().contains(TurbineModifier.ENUM_IMPL)) {
-        continue;
-      }
-      return true;
     }
     return false;
   }
