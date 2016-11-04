@@ -37,6 +37,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
@@ -329,70 +330,70 @@ public class ConstEvaluator {
     }
     switch (t.op()) {
       case NOT:
-        switch (expr.constantTypeKind()) {
-          case BOOLEAN:
-            return new Const.BooleanValue(!expr.asBoolean().value());
-          default:
-            throw new AssertionError(expr.constantTypeKind());
-        }
+        return unaryNegate(expr);
       case BITWISE_COMP:
-        switch (expr.constantTypeKind()) {
-          case INT:
-            return new Const.IntValue(~expr.asInteger().value());
-          case LONG:
-            return new Const.LongValue(~expr.asLong().value());
-          case BYTE:
-            return new Const.ByteValue((byte) ~expr.asByte().value());
-          case SHORT:
-            return new Const.ShortValue((short) ~expr.asShort().value());
-          case CHAR:
-            return new Const.CharValue((char) ~expr.asChar().value());
-          default:
-            throw new AssertionError(expr.constantTypeKind());
-        }
+        return bitwiseComp(expr);
       case UNARY_PLUS:
-        switch (expr.constantTypeKind()) {
-          case INT:
-            return new Const.IntValue(+expr.asInteger().value());
-          case LONG:
-            return new Const.LongValue(+expr.asLong().value());
-          case BYTE:
-            return new Const.ByteValue((byte) +expr.asByte().value());
-          case SHORT:
-            return new Const.ShortValue((short) +expr.asShort().value());
-          case CHAR:
-            return new Const.CharValue((char) +expr.asChar().value());
-          case FLOAT:
-            return new Const.FloatValue(+expr.asFloat().value());
-          case DOUBLE:
-            return new Const.DoubleValue(+expr.asDouble().value());
-          default:
-            throw new AssertionError(expr.constantTypeKind());
-        }
+        return unaryPlus(expr);
       case NEG:
-        switch (expr.constantTypeKind()) {
-          case INT:
-            return new Const.IntValue(-expr.asInteger().value());
-          case BYTE:
-            return new Const.ByteValue((byte) -expr.asByte().value());
-          case SHORT:
-            return new Const.ShortValue((short) -expr.asShort().value());
-          case CHAR:
-            return new Const.CharValue((char) -expr.asChar().value());
-          case LONG:
-            return new Const.LongValue(-expr.asLong().value());
-          case FLOAT:
-            return new Const.FloatValue(-expr.asFloat().value());
-          case DOUBLE:
-            return new Const.DoubleValue(-expr.asDouble().value());
-          default:
-            throw new AssertionError(expr.constantTypeKind());
-        }
+        return unaryMinus(expr);
       default:
         throw new AssertionError(t.op());
     }
   }
 
+  private Value unaryNegate(Value expr) {
+    switch (expr.constantTypeKind()) {
+      case BOOLEAN:
+        return new Const.BooleanValue(!expr.asBoolean().value());
+      default:
+        throw new AssertionError(expr.constantTypeKind());
+    }
+  }
+
+  private Value bitwiseComp(Value expr) {
+    expr = promoteUnary(expr);
+    switch (expr.constantTypeKind()) {
+      case INT:
+        return new Const.IntValue(~expr.asInteger().value());
+      case LONG:
+        return new Const.LongValue(~expr.asLong().value());
+      default:
+        throw new AssertionError(expr.constantTypeKind());
+    }
+  }
+
+  private Value unaryPlus(Value expr) {
+    expr = promoteUnary(expr);
+    switch (expr.constantTypeKind()) {
+      case INT:
+        return new Const.IntValue(+expr.asInteger().value());
+      case LONG:
+        return new Const.LongValue(+expr.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(+expr.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(+expr.asDouble().value());
+      default:
+        throw new AssertionError(expr.constantTypeKind());
+    }
+  }
+
+  private Value unaryMinus(Value expr) {
+    expr = promoteUnary(expr);
+    switch (expr.constantTypeKind()) {
+      case INT:
+        return new Const.IntValue(-expr.asInteger().value());
+      case LONG:
+        return new Const.LongValue(-expr.asLong().value());
+      case FLOAT:
+        return new Const.FloatValue(-expr.asFloat().value());
+      case DOUBLE:
+        return new Const.DoubleValue(-expr.asDouble().value());
+      default:
+        throw new AssertionError(expr.constantTypeKind());
+    }
+  }
   private Const.Value evalCast(TypeCast t) {
     Const.Value expr = evalValue(t.expr());
     if (expr == null) {

@@ -43,23 +43,32 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.type.Type;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
 
 @RunWith(JUnit4.class)
 public class LowerTest {
+
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   private static final ImmutableList<Path> BOOTCLASSPATH =
       ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
@@ -328,5 +337,36 @@ public class LowerTest {
     assertThat(path[0].getStepArgument(0)).isEqualTo(0);
     assertThat(path[0].getStep(1)).isEqualTo(TypePath.ARRAY_ELEMENT);
     assertThat(path[0].getStepArgument(1)).isEqualTo(0);
+  }
+
+  @Test
+  public void invalidBooleanConstant() throws Exception {
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(lib);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("Lib.class"));
+
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(52, Opcodes.ACC_SUPER, "Lib", null, "java/lang/Object", null);
+      FieldVisitor fv =
+          cw.visitField(
+              Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "CONST", "Z", null, Integer.MAX_VALUE);
+      fv.visitEnd();
+      cw.visitEnd();
+      jos.write(cw.toByteArray());
+    }
+
+    ImmutableMap<String, String> input =
+        ImmutableMap.of(
+            "Test.java", "class Test { static final boolean CONST = Lib.CONST || false; }");
+
+    Map<String, byte[]> actual =
+        IntegrationTestSupport.runTurbine(input, ImmutableList.of(lib), BOOTCLASSPATH);
+
+    Map<String, byte[]> expected =
+        IntegrationTestSupport.runJavac(input, ImmutableList.of(lib), BOOTCLASSPATH);
+
+    assertThat(IntegrationTestSupport.dump(actual))
+        .isEqualTo(IntegrationTestSupport.dump(expected));
   }
 }

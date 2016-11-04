@@ -320,9 +320,25 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
                 Type type = null;
                 int access = cfi.access();
                 Const.Value value = cfi.value();
-                if (value != null && cfi.descriptor().equals("Z")) {
-                  // boolean constants are encoded as integers
-                  value = new Const.BooleanValue(value.asInteger().value() == 1);
+                if (value != null) {
+                  // TODO(b/32626659): this is not bug-compatible with javac
+                  switch (cfi.descriptor()) {
+                    case "Z":
+                      // boolean constants are encoded as integers
+                      value = new Const.BooleanValue(value.asInteger().value() != 0);
+                      break;
+                    case "C":
+                      value = new Const.CharValue(value.asChar().value());
+                      break;
+                    case "S":
+                      value = new Const.ShortValue(value.asShort().value());
+                      break;
+                    case "B":
+                      value = new Const.ByteValue(value.asByte().value());
+                      break;
+                    default:
+                      break;
+                  }
                 }
                 fields.add(new FieldInfo(fieldSym, type, access, ImmutableList.of(), null, value));
               }

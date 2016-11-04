@@ -1,0 +1,13 @@
+%%% Lib.java %%%
+class Lib {
+  static final char C = '/';
+  static final char S = (short) 1;
+  static final char B = (byte) 2;
+}
+
+=== Test.java ===
+class Test {
+  static final String A = "" + Lib.C;
+  static final String B = "" + Lib.S;
+  static final String C = "" + Lib.B;
+}
