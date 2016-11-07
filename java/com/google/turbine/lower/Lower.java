@@ -36,7 +36,6 @@ import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
-import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -332,7 +331,8 @@ public class Lower {
   /**
    * Looks up {@link TyVarInfo}s.
    *
-   * <p>We could generalize {@link Scope} instead, but this isn't needed anywhere else.
+   * <p>We could generalize {@link com.google.turbine.binder.lookup.Scope} instead, but this isn't
+   * needed anywhere else.
    */
   class TyVarEnv implements Function<TyVarSymbol, TyVarInfo> {
 
