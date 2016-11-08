@@ -41,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -70,11 +71,14 @@ public class Main {
 
     ImmutableList<CompUnit> units = parseAll(options);
 
-    // TODO(cushon): reduce classpath
+    Collection<String> reducedClasspath =
+        Dependencies.reduceClasspath(
+            options.classPath(), options.directJarsToTargets(), options.depsArtifacts());
+
     BindingResult bound =
         Binder.bind(
             units,
-            Iterables.transform(options.classPath(), TO_PATH),
+            Iterables.transform(reducedClasspath, TO_PATH),
             Iterables.transform(options.bootClassPath(), TO_PATH));
 
     // TODO(cushon): parallelize

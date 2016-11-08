@@ -17,6 +17,10 @@
 package com.google.turbine.deps;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -27,6 +31,14 @@ import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.proto.DepsProto;
+import java.io.BufferedInputStream;
+import java.io.IOError;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -94,5 +106,45 @@ public class Dependencies {
     for (ClassSymbol i : info.interfaces()) {
       addSuperTypes(closure, env, i);
     }
+  }
+
+  /**
+   * Filters a transitive classpath to contain only the entries for direct dependencies, and the
+   * types needed to compile those direct deps as reported by jdeps.
+   *
+   * <p>If no direct dependency information is available the full transitive classpath is returned.
+   */
+  public static Collection<String> reduceClasspath(
+      ImmutableList<String> transitiveClasspath,
+      ImmutableMap<String, String> directJarsToTargets,
+      ImmutableList<String> depsArtifacts) {
+    if (directJarsToTargets.isEmpty()) {
+      // the compilation doesn't support strict deps (e.g. proto libraries)
+      return transitiveClasspath;
+    }
+    Set<String> reduced = new HashSet<>(directJarsToTargets.keySet());
+    for (String path : depsArtifacts) {
+      DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
+      try (InputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(path)))) {
+        deps.mergeFrom(is);
+      } catch (IOException e) {
+        throw new IOError(e);
+      }
+      for (DepsProto.Dependency dep : deps.build().getDependencyList()) {
+        switch (dep.getKind()) {
+          case EXPLICIT:
+          case IMPLICIT:
+            reduced.add(dep.getPath());
+            break;
+          case INCOMPLETE:
+          case UNUSED:
+            break;
+          default:
+            throw new AssertionError(dep.getKind());
+        }
+      }
+    }
+    // preserve the order of entries in the transitive classpath
+    return Collections2.filter(transitiveClasspath, Predicates.in(reduced));
   }
 }

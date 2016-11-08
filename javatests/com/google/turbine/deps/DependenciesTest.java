@@ -33,7 +33,9 @@ import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.tree.Tree.CompUnit;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -247,6 +249,63 @@ public class DependenciesTest {
               ImmutableMap.of(
                   libb, DepsProto.Dependency.Kind.EXPLICIT,
                   liba, DepsProto.Dependency.Kind.EXPLICIT));
+    }
+  }
+
+  @Test
+  public void unreducedClasspathTest() throws IOException {
+    ImmutableList<String> classpath =
+        ImmutableList.of(
+            "a.jar", "b.jar", "c.jar", "d.jar", "e.jar", "f.jar", "g.jar", "h.jar", "i.jar",
+            "j.jar");
+    ImmutableMap<String, String> directJarsToTargets = ImmutableMap.of();
+    ImmutableList<String> depsArtifacts = ImmutableList.of();
+    assertThat(Dependencies.reduceClasspath(classpath, directJarsToTargets, depsArtifacts))
+        .isEqualTo(classpath);
+  }
+
+  @Test
+  public void reducedClasspathTest() throws IOException {
+    Path cdeps = temporaryFolder.newFile("c.jdeps").toPath();
+    Path ddeps = temporaryFolder.newFile("d.jdeps").toPath();
+    Path gdeps = temporaryFolder.newFile("g.jdeps").toPath();
+    ImmutableList<String> classpath =
+        ImmutableList.of(
+            "a.jar", "b.jar", "c.jar", "d.jar", "e.jar", "f.jar", "g.jar", "h.jar", "i.jar",
+            "j.jar");
+    ImmutableMap<String, String> directJarsToTargets =
+        ImmutableMap.of(
+            "c.jar", "//a",
+            "d.jar", "//d",
+            "g.jar", "//e");
+    ImmutableList<String> depsArtifacts =
+        ImmutableList.of(cdeps.toString(), ddeps.toString(), gdeps.toString());
+    writeDeps(
+        cdeps,
+        ImmutableMap.of(
+            "b.jar", DepsProto.Dependency.Kind.EXPLICIT,
+            "e.jar", DepsProto.Dependency.Kind.EXPLICIT));
+    writeDeps(
+        ddeps,
+        ImmutableMap.of(
+            "f.jar", DepsProto.Dependency.Kind.UNUSED,
+            "j.jar", DepsProto.Dependency.Kind.UNUSED));
+    writeDeps(gdeps, ImmutableMap.of("i.jar", DepsProto.Dependency.Kind.IMPLICIT));
+    assertThat(Dependencies.reduceClasspath(classpath, directJarsToTargets, depsArtifacts))
+        .containsExactly("b.jar", "c.jar", "d.jar", "e.jar", "g.jar", "i.jar")
+        .inOrder();
+  }
+
+  void writeDeps(Path path, ImmutableMap<String, DepsProto.Dependency.Kind> deps)
+      throws IOException {
+    DepsProto.Dependencies.Builder builder =
+        DepsProto.Dependencies.newBuilder().setSuccess(true).setRuleLabel("//test");
+    for (Map.Entry<String, DepsProto.Dependency.Kind> e : deps.entrySet()) {
+      builder.addDependency(
+          DepsProto.Dependency.newBuilder().setPath(e.getKey()).setKind(e.getValue()));
+    }
+    try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(path))) {
+      builder.build().writeTo(os);
     }
   }
 }
