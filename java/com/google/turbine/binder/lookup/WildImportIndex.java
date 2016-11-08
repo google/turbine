@@ -85,7 +85,11 @@ public class WildImportIndex implements Scope {
   @Override
   public LookupResult lookup(LookupKey lookup) {
     for (Supplier<Scope> packageScope : packages) {
-      LookupResult result = packageScope.get().lookup(lookup);
+      Scope scope = packageScope.get();
+      if (scope == null) {
+        continue;
+      }
+      LookupResult result = scope.lookup(lookup);
       if (result != null) {
         return result;
       }
