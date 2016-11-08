@@ -19,10 +19,16 @@ package com.google.turbine.deps;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
+import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.proto.DepsProto;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /** Support for Bazel jdeps dependency output. */
 public class Dependencies {
@@ -33,7 +39,9 @@ public class Dependencies {
       BindingResult bound,
       Lowered lowered) {
     DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
-    for (ClassSymbol sym : lowered.symbols()) {
+    Set<ClassSymbol> closure = superTypeClosure(bound, lowered);
+    Set<String> jars = new LinkedHashSet<>();
+    for (ClassSymbol sym : closure) {
       BytecodeBoundClass info = bound.classPathEnv().get(sym);
       if (info == null) {
         // the symbol wasn't loaded from the classpath
@@ -44,6 +52,9 @@ public class Dependencies {
         // bootclasspath deps are not tracked
         continue;
       }
+      jars.add(jarFile);
+    }
+    for (String jarFile : jars) {
       deps.addDependency(
           DepsProto.Dependency.newBuilder()
               .setPath(jarFile)
@@ -55,5 +66,33 @@ public class Dependencies {
       deps.setRuleLabel(targetLabel.get());
     }
     return deps.build();
+  }
+
+  private static Set<ClassSymbol> superTypeClosure(BindingResult bound, Lowered lowered) {
+    Env<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(new SimpleEnv<>(bound.units()))
+            .append(bound.classPathEnv());
+    Set<ClassSymbol> closure = new LinkedHashSet<>();
+    for (ClassSymbol sym : lowered.symbols()) {
+      addSuperTypes(closure, env, sym);
+    }
+    return closure;
+  }
+
+  private static void addSuperTypes(
+      Set<ClassSymbol> closure, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
+    if (!closure.add(sym)) {
+      return;
+    }
+    TypeBoundClass info = env.get(sym);
+    if (info == null) {
+      return;
+    }
+    if (info.superclass() != null) {
+      addSuperTypes(closure, env, info.superclass());
+    }
+    for (ClassSymbol i : info.interfaces()) {
+      addSuperTypes(closure, env, i);
+    }
   }
 }

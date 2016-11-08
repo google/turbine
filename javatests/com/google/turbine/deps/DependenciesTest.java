@@ -143,7 +143,11 @@ public class DependenciesTest {
     Path libb =
         new LibraryBuilder()
             .setClasspath(liba)
-            .addSourceLines("B.java", "class B extends A {}")
+            .addSourceLines(
+                "B.java", //
+                "class B {",
+                "  public static final A a = new A();",
+                "}")
             .compileToJar("libb.jar");
     DepsProto.Dependencies deps =
         new DepsBuilder()
@@ -183,5 +187,66 @@ public class DependenciesTest {
             ImmutableMap.of(
                 libb, DepsProto.Dependency.Kind.EXPLICIT,
                 liba, DepsProto.Dependency.Kind.EXPLICIT));
+  }
+
+  @Test
+  public void closure() throws Exception {
+    Path libi =
+        new LibraryBuilder()
+            .addSourceLines(
+                "i/I.java",
+                "package i;", //
+                "public interface I {}")
+            .compileToJar("libi.jar");
+    Path liba =
+        new LibraryBuilder()
+            .setClasspath(libi)
+            .addSourceLines(
+                "a/A.java", //
+                "package a;",
+                "import i.I;",
+                "public class A implements I {}")
+            .compileToJar("liba.jar");
+    Path libb =
+        new LibraryBuilder()
+            .setClasspath(liba, libi)
+            .addSourceLines(
+                "b/B.java", //
+                "package b;",
+                "import a.A;",
+                "public class B extends A {}")
+            .compileToJar("libb.jar");
+    {
+      DepsProto.Dependencies deps =
+          new DepsBuilder()
+              .setClasspath(liba, libb, libi)
+              .addSourceLines(
+                  "Test.java", //
+                  "import b.B;",
+                  "class Test extends B {}")
+              .run();
+      assertThat(depsMap(deps))
+          .isEqualTo(
+              ImmutableMap.of(
+                  libi, DepsProto.Dependency.Kind.EXPLICIT,
+                  libb, DepsProto.Dependency.Kind.EXPLICIT,
+                  liba, DepsProto.Dependency.Kind.EXPLICIT));
+    }
+    {
+      // partial classpath
+      DepsProto.Dependencies deps =
+          new DepsBuilder()
+              .setClasspath(liba, libb)
+              .addSourceLines(
+                  "Test.java", //
+                  "import b.B;",
+                  "class Test extends B {}")
+              .run();
+      assertThat(depsMap(deps))
+          .isEqualTo(
+              ImmutableMap.of(
+                  libb, DepsProto.Dependency.Kind.EXPLICIT,
+                  liba, DepsProto.Dependency.Kind.EXPLICIT));
+    }
   }
 }
