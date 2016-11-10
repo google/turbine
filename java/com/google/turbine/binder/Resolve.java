@@ -106,6 +106,9 @@ public class Resolve {
   public static FieldInfo resolveField(
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol origin, ClassSymbol sym, String name) {
     TypeBoundClass info = env.get(sym);
+    if (info == null) {
+      return null;
+    }
     for (FieldInfo f : info.fields()) {
       if (f.name().equals(name)) {
         return f;

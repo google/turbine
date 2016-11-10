@@ -25,20 +25,31 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree;
+import java.io.OutputStream;
+import java.lang.annotation.ElementType;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class BinderTest {
+
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   private static final ImmutableList<Path> BOOTCLASSPATH =
       ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
@@ -234,6 +245,42 @@ public class BinderTest {
 
     assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
         .isEqualTo(new ClassSymbol("lib/Lib$Inner"));
+  }
+
+  @Test
+  public void incompleteClasspath() throws Exception {
+
+    Map<String, byte[]> lib =
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of(
+                "A.java", "class A {}",
+                "B.java", "class B extends A {}"),
+            ImmutableList.of(),
+            BOOTCLASSPATH);
+
+    // create a jar containing only B
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("B.class"));
+      jos.write(lib.get("B"));
+    }
+
+    List<Tree.CompUnit> units = new ArrayList<>();
+    units.add(
+        parseLines(
+            "import java.lang.annotation.Target;",
+            "import java.lang.annotation.ElementType;",
+            "public class C implements B {",
+            "  @Target(ElementType.TYPE_USE)",
+            "  @interface A {};",
+            "}"));
+
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(units, ImmutableList.of(libJar), BOOTCLASSPATH).units();
+
+    SourceTypeBoundClass a = bound.get(new ClassSymbol("C$A"));
+    assertThat(a.annotationMetadata().target()).containsExactly(ElementType.TYPE_USE);
   }
 
   private Tree.CompUnit parseLines(String... lines) {
