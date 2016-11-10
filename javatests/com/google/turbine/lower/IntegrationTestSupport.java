@@ -157,8 +157,7 @@ public class IntegrationTestSupport {
     n.methods =
         n.methods
             .stream()
-            .filter(x -> (x.access & Opcodes.ACC_SYNTHETIC) == 0)
-            .filter(x -> (x.access & Opcodes.ACC_PRIVATE) == 0 || x.name.equals("<init>"))
+            .filter(x -> (x.access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PRIVATE)) == 0)
             .filter(x -> !x.name.equals("<clinit>"))
             .collect(toList());
 

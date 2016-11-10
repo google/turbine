@@ -140,8 +140,7 @@ public class Lower {
 
     List<ClassFile.MethodInfo> methods = new ArrayList<>();
     for (MethodInfo m : info.methods()) {
-      if (TurbineVisibility.fromAccess(m.access()) == TurbineVisibility.PRIVATE
-          && !m.name().equals("<init>")) {
+      if (TurbineVisibility.fromAccess(m.access()) == TurbineVisibility.PRIVATE) {
         // TODO(cushon): drop private members earlier?
         continue;
       }
