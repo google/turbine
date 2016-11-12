@@ -100,7 +100,11 @@ public class DisambiguateTypeAnnotations {
     ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
     Type returnType =
         disambiguate(
-            env, ElementType.METHOD, base.returnType(), base.annotations(), declarationAnnotations);
+            env,
+            base.name().equals("<init>") ? ElementType.CONSTRUCTOR : ElementType.METHOD,
+            base.returnType(),
+            base.annotations(),
+            declarationAnnotations);
     return new MethodInfo(
         base.sym(),
         base.tyParams(),

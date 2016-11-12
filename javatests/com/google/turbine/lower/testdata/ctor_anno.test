@@ -1,0 +1,11 @@
+=== Anno.java ===
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+
+@Target(ElementType.CONSTRUCTOR)
+@interface Anno {}
+
+=== Test.java ===
+public class Test {
+  @Anno Test(int x) {}
+}
