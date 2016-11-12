@@ -926,11 +926,16 @@ public class ConstEvaluator {
         return value;
       case ARRAY_TY:
         {
-          if (value.kind() == Const.Kind.ARRAY) {
-            return value;
+          Type elementType = ((Type.ArrayTy) ty).elementType();
+          ImmutableList<Const> elements =
+              value.kind() == Const.Kind.ARRAY
+                  ? ((Const.ArrayInitValue) value).elements()
+                  : ImmutableList.of(value);
+          ImmutableList.Builder<Const> coerced = ImmutableList.builder();
+          for (Const element : elements) {
+            coerced.add(cast(elementType, element));
           }
-          Type.ArrayTy aty = (Type.ArrayTy) ty;
-          return new Const.ArrayInitValue(ImmutableList.of(cast(aty.elementType(), value)));
+          return new Const.ArrayInitValue(coerced.build());
         }
       default:
         throw new AssertionError(ty.tyKind());

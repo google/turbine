@@ -265,6 +265,7 @@ public class LowerIntegrationTest {
       "enum_abstract.test",
       "deficient_types_classfile.test",
       "ctor_anno.test",
+      "anno_const_coerce.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

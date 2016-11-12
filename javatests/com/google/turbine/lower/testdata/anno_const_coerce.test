@@ -1,0 +1,10 @@
+=== Anno.java ===
+@interface Anno {
+  long a() default 0;
+  long[] b() default {0};
+}
+=== Test.java ===
+class Test {
+  @Anno() int one;
+  @Anno(a=0, b={0, 1}) int two;
+}
