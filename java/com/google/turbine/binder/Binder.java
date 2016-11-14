@@ -57,6 +57,7 @@ import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.PkgDecl;
 import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.TurbineModifier;
+import com.google.turbine.type.Type;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -275,14 +276,7 @@ public class Binder {
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass info = env.get(sym);
       for (FieldInfo field : info.fields()) {
-        if ((field.access() & TurbineFlag.ACC_FINAL) == 0) {
-          continue;
-        }
-        if (field.decl() == null) {
-          continue;
-        }
-        final Optional<Tree.Expression> init = field.decl().init();
-        if (!init.isPresent()) {
+        if (!isConst(field)) {
           continue;
         }
         completers.put(
@@ -292,7 +286,7 @@ public class Binder {
               public Const.Value complete(Env<FieldSymbol, Const.Value> env1, FieldSymbol k) {
                 try {
                   return new ConstEvaluator(sym, info, info.scope(), env1, baseEnv)
-                      .evalFieldInitializer(init.get(), field.type());
+                      .evalFieldInitializer(field.decl().init().get(), field.type());
                 } catch (LazyEnv.LazyBindingError e) {
                   // fields initializers are allowed to reference the field being initialized,
                   // but if they do they aren't constants
@@ -314,6 +308,31 @@ public class Binder {
       builder.putIfAbsent(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
     }
     return builder.build();
+  }
+
+  static boolean isConst(FieldInfo field) {
+    if ((field.access() & TurbineFlag.ACC_FINAL) == 0) {
+      return false;
+    }
+    if (field.decl() == null) {
+      return false;
+    }
+    final Optional<Tree.Expression> init = field.decl().init();
+    if (!init.isPresent()) {
+      return false;
+    }
+    switch (field.type().tyKind()) {
+      case PRIM_TY:
+        break;
+      case CLASS_TY:
+        if (((Type.ClassTy) field.type()).sym().equals(ClassSymbol.STRING)) {
+          break;
+        }
+        // fall through
+      default:
+        return false;
+    }
+    return true;
   }
 
   /**

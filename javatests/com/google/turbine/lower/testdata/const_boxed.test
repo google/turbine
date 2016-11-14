@@ -1,0 +1,5 @@
+=== Test.java ===
+class Test {
+  static final Double A = 2.0;
+  static final String S = "" + A;
+}

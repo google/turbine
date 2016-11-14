@@ -267,6 +267,7 @@ public class LowerIntegrationTest {
       "ctor_anno.test",
       "anno_const_coerce.test",
       "const_octal_underscore.test",
+      "const_boxed.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
