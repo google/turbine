@@ -1,0 +1,6 @@
+=== Test.java ===
+class Test {
+  static final int A = 0_10;
+  static final long B = 0_10;
+  static final long C = 0_10L;
+}

@@ -286,9 +286,7 @@ public class ConstExpressionParser {
           if (text.startsWith("0x") || text.startsWith("0X")) {
             text = text.substring(2);
             radix = 0x10;
-          } else if (text.startsWith("0")
-              && text.length() > 1
-              && Character.isDigit(text.charAt(1))) {
+          } else if (isOctal(text)) {
             radix = 010;
           } else if (text.startsWith("0b") || text.startsWith("0B")) {
             text = text.substring(2);
@@ -316,9 +314,7 @@ public class ConstExpressionParser {
           if (text.startsWith("0x") || text.startsWith("0X")) {
             text = text.substring(2);
             radix = 0x10;
-          } else if (text.startsWith("0")
-              && text.length() > 1
-              && Character.isDigit(text.charAt(1))) {
+          } else if (isOctal(text)) {
             radix = 010;
           } else if (text.startsWith("0b") || text.startsWith("0B")) {
             text = text.substring(2);
@@ -358,6 +354,17 @@ public class ConstExpressionParser {
     }
     eat();
     return new Tree.Literal(position, kind, value);
+  }
+
+  static boolean isOctal(String text) {
+    if (!text.startsWith("0")) {
+      return false;
+    }
+    if (text.length() <= 1) {
+      return false;
+    }
+    char next = text.charAt(1);
+    return Character.isDigit(next) || next == '_';
   }
 
   /**
