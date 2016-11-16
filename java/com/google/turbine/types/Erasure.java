@@ -53,19 +53,18 @@ public class Erasure {
     return Type.ClassTy.OBJECT;
   }
 
-  private static Type eraseArrayTy(
+  private static Type.ArrayTy eraseArrayTy(
       Type.ArrayTy ty, Function<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> tenv) {
-    return new Type.ArrayTy(erase(ty.elementType(), tenv), ImmutableList.of());
+    return new Type.ArrayTy(erase(ty.elementType(), tenv), ty.annos());
   }
 
-  private static Type eraseClassTy(Type.ClassTy ty) {
+  public static Type.ClassTy eraseClassTy(Type.ClassTy ty) {
     ImmutableList.Builder<Type.ClassTy.SimpleClassTy> classes = ImmutableList.builder();
     for (Type.ClassTy.SimpleClassTy c : ty.classes) {
       if (c.targs().isEmpty()) {
         classes.add(c);
       } else {
-        classes.add(
-            new Type.ClassTy.SimpleClassTy(c.sym(), ImmutableList.<Type>of(), ImmutableList.of()));
+        classes.add(new Type.ClassTy.SimpleClassTy(c.sym(), ImmutableList.of(), c.annos()));
       }
     }
     return new Type.ClassTy(classes.build());

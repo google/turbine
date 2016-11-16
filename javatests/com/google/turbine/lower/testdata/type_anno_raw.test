@@ -1,0 +1,16 @@
+=== test/Test.java ===
+package test;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import java.lang.annotation.Target;
+import java.util.List;
+
+@Target({TYPE_USE, FIELD}) @interface A {}
+@Target({TYPE_USE, FIELD}) @interface B {}
+
+class Test<T> {
+  class Inner<T> {}
+  @A List a;
+  @A Test.@B Inner c;
+}

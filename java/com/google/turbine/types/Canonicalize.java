@@ -86,7 +86,7 @@ public class Canonicalize {
   /** Canonicalize a qualified class type, excluding type arguments. */
   private static ClassTy canon(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
     if (isRaw(env, ty)) {
-      return ClassTy.asNonParametricClassTy(ty.sym());
+      return Erasure.eraseClassTy(ty);
     }
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
     // for the enclosing declarations

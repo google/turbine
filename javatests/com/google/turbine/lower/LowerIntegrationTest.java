@@ -271,6 +271,7 @@ public class LowerIntegrationTest {
       "interface_member_public.test",
       "javadoc_deprecated.test",
       "strictfp.test",
+      "type_anno_raw.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
