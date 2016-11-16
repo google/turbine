@@ -298,4 +298,8 @@ public class LowerSignature {
     classes.add(sym);
     return sym.binaryName();
   }
+
+  String objectType(ClassSymbol sym) {
+    return "L" + descriptor(sym) + ";";
+  }
 }

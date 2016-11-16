@@ -273,6 +273,7 @@ public class LowerIntegrationTest {
       "strictfp.test",
       "type_anno_raw.test",
       "inner_static.test",
+      "innerclassanno.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

@@ -1,0 +1,41 @@
+=== a/Anno.java ===
+package a;
+
+public @interface Anno {
+  @interface InnerAnno {}
+
+  enum E {
+    ONE
+  }
+
+  Class<?>[] clazz() default {};
+  InnerAnno[] anno() default {};
+  E[] enums() default {};
+}
+
+=== b/B.java ===
+package b;
+import a.Anno;
+@Anno.InnerAnno public class B {}
+
+=== c/C.java ===
+package c;
+import a.Anno;
+@Anno(clazz=Anno.InnerAnno.class) public class C {}
+
+=== d/D.java ===
+package d;
+import a.Anno;
+@Anno(anno=@Anno.InnerAnno) public class D {}
+
+=== e/E.java ===
+package e;
+import a.Anno;
+@Anno(enums=Anno.E.ONE) public class E {}
+
+=== a/A.java ===
+package a;
+import a.Anno;
+@interface A {
+  Class<?> clazz() default Anno.InnerAnno.class;
+}

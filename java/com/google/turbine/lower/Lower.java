@@ -229,7 +229,7 @@ public class Lower {
         if (visible == null) {
           continue;
         }
-        String desc = descriptor(sig.descriptor(annotation.sym()));
+        String desc = sig.objectType(annotation.sym());
         parameterAnnotations.add(
             new AnnotationInfo(desc, visible, annotationValues(annotation.values())));
       }
@@ -380,13 +380,7 @@ public class Lower {
       return null;
     }
     return new AnnotationInfo(
-        descriptor(sig.descriptor(annotation.sym())),
-        visible,
-        annotationValues(annotation.values()));
-  }
-
-  private static String descriptor(String descriptor) {
-    return "L" + descriptor + ";";
+        sig.objectType(annotation.sym()), visible, annotationValues(annotation.values()));
   }
 
   /**
@@ -427,7 +421,7 @@ public class Lower {
         {
           EnumConstantValue enumValue = (EnumConstantValue) value;
           return new ElementValue.EnumConstValue(
-              descriptor(enumValue.sym().owner().binaryName()), enumValue.sym().name());
+              sig.objectType(enumValue.sym().owner()), enumValue.sym().name());
         }
       case ARRAY:
         {
@@ -447,7 +441,7 @@ public class Lower {
           }
           return new ElementValue.AnnotationValue(
               new AnnotationInfo(
-                  descriptor(annotationValue.sym().binaryName()),
+                  sig.objectType(annotationValue.sym()),
                   visible,
                   annotationValues(annotationValue.values())));
         }

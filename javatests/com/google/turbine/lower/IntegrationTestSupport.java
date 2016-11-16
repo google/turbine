@@ -61,6 +61,7 @@ import javax.tools.StandardLocation;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -267,15 +268,35 @@ public class IntegrationTestSupport {
         types.add(n.superName);
       }
       types.addAll(n.interfaces);
+
+      addTypesInAnnotations(types, n.visibleAnnotations);
+      addTypesInAnnotations(types, n.invisibleAnnotations);
+      addTypesInTypeAnnotations(types, n.visibleTypeAnnotations);
+      addTypesInTypeAnnotations(types, n.invisibleTypeAnnotations);
     }
     for (MethodNode m : n.methods) {
       collectTypesFromSignature(types, m.desc);
       collectTypesFromSignature(types, m.signature);
       types.addAll(m.exceptions);
+
+      addTypesInAnnotations(types, m.visibleAnnotations);
+      addTypesInAnnotations(types, m.invisibleAnnotations);
+      addTypesInTypeAnnotations(types, m.visibleTypeAnnotations);
+      addTypesInTypeAnnotations(types, m.invisibleTypeAnnotations);
+
+      addTypesFromParameterAnnotations(types, m.visibleParameterAnnotations);
+      addTypesFromParameterAnnotations(types, m.invisibleParameterAnnotations);
+
+      collectTypesFromAnnotationValue(types, m.annotationDefault);
     }
     for (FieldNode f : n.fields) {
       collectTypesFromSignature(types, f.desc);
       collectTypesFromSignature(types, f.signature);
+
+      addTypesInAnnotations(types, f.visibleAnnotations);
+      addTypesInAnnotations(types, f.invisibleAnnotations);
+      addTypesInTypeAnnotations(types, f.visibleTypeAnnotations);
+      addTypesInTypeAnnotations(types, f.invisibleTypeAnnotations);
     }
 
     List<InnerClassNode> used = new ArrayList<>();
@@ -290,6 +311,57 @@ public class IntegrationTestSupport {
     }
     addInnerChain(infos, used, n.name);
     n.innerClasses = used;
+  }
+
+  private static void addTypesFromParameterAnnotations(
+      Set<String> types, List<AnnotationNode>[] parameterAnnotations) {
+    if (parameterAnnotations == null) {
+      return;
+    }
+    for (List<AnnotationNode> annos : parameterAnnotations) {
+      addTypesInAnnotations(types, annos);
+    }
+  }
+
+  private static void addTypesInTypeAnnotations(Set<String> types, List<TypeAnnotationNode> annos) {
+    if (annos == null) {
+      return;
+    }
+    annos.stream().forEach(a -> collectTypesFromAnnotation(types, a));
+  }
+
+  private static void addTypesInAnnotations(Set<String> types, List<AnnotationNode> annos) {
+    if (annos == null) {
+      return;
+    }
+    annos.stream().forEach(a -> collectTypesFromAnnotation(types, a));
+  }
+
+  private static void collectTypesFromAnnotation(Set<String> types, AnnotationNode a) {
+    collectTypesFromSignature(types, a.desc);
+    collectTypesFromAnnotationValues(types, a.values);
+  }
+
+  private static void collectTypesFromAnnotationValues(Set<String> types, List<?> values) {
+    if (values == null) {
+      return;
+    }
+    for (Object v : values) {
+      collectTypesFromAnnotationValue(types, v);
+    }
+  }
+
+  private static void collectTypesFromAnnotationValue(Set<String> types, Object v) {
+    if (v instanceof List) {
+      collectTypesFromAnnotationValues(types, (List<?>) v);
+    } else if (v instanceof Type) {
+      collectTypesFromSignature(types, ((Type) v).getDescriptor());
+    } else if (v instanceof AnnotationNode) {
+      collectTypesFromAnnotation(types, (AnnotationNode) v);
+    } else if (v instanceof String[]) {
+      String[] enumValue = (String[]) v;
+      collectTypesFromSignature(types, enumValue[0]);
+    }
   }
 
   /**
