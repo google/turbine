@@ -198,7 +198,6 @@ public class BinderTest {
     assertThat(a.access())
         .isEqualTo(
             TurbineFlag.ACC_PUBLIC
-                | TurbineFlag.ACC_STATIC
                 | TurbineFlag.ACC_INTERFACE
                 | TurbineFlag.ACC_ABSTRACT
                 | TurbineFlag.ACC_ANNOTATION);

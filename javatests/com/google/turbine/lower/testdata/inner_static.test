@@ -1,0 +1,53 @@
+=== Ifc.java ===
+interface Ifc {
+  class A {
+    public static class Inner {}
+  }
+  static class B {
+    public class Inner {}
+  }
+  class C {
+    public class Inner {}
+  }
+}
+
+=== Cls.java ===
+class Cls {
+  static class A {
+    public static class Inner {}
+  }
+  static class B {
+    public class Inner {}
+  }
+  class C {
+    public class Inner {}
+  }
+}
+
+=== Enm.java ===
+enum Enm {
+  ;
+
+  static class A {
+    public static class Inner {}
+  }
+  static class B {
+    public class Inner {}
+  }
+  class C {
+    public class Inner {}
+  }
+}
+
+=== Ano.java ===
+@interface Ano {
+  class A {
+    public static class Inner {}
+  }
+  static class B {
+    public class Inner {}
+  }
+  class C {
+    public class Inner {}
+  }
+}

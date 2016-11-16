@@ -144,27 +144,29 @@ public class HierarchyBinder {
   }
 
   /**
-   * Nested enums (JLS 8.9) and types nested within interfaces and annotations (JLS 9.5) are
-   * implicitly static
+   * Nested enums, interfaces, and annotations, and any types nested within interfaces and
+   * annotations (JLS 9.5) are implicitly static.
    */
   private boolean implicitStatic(BoundClass c) {
-    if (c.kind() == TurbineTyKind.ENUM) {
-      return true;
+    if (c.owner() == null) {
+      return false;
     }
-    while (true) {
-      switch (c.kind()) {
-        case INTERFACE:
-        case ANNOTATION:
-          return true;
-        default:
-          break;
-      }
-      if (c.owner() == null) {
-        break;
-      }
-      c = env.get(c.owner());
+    switch (c.kind()) {
+      case INTERFACE:
+      case ENUM:
+      case ANNOTATION:
+        return true;
+      case CLASS:
+        switch (env.get(c.owner()).kind()) {
+          case INTERFACE:
+          case ANNOTATION:
+            return true;
+          default:
+            return false;
+        }
+      default:
+        throw new AssertionError(c.kind());
     }
-    return false;
   }
 
   /** Returns true if the given type is declared in an interface. */
