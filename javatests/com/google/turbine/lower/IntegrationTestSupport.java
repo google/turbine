@@ -106,9 +106,16 @@ public class IntegrationTestSupport {
       removeUnusedInnerClassAttributes(infos, n);
       makeEnumsFinal(n);
       sortMembersAndAttributes(n);
+      undeprecate(n);
     }
 
     return toByteCode(classes);
+  }
+
+  private static void undeprecate(ClassNode n) {
+    n.access &= ~Opcodes.ACC_DEPRECATED;
+    n.methods.forEach(m -> m.access &= ~Opcodes.ACC_DEPRECATED);
+    n.fields.forEach(f -> f.access &= ~Opcodes.ACC_DEPRECATED);
   }
 
   private static void makeEnumsFinal(ClassNode n) {

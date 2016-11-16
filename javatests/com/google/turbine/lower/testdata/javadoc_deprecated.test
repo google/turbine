@@ -1,0 +1,10 @@
+=== Test.java ===
+/** @deprecated */
+class Test {
+  /** @deprecated */
+  class Inner {}
+  /** @deprecated */
+  int x;
+  /** @deprecated */
+  void f() {}
+}

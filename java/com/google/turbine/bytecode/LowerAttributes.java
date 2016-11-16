@@ -80,9 +80,6 @@ public class LowerAttributes {
     List<AnnotationInfo> visible = new ArrayList<>();
     List<AnnotationInfo> invisible = new ArrayList<>();
     for (AnnotationInfo annotation : annotations) {
-      if (annotation.typeName().equals("Ljava/lang/Deprecated;")) {
-        attributes.add(Attribute.DEPRECATED);
-      }
       (annotation.isRuntimeVisible() ? visible : invisible).add(annotation);
     }
     if (!visible.isEmpty()) {
