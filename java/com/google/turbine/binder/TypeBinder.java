@@ -606,7 +606,8 @@ public class TypeBinder {
     }
     Verify.verifyNotNull(result, "%s", names);
     Symbol sym = result.sym();
-    ImmutableList<AnnoInfo> annos = bindAnnotations(scope, flat.get(0).annos());
+    int annoIdx = flat.size() - result.remaining().size() - 1;
+    ImmutableList<AnnoInfo> annos = bindAnnotations(scope, flat.get(annoIdx).annos());
     switch (sym.symKind()) {
       case CLASS:
         // resolve any remaining types in the qualified name, and their type arguments

@@ -16,4 +16,6 @@ abstract class Test {
   }
   List<@A Inner.InnerMost> a;
   List<Inner.@B InnerMost> b;
+
+  java.lang.@A @B String s;
 }
