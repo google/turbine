@@ -275,6 +275,7 @@ public class LowerIntegrationTest {
       "inner_static.test",
       "innerclassanno.test",
       "type_anno_parameter_index.test",
+      "anno_const_scope.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

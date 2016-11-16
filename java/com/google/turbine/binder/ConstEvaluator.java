@@ -862,6 +862,14 @@ public strictfp class ConstEvaluator {
     }
   }
 
+  ImmutableList<AnnoInfo> evaluateAnnotations(ImmutableList<AnnoInfo> annotations) {
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
+    for (AnnoInfo annotation : annotations) {
+      result.add(evaluateAnnotation(annotation.sym(), annotation.args()));
+    }
+    return result.build();
+  }
+
   /**
    * Evaluates annotation arguments given the symbol of the annotation declaration and a list of
    * expression trees.

@@ -1,0 +1,17 @@
+=== a/A.java ===
+package a;
+public class A {
+  public static final String CONST = "one";
+}
+
+=== Test.java ===
+import static a.A.CONST;
+
+@interface Anno {
+  String value() default "";
+}
+
+@Anno(CONST) // this is a/A#Const; Test#ONST is not in scope
+class Test {
+  public static final String CONST = "two";
+}
