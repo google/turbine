@@ -1,0 +1,44 @@
+=== Test.java ===
+strictfp abstract class Test {
+  abstract void a();
+  strictfp void f() {}
+  class Inner {
+    void g() {}
+  }
+  enum E {
+    ;
+    void h() {}
+  }
+  @interface A {
+    int value() default 0;
+  }
+  interface I {
+    default int j() {
+      return 1;
+    }
+  }
+  final double x = 1.0 / 2;
+}
+
+=== I.java ===
+strictfp interface I {
+  void f();
+  abstract void a();
+  abstract class N {
+    void g() {}
+    abstract void a();
+  }
+}
+
+=== E.java ===
+strictfp enum E {
+  I {
+    void a() {}
+  };
+  void f() {}
+  abstract void a();
+  abstract class N {
+    void g() {}
+    abstract void a();
+  }
+}

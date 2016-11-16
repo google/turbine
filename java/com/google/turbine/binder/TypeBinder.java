@@ -129,15 +129,34 @@ public class TypeBinder {
     return new TypeBinder(env, sym, base).bind();
   }
 
+  private final boolean isStrictFp;
   private final Env<ClassSymbol, HeaderBoundClass> env;
   private final ClassSymbol owner;
   private final SourceHeaderBoundClass base;
 
-  public TypeBinder(
+  private TypeBinder(
       Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol owner, SourceHeaderBoundClass base) {
     this.env = env;
     this.owner = owner;
     this.base = base;
+    this.isStrictFp = isStrictFp(env, owner);
+  }
+
+  private boolean isStrictFp(Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym) {
+    while (sym != null) {
+      HeaderBoundClass info = env.get(sym);
+      switch (info.kind()) {
+        case ANNOTATION:
+          return false;
+        default:
+          break;
+      }
+      if ((info.access() & TurbineFlag.ACC_STRICT) == TurbineFlag.ACC_STRICT) {
+        return true;
+      }
+      sym = info.owner();
+    }
+    return false;
   }
 
   private SourceTypeBoundClass bind() {
@@ -216,7 +235,7 @@ public class TypeBinder {
         interfaceTypes.build(),
         superClassType,
         typeParameterTypes,
-        base.access(),
+        base.access() & ~TurbineFlag.ACC_STRICT,
         ImmutableList.copyOf(methods),
         fields,
         base.owner(),
@@ -261,6 +280,9 @@ public class TypeBinder {
       formals = ImmutableList.of();
     }
     int access = TurbineVisibility.fromAccess(base.access()).flag();
+    if (isStrictFp) {
+      access |= TurbineFlag.ACC_STRICT;
+    }
     access |= TurbineFlag.ACC_SYNTH_CTOR;
     methods.add(
         new MethodInfo(
@@ -277,6 +299,11 @@ public class TypeBinder {
   }
 
   private void addEnumMethods(List<MethodInfo> methods) {
+    int access = 0;
+    if (isStrictFp) {
+      access |= TurbineFlag.ACC_STRICT;
+    }
+
     if (!hasConstructor(methods)) {
       methods.add(
           new MethodInfo(
@@ -290,7 +317,7 @@ public class TypeBinder {
                       ImmutableList.of(),
                       true)),
               ImmutableList.of(),
-              TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
+              access | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
               null,
               null,
               ImmutableList.of(),
@@ -304,7 +331,7 @@ public class TypeBinder {
             Type.ClassTy.asNonParametricClassTy(owner),
             ImmutableList.of(new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), false)),
             ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
+            access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
             null,
             ImmutableList.of(),
@@ -317,7 +344,7 @@ public class TypeBinder {
             new Type.ArrayTy(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
             ImmutableList.of(),
             ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
+            access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
             null,
             ImmutableList.of(),
@@ -458,6 +485,10 @@ public class TypeBinder {
         break;
     }
 
+    if (isStrictFp && (access & TurbineFlag.ACC_ABSTRACT) == 0) {
+      access |= TurbineFlag.ACC_STRICT;
+    }
+    
     ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, t.annos());
     return new MethodInfo(
         sym,
