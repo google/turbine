@@ -508,11 +508,14 @@ public class Lower {
     {
       int idx = 0;
       for (ParamInfo p : m.parameters()) {
+        if (p.synthetic()) {
+          continue;
+        }
         lowerTypeAnnotations(
             result,
             p.type(),
             TargetType.METHOD_FORMAL_PARAMETER,
-            new TypeAnnotationInfo.FormalParameterTarget(idx));
+            new TypeAnnotationInfo.FormalParameterTarget(idx++));
       }
     }
 

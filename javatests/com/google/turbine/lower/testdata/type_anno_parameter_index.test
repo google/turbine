@@ -1,0 +1,19 @@
+=== Test.java ===
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+
+import java.lang.annotation.Target;
+import java.util.function.Function;
+
+@Target({TYPE_USE, PARAMETER}) @interface A {}
+@Target({TYPE_USE, PARAMETER}) @interface B {}
+@Target({TYPE_USE, PARAMETER}) @interface C {}
+
+class Test {
+  void f(@A int x, @A int y) {}
+
+  class Inner {
+    Inner(@A int x, @B int y) {}
+    Inner(@A Test Test.this, @C int x) {}
+  }
+}
