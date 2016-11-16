@@ -58,8 +58,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Constant expression evaluation. */
-public class ConstEvaluator {
+/**
+ * Constant expression evaluation.
+ *
+ * <p>JLS §15.4 requires this class to be strictfp.
+ */
+public strictfp class ConstEvaluator {
 
   /** The symbol of the enclosing class. */
   private final ClassSymbol owner;
