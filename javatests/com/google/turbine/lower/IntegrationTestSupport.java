@@ -63,10 +63,12 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
 /** Support for bytecode diffing-integration tests. */
 public class IntegrationTestSupport {
@@ -177,26 +179,78 @@ public class IntegrationTestSupport {
 
   /** Remove synthetic members, and apply a standard sort order. */
   private static void sortMembersAndAttributes(ClassNode n) {
-    Collections.<InnerClassNode>sort(
-        n.innerClasses,
+
+    n.innerClasses.sort(
         Comparator.comparing((InnerClassNode x) -> x.name)
             .thenComparing(x -> x.outerName)
             .thenComparing(x -> x.innerName)
             .thenComparing(x -> x.access));
 
-    Collections.<MethodNode>sort(
-        n.methods,
+    n.methods.sort(
         Comparator.comparing((MethodNode x) -> x.name)
             .thenComparing(x -> x.desc)
             .thenComparing(x -> x.signature)
             .thenComparing(x -> x.access));
 
-    Collections.<FieldNode>sort(
-        n.fields,
+    n.fields.sort(
         Comparator.comparing((FieldNode x) -> x.name)
             .thenComparing(x -> x.desc)
             .thenComparing(x -> x.signature)
             .thenComparing(x -> x.access));
+
+    sortAnnotations(n.visibleAnnotations);
+    sortAnnotations(n.invisibleAnnotations);
+    sortTypeAnnotations(n.visibleTypeAnnotations);
+    sortTypeAnnotations(n.invisibleTypeAnnotations);
+
+    for (MethodNode m : n.methods) {
+      sortParameterAnnotations(m.visibleParameterAnnotations);
+      sortParameterAnnotations(m.invisibleParameterAnnotations);
+
+      sortAnnotations(m.visibleAnnotations);
+      sortAnnotations(m.invisibleAnnotations);
+      sortTypeAnnotations(m.visibleTypeAnnotations);
+      sortTypeAnnotations(m.invisibleTypeAnnotations);
+    }
+
+    for (FieldNode f : n.fields) {
+      sortAnnotations(f.visibleAnnotations);
+      sortAnnotations(f.invisibleAnnotations);
+
+      sortAnnotations(f.visibleAnnotations);
+      sortAnnotations(f.invisibleAnnotations);
+      sortTypeAnnotations(f.visibleTypeAnnotations);
+      sortTypeAnnotations(f.invisibleTypeAnnotations);
+    }
+  }
+
+  private static void sortParameterAnnotations(List<AnnotationNode>[] parameters) {
+    if (parameters == null) {
+      return;
+    }
+    for (List<AnnotationNode> annos : parameters) {
+      sortAnnotations(annos);
+    }
+  }
+
+  private static void sortTypeAnnotations(List<TypeAnnotationNode> annos) {
+    if (annos == null) {
+      return;
+    }
+    annos.sort(
+        Comparator.comparing((TypeAnnotationNode a) -> a.desc)
+            .thenComparing(a -> String.valueOf(a.typeRef))
+            .thenComparing(a -> String.valueOf(a.typePath))
+            .thenComparing(a -> String.valueOf(a.values)));
+  }
+
+  private static void sortAnnotations(List<AnnotationNode> annos) {
+    if (annos == null) {
+      return;
+    }
+    annos.sort(
+        Comparator.comparing((AnnotationNode a) -> a.desc)
+            .thenComparing(a -> String.valueOf(a.values)));
   }
 
   /**
