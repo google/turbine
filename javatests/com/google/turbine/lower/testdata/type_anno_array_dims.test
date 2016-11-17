@@ -1,10 +1,12 @@
 === Test.java ===
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
+import java.util.Map;
 
 @Target(ElementType.TYPE_USE) @interface A {}
 @Target(ElementType.TYPE_USE) @interface B {}
 
 class Test<T> {
   private T @A [] [] @B [] values;
+  Map.Entry<?, ?> @A [] @B [] entries;
 }

@@ -203,8 +203,8 @@ public abstract class Tree {
       return visitor.visitVoidTy(this, input);
     }
 
-    public VoidTy(int position, ImmutableList<Anno> annos) {
-      super(position, annos);
+    public VoidTy(int position) {
+      super(position, ImmutableList.of());
     }
   }
 

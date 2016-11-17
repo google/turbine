@@ -1,0 +1,15 @@
+=== Test.java ===
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+
+import java.lang.annotation.Target;
+import java.util.function.Function;
+
+@Target({TYPE_USE, TYPE_PARAMETER, METHOD, PARAMETER}) @interface A {}
+
+interface Test {
+  public <T extends Object> @A Function<T, Throwable> c(
+      final Function<T, Throwable> delegate);
+}

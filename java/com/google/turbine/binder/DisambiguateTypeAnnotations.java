@@ -158,7 +158,7 @@ public class DisambiguateTypeAnnotations {
         declarationAnnotations.add(anno);
       }
     }
-    return fixAnnotations(env, type, typeAnnotations.build(), declarationAnnotations);
+    return addAnnotationsToType(type, typeAnnotations.build());
   }
 
   private static ImmutableList<FieldInfo> bindFields(
@@ -189,22 +189,16 @@ public class DisambiguateTypeAnnotations {
    * <p>Note: the second case means that type annotation disambiguation has to occur on nested types
    * before they are canonicalized.
    */
-  private static Type fixAnnotations(
-      Env<ClassSymbol, TypeBoundClass> env,
-      Type type,
-      ImmutableList<AnnoInfo> extra,
-      Builder<AnnoInfo> removed) {
+  private static Type addAnnotationsToType(Type type, ImmutableList<AnnoInfo> extra) {
     switch (type.tyKind()) {
       case PRIM_TY:
         PrimTy primTy = (PrimTy) type;
-        return new Type.PrimTy(
-            primTy.primkind(), fixAnnotations(env, primTy.annos(), extra, removed));
+        return new Type.PrimTy(primTy.primkind(), appendAnnotations(primTy.annos(), extra));
       case CLASS_TY:
         ClassTy classTy = (ClassTy) type;
         SimpleClassTy base = classTy.classes.get(0);
         SimpleClassTy simple =
-            new SimpleClassTy(
-                base.sym(), base.targs(), fixAnnotations(env, base.annos(), extra, removed));
+            new SimpleClassTy(base.sym(), base.targs(), appendAnnotations(base.annos(), extra));
         return new Type.ClassTy(
             ImmutableList.<SimpleClassTy>builder()
                 .add(simple)
@@ -212,11 +206,10 @@ public class DisambiguateTypeAnnotations {
                 .build());
       case ARRAY_TY:
         ArrayTy arrayTy = (ArrayTy) type;
-        return new ArrayTy(
-            fixAnnotations(env, arrayTy.elementType(), extra, removed), arrayTy.annos());
+        return new ArrayTy(addAnnotationsToType(arrayTy.elementType(), extra), arrayTy.annos());
       case TY_VAR:
         TyVar tyVar = (TyVar) type;
-        return new Type.TyVar(tyVar.sym(), fixAnnotations(env, tyVar.annos(), extra, removed));
+        return new Type.TyVar(tyVar.sym(), appendAnnotations(tyVar.annos(), extra));
       case VOID_TY:
         return type;
       case WILD_TY:
@@ -226,22 +219,9 @@ public class DisambiguateTypeAnnotations {
     }
   }
 
-  private static ImmutableList<AnnoInfo> fixAnnotations(
-      Env<ClassSymbol, TypeBoundClass> env,
-      ImmutableList<AnnoInfo> annos,
-      ImmutableList<AnnoInfo> extra,
-      Builder<AnnoInfo> removed) {
-    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
-    for (AnnoInfo anno : annos) {
-      Set<ElementType> target = env.get(anno.sym()).annotationMetadata().target();
-      if (target.contains(ElementType.TYPE_USE)) {
-        result.add(anno);
-      } else {
-        removed.add(anno);
-      }
-    }
-    result.addAll(extra);
-    return result.build();
+  private static ImmutableList<AnnoInfo> appendAnnotations(
+      ImmutableList<AnnoInfo> annos, ImmutableList<AnnoInfo> extra) {
+    return ImmutableList.<AnnoInfo>builder().addAll(annos).addAll(extra).build();
   }
 
   /**

@@ -1,0 +1,13 @@
+=== Test.java ===
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import java.lang.annotation.Target;
+import java.util.List;
+
+@Target({TYPE_USE, PARAMETER}) @interface A {}
+@Target({TYPE_USE, PARAMETER}) @interface B {}
+
+class Test {
+  List<? extends @A Integer @B []> xs;
+}
+

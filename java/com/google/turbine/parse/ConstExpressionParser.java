@@ -153,7 +153,7 @@ public class ConstExpressionParser {
         return primitiveClassLiteral(TurbineConstantTypeKind.BOOLEAN);
       case VOID:
         eat();
-        return finishClassLiteral(position, new Tree.VoidTy(position, ImmutableList.of()));
+        return finishClassLiteral(position, new Tree.VoidTy(position));
       case AT:
         return annotation();
       default:

@@ -470,12 +470,14 @@ public class Parser {
       typaram = typarams();
     }
 
-    ImmutableList<Anno> typeAnnos = maybeAnnos();
+    if (token == Token.AT) {
+      annos = ImmutableList.<Anno>builder().addAll(annos).addAll(maybeAnnos()).build();
+    }
 
     switch (token) {
       case VOID:
         {
-          result = new Tree.VoidTy(position, typeAnnos);
+          result = new Tree.VoidTy(position);
           next();
           name = eatIdent();
           return memberRest(access, annos, typaram, result, name);
@@ -489,7 +491,7 @@ public class Parser {
       case DOUBLE:
       case FLOAT:
         {
-          result = referenceType(typeAnnos);
+          result = referenceType(ImmutableList.of());
           name = eatIdent();
           return memberRest(access, annos, typaram, result, name);
         }
@@ -510,7 +512,7 @@ public class Parser {
                         Optional.<ClassTy>absent(),
                         ident,
                         ImmutableList.<Type>of(),
-                        typeAnnos);
+                        ImmutableList.of());
                 name = eatIdent();
                 return memberRest(access, annos, typaram, result, name);
               }
@@ -523,24 +525,16 @@ public class Parser {
                         Optional.<ClassTy>absent(),
                         ident,
                         ImmutableList.<Type>of(),
-                        typeAnnos);
-                typeAnnos = maybeAnnos();
-                eat(Token.LBRACK);
-                do {
-                  result = new ArrTy(position, typeAnnos, result);
-                  eat(Token.RBRACK);
-                  typeAnnos = maybeAnnos();
-                } while (maybe(Token.LBRACK));
+                        ImmutableList.of());
+                result = maybeDims(maybeAnnos(), result);
                 break;
               }
             case LT:
               {
                 result =
-                    new ClassTy(position, Optional.<ClassTy>absent(), ident, tyargs(), typeAnnos);
-                while (maybe(Token.LBRACK)) {
-                  eat(Token.RBRACK);
-                  result = new ArrTy(position, typeAnnos, result);
-                }
+                    new ClassTy(
+                        position, Optional.<ClassTy>absent(), ident, tyargs(), ImmutableList.of());
+                result = maybeDims(maybeAnnos(), result);
                 break;
               }
             case DOT:
@@ -550,7 +544,7 @@ public class Parser {
                       Optional.<ClassTy>absent(),
                       ident,
                       ImmutableList.<Type>of(),
-                      typeAnnos);
+                      ImmutableList.of());
               break;
             default:
               throw error(token);
@@ -562,11 +556,8 @@ public class Parser {
             next();
             // TODO(cushon): is this cast OK?
             result = classty((ClassTy) result);
-            while (maybe(Token.LBRACK)) {
-              eat(Token.RBRACK);
-              result = new ArrTy(position, typeAnnos, result);
-            }
           }
+          result = maybeDims(maybeAnnos(), result);
           name = eatIdent();
           switch (token) {
             case LPAREN:
@@ -591,16 +582,15 @@ public class Parser {
   }
 
   private ImmutableList<Anno> maybeAnnos() {
-    ImmutableList<Anno> typeAnnos = ImmutableList.of();
-    if (token == Token.AT) {
-      ImmutableList.Builder<Anno> builder = ImmutableList.builder();
-      while (token == Token.AT) {
-        next();
-        builder.add(annotation());
-      }
-      typeAnnos = builder.build();
+    if (token != Token.AT) {
+      return ImmutableList.of();
     }
-    return typeAnnos;
+    ImmutableList.Builder<Anno> builder = ImmutableList.builder();
+    while (token == Token.AT) {
+      next();
+      builder.add(annotation());
+    }
+    return builder.build();
   }
 
   private ImmutableList<Tree> memberRest(
@@ -790,18 +780,14 @@ public class Parser {
 
   private VarDecl formalParam() {
     ImmutableList.Builder<Anno> annos = ImmutableList.builder();
-    EnumSet<TurbineModifier> access = modifiers(annos);
-    Type ty = referenceType(maybeAnnos());
+    EnumSet<TurbineModifier> access = modifiersAndAnnotations(annos);
+    Type ty = referenceType(ImmutableList.of());
     ImmutableList<Anno> typeAnnos = maybeAnnos();
     if (maybe(Token.ELLIPSIS)) {
       access.add(TurbineModifier.VARARGS);
       ty = new ArrTy(position, typeAnnos, ty);
-    }
-    while (token == Token.LBRACK) {
-      eat(Token.LBRACK);
-      eat(Token.RBRACK);
-      ty = new ArrTy(position, typeAnnos, ty);
-      typeAnnos = maybeAnnos();
+    } else {
+      ty = maybeDims(typeAnnos, ty);
     }
     // the parameter name is `this` for receiver parameters, and a qualified this expression
     // for inner classes
@@ -1040,14 +1026,20 @@ public class Parser {
       default:
         throw error(token);
     }
+    ty = maybeDims(maybeAnnos(), ty);
+    return ty;
+  }
+
+  private Type maybeDims(ImmutableList<Anno> typeAnnos, Type ty) {
     while (maybe(Token.LBRACK)) {
       eat(Token.RBRACK);
       ty = new ArrTy(position, typeAnnos, ty);
+      typeAnnos = maybeAnnos();
     }
     return ty;
   }
 
-  private EnumSet<TurbineModifier> modifiers(ImmutableList.Builder<Anno> annos) {
+  private EnumSet<TurbineModifier> modifiersAndAnnotations(ImmutableList.Builder<Anno> annos) {
     EnumSet<TurbineModifier> access = EnumSet.noneOf(TurbineModifier.class);
     while (true) {
       switch (token) {
