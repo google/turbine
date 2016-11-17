@@ -22,6 +22,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.AnnoInfo;
@@ -234,13 +235,15 @@ public interface TypeBoundClass extends HeaderBoundClass {
   /** A formal parameter declaration. */
   class ParamInfo {
     private final Type type;
+    private final String name;
+    private final int access;
     private final ImmutableList<AnnoInfo> annotations;
-    private final boolean synthetic;
 
-    public ParamInfo(Type type, ImmutableList<AnnoInfo> annotations, boolean synthetic) {
+    public ParamInfo(Type type, String name, ImmutableList<AnnoInfo> annotations, int access) {
       this.type = type;
+      this.name = name;
+      this.access = access;
       this.annotations = annotations;
-      this.synthetic = synthetic;
     }
 
     /** The parameter type. */
@@ -253,12 +256,22 @@ public interface TypeBoundClass extends HeaderBoundClass {
      * class constructor.
      */
     public boolean synthetic() {
-      return synthetic;
+      return (access & (TurbineFlag.ACC_SYNTHETIC | TurbineFlag.ACC_MANDATED)) != 0;
     }
 
     /** Parameter annotations. */
     public ImmutableList<AnnoInfo> annotations() {
       return annotations;
+    }
+
+    /** The parameter's name. */
+    public String name() {
+      return name;
+    }
+
+    /** The parameter's modifiers. */
+    public int access() {
+      return access;
     }
   }
 }

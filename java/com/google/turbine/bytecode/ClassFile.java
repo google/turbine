@@ -227,6 +227,7 @@ public class ClassFile {
     private final List<AnnotationInfo> annotations;
     private final ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations;
     private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
+    private final ImmutableList<ParameterInfo> parameters;
 
     public MethodInfo(
         int access,
@@ -237,7 +238,8 @@ public class ClassFile {
         @Nullable ElementValue defaultValue,
         List<AnnotationInfo> annotations,
         ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations,
-        ImmutableList<TypeAnnotationInfo> typeAnnotations) {
+        ImmutableList<TypeAnnotationInfo> typeAnnotations,
+        ImmutableList<ParameterInfo> parameters) {
       this.access = access;
       this.name = name;
       this.descriptor = descriptor;
@@ -247,6 +249,7 @@ public class ClassFile {
       this.annotations = annotations;
       this.parameterAnnotations = parameterAnnotations;
       this.typeAnnotations = typeAnnotations;
+      this.parameters = parameters;
     }
 
     /** Method access and property flags. */
@@ -294,6 +297,32 @@ public class ClassFile {
     /** Type annotations. */
     public ImmutableList<TypeAnnotationInfo> typeAnnotations() {
       return typeAnnotations;
+    }
+
+    /** Formal parameters. */
+    public ImmutableList<ParameterInfo> parameters() {
+      return parameters;
+    }
+
+    /** A formal parameter. */
+    public static class ParameterInfo {
+      private final String name;
+      private final int access;
+
+      public ParameterInfo(String name, int access) {
+        this.name = name;
+        this.access = access;
+      }
+
+      /** Returns the parameter's name. */
+      public String name() {
+        return name;
+      }
+
+      /** Returns the parameter's modifiers. */
+      public int access() {
+        return access;
+      }
     }
   }
 

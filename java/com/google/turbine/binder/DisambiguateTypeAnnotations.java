@@ -132,7 +132,7 @@ public class DisambiguateTypeAnnotations {
     Type type =
         disambiguate(
             env, ElementType.PARAMETER, base.type(), base.annotations(), declarationAnnotations);
-    return new ParamInfo(type, declarationAnnotations.build(), base.synthetic());
+    return new ParamInfo(type, base.name(), declarationAnnotations.build(), base.access());
   }
 
   /**

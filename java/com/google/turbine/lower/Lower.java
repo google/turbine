@@ -42,6 +42,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.Target;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TargetType;
@@ -201,6 +202,8 @@ public class Lower {
 
     ImmutableList<TypeAnnotationInfo> typeAnnotations = methodTypeAnnotations(m);
 
+    ImmutableList<ClassFile.MethodInfo.ParameterInfo> parameters = methodParameters(m);
+
     return new ClassFile.MethodInfo(
         access,
         name,
@@ -210,8 +213,20 @@ public class Lower {
         defaultValue,
         annotations,
         paramAnnotations,
-        typeAnnotations);
+        typeAnnotations,
+        parameters);
   }
+
+  private ImmutableList<ParameterInfo> methodParameters(MethodInfo m) {
+    ImmutableList.Builder<ParameterInfo> result = ImmutableList.builder();
+    for (ParamInfo p : m.parameters()) {
+      result.add(new ParameterInfo(p.name(), p.access() & PARAMETER_ACCESS_MASK));
+    }
+    return result.build();
+  }
+
+  private static final int PARAMETER_ACCESS_MASK =
+      TurbineFlag.ACC_MANDATED | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_SYNTHETIC;
 
   private ImmutableList<ImmutableList<AnnotationInfo>> parameterAnnotations(MethodInfo m) {
     ImmutableList.Builder<ImmutableList<AnnotationInfo>> annotations = ImmutableList.builder();

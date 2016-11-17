@@ -17,4 +17,5 @@ public class test/Test implements java/util/List  {
   // signature <V::Ljava/lang/Runnable;E:Ljava/lang/Error;>(I)V^TE;
   // declaration: void g<V extends java.lang.Runnable, E extends java.lang.Error>(int) throws E
   public g(I)V throws java/lang/Error 
+    // parameter  foo
 }

@@ -138,7 +138,7 @@ public class ConstBinder {
 
   private ParamInfo bindParameter(ParamInfo base) {
     ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(base.annotations());
-    return new ParamInfo(bindType(base.type()), annos, base.synthetic());
+    return new ParamInfo(bindType(base.type()), base.name(), annos, base.access());
   }
 
   static AnnotationMetadata bindAnnotationMetadata(

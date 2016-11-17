@@ -383,7 +383,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
 
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
     for (Sig.TySig tySig : sig.params()) {
-      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), ImmutableList.of(), false));
+      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), null, ImmutableList.of(), 0));
     }
 
     verify(sig.exceptions().isEmpty());

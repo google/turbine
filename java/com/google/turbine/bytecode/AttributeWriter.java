@@ -22,9 +22,11 @@ import com.google.turbine.bytecode.Attribute.Annotations;
 import com.google.turbine.bytecode.Attribute.ConstantValue;
 import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
+import com.google.turbine.bytecode.Attribute.MethodParameters;
 import com.google.turbine.bytecode.Attribute.Signature;
 import com.google.turbine.bytecode.Attribute.TypeAnnotations;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const;
 import java.util.List;
@@ -69,6 +71,9 @@ public class AttributeWriter {
       case RUNTIME_INVISIBLE_TYPE_ANNOTATIONS:
       case RUNTIME_VISIBLE_TYPE_ANNOTATIONS:
         writeTypeAnnotation((Attribute.TypeAnnotations) attribute);
+        break;
+      case METHOD_PARAMETERS:
+        writeMethodParameters((Attribute.MethodParameters) attribute);
         break;
       default:
         throw new AssertionError(attribute.kind());
@@ -179,5 +184,15 @@ public class AttributeWriter {
     byte[] data = tmp.toByteArray();
     output.writeInt(data.length);
     output.write(data);
+  }
+
+  private void writeMethodParameters(MethodParameters attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(attribute.parameters().size() * 4 + 1);
+    output.writeByte(attribute.parameters().size());
+    for (ParameterInfo parameter : attribute.parameters()) {
+      output.writeShort(parameter.name() != null ? pool.utf8(parameter.name()) : 0);
+      output.writeShort(parameter.access());
+    }
   }
 }

@@ -41,6 +41,7 @@ public class TurbineFlag {
   public static final int ACC_SYNTHETIC = 0x1000;
   public static final int ACC_ANNOTATION = 0x2000;
   public static final int ACC_ENUM = 0x4000;
+  public static final int ACC_MANDATED = 0x8000;
 
   // TODO(cushon): the rest of these aren't spec'd access bits, put them somewhere else?
 

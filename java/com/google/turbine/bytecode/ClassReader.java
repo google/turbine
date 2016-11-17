@@ -295,6 +295,7 @@ public class ClassReader {
               null,
               ImmutableList.of(),
               ImmutableList.of(),
+              ImmutableList.of(),
               ImmutableList.of()));
     }
     return methods;

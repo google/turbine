@@ -459,7 +459,7 @@ public class IntegrationTestSupport {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             fileManager,
             collector,
-            ImmutableList.of(),
+            ImmutableList.of("-parameters"),
             ImmutableList.of(),
             fileManager.getJavaFileObjectsFromPaths(inputs));
 

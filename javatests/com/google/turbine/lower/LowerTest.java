@@ -144,8 +144,9 @@ public class LowerTest {
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
                         new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
+                        "foo",
                         ImmutableList.of(),
-                        false)),
+                        0)),
                 ImmutableList.of(
                     new Type.TyVar(
                         new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),

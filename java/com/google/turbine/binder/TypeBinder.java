@@ -272,10 +272,7 @@ public class TypeBinder {
     }
     ImmutableList<ParamInfo> formals;
     if (hasEnclosingInstance(base)) {
-      formals =
-          ImmutableList.of(
-              new ParamInfo(
-                  Type.ClassTy.asNonParametricClassTy(base.owner()), ImmutableList.of(), true));
+      formals = ImmutableList.of(enclosingInstanceParameter());
     } else {
       formals = ImmutableList.of();
     }
@@ -298,6 +295,45 @@ public class TypeBinder {
             null));
   }
 
+  private ParamInfo enclosingInstanceParameter() {
+    int access = TurbineFlag.ACC_FINAL;
+    if ((base.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
+      access |= TurbineFlag.ACC_SYNTHETIC;
+    } else {
+      access |= TurbineFlag.ACC_MANDATED;
+    }
+    int enclosingInstances = 0;
+    for (ClassSymbol sym = base.owner(); sym != null; ) {
+      HeaderBoundClass info = env.get(sym);
+      if (((info.access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC)
+          || info.owner() == null) {
+        break;
+      }
+      enclosingInstances++;
+      sym = info.owner();
+    }
+    return new ParamInfo(
+        Type.ClassTy.asNonParametricClassTy(base.owner()),
+        "this$" + enclosingInstances,
+        ImmutableList.of(),
+        access);
+  }
+
+  private static final ImmutableList<ParamInfo> ENUM_CTOR_PARAMS =
+      ImmutableList.of(
+          new ParamInfo(
+              Type.ClassTy.STRING,
+              "$enum$name",
+              ImmutableList.of(),
+              /*synthetic*/
+              TurbineFlag.ACC_SYNTHETIC),
+          new ParamInfo(
+              new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
+              "$enum$ordinal",
+              ImmutableList.of(),
+              /*synthetic*/
+              TurbineFlag.ACC_SYNTHETIC));
+
   private void addEnumMethods(List<MethodInfo> methods) {
     int access = 0;
     if (isStrictFp) {
@@ -310,12 +346,7 @@ public class TypeBinder {
               new MethodSymbol(owner, "<init>"),
               ImmutableMap.of(),
               Type.VOID,
-              ImmutableList.of(
-                  new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), true),
-                  new ParamInfo(
-                      new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
-                      ImmutableList.of(),
-                      true)),
+              ENUM_CTOR_PARAMS,
               ImmutableList.of(),
               access | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
               null,
@@ -329,7 +360,9 @@ public class TypeBinder {
             new MethodSymbol(owner, "valueOf"),
             ImmutableMap.of(),
             Type.ClassTy.asNonParametricClassTy(owner),
-            ImmutableList.of(new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), false)),
+            ImmutableList.of(
+                new ParamInfo(
+                    Type.ClassTy.STRING, "name", ImmutableList.of(), TurbineFlag.ACC_MANDATED)),
             ImmutableList.of(),
             access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
@@ -431,25 +464,23 @@ public class TypeBinder {
     String name = t.name();
     if (name.equals("<init>")) {
       if (hasEnclosingInstance(base)) {
-        parameters.add(
-            new ParamInfo(
-                Type.ClassTy.asNonParametricClassTy(base.owner()),
-                ImmutableList.of(),
-                /*synthetic*/ true));
+        parameters.add(enclosingInstanceParameter());
       } else if (base.kind() == TurbineTyKind.ENUM && name.equals("<init>")) {
-        parameters.add(new ParamInfo(Type.ClassTy.STRING, ImmutableList.of(), /*synthetic*/ true));
-        parameters.add(
-            new ParamInfo(
-                new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
-                ImmutableList.of(),
-                /*synthetic*/ true));
+        parameters.addAll(ENUM_CTOR_PARAMS);
       }
     }
     ParamInfo receiver = null;
     for (Tree.VarDecl p : t.params()) {
+      int access = 0;
+      for (TurbineModifier m : p.mods()) {
+        access |= m.flag();
+      }
       ParamInfo param =
           new ParamInfo(
-              bindTy(scope, p.ty()), bindAnnotations(scope, p.annos()), /*synthetic*/ false);
+              bindTy(scope, p.ty()),
+              p.name(),
+              bindAnnotations(scope, p.annos()), /*synthetic*/
+              access);
       if (p.name().equals("this")) {
         receiver = param;
         continue;

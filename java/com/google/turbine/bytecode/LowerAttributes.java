@@ -21,6 +21,7 @@ import com.google.turbine.bytecode.Attribute.AnnotationDefault;
 import com.google.turbine.bytecode.Attribute.ConstantValue;
 import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
+import com.google.turbine.bytecode.Attribute.MethodParameters;
 import com.google.turbine.bytecode.Attribute.Signature;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
@@ -58,6 +59,9 @@ public class LowerAttributes {
     }
     if (method.defaultValue() != null) {
       attributes.add(new AnnotationDefault(method.defaultValue()));
+    }
+    if (!method.parameters().isEmpty()) {
+      attributes.add(new MethodParameters(method.parameters()));
     }
     return attributes;
   }

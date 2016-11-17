@@ -18,6 +18,7 @@ package com.google.turbine.bytecode;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
+import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const.Value;
 import java.util.List;
@@ -36,7 +37,8 @@ interface Attribute {
     RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS("RuntimeVisibleParameterAnnotations"),
     RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS("RuntimeInvisibleParameterAnnotations"),
     RUNTIME_VISIBLE_TYPE_ANNOTATIONS("RuntimeVisibleTypeAnnotations"),
-    RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations");
+    RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations"),
+    METHOD_PARAMETERS("MethodParameters");
 
     private final String signature;
 
@@ -255,6 +257,25 @@ interface Attribute {
     @Override
     public ImmutableList<TypeAnnotationInfo> annotations() {
       return annotations;
+    }
+  }
+
+  /** A JVMS §4.7.24 MethodParameters attribute. */
+  class MethodParameters implements Attribute {
+    private final ImmutableList<ParameterInfo> parameters;
+
+    public MethodParameters(ImmutableList<ParameterInfo> parameters) {
+      this.parameters = parameters;
+    }
+
+    /** The parameters. */
+    public ImmutableList<ParameterInfo> parameters() {
+      return parameters;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.METHOD_PARAMETERS;
     }
   }
 }
