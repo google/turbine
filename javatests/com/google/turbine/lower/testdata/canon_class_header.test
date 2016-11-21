@@ -1,0 +1,30 @@
+=== test/Test.java ===
+package test;
+import test.A.Inner;
+import java.util.TreeMap;
+import java.util.Map;
+
+// in Map<K, Inner>, Inner is resolved using the single type import, and is raw
+class A<K extends Comparable> extends TreeMap<K, Inner> {
+  public class Inner {}
+}
+
+class S<T> {
+  public class Inner {}
+}
+
+// Inner is resolved using the single type import, and is raw
+abstract class B<K extends Comparable> extends S implements Map<K, Inner> {
+}
+
+class C extends S<String> {
+  // Inner is resolved as a member of the enclosing instance, and is implicitly
+  // qualified by `S<String>`
+  abstract class One<K> extends TreeMap<K, Inner> {
+  }
+
+  // Inner is resolved as a member of the enclosing instance (not as a member
+  // of the superclass!), and is qualified by `S<String>` (not S<Number>)
+  abstract class Two<K> extends S<Number> implements Map<K, Inner> {
+  }
+}

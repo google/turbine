@@ -195,22 +195,6 @@ public class TypeBinder {
       case INTERFACE:
         if (base.decl().xtnds().isPresent()) {
           superClassType = (Type.ClassTy) bindClassTy(bindingScope, base.decl().xtnds().get());
-          // Members inherited from the superclass are visible to interface types.
-          // (The same is not true for interface types declared before other interface
-          // types, at least according to javac.)
-          bindingScope =
-              bindingScope.append(
-                  new Scope() {
-                    @Override
-                    public LookupResult lookup(LookupKey lookup) {
-                      ClassSymbol result =
-                          Resolve.resolve(env, owner, base.superclass(), lookup.first());
-                      if (result != null) {
-                        return new LookupResult(result, lookup);
-                      }
-                      return null;
-                    }
-                  });
         } else {
           superClassType = Type.ClassTy.OBJECT;
         }

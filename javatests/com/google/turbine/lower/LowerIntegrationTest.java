@@ -280,6 +280,7 @@ public class LowerIntegrationTest {
       "type_anno_array_bound.test",
       "type_anno_return.test",
       "type_anno_order.test",
+      "canon_class_header.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
