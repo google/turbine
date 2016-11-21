@@ -1,0 +1,12 @@
+=== Test.java ===
+import static java.lang.annotation.ElementType.TYPE_USE;
+import java.lang.annotation.Target;
+
+@Target(TYPE_USE) @interface A {}
+
+class Test {
+  class Inner {
+    void f(@A Inner this, int x) {}
+    void g(@A Inner i) {}
+  }
+}

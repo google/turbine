@@ -96,12 +96,7 @@ public class CanonicalTypeBinder {
       Type ret = Canonicalize.canonicalize(env, sym, base.returnType());
       ImmutableList.Builder<ParamInfo> parameters = ImmutableList.builder();
       for (ParamInfo parameter : base.parameters()) {
-        parameters.add(
-            new ParamInfo(
-                Canonicalize.canonicalize(env, sym, parameter.type()),
-                parameter.name(),
-                parameter.annotations(),
-                parameter.access()));
+        parameters.add(param(env, sym, parameter));
       }
       ImmutableList<Type> exceptions = canonicalizeList(env, sym, base.exceptions());
       result.add(
@@ -115,9 +110,18 @@ public class CanonicalTypeBinder {
               base.defaultValue(),
               base.decl(),
               base.annotations(),
-              base.receiver()));
+              base.receiver() != null ? param(env, sym, base.receiver()) : null));
     }
     return result.build();
+  }
+
+  private static ParamInfo param(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, ParamInfo base) {
+    return new ParamInfo(
+        Canonicalize.canonicalize(env, sym, base.type()),
+        base.name(),
+        base.annotations(),
+        base.access());
   }
 
   private static ImmutableMap<TyVarSymbol, TyVarInfo> typeParameters(
