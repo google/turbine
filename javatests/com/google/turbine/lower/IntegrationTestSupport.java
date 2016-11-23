@@ -18,6 +18,7 @@ package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
@@ -104,10 +105,11 @@ public class IntegrationTestSupport {
       }
     }
 
+    HashSet<String> all = classes.stream().map(n -> n.name).collect(toCollection(HashSet::new));
     for (ClassNode n : classes) {
       removeImplementation(n);
       removeUnusedInnerClassAttributes(infos, n);
-      makeEnumsFinal(in.keySet(), n);
+      makeEnumsFinal(all, n);
       sortMembersAndAttributes(n);
       undeprecate(n);
     }
