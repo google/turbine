@@ -107,7 +107,7 @@ public class IntegrationTestSupport {
     for (ClassNode n : classes) {
       removeImplementation(n);
       removeUnusedInnerClassAttributes(infos, n);
-      makeEnumsFinal(n);
+      makeEnumsFinal(in.keySet(), n);
       sortMembersAndAttributes(n);
       undeprecate(n);
     }
@@ -121,10 +121,10 @@ public class IntegrationTestSupport {
     n.fields.forEach(f -> f.access &= ~Opcodes.ACC_DEPRECATED);
   }
 
-  private static void makeEnumsFinal(ClassNode n) {
+  private static void makeEnumsFinal(Set<String> all, ClassNode n) {
     n.innerClasses.forEach(
         x -> {
-          if ((x.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
+          if (all.contains(x.name) && (x.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
             x.access &= ~Opcodes.ACC_ABSTRACT;
             x.access |= Opcodes.ACC_FINAL;
           }

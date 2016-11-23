@@ -1,0 +1,14 @@
+%%% A.java %%%
+class A {
+  static enum E {
+    ONE{
+      void f() {}
+    };
+    abstract void f();
+  }
+}
+
+=== Test.java ===
+class Test {
+  A.E e;
+}
