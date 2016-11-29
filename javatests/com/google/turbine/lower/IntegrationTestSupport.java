@@ -122,10 +122,27 @@ public class IntegrationTestSupport {
     return n.innerClasses.stream().anyMatch(i -> i.name.equals(n.name) && i.innerName == null);
   }
 
+  // ASM sets ACC_DEPRECATED for elements with the Deprecated attribute;
+  // unset it if the @Deprecated annotation is not also present.
+  // This can happen if the @deprecated javadoc tag was present but the
+  // annotation wasn't.
   private static void undeprecate(ClassNode n) {
-    n.access &= ~Opcodes.ACC_DEPRECATED;
-    n.methods.forEach(m -> m.access &= ~Opcodes.ACC_DEPRECATED);
-    n.fields.forEach(f -> f.access &= ~Opcodes.ACC_DEPRECATED);
+    if (!isDeprecated(n.visibleAnnotations)) {
+      n.access &= ~Opcodes.ACC_DEPRECATED;
+    }
+    n.methods
+        .stream()
+        .filter(m -> !isDeprecated(m.visibleAnnotations))
+        .forEach(m -> m.access &= ~Opcodes.ACC_DEPRECATED);
+    n.fields
+        .stream()
+        .filter(f -> !isDeprecated(f.visibleAnnotations))
+        .forEach(f -> f.access &= ~Opcodes.ACC_DEPRECATED);
+  }
+
+  private static boolean isDeprecated(List<AnnotationNode> visibleAnnotations) {
+    return visibleAnnotations != null
+        && visibleAnnotations.stream().anyMatch(a -> a.desc.equals("Ljava/lang/Deprecated;"));
   }
 
   private static void makeEnumsFinal(Set<String> all, ClassNode n) {

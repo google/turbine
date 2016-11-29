@@ -370,4 +370,31 @@ public class LowerTest {
     assertThat(IntegrationTestSupport.dump(actual))
         .isEqualTo(IntegrationTestSupport.dump(expected));
   }
+
+  @Test
+  public void deprecated() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
+            ImmutableList.of(),
+            BOOTCLASSPATH);
+    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
+    int[] acc = {0};
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM5) {
+              @Override
+              public void visit(
+                  int version,
+                  int access,
+                  String name,
+                  String signature,
+                  String superName,
+                  String[] interfaces) {
+                acc[0] = access;
+              }
+            },
+            0);
+    assertThat((acc[0] & Opcodes.ACC_DEPRECATED) == Opcodes.ACC_DEPRECATED).isTrue();
+  }
 }

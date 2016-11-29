@@ -68,6 +68,9 @@ public class AttributeWriter {
       case RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS:
         writeParameterAnnotations((Attribute.ParameterAnnotations) attribute);
         break;
+      case DEPRECATED:
+        writeDeprecated(attribute);
+        break;
       case RUNTIME_INVISIBLE_TYPE_ANNOTATIONS:
       case RUNTIME_VISIBLE_TYPE_ANNOTATIONS:
         writeTypeAnnotation((Attribute.TypeAnnotations) attribute);
@@ -172,6 +175,11 @@ public class AttributeWriter {
     byte[] data = tmp.toByteArray();
     output.writeInt(data.length);
     output.write(data);
+  }
+
+  private void writeDeprecated(Attribute attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(0);
   }
 
   private void writeTypeAnnotation(TypeAnnotations attribute) {

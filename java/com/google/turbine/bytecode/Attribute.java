@@ -36,6 +36,7 @@ interface Attribute {
     ANNOTATION_DEFAULT("AnnotationDefault"),
     RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS("RuntimeVisibleParameterAnnotations"),
     RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS("RuntimeInvisibleParameterAnnotations"),
+    DEPRECATED("Deprecated"),
     RUNTIME_VISIBLE_TYPE_ANNOTATIONS("RuntimeVisibleTypeAnnotations"),
     RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations"),
     METHOD_PARAMETERS("MethodParameters");
@@ -217,6 +218,15 @@ interface Attribute {
       return Kind.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS;
     }
   }
+
+  /** A JVMS §4.7.15 Deprecated attribute. */
+  Attribute DEPRECATED =
+      new Attribute() {
+        @Override
+        public Kind kind() {
+          return Kind.DEPRECATED;
+        }
+      };
 
   interface TypeAnnotations extends Attribute {
     ImmutableList<TypeAnnotationInfo> annotations();
