@@ -43,6 +43,8 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
+import com.google.turbine.tree.Tree.Kind;
+import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.AnnoInfo;
@@ -210,8 +212,11 @@ public class TypeBinder {
 
     CompoundScope scope = base.scope().append(new ClassMemberScope(owner, env));
 
-    List<MethodInfo> methods = bindMethods(scope, base.decl().members());
-    addSyntheticMethods(methods);
+    List<MethodInfo> methods =
+        ImmutableList.<MethodInfo>builder()
+            .addAll(syntheticMethods())
+            .addAll(bindMethods(scope, base.decl().members()))
+            .build();
 
     ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
 
@@ -236,23 +241,21 @@ public class TypeBinder {
         base.source());
   }
 
-  /** Add synthetic and implicit methods, including default constructors and enum methods. */
-  void addSyntheticMethods(List<MethodInfo> methods) {
+  /** Collect synthetic and implicit methods, including default constructors and enum methods. */
+  ImmutableList<MethodInfo> syntheticMethods() {
     switch (base.kind()) {
       case CLASS:
-        maybeAddDefaultConstructor(methods);
-        break;
+        return maybeDefaultConstructor();
       case ENUM:
-        addEnumMethods(methods);
-        break;
+        return syntheticEnumMethods();
       default:
-        break;
+        return ImmutableList.of();
     }
   }
 
-  private void maybeAddDefaultConstructor(List<MethodInfo> methods) {
-    if (hasConstructor(methods)) {
-      return;
+  private ImmutableList<MethodInfo> maybeDefaultConstructor() {
+    if (hasConstructor()) {
+      return ImmutableList.of();
     }
     ImmutableList<ParamInfo> formals;
     if (hasEnclosingInstance(base)) {
@@ -260,23 +263,27 @@ public class TypeBinder {
     } else {
       formals = ImmutableList.of();
     }
-    int access = TurbineVisibility.fromAccess(base.access()).flag();
+    return ImmutableList.of(
+        syntheticConstructor(formals, TurbineVisibility.fromAccess(base.access())));
+  }
+
+  private MethodInfo syntheticConstructor(
+      ImmutableList<ParamInfo> formals, TurbineVisibility visibility) {
+    int access = visibility.flag();
     if (isStrictFp) {
       access |= TurbineFlag.ACC_STRICT;
     }
-    access |= TurbineFlag.ACC_SYNTH_CTOR;
-    methods.add(
-        new MethodInfo(
-            new MethodSymbol(owner, "<init>"),
-            ImmutableMap.of(),
-            Type.VOID,
-            formals,
-            ImmutableList.of(),
-            access,
-            null,
-            null,
-            ImmutableList.of(),
-            null));
+    return new MethodInfo(
+        new MethodSymbol(owner, "<init>"),
+        ImmutableMap.of(),
+        Type.VOID,
+        formals,
+        ImmutableList.of(),
+        access | TurbineFlag.ACC_SYNTH_CTOR,
+        null,
+        null,
+        ImmutableList.of(),
+        null);
   }
 
   private ParamInfo enclosingInstanceParameter() {
@@ -318,27 +325,27 @@ public class TypeBinder {
               /*synthetic*/
               TurbineFlag.ACC_SYNTHETIC));
 
-  private void addEnumMethods(List<MethodInfo> methods) {
+  private ImmutableList<MethodInfo> syntheticEnumMethods() {
+    ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
     int access = 0;
     if (isStrictFp) {
       access |= TurbineFlag.ACC_STRICT;
     }
-
-    if (!hasConstructor(methods)) {
-      methods.add(
-          new MethodInfo(
-              new MethodSymbol(owner, "<init>"),
-              ImmutableMap.of(),
-              Type.VOID,
-              ENUM_CTOR_PARAMS,
-              ImmutableList.of(),
-              access | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_SYNTH_CTOR,
-              null,
-              null,
-              ImmutableList.of(),
-              null));
+    if (!hasConstructor()) {
+      methods.add(syntheticConstructor(ENUM_CTOR_PARAMS, TurbineVisibility.PRIVATE));
     }
-
+    methods.add(
+        new MethodInfo(
+            new MethodSymbol(owner, "values"),
+            ImmutableMap.of(),
+            new Type.ArrayTy(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
+            ImmutableList.of(),
+            ImmutableList.of(),
+            access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
+            null,
+            null,
+            ImmutableList.of(),
+            null));
     methods.add(
         new MethodInfo(
             new MethodSymbol(owner, "valueOf"),
@@ -353,24 +360,15 @@ public class TypeBinder {
             null,
             ImmutableList.of(),
             null));
-
-    methods.add(
-        new MethodInfo(
-            new MethodSymbol(owner, "values"),
-            ImmutableMap.of(),
-            new Type.ArrayTy(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
-            ImmutableList.of(),
-            ImmutableList.of(),
-            access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
-            null,
-            null,
-            ImmutableList.of(),
-            null));
+    return methods.build();
   }
 
-  private static boolean hasConstructor(List<MethodInfo> methods) {
-    for (MethodInfo m : methods) {
-      if (m.name().equals("<init>")) {
+  private boolean hasConstructor() {
+    for (Tree m : base.decl().members()) {
+      if (m.kind() != Kind.METH_DECL) {
+        continue;
+      }
+      if (((MethDecl) m).name().equals("<init>")) {
         return true;
       }
     }
@@ -503,7 +501,7 @@ public class TypeBinder {
     if (isStrictFp && (access & TurbineFlag.ACC_ABSTRACT) == 0) {
       access |= TurbineFlag.ACC_STRICT;
     }
-    
+
     ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, t.annos());
     return new MethodInfo(
         sym,

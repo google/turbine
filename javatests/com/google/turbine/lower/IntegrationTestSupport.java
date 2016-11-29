@@ -81,7 +81,7 @@ public class IntegrationTestSupport {
   public static Map<String, byte[]> sortMembers(Map<String, byte[]> in) {
     List<ClassNode> classes = toClassNodes(in);
     for (ClassNode n : classes) {
-      sortMembersAndAttributes(n);
+      sortAttributes(n);
     }
     return toByteCode(classes);
   }
@@ -110,7 +110,7 @@ public class IntegrationTestSupport {
       removeImplementation(n);
       removeUnusedInnerClassAttributes(infos, n);
       makeEnumsFinal(all, n);
-      sortMembersAndAttributes(n);
+      sortAttributes(n);
       undeprecate(n);
     }
 
@@ -202,25 +202,13 @@ public class IntegrationTestSupport {
             .collect(toList());
   }
 
-  /** Remove synthetic members, and apply a standard sort order. */
-  private static void sortMembersAndAttributes(ClassNode n) {
+  /** Apply a standard sort order to attributes. */
+  private static void sortAttributes(ClassNode n) {
 
     n.innerClasses.sort(
         Comparator.comparing((InnerClassNode x) -> x.name)
             .thenComparing(x -> x.outerName)
             .thenComparing(x -> x.innerName)
-            .thenComparing(x -> x.access));
-
-    n.methods.sort(
-        Comparator.comparing((MethodNode x) -> x.name)
-            .thenComparing(x -> x.desc)
-            .thenComparing(x -> x.signature)
-            .thenComparing(x -> x.access));
-
-    n.fields.sort(
-        Comparator.comparing((FieldNode x) -> x.name)
-            .thenComparing(x -> x.desc)
-            .thenComparing(x -> x.signature)
             .thenComparing(x -> x.access));
 
     sortAnnotations(n.visibleAnnotations);
