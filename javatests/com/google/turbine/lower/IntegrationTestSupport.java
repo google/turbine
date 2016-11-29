@@ -95,7 +95,7 @@ public class IntegrationTestSupport {
     List<ClassNode> classes = toClassNodes(in);
 
     // drop anonymous classes
-    classes = classes.stream().filter(n -> !n.name.matches(".*\\$[0-9]+.*")).collect(toList());
+    classes = classes.stream().filter(n -> !isAnonymous(n)).collect(toCollection(ArrayList::new));
 
     // collect all inner classes attributes
     Map<String, InnerClassNode> infos = new HashMap<>();
@@ -115,6 +115,11 @@ public class IntegrationTestSupport {
     }
 
     return toByteCode(classes);
+  }
+
+  private static boolean isAnonymous(ClassNode n) {
+    // JVMS 4.7.6: if C is anonymous, the value of the inner_name_index item must be zero
+    return n.innerClasses.stream().anyMatch(i -> i.name.equals(n.name) && i.innerName == null);
   }
 
   private static void undeprecate(ClassNode n) {
