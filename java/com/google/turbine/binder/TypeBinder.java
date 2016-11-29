@@ -109,11 +109,11 @@ public class TypeBinder {
       ClassSymbol curr = sym;
       while (curr != null) {
         HeaderBoundClass info = env.get(curr);
-        Symbol result = info.typeParameters().get(lookup.first());
+        Symbol result = Resolve.resolve(env, sym, curr, lookup.first());
         if (result != null) {
           return new LookupResult(result, lookup);
         }
-        result = Resolve.resolve(env, sym, curr, lookup.first());
+        result = info.typeParameters().get(lookup.first());
         if (result != null) {
           return new LookupResult(result, lookup);
         }

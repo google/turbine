@@ -1,0 +1,6 @@
+=== Test.java ===
+interface T {}
+class Test<T> {
+  // 'T' is 'TT', not 'LT;'
+  protected Test(T t) {}
+}
