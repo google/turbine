@@ -40,7 +40,7 @@ public class ParseErrorTest {
       parser.expression();
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("out of range");
+      assertThat(e.getMessage()).contains("invalid literal");
     }
   }
 
@@ -54,7 +54,7 @@ public class ParseErrorTest {
       parser.expression();
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("out of range");
+      assertThat(e.getMessage()).contains("invalid literal");
     }
   }
 
@@ -69,7 +69,7 @@ public class ParseErrorTest {
           .isEqualTo(
               Joiner.on('\n')
                   .join(
-                      "<>: 1:14: unexpected token VOID",
+                      "<>:1: error: unexpected token VOID",
                       "public static void main(String[] args) {}",
                       "              ^"));
     }
@@ -86,7 +86,7 @@ public class ParseErrorTest {
           .isEqualTo(
               Joiner.on('\n')
                   .join(
-                      "<>: 1:7: unexpected identifier 'clas'", //
+                      "<>:1: error: unexpected identifier 'clas'", //
                       "public clas Test {}",
                       "       ^"));
     }

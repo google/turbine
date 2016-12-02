@@ -49,7 +49,7 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>: 2:23: symbol not found NoSuch",
+          "<>:2: error: symbol not found NoSuch",
           "public class A extends NoSuch {",
           "                       ^",
         }
@@ -64,7 +64,7 @@ public class BinderErrorTest {
         },
         // TODO(cushon): we'd prefer the caret at NoSuch instead of A
         {
-          "<>: 4:16: symbol not found NoSuch", //
+          "<>:4: error: symbol not found NoSuch", //
           "class B extends A.NoSuch {",
           "                ^",
         }
@@ -76,7 +76,7 @@ public class BinderErrorTest {
           "class B extends A<NoSuch> {}",
         },
         {
-          "<>: 3:18: symbol not found NoSuch",
+          "<>:3: error: symbol not found NoSuch",
           "class B extends A<NoSuch> {}",
           "                  ^",
         }
@@ -87,7 +87,7 @@ public class BinderErrorTest {
           "@Anno(foo=100, bar=200) class Test {}",
         },
         {
-          "<>: 2:6: cannot resolve foo", //
+          "<>:2: error: cannot resolve foo", //
           "@Anno(foo=100, bar=200) class Test {}",
           "      ^",
         },
@@ -98,7 +98,7 @@ public class BinderErrorTest {
           "@Anno(foo=100, bar=200) class Test {}",
         },
         {
-          "<>: 2:15: cannot resolve bar", //
+          "<>:2: error: cannot resolve bar", //
           "@Anno(foo=100, bar=200) class Test {}",
           "               ^",
         },
@@ -110,7 +110,7 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>: 2:14: unexpected input: f", //
+          "<>:2: error: unexpected input: f", //
           "  float x = 1ef;",
           "              ^",
         },
@@ -122,9 +122,22 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>: 2:15: unexpected input: ;", //
+          "<>:2: error: unexpected input: ;", //
           "  double x = 1e;",
           "               ^",
+        },
+      },
+      {
+        {
+          "class A {", //
+          "  class I {}",
+          "}",
+          "interface Class<U extends A, V extends U.I> {}",
+        },
+        {
+          "<>:4: error: type parameter used as type qualifier",
+          "interface Class<U extends A, V extends U.I> {}",
+          "                                       ^",
         },
       },
     };

@@ -17,7 +17,6 @@
 package com.google.turbine.parse;
 
 import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineError;
 
 /** Preprocesses Unicode escape characters in Java source code, as described in JLS §3.3. */
 public class UnicodeEscapePreprocessor {
@@ -86,7 +85,7 @@ public class UnicodeEscapePreprocessor {
   }
 
   /** Consumes a hex digit. */
-  private int hexDigit(char d) {
+  private static int hexDigit(char d) {
     switch (d) {
       case '0':
       case '1':
@@ -116,7 +115,7 @@ public class UnicodeEscapePreprocessor {
       case ASCII_SUB:
         throw new AssertionError("unexpected end of input");
       default:
-        throw TurbineError.format(source, position(), "0x%x", (int) d);
+        throw new AssertionError(String.format("unexpected hex digit: 0x%x", (int) d));
     }
   }
 

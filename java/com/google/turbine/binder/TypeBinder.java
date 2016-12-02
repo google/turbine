@@ -37,6 +37,7 @@ import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -615,7 +616,7 @@ public class TypeBinder {
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null) {
-      throw error(t.position(), "symbol not found %s", t);
+      throw error(t.position(), ErrorKind.SYMBOL_NOT_FOUND, t);
     }
     Verify.verifyNotNull(result, "%s", names);
     Symbol sym = result.sym();
@@ -626,7 +627,9 @@ public class TypeBinder {
         // resolve any remaining types in the qualified name, and their type arguments
         return bindClassTyRest(scope, flat, names, result, (ClassSymbol) sym, annos);
       case TY_PARAM:
-        Verify.verify(result.remaining().isEmpty(), "%s", result.remaining());
+        if (!result.remaining().isEmpty()) {
+          throw error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
+        }
         return new Type.TyVar((TyVarSymbol) sym, annos);
       default:
         throw new AssertionError(sym.symKind());
@@ -674,7 +677,7 @@ public class TypeBinder {
     }
   }
 
-  private TurbineError error(int position, String message, Object... args) {
-    return TurbineError.format(base.source(), position, message, args);
+  private TurbineError error(int position, ErrorKind kind, Object... args) {
+    return TurbineError.format(base.source(), position, kind, args);
   }
 }

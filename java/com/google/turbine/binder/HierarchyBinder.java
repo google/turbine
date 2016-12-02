@@ -28,6 +28,7 @@ import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
@@ -198,8 +199,7 @@ public class HierarchyBinder {
     // Resolve the base symbol in the qualified name.
     LookupResult result = lookup(new LookupKey(flat));
     if (result == null) {
-      throw TurbineError.format(
-          base.source(), ty.position(), String.format("symbol not found %s\n", ty));
+      throw TurbineError.format(base.source(), ty.position(), ErrorKind.SYMBOL_NOT_FOUND, ty);
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
@@ -207,7 +207,7 @@ public class HierarchyBinder {
     for (String bit : result.remaining()) {
       sym = Resolve.resolve(env, origin, sym, bit);
       if (sym == null) {
-        throw error(ty.position(), "symbol not found %s\n", bit);
+        throw error(ty.position(), ErrorKind.SYMBOL_NOT_FOUND, bit);
       }
     }
     return sym;
@@ -229,7 +229,7 @@ public class HierarchyBinder {
     return base.scope().lookup(lookup);
   }
 
-  private TurbineError error(int position, String message, Object... args) {
-    return TurbineError.format(base.source(), position, message, args);
+  private TurbineError error(int position, ErrorKind kind, Object... args) {
+    return TurbineError.format(base.source(), position, kind, args);
   }
 }

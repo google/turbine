@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
@@ -568,7 +569,7 @@ public class Parser {
             case COMMA:
               {
                 if (!typaram.isEmpty()) {
-                  throw error("%s", typaram);
+                  throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
                 }
                 return fieldRest(access, annos, result, name);
               }
@@ -606,7 +607,7 @@ public class Parser {
       case COMMA:
         {
           if (!typaram.isEmpty()) {
-            throw error("%s", typaram);
+            throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
           }
           return fieldRest(access, annos, result, name);
         }
@@ -636,7 +637,7 @@ public class Parser {
         if (next.token == Token.IDENT) {
           name = next.value;
         } else {
-          throw error("%s", next);
+          throw error(next.token);
         }
       }
 
@@ -648,7 +649,7 @@ public class Parser {
           extra++;
           next = it.next();
           if (next.token != Token.RBRACK) {
-            throw error("%s", next);
+            throw error(next.token);
           }
           if (it.hasNext()) {
             next = it.next();
@@ -1146,7 +1147,7 @@ public class Parser {
         ConstExpressionParser cparser = new ConstExpressionParser(lexer, token);
         Expression arg = cparser.expression();
         if (arg == null) {
-          throw error("invalid annotation argument");
+          throw error(ErrorKind.INVALID_ANNOTATION_ARGUMENT);
         }
         args.add(arg);
         token = cparser.token;
@@ -1168,7 +1169,7 @@ public class Parser {
 
   private void eat(Token kind) {
     if (token != kind) {
-      throw error("expected %s, was %s", kind, token);
+      throw error(ErrorKind.EXPECTED_TOKEN, kind);
     }
     next();
   }
@@ -1182,19 +1183,15 @@ public class Parser {
   }
 
   TurbineError error(Token token) {
-    String message;
     switch (token) {
       case IDENT:
-        message = String.format("unexpected identifier '%s'", lexer.stringValue());
-        break;
+        return error(ErrorKind.UNEXPECTED_IDENTIFIER, lexer.stringValue());
       default:
-        message = String.format("unexpected token %s", token);
-        break;
+        return error(ErrorKind.UNEXPECTED_TOKEN, token);
     }
-    return TurbineError.format(lexer.source(), lexer.position(), message, new Object[] {});
   }
 
-  private TurbineError error(String message, Object... args) {
-    return TurbineError.format(lexer.source(), lexer.position(), message, args);
+  private TurbineError error(ErrorKind kind, Object... args) {
+    return TurbineError.format(lexer.source(), lexer.position(), kind, args);
   }
 }

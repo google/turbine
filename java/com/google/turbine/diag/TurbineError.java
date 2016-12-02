@@ -24,35 +24,66 @@ import com.google.common.base.Strings;
 /** A compilation error. */
 public class TurbineError extends Error {
 
+  /** A diagnostic kind. */
+  public enum ErrorKind {
+    UNEXPECTED_INPUT("unexpected input: %c"),
+    UNEXPECTED_IDENTIFIER("unexpected identifier '%s'"),
+    EXPECTED_TOKEN("expected token %s"),
+    INVALID_LITERAL("invalid literal: %s"),
+    UNEXPECTED_TYPE_PARAMETER("unexpected type parameter %s"),
+    SYMBOL_NOT_FOUND("symbol not found %s"),
+    TYPE_PARAMETER_QUALIFIER("type parameter used as type qualifier"),
+    UNEXPECTED_TOKEN("unexpected token %s"),
+    INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
+    CANNOT_RESOLVE("cannot resolve %s"),
+    EXPRESSION_ERROR("could not evaluate constant expression");
+
+    private final String message;
+
+    ErrorKind(String message) {
+      this.message = message;
+    }
+
+    String format(Object... args) {
+      return String.format(message, args);
+    }
+  }
+
   /**
    * Formats a diagnostic.
    *
    * @param source the source file
    * @param position the diagnostic position
-   * @param format a printf-style format string
+   * @param kind the error kind
    * @param args format args
    */
   public static TurbineError format(
-      SourceFile source, int position, String format, Object... args) {
+      SourceFile source, int position, ErrorKind kind, Object... args) {
     String path = firstNonNull(source.path(), "<>");
     LineMap lineMap = LineMap.create(source.source());
     int lineNumber = lineMap.lineNumber(position);
     int column = lineMap.column(position);
-    String message = String.format(format, args);
+    String message = kind.format(args);
 
-    StringBuilder sb = new StringBuilder(path).append(": ");
-    sb.append(lineNumber).append(':').append(column).append(": ");
+    StringBuilder sb = new StringBuilder(path).append(":");
+    sb.append(lineNumber).append(": error: ");
     sb.append(message.trim()).append(System.lineSeparator());
     sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(lineMap.line(position)))
         .append(System.lineSeparator());
     sb.append(Strings.repeat(" ", column)).append('^');
     String diagnostic = sb.toString();
-
-    return new TurbineError(path, lineMap, column, message, diagnostic);
+    return new TurbineError(kind, diagnostic);
   }
 
-  private TurbineError(
-      String path, LineMap lineMap, int column, String message, String diagnostic) {
+  final ErrorKind kind;
+
+  private TurbineError(ErrorKind kind, String diagnostic) {
     super(diagnostic);
+    this.kind = kind;
+  }
+
+  /** The diagnostic kind. */
+  public ErrorKind kind() {
+    return kind;
   }
 }

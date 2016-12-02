@@ -36,6 +36,7 @@ import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineConstantTypeKind;
@@ -187,13 +188,13 @@ public strictfp class ConstEvaluator {
     }
     LookupResult result = scope.lookup(new LookupKey(flat));
     if (result == null) {
-      throw error(classTy.position(), String.format("symbol not found %s\n", flat.peekFirst()));
+      throw error(classTy.position(), ErrorKind.SYMBOL_NOT_FOUND, flat.peekFirst());
     }
     ClassSymbol classSym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
       classSym = Resolve.resolve(env, owner, classSym, bit);
       if (classSym == null) {
-        throw error(classTy.position(), String.format("symbol not found %s\n", bit));
+        throw error(classTy.position(), ErrorKind.SYMBOL_NOT_FOUND, bit);
       }
     }
     return classSym;
@@ -895,7 +896,7 @@ public strictfp class ConstEvaluator {
       }
       Type ty = template.get(key);
       if (ty == null) {
-        throw error(arg.position(), "cannot resolve %s", key);
+        throw error(arg.position(), ErrorKind.CANNOT_RESOLVE, key);
       }
       Const value = evalAnnotationValue(expr, ty);
       values.put(key, value);
@@ -927,7 +928,7 @@ public strictfp class ConstEvaluator {
 
   Const evalAnnotationValue(Tree tree, Type ty) {
     if (ty == null) {
-      throw error(tree.position(), "could not evaluate");
+      throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
     }
     Const value = eval(tree);
     switch (ty.tyKind()) {
@@ -954,8 +955,8 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private TurbineError error(int position, String message, Object... args) {
-    return TurbineError.format(base.source(), position, message, args);
+  private TurbineError error(int position, ErrorKind kind, Object... args) {
+    return TurbineError.format(base.source(), position, kind, args);
   }
 
   public Const.Value evalFieldInitializer(Expression expression, Type type) {

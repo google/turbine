@@ -21,6 +21,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.tree.Tree;
@@ -298,11 +299,11 @@ public class ConstExpressionParser {
           long longValue = parseLong(text, radix);
           if (radix == 10) {
             if (longValue != (int) longValue) {
-              throw error("integer literal out of range", text);
+              throw error(ErrorKind.INVALID_LITERAL, text);
             }
           } else {
             if (Math.abs(longValue) >> 32 != 0) {
-              throw error("integer literal out of range", text);
+              throw error(ErrorKind.INVALID_LITERAL, text);
             }
           }
           value = new Const.IntValue((int) longValue);
@@ -336,21 +337,21 @@ public class ConstExpressionParser {
         try {
           value = new Const.FloatValue(Float.parseFloat(text.replace("_", "")));
         } catch (NumberFormatException e) {
-          throw error("invalid float literal");
+          throw error(ErrorKind.INVALID_LITERAL, text);
         }
         break;
       case DOUBLE:
         try {
           value = new Const.DoubleValue(Double.parseDouble(text.replace("_", "")));
         } catch (NumberFormatException e) {
-          throw error("invalid double literal");
+          throw error(ErrorKind.INVALID_LITERAL, text);
         }
         break;
       case STRING:
         value = new Const.StringValue(text);
         break;
       default:
-        throw error("%s", kind);
+        throw new AssertionError(kind);
     }
     eat();
     return new Tree.Literal(position, kind, value);
@@ -389,7 +390,7 @@ public class ConstExpressionParser {
       } else if (c == '_') {
         continue;
       } else {
-        throw error(text);
+        throw error(ErrorKind.INVALID_LITERAL, text);
       }
       r = (r * radix) + digit;
     }
@@ -582,7 +583,7 @@ public class ConstExpressionParser {
   }
 
   @CheckReturnValue
-  private TurbineError error(String message, Object... args) {
-    return TurbineError.format(lexer.source(), lexer.position(), message, args);
+  private TurbineError error(ErrorKind kind, Object... args) {
+    return TurbineError.format(lexer.source(), lexer.position(), kind, args);
   }
 }

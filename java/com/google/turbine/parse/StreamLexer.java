@@ -21,6 +21,7 @@ import static com.google.turbine.parse.UnicodeEscapePreprocessor.ASCII_SUB;
 import com.google.common.base.Verify;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 
 /** A {@link Lexer} that streams input from a {@link UnicodeEscapePreprocessor}. */
 public class StreamLexer implements Lexer {
@@ -318,7 +319,7 @@ public class StreamLexer implements Lexer {
                     eat();
                     return Token.ELLIPSIS;
                   } else {
-                    throw error("unexpected input: %c", ch);
+                    throw error(ErrorKind.UNEXPECTED_INPUT, ch);
                   }
                 }
               case '0':
@@ -353,7 +354,7 @@ public class StreamLexer implements Lexer {
               eat();
               return Token.CHAR_LITERAL;
             }
-            throw error("unexpected input: %c", ch);
+            throw error(ErrorKind.UNEXPECTED_INPUT, ch);
           }
 
         case '"':
@@ -390,7 +391,7 @@ public class StreamLexer implements Lexer {
             // TODO(cushon): the style guide disallows non-ascii identifiers
             return identifier();
           }
-          throw error("unexpected input: %c", ch);
+          throw error(ErrorKind.UNEXPECTED_INPUT, ch);
       }
     }
   }
@@ -470,7 +471,7 @@ public class StreamLexer implements Lexer {
           }
         }
       default:
-        throw error("unexpected input: %c", ch);
+        throw error(ErrorKind.UNEXPECTED_INPUT, ch);
     }
   }
 
@@ -580,7 +581,7 @@ public class StreamLexer implements Lexer {
         eat();
         break;
       default:
-        throw error("unexpected input: %c", ch);
+        throw error(ErrorKind.UNEXPECTED_INPUT, ch);
     }
     OUTER:
     while (true) {
@@ -615,7 +616,7 @@ public class StreamLexer implements Lexer {
               case '9':
                 continue OUTER;
               default:
-                throw error("unexpected input: %c", ch);
+                throw error(ErrorKind.UNEXPECTED_INPUT, ch);
             }
           }
         case 'A':
@@ -652,7 +653,7 @@ public class StreamLexer implements Lexer {
     if ('0' <= ch && ch <= '9') {
       eat();
     } else {
-      throw error("unexpected input: %c", ch);
+      throw error(ErrorKind.UNEXPECTED_INPUT, ch);
     }
     OUTER:
     while (true) {
@@ -664,7 +665,7 @@ public class StreamLexer implements Lexer {
           if ('0' <= ch && ch <= '9') {
             continue OUTER;
           } else {
-            throw error("unexpected input: %c", ch);
+            throw error(ErrorKind.UNEXPECTED_INPUT, ch);
           }
         case '0':
         case '1':
@@ -703,7 +704,7 @@ public class StreamLexer implements Lexer {
         eat();
         break;
       default:
-        throw error("unexpected input: %c", ch);
+        throw error(ErrorKind.UNEXPECTED_INPUT, ch);
     }
     OUTER:
     while (true) {
@@ -717,7 +718,7 @@ public class StreamLexer implements Lexer {
             case '1':
               continue OUTER;
             default:
-              throw error("unexpected input: %c", ch);
+              throw error(ErrorKind.UNEXPECTED_INPUT, ch);
           }
         case '0':
         case '1':
@@ -755,7 +756,7 @@ public class StreamLexer implements Lexer {
         eat();
         break;
       default:
-        throw error("unexpected input: %c", ch);
+        throw error(ErrorKind.UNEXPECTED_INPUT, ch);
     }
     OUTER:
     while (true) {
@@ -775,7 +776,7 @@ public class StreamLexer implements Lexer {
             case '7':
               continue OUTER;
             default:
-              throw error("unexpected input: %c", ch);
+              throw error(ErrorKind.UNEXPECTED_INPUT, ch);
           }
         case '0':
         case '1':
@@ -949,7 +950,7 @@ public class StreamLexer implements Lexer {
         }
       case '/':
         // handled with comments
-        throw error("unexpected input: %c", ch);
+        throw error(ErrorKind.UNEXPECTED_INPUT, ch);
 
       case '%':
         eat();
@@ -968,7 +969,7 @@ public class StreamLexer implements Lexer {
           return Token.XOR;
         }
       default:
-        throw error("unexpected input: %c", ch);
+        throw error(ErrorKind.UNEXPECTED_INPUT, ch);
     }
   }
 
@@ -1098,7 +1099,7 @@ public class StreamLexer implements Lexer {
     }
   }
 
-  private TurbineError error(String message, Object... args) {
-    return TurbineError.format(reader.source(), reader.position(), message, args);
+  private TurbineError error(ErrorKind kind, Object... args) {
+    return TurbineError.format(reader.source(), reader.position(), kind, args);
   }
 }
