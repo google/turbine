@@ -61,7 +61,11 @@ public class ClassPathBinder {
           }
         };
     for (Path path : paths) {
-      bindJar(tli, path, map, benv);
+      try {
+        bindJar(tli, path, map, benv);
+      } catch (IOException e) {
+        throw new IOException("error reading " + path, e);
+      }
     }
     return new SimpleEnv<>(ImmutableMap.copyOf(map));
   }

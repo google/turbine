@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.VerifyException;
@@ -154,5 +155,18 @@ public class ClassPathBinderTest {
         .isEqualTo(new ClassSymbol("bar/B"));
     assertThat(env.get(new ClassSymbol("foo/Baz")).superclass())
         .isEqualTo(new ClassSymbol("bar/A"));
+  }
+
+  @Test
+  public void nonJarFile() throws Exception {
+    Path lib = temporaryFolder.newFile("NOT_A_JAR").toPath();
+    Files.write(lib, "hello".getBytes(UTF_8));
+
+    try {
+      ClassPathBinder.bind(ImmutableList.of(lib), ImmutableList.of(), TopLevelIndex.builder());
+      fail();
+    } catch (IOException e) {
+      assertThat(e.getMessage()).contains("NOT_A_JAR");
+    }
   }
 }
