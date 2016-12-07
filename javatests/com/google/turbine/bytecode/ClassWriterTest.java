@@ -24,7 +24,7 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.nio.JavacPathFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import java.io.PrintWriter;
 import java.nio.file.FileSystem;
@@ -61,8 +61,8 @@ public class ClassWriterTest {
     Path out = fs.getPath("out");
     Files.createDirectories(out);
 
-    JavacPathFileManager fileManager = new JavacPathFileManager(new Context(), false, UTF_8);
-    fileManager.setLocation(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
+    JavacFileManager fileManager = new JavacFileManager(new Context(), false, UTF_8);
+    fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
     DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
     JavacTask task =
         JavacTool.create()

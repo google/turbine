@@ -33,7 +33,7 @@ import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.nio.JavacPathFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -461,10 +461,10 @@ public class IntegrationTestSupport {
 
     JavacTool compiler = JavacTool.create();
     DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
-    JavacPathFileManager fileManager = new JavacPathFileManager(new Context(), true, UTF_8);
-    fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, bootclasspath);
-    fileManager.setLocation(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
-    fileManager.setLocation(StandardLocation.CLASS_PATH, classpath);
+    JavacFileManager fileManager = new JavacFileManager(new Context(), true, UTF_8);
+    fileManager.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, bootclasspath);
+    fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
+    fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
 
     JavacTask task =
         compiler.getTask(

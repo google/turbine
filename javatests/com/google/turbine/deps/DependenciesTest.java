@@ -63,7 +63,7 @@ public class DependenciesTest {
 
   class LibraryBuilder {
     final Map<String, String> sources = new LinkedHashMap<>();
-    private ImmutableList<Path> classpath;
+    private ImmutableList<Path> classpath = ImmutableList.of();
 
     LibraryBuilder addSourceLines(String path, String... lines) {
       sources.put(path, Joiner.on('\n').join(lines));

@@ -330,7 +330,7 @@ public class LowerIntegrationTest {
     ImmutableList<Path> classpathJar = ImmutableList.of();
     if (!input.classes.isEmpty()) {
       Map<String, byte[]> classpath =
-          IntegrationTestSupport.runJavac(input.classes, null, BOOTCLASSPATH);
+          IntegrationTestSupport.runJavac(input.classes, ImmutableList.of(), BOOTCLASSPATH);
       Path lib = temporaryFolder.newFile("lib.jar").toPath();
       try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
         for (Map.Entry<String, byte[]> entry : classpath.entrySet()) {

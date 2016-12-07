@@ -22,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import com.sun.tools.javac.nio.JavacPathFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javap.JavapTask;
 import java.io.IOException;
@@ -50,9 +50,9 @@ public class JavapUtils {
       Files.createDirectories(path.getParent());
     }
     Files.write(path, bytes);
-    JavacPathFileManager fileManager = new JavacPathFileManager(new Context(), false, UTF_8);
-    fileManager.setLocation(StandardLocation.CLASS_PATH, ImmutableList.of(root));
-    fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, BOOTCLASSPATH);
+    JavacFileManager fileManager = new JavacFileManager(new Context(), false, UTF_8);
+    fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, ImmutableList.of(root));
+    fileManager.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, BOOTCLASSPATH);
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     List<String> options = ImmutableList.of("-s", "-private");
     Writer writer = new StringWriter();
