@@ -1,0 +1,10 @@
+=== p/A.java ===
+package p;
+import static p.A.B.*;
+class A {
+  static class B {
+    static class C {
+    }
+  }
+  C i;
+}

@@ -67,12 +67,15 @@ public class WildImportIndex implements Scope {
                   if (result == null) {
                     return null;
                   }
+                  ClassSymbol sym = resolve.resolve(result);
+                  if (sym == null) {
+                    return null;
+                  }
                   // a wildcard import of a type's members
                   return new Scope() {
                     @Override
                     public LookupResult lookup(LookupKey lookupKey) {
-                      ClassSymbol member =
-                          resolve.resolveOne((ClassSymbol) result.sym(), lookupKey.first());
+                      ClassSymbol member = resolve.resolveOne(sym, lookupKey.first());
                       return member != null ? new LookupResult(member, lookupKey) : null;
                     }
                   };
