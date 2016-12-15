@@ -651,6 +651,9 @@ public class TypeBinder {
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
       sym = Resolve.resolve(env, owner, sym, curr.name());
+      if (sym == null) {
+        throw error(curr.position(), ErrorKind.CANNOT_RESOLVE, curr.name());
+      }
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(
           new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs()), annotations));

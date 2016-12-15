@@ -57,6 +57,11 @@ public class PackageSourceBoundClass implements BoundClass {
   }
 
   @Override
+  public int access() {
+    return base.access();
+  }
+
+  @Override
   public ImmutableMap<String, ClassSymbol> children() {
     return base.children();
   }

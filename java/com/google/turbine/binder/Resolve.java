@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -66,9 +68,12 @@ public class Resolve {
   }
 
   static class CanonicalResolver implements CanonicalSymbolResolver {
+    private final String packagename;
     private final CompoundEnv<ClassSymbol, BoundClass> env;
 
-    public CanonicalResolver(CompoundEnv<ClassSymbol, BoundClass> env) {
+    public CanonicalResolver(
+        ImmutableList<String> packagename, CompoundEnv<ClassSymbol, BoundClass> env) {
+      this.packagename = Joiner.on('/').join(packagename);
       this.env = env;
     }
 
@@ -94,7 +99,24 @@ public class Resolve {
       if (sym == null) {
         return null;
       }
+      if (!visible(sym, TurbineVisibility.fromAccess(env.get(sym).access()))) {
+        return null;
+      }
       return sym;
+    }
+
+    boolean visible(ClassSymbol sym, TurbineVisibility visibility) {
+      switch (visibility) {
+        case PUBLIC:
+          return true;
+        case PROTECTED:
+        case PACKAGE:
+          return Objects.equals(packageName(sym), packagename);
+        case PRIVATE:
+          return false;
+        default:
+          throw new AssertionError(visibility);
+      }
     }
   }
 

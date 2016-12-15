@@ -1,0 +1,16 @@
+=== p/A.java ===
+package p;
+import static p.A.I.*;
+import static p.B.*;
+class A {
+  static class I {
+    private static final int N = 1;
+  }
+  static final int M = N;
+}
+
+=== p/B.java ===
+package p;
+public class B {
+  public static final int N = 2;
+}

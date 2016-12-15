@@ -1,0 +1,19 @@
+=== p/A.java ===
+package p;
+import static p.A.I.*;
+import static p.B.*;
+class A {
+  static class I {
+    private static class Inner {
+    }
+  }
+  Inner.InnerMost i;
+}
+
+=== p/B.java ===
+package p;
+public class B {
+  public static class Inner {
+    protected static class InnerMost {}
+  }
+}

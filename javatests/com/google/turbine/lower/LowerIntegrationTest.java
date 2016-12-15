@@ -287,6 +287,8 @@ public class LowerIntegrationTest {
       "typaram_lookup.test",
       "typaram_lookup_enclosing.test",
       "B33513475.test",
+      "B33513475b.test",
+      "B33513475c.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

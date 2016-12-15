@@ -235,9 +235,15 @@ public strictfp class ConstEvaluator {
     Iterator<ClassSymbol> it = base.memberImports().onDemandImports();
     while (it.hasNext()) {
       field = Resolve.resolveField(env, owner, it.next(), simpleName);
-      if (field != null) {
-        return field;
+      if (field == null) {
+        continue;
       }
+      // resolve handles visibility of inherited members; on-demand imports of private members are
+      // a special case
+      if ((field.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
+        continue;
+      }
+      return field;
     }
     return null;
   }

@@ -29,9 +29,6 @@ public interface HeaderBoundClass extends BoundClass {
   /** The interfaces of the declaration. */
   ImmutableList<ClassSymbol> interfaces();
 
-  /** Class access bits (see JVMS table 4.1). */
-  int access();
-
   /** Declared type parameters. */
   public ImmutableMap<String, TyVarSymbol> typeParameters();
 }

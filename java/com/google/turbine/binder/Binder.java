@@ -52,6 +52,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.PkgDecl;
@@ -141,15 +142,36 @@ public class Binder {
       for (Tree.TyDecl decl : decls) {
         ClassSymbol sym = new ClassSymbol(packagename + decl.name());
         ImmutableMap<String, ClassSymbol> children =
-            bindSourceBoundClassMembers(envbuilder, sym, decl.members(), toplevels, unit);
+            bindSourceBoundClassMembers(
+                envbuilder, sym, decl.members(), toplevels, unit, decl.tykind());
         if (envbuilder.putIfAbsent(
-            sym, new SourceBoundClass(decl, null, decl.tykind(), children))) {
+            sym,
+            new SourceBoundClass(decl, null, decl.tykind(), children, access(null, decl.mods())))) {
           toplevels.put(unit, sym);
         }
         tliBuilder.insert(sym);
       }
     }
     return envbuilder.build();
+  }
+
+  private static int access(TurbineTyKind enclosing, ImmutableSet<TurbineModifier> mods) {
+    int access = 0;
+    for (TurbineModifier m : mods) {
+      access |= m.flag();
+    }
+    // types declared in interfaces and annotations are implicitly public (JLS 9.5)
+    if (enclosing != null) {
+      switch (enclosing) {
+        case INTERFACE:
+        case ANNOTATION:
+          access = TurbineVisibility.PUBLIC.setAccess(access);
+          break;
+        default:
+          break;
+      }
+    }
+    return access;
   }
 
   /** Fakes up the synthetic type declaration for a package-info.java file. */
@@ -172,7 +194,8 @@ public class Binder {
       ClassSymbol owner,
       ImmutableList<Tree> members,
       Multimap<CompUnit, ClassSymbol> toplevels,
-      CompUnit unit) {
+      CompUnit unit,
+      TurbineTyKind enclosing) {
     ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.TY_DECL) {
@@ -181,8 +204,11 @@ public class Binder {
         toplevels.put(unit, sym);
         result.put(decl.name(), sym);
         ImmutableMap<String, ClassSymbol> children =
-            bindSourceBoundClassMembers(env, sym, decl.members(), toplevels, unit);
-        env.putIfAbsent(sym, new SourceBoundClass(decl, owner, decl.tykind(), children));
+            bindSourceBoundClassMembers(env, sym, decl.members(), toplevels, unit, decl.tykind());
+        env.putIfAbsent(
+            sym,
+            new SourceBoundClass(
+                decl, owner, decl.tykind(), children, access(enclosing, decl.mods())));
       }
     }
     return result.build();
@@ -204,7 +230,8 @@ public class Binder {
           unit.pkg().isPresent() ? unit.pkg().get().name() : ImmutableList.of();
       Scope packageScope = tli.lookupPackage(packagename);
       CanonicalSymbolResolver importResolver =
-          new CanonicalResolver(CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv));
+          new CanonicalResolver(
+              packagename, CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv));
       Scope importScope = ImportIndex.create(importResolver, tli, unit.imports());
       Scope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
       MemberImportIndex memberImports = new MemberImportIndex(importResolver, tli, unit.imports());

@@ -31,9 +31,7 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
-import com.google.turbine.tree.TurbineModifier;
 import java.util.ArrayDeque;
 
 /** Type hierarchy binding. */
@@ -62,11 +60,7 @@ public class HierarchyBinder {
 
   private SourceHeaderBoundClass bind() {
     Tree.TyDecl decl = base.decl();
-
-    int access = 0;
-    for (TurbineModifier m : decl.mods()) {
-      access |= m.flag();
-    }
+    int access = base.access();
     switch (decl.tykind()) {
       case CLASS:
         access |= TurbineFlag.ACC_SUPER;
@@ -82,11 +76,6 @@ public class HierarchyBinder {
         break;
       default:
         throw new AssertionError(decl.tykind());
-    }
-
-    // types declared in interfaces  annotations are implicitly public (JLS 9.5)
-    if (enclosedByInterface(base)) {
-      access = TurbineVisibility.PUBLIC.setAccess(access);
     }
 
     if ((access & TurbineFlag.ACC_STATIC) == 0 && implicitStatic(base)) {
@@ -168,21 +157,6 @@ public class HierarchyBinder {
       default:
         throw new AssertionError(c.kind());
     }
-  }
-
-  /** Returns true if the given type is declared in an interface. */
-  private boolean enclosedByInterface(BoundClass c) {
-    if (c.owner() != null) {
-      HeaderBoundClass info = env.get(c.owner());
-      switch (info.kind()) {
-        case INTERFACE:
-        case ANNOTATION:
-          return true;
-        default:
-          break;
-      }
-    }
-    return false;
   }
 
   /**

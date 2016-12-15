@@ -35,6 +35,9 @@ public interface BoundClass {
   @Nullable
   ClassSymbol owner();
 
+  /** Class access bits (see JVMS table 4.1). */
+  int access();
+
   /** Member type declarations, by simple name. */
   ImmutableMap<String, ClassSymbol> children();
 }
