@@ -18,6 +18,7 @@ package com.google.turbine.bytecode;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.model.Const;
@@ -206,5 +207,17 @@ public class ClassReaderTest {
     assertThat(b.innerName()).isEqualTo("InnerMost");
     assertThat(b.innerClass()).isEqualTo("test/Hello$Inner$InnerMost");
     assertThat(b.outerClass()).isEqualTo("test/Hello$Inner");
+  }
+
+  @Test
+  public void largeConstant() {
+    String jumbo = Strings.repeat("a", Short.MAX_VALUE + 1);
+
+    ClassWriter cw = new ClassWriter(0);
+    cw.visit(52, Opcodes.ACC_SUPER, jumbo, null, "java/lang/Object", null);
+    byte[] bytes = cw.toByteArray();
+
+    ClassFile cf = ClassReader.read(bytes);
+    assertThat(cf.name()).isEqualTo(jumbo);
   }
 }

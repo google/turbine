@@ -46,22 +46,22 @@ public class ClassReader {
     if (magic != 0xcafebabe) {
       throw new AssertionError(String.format("bad magic: 0x%x", magic));
     }
-    short minorVersion = reader.u2();
-    short majorVersion = reader.u2();
+    int minorVersion = reader.u2();
+    int majorVersion = reader.u2();
     if (majorVersion < 45 || majorVersion > 52) {
       throw new AssertionError(String.format("bad version: %d.%d", majorVersion, minorVersion));
     }
     ConstantPoolReader constantPool = ConstantPoolReader.readConstantPool(reader);
-    short accessFlags = reader.u2();
+    int accessFlags = reader.u2();
     String thisClass = constantPool.classInfo(reader.u2());
-    short superClassIndex = reader.u2();
+    int superClassIndex = reader.u2();
     String superClass;
     if (superClassIndex != 0) {
       superClass = constantPool.classInfo(superClassIndex);
     } else {
       superClass = null;
     }
-    short interfacesCount = reader.u2();
+    int interfacesCount = reader.u2();
     List<String> interfaces = new ArrayList<>();
     for (int i = 0; i < interfacesCount; i++) {
       interfaces.add(constantPool.classInfo(reader.u2()));
@@ -129,7 +129,7 @@ public class ClassReader {
           outerClassInfoIndex != 0 ? constantPool.classInfo(outerClassInfoIndex) : null;
       int innerNameIndex = reader.u2();
       String innerName = innerNameIndex != 0 ? constantPool.utf8(innerNameIndex) : null;
-      short innerClassAccessFlags = reader.u2();
+      int innerClassAccessFlags = reader.u2();
       if (thisClass.equals(innerClass) || thisClass.equals(outerClass)) {
         innerclasses.add(
             new ClassFile.InnerClass(innerClass, outerClass, innerName, innerClassAccessFlags));
@@ -145,7 +145,7 @@ public class ClassReader {
    * {@link @Target} on annotation declarations.
    */
   private List<ClassFile.AnnotationInfo> readAnnotations(
-      ConstantPoolReader constantPool, short accessFlags) {
+      ConstantPoolReader constantPool, int accessFlags) {
     List<ClassFile.AnnotationInfo> annotations = new ArrayList<>();
     if ((accessFlags & TurbineFlag.ACC_ANNOTATION) == 0) {
       reader.skip(reader.u4());

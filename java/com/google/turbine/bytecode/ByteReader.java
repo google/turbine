@@ -45,13 +45,13 @@ class ByteReader {
   }
 
   /** Reads an unsigned 8-bit integer. */
-  public byte u1() {
-    return input.readByte();
+  public int u1() {
+    return input.readUnsignedByte();
   }
 
   /** Reads an unsigned 16-bit integer in big-endian byte order. */
-  public short u2() {
-    return input.readShort();
+  public int u2() {
+    return input.readUnsignedShort();
   }
 
   /** Reads an unsigned 32-bit integer in big-endian byte order. */
@@ -62,7 +62,8 @@ class ByteReader {
   /** Skips n bytes of input. */
   public void skip(int n) {
     int skipped = input.skipBytes(n);
-    verify(skipped == n); // this is only used with {@link ByteArrayInputStream}.
+    // this is only used with {@link ByteArrayInputStream}.
+    verify(skipped == n, "wanted %s, read %s", n, skipped);
   }
 
   /** {@link #pos} is protected in {@link java.io.ByteArrayInputStream}. */

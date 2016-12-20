@@ -65,7 +65,7 @@ class ConstantPoolReader {
 
   /** Skips over the data for a single constant pool entry and returns the size of the entry. */
   private static int skipConstantPool(ByteReader reader) {
-    byte tag = reader.u1();
+    int tag = reader.u1();
     switch (tag) {
       case CONSTANT_CLASS:
       case CONSTANT_METHOD_TYPE:
