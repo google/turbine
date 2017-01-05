@@ -180,6 +180,7 @@ public class TypeBinder {
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
         bindTyParams(base.decl().typarams(), bindingScope, base.typeParameters());
 
+    ImmutableList.Builder<Type.ClassTy> interfaceTypes = ImmutableList.builder();
     Type.ClassTy superClassType;
     switch (base.kind()) {
       case ENUM:
@@ -192,21 +193,29 @@ public class TypeBinder {
                         ImmutableList.of())));
         break;
       case ANNOTATION:
-        superClassType = Type.ClassTy.asNonParametricClassTy(ClassSymbol.ANNOTATION);
+        superClassType = Type.ClassTy.OBJECT;
+        interfaceTypes.add(Type.ClassTy.asNonParametricClassTy(ClassSymbol.ANNOTATION));
         break;
       case CLASS:
-      case INTERFACE:
         if (base.decl().xtnds().isPresent()) {
           superClassType = (Type.ClassTy) bindClassTy(bindingScope, base.decl().xtnds().get());
+        } else if (owner.equals(ClassSymbol.OBJECT)) {
+          // java.lang.Object doesn't have a superclass
+          superClassType = null;
         } else {
           superClassType = Type.ClassTy.OBJECT;
         }
+        break;
+      case INTERFACE:
+        if (base.decl().xtnds().isPresent()) {
+          throw new AssertionError();
+        }
+        superClassType = Type.ClassTy.OBJECT;
         break;
       default:
         throw new AssertionError(base.decl().tykind());
     }
 
-    ImmutableList.Builder<Type.ClassTy> interfaceTypes = ImmutableList.builder();
     for (Tree.ClassTy i : base.decl().impls()) {
       interfaceTypes.add((Type.ClassTy) bindClassTy(bindingScope, i));
     }
@@ -231,8 +240,6 @@ public class TypeBinder {
         base.owner(),
         base.kind(),
         base.children(),
-        base.superclass(),
-        base.interfaces(),
         base.typeParameters(),
         enclosingScope,
         scope,

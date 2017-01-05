@@ -17,8 +17,8 @@
 package com.google.turbine.lower;
 
 import com.google.common.collect.ImmutableList;
-import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -135,7 +135,7 @@ public class LowerSignature {
    * unnecessary.
    */
   public String methodSignature(
-      Env<ClassSymbol, ? extends HeaderBoundClass> env,
+      Env<ClassSymbol, TypeBoundClass> env,
       SourceTypeBoundClass.MethodInfo method,
       ClassSymbol sym) {
     if (!needsMethodSig(sym, env, method)) {
@@ -168,9 +168,7 @@ public class LowerSignature {
   }
 
   private boolean needsMethodSig(
-      ClassSymbol sym,
-      Env<ClassSymbol, ? extends HeaderBoundClass> env,
-      SourceTypeBoundClass.MethodInfo m) {
+      ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env, SourceTypeBoundClass.MethodInfo m) {
     if ((env.get(sym).access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM
         && m.name().equals("<init>")) {
       // JDK-8024694: javac always expects signature attribute for enum constructors

@@ -168,8 +168,6 @@ public class LowerTest {
     ClassSymbol owner = null;
     TurbineTyKind kind = TurbineTyKind.CLASS;
     ImmutableMap<String, ClassSymbol> children = ImmutableMap.of();
-    ClassSymbol superclass = ClassSymbol.OBJECT;
-    ImmutableList<ClassSymbol> interfaces = ImmutableList.of(new ClassSymbol("java/util/List"));
     ImmutableMap<String, TyVarSymbol> tyParams =
         ImmutableMap.of("V", new TyVarSymbol(new ClassSymbol("test/Test"), "V"));
 
@@ -184,8 +182,6 @@ public class LowerTest {
             owner,
             kind,
             children,
-            superclass,
-            interfaces,
             tyParams,
             null,
             null,
@@ -205,8 +201,6 @@ public class LowerTest {
             new ClassSymbol("test/Test"),
             TurbineTyKind.CLASS,
             ImmutableMap.of("Inner", new ClassSymbol("test/Test$Inner")),
-            ClassSymbol.OBJECT,
-            ImmutableList.of(),
             ImmutableMap.of(),
             null,
             null,

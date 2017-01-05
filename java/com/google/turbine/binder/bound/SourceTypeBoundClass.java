@@ -16,8 +16,10 @@
 
 package com.google.turbine.binder.bound;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -37,8 +39,6 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableMap<String, ClassSymbol> children;
 
   private final int access;
-  private final ClassSymbol superclass;
-  private final ImmutableList<ClassSymbol> interfaces;
   private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
   private final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes;
@@ -63,8 +63,6 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       ClassSymbol owner,
       TurbineTyKind kind,
       ImmutableMap<String, ClassSymbol> children,
-      ClassSymbol superclass,
-      ImmutableList<ClassSymbol> interfaces,
       ImmutableMap<String, TyVarSymbol> typeParameters,
       CompoundScope enclosingScope,
       CompoundScope scope,
@@ -81,8 +79,6 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.owner = owner;
     this.kind = kind;
     this.children = children;
-    this.superclass = superclass;
-    this.interfaces = interfaces;
     this.typeParameters = typeParameters;
     this.enclosingScope = enclosingScope;
     this.scope = scope;
@@ -94,12 +90,20 @@ public class SourceTypeBoundClass implements TypeBoundClass {
 
   @Override
   public ClassSymbol superclass() {
-    return superclass;
+    return superClassType() != null ? superClassType().sym() : null;
   }
 
   @Override
   public ImmutableList<ClassSymbol> interfaces() {
-    return interfaces;
+    return ImmutableList.copyOf(
+        Iterables.transform(
+            interfaceTypes,
+            new Function<ClassTy, ClassSymbol>() {
+              @Override
+              public ClassSymbol apply(ClassTy classTy) {
+                return classTy.sym();
+              }
+            }));
   }
 
   @Override

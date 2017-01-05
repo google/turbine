@@ -89,8 +89,6 @@ public class ConstBinder {
         base.owner(),
         base.kind(),
         base.children(),
-        base.superclass(),
-        base.interfaces(),
         base.typeParameters(),
         base.enclosingScope(),
         base.scope(),
