@@ -154,7 +154,7 @@ public class SigWriter {
         sb.append('Z');
         break;
       default:
-        throw new AssertionError(ty.kind());
+        throw new AssertionError(ty.type());
     }
   }
 
