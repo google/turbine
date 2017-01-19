@@ -564,6 +564,9 @@ public class TypeBinder {
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (Tree.Anno tree : trees) {
       LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
+      if (lookupResult == null) {
+        throw error(tree.position(), ErrorKind.SYMBOL_NOT_FOUND, tree.name());
+      }
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
       for (String name : lookupResult.remaining()) {
         sym = Resolve.resolve(env, owner, sym, name);
