@@ -43,7 +43,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -106,23 +105,17 @@ public class Main {
           Parser.parse(
               new SourceFile(source, new String(Files.readAllBytes(Paths.get(source)), UTF_8))));
     }
-    Map<String, SourceFile> sources = new LinkedHashMap<>();
     for (String sourceJar : options.sourceJars()) {
       try (JarFile jf = new JarFile(sourceJar)) {
         Enumeration<JarEntry> entries = jf.entries();
         while (entries.hasMoreElements()) {
           JarEntry je = entries.nextElement();
-          if (!je.getName().endsWith(".java")) {
-            continue;
+          if (je.getName().endsWith(".java")) {
+            String source = new String(ByteStreams.toByteArray(jf.getInputStream(je)), UTF_8);
+            units.add(Parser.parse(new SourceFile(je.getName(), source)));
           }
-          // overwrite existing entries for bug-compatibility with JavaBuilder (see b/26688023)
-          String source = new String(ByteStreams.toByteArray(jf.getInputStream(je)), UTF_8);
-          sources.put(je.getName(), new SourceFile(je.getName(), source));
         }
       }
-    }
-    for (SourceFile sourceFile : sources.values()) {
-      units.add(Parser.parse(sourceFile));
     }
     return units.build();
   }

@@ -18,7 +18,6 @@ package com.google.turbine.binder.env;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.Symbol;
-import java.util.LinkedHashMap;
 
 /** A simple {@link ImmutableMap}-backed {@link Env}. */
 public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
@@ -39,18 +38,14 @@ public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
 
   /** A builder for {@link SimpleEnv}static. */
   public static class Builder<K extends Symbol, V> {
-    private final LinkedHashMap<K, V> map = new LinkedHashMap<>();
+    private final ImmutableMap.Builder<K, V> map = ImmutableMap.builder();
 
-    public boolean putIfAbsent(K sym, V v) {
-      if (map.containsKey(sym)) {
-        return false;
-      }
+    public void put(K sym, V v) {
       map.put(sym, v);
-      return true;
     }
 
     public SimpleEnv<K, V> build() {
-      return new SimpleEnv<>(ImmutableMap.copyOf(map));
+      return new SimpleEnv<>(map.build());
     }
   }
 

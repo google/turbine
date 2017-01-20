@@ -210,8 +210,8 @@ public class LowerTest {
             null);
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> b = SimpleEnv.builder();
-    b.putIfAbsent(new ClassSymbol("test/Test"), c);
-    b.putIfAbsent(new ClassSymbol("test/Test$Inner"), i);
+    b.put(new ClassSymbol("test/Test"), c);
+    b.put(new ClassSymbol("test/Test$Inner"), i);
 
     Map<String, byte[]> bytes =
         Lower.lowerAll(

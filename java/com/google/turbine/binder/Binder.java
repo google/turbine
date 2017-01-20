@@ -144,11 +144,10 @@ public class Binder {
         ImmutableMap<String, ClassSymbol> children =
             bindSourceBoundClassMembers(
                 envbuilder, sym, decl.members(), toplevels, unit, decl.tykind());
-        if (envbuilder.putIfAbsent(
+        envbuilder.put(
             sym,
-            new SourceBoundClass(decl, null, decl.tykind(), children, access(null, decl.mods())))) {
-          toplevels.put(unit, sym);
-        }
+            new SourceBoundClass(decl, null, decl.tykind(), children, access(null, decl.mods())));
+        toplevels.put(unit, sym);
         tliBuilder.insert(sym);
       }
     }
@@ -205,7 +204,7 @@ public class Binder {
         result.put(decl.name(), sym);
         ImmutableMap<String, ClassSymbol> children =
             bindSourceBoundClassMembers(env, sym, decl.members(), toplevels, unit, decl.tykind());
-        env.putIfAbsent(
+        env.put(
             sym,
             new SourceBoundClass(
                 decl, owner, decl.tykind(), children, access(enclosing, decl.mods())));
@@ -239,7 +238,7 @@ public class Binder {
           topLevel.append(wildImportScope).append(packageScope).append(importScope);
 
       for (ClassSymbol sym : entry.getValue()) {
-        env.putIfAbsent(
+        env.put(
             sym, new PackageSourceBoundClass(ienv.get(sym), scope, memberImports, unit.source()));
       }
     }
@@ -274,7 +273,7 @@ public class Binder {
       Env<ClassSymbol, HeaderBoundClass> henv) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.putIfAbsent(sym, TypeBinder.bind(henv, sym, shenv.get(sym)));
+      builder.put(sym, TypeBinder.bind(henv, sym, shenv.get(sym)));
     }
     return builder.build();
   }
@@ -285,7 +284,7 @@ public class Binder {
       Env<ClassSymbol, TypeBoundClass> tenv) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.putIfAbsent(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
+      builder.put(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
     }
     return builder.build();
   }
@@ -332,7 +331,7 @@ public class Binder {
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.putIfAbsent(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
+      builder.put(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
     }
     return builder.build();
   }
@@ -372,7 +371,7 @@ public class Binder {
       Env<ClassSymbol, TypeBoundClass> tenv) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.putIfAbsent(sym, DisambiguateTypeAnnotations.bind(stenv.get(sym), tenv));
+      builder.put(sym, DisambiguateTypeAnnotations.bind(stenv.get(sym), tenv));
     }
     return builder.build();
   }
