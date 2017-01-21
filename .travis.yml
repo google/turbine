@@ -1,0 +1,15 @@
+language: java
+
+jdk:
+  - oraclejdk8
+
+# use travis-ci docker based infrastructure
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2
+
+install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+script: mvn test -B
