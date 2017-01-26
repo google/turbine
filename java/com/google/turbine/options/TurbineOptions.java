@@ -34,7 +34,7 @@ public class TurbineOptions {
   private final ImmutableList<String> processorPath;
   private final ImmutableSet<String> processors;
   private final ImmutableSet<String> blacklistedProcessors;
-  private final String tempDir;
+  private final @Nullable String tempDir;
   private final ImmutableList<String> sourceJars;
   private final Optional<String> outputDeps;
   private final ImmutableMap<String, String> directJarsToTargets;
@@ -69,7 +69,7 @@ public class TurbineOptions {
     this.processors = checkNotNull(processors, "processors must not be null");
     this.blacklistedProcessors =
         checkNotNull(blacklistedProcessors, "blacklistedProcessors must not be null");
-    this.tempDir = checkNotNull(tempDir, "tempDir must not be null");
+    this.tempDir = tempDir;
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
     this.outputDeps = Optional.fromNullable(outputDeps);
     this.directJarsToTargets =
@@ -103,6 +103,7 @@ public class TurbineOptions {
   }
 
   /** A temporary directory, e.g. for extracting sourcejar entries to before compilation. */
+  @Nullable
   public String tempDir() {
     return tempDir;
   }

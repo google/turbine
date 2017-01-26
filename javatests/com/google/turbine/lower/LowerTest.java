@@ -278,7 +278,7 @@ public class LowerTest {
     Map<String, byte[]> actual =
         IntegrationTestSupport.runTurbine(input.sources, ImmutableList.of(), BOOTCLASSPATH);
 
-    assertThat(JavapUtils.dump("Test", actual.get("Test")))
+    assertThat(JavapUtils.dump("Test", actual.get("Test"), ImmutableList.of("-s", "-private")))
         .isEqualTo(
             Joiner.on('\n')
                 .join(

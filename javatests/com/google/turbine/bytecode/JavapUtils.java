@@ -32,7 +32,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -42,7 +41,8 @@ public class JavapUtils {
   static final ImmutableList<Path> BOOTCLASSPATH =
       ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
 
-  public static String dump(String className, byte[] bytes) throws IOException {
+  public static String dump(String className, byte[] bytes, ImmutableList<String> options)
+      throws IOException {
     FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
     Path root = fs.getPath("classes");
     Path path = root.resolve(className + ".class");
@@ -54,7 +54,6 @@ public class JavapUtils {
     fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, ImmutableList.of(root));
     fileManager.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, BOOTCLASSPATH);
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-    List<String> options = ImmutableList.of("-s", "-private");
     Writer writer = new StringWriter();
     JavapTask task =
         new JavapTask(writer, fileManager, diagnostics, options, ImmutableList.of(className));

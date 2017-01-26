@@ -528,4 +528,9 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
   public String jarFile() {
     return jarFile;
   }
+
+  /** The class file the symbol was loaded from. */
+  public ClassFile classFile() {
+    return classFile.get();
+  }
 }

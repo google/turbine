@@ -25,7 +25,9 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.deps.Dependencies;
+import com.google.turbine.deps.Transitive;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.lower.Lower.Lowered;
@@ -83,6 +85,8 @@ public class Main {
     // TODO(cushon): parallelize
     Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
 
+    Map<String, byte[]> transitive = Transitive.collectDeps(options.bootClassPath(), bound);
+
     if (options.outputDeps().isPresent()) {
       DepsProto.Dependencies deps =
           Dependencies.collectDeps(options.targetLabel(), options.bootClassPath(), bound, lowered);
@@ -92,7 +96,7 @@ public class Main {
       }
     }
 
-    writeOutput(Paths.get(options.outputFile()), lowered.bytes());
+    writeOutput(Paths.get(options.outputFile()), lowered.bytes(), transitive);
     return true;
   }
 
@@ -121,21 +125,29 @@ public class Main {
   }
 
   /** Write bytecode to the output jar. */
-  private static void writeOutput(Path path, Map<String, byte[]> lowered) throws IOException {
+  private static void writeOutput(
+      Path path, Map<String, byte[]> lowered, Map<String, byte[]> transitive) throws IOException {
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {
       for (Map.Entry<String, byte[]> entry : lowered.entrySet()) {
-        JarEntry je = new JarEntry(entry.getKey() + ".class");
-        je.setTime(0L); // normalize timestamps to the DOS epoch
-        je.setMethod(ZipEntry.STORED);
-        byte[] bytes = entry.getValue();
-        je.setSize(bytes.length);
-        je.setCrc(Hashing.crc32().hashBytes(bytes).padToLong());
-        jos.putNextEntry(je);
-        jos.write(bytes);
+        addEntry(jos, entry.getKey() + ".class", entry.getValue());
+      }
+      for (Map.Entry<String, byte[]> entry : transitive.entrySet()) {
+        addEntry(
+            jos, ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ".class", entry.getValue());
       }
     }
+  }
+
+  private static void addEntry(JarOutputStream jos, String name, byte[] bytes) throws IOException {
+    JarEntry je = new JarEntry(name);
+    je.setTime(0L); // normalize timestamps to the DOS epoch
+    je.setMethod(ZipEntry.STORED);
+    je.setSize(bytes.length);
+    je.setCrc(Hashing.crc32().hashBytes(bytes).padToLong());
+    jos.putNextEntry(je);
+    jos.write(bytes);
   }
 
   private static final Function<String, Path> TO_PATH =

@@ -149,7 +149,7 @@ public class ClassReader {
     List<ClassFile.AnnotationInfo> annotations = new ArrayList<>();
     if ((accessFlags & TurbineFlag.ACC_ANNOTATION) == 0) {
       reader.skip(reader.u4());
-      return null;
+      return ImmutableList.of();
     }
     reader.u4(); // length
     int numAnnotations = reader.u2();
