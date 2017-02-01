@@ -16,6 +16,8 @@
 
 package com.google.turbine.bytecode;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.model.Const;
@@ -188,9 +190,9 @@ public class ClassFile {
     private final int access;
 
     public InnerClass(String innerClass, String outerClass, String innerName, int access) {
-      this.innerClass = innerClass;
-      this.outerClass = outerClass;
-      this.innerName = innerName;
+      this.innerClass = requireNonNull(innerClass);
+      this.outerClass = requireNonNull(outerClass);
+      this.innerName = requireNonNull(innerName);
       this.access = access;
     }
 

@@ -130,7 +130,7 @@ public class ClassReader {
       int innerNameIndex = reader.u2();
       String innerName = innerNameIndex != 0 ? constantPool.utf8(innerNameIndex) : null;
       int innerClassAccessFlags = reader.u2();
-      if (thisClass.equals(innerClass) || thisClass.equals(outerClass)) {
+      if (innerName != null && (thisClass.equals(innerClass) || thisClass.equals(outerClass))) {
         innerclasses.add(
             new ClassFile.InnerClass(innerClass, outerClass, innerName, innerClassAccessFlags));
       }

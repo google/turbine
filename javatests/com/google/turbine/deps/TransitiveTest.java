@@ -30,6 +30,7 @@ import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.main.Main;
 import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,11 +41,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 
 @RunWith(JUnit4.class)
 public class TransitiveTest {
@@ -172,5 +176,49 @@ public class TransitiveTest {
             "META-INF/TRANSITIVE/a/A.class",
             "META-INF/TRANSITIVE/a/A$Anno.class",
             "META-INF/TRANSITIVE/a/A$Inner.class");
+  }
+
+  @Test
+  public void anonymous() throws Exception {
+    Path liba = temporaryFolder.newFolder().toPath().resolve("out.jar");
+    try (OutputStream os = Files.newOutputStream(liba);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      {
+        jos.putNextEntry(new JarEntry("a/A.class"));
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(52, Opcodes.ACC_SUPER, "a/A", null, "java/lang/Object", null);
+        cw.visitInnerClass("a/A$1", "a/A", null, Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC);
+        cw.visitInnerClass("a/A$I", "a/A", "I", Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC);
+        jos.write(cw.toByteArray());
+      }
+      {
+        jos.putNextEntry(new JarEntry("a/A$1.class"));
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(52, Opcodes.ACC_SUPER, "a/A$1", null, "java/lang/Object", null);
+        cw.visitInnerClass("a/A$1", "a/A", "I", Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC);
+        jos.write(cw.toByteArray());
+      }
+      {
+        jos.putNextEntry(new JarEntry("a/A$I.class"));
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(52, Opcodes.ACC_SUPER, "a/A$I", null, "java/lang/Object", null);
+        cw.visitInnerClass("a/A$I", "a/A", "I", Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC);
+        jos.write(cw.toByteArray());
+      }
+    }
+    Path libb =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "b/B.java", //
+                    "package b;",
+                    "public class B extends a.A {}")
+                .build(),
+            ImmutableList.of(liba));
+
+    // libb repackages A and any named member types
+    assertThat(readJar(libb).keySet())
+        .containsExactly(
+            "b/B.class", "META-INF/TRANSITIVE/a/A.class", "META-INF/TRANSITIVE/a/A$I.class");
   }
 }
