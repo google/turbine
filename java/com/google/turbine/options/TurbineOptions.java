@@ -33,7 +33,6 @@ public class TurbineOptions {
   private final ImmutableList<String> sources;
   private final ImmutableList<String> processorPath;
   private final ImmutableSet<String> processors;
-  private final ImmutableSet<String> blacklistedProcessors;
   private final @Nullable String tempDir;
   private final ImmutableList<String> sourceJars;
   private final Optional<String> outputDeps;
@@ -51,7 +50,6 @@ public class TurbineOptions {
       ImmutableList<String> sources,
       ImmutableList<String> processorPath,
       ImmutableSet<String> processors,
-      ImmutableSet<String> blacklistedProcessors,
       String tempDir,
       ImmutableList<String> sourceJars,
       @Nullable String outputDeps,
@@ -67,8 +65,6 @@ public class TurbineOptions {
     this.sources = checkNotNull(sources, "sources must not be null");
     this.processorPath = checkNotNull(processorPath, "processorPath must not be null");
     this.processors = checkNotNull(processors, "processors must not be null");
-    this.blacklistedProcessors =
-        checkNotNull(blacklistedProcessors, "blacklistedProcessors must not be null");
     this.tempDir = tempDir;
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
     this.outputDeps = Optional.fromNullable(outputDeps);
@@ -116,14 +112,6 @@ public class TurbineOptions {
   /** Annotation processor class names. */
   public ImmutableSet<String> processors() {
     return processors;
-  }
-
-  /**
-   * Annotation processors that require tree pruning to be disabled, for example because they use
-   * internal compiler APIs to inspect information that would be removed during pruning.
-   */
-  public ImmutableSet<String> blacklistedProcessors() {
-    return blacklistedProcessors;
   }
 
   /** Source jars for compilation. */
@@ -178,7 +166,6 @@ public class TurbineOptions {
     private final ImmutableList.Builder<String> sources = ImmutableList.builder();
     private final ImmutableList.Builder<String> processorPath = ImmutableList.builder();
     private final ImmutableSet.Builder<String> processors = ImmutableSet.builder();
-    private final ImmutableSet.Builder<String> blacklistedProcessors = ImmutableSet.builder();
     private String tempDir;
     private final ImmutableList.Builder<String> sourceJars = ImmutableList.builder();
     private final ImmutableSet.Builder<String> bootClassPath = ImmutableSet.builder();
@@ -199,7 +186,6 @@ public class TurbineOptions {
           sources.build(),
           processorPath.build(),
           processors.build(),
-          blacklistedProcessors.build(),
           tempDir,
           sourceJars.build(),
           outputDeps,
@@ -238,11 +224,6 @@ public class TurbineOptions {
 
     public Builder addProcessors(Iterable<String> processors) {
       this.processors.addAll(processors);
-      return this;
-    }
-
-    public Builder addBlacklistedProcessors(Iterable<String> processors) {
-      this.blacklistedProcessors.addAll(processors);
       return this;
     }
 
