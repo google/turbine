@@ -113,7 +113,6 @@ public class StreamLexer implements Lexer {
                       break;
                   }
                 }
-                // does not fall through
               case '*':
                 boolean sawStar = false;
                 while (true) {
@@ -140,7 +139,6 @@ public class StreamLexer implements Lexer {
                       break;
                   }
                 }
-                // does not fall through
               default:
                 if (ch == '=') {
                   eat();
@@ -149,7 +147,6 @@ public class StreamLexer implements Lexer {
                 return Token.DIV;
             }
           }
-          // does not fall through
 
         case 'a':
         case 'b':
@@ -385,7 +382,6 @@ public class StreamLexer implements Lexer {
               }
             }
           }
-          // does not fall through
         default:
           if (Character.isJavaIdentifierStart(ch)) {
             // TODO(cushon): the style guide disallows non-ascii identifiers
@@ -466,6 +462,7 @@ public class StreamLexer implements Lexer {
                   }
                 }
               }
+              // fall through
             default:
               return value;
           }
