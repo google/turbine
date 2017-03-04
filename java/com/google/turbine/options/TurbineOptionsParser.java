@@ -86,7 +86,8 @@ public class TurbineOptionsParser {
           builder.setSourceJars(readList(argumentDeque));
           break;
         case "--temp_dir":
-          builder.setTempDir(readOne(argumentDeque));
+          // TODO(cushon): remove this when Bazel no longer passes the flag
+          readOne(argumentDeque);
           break;
         case "--processors":
           builder.addProcessors(readList(argumentDeque));

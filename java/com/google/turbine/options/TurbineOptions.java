@@ -33,7 +33,6 @@ public class TurbineOptions {
   private final ImmutableList<String> sources;
   private final ImmutableList<String> processorPath;
   private final ImmutableSet<String> processors;
-  private final @Nullable String tempDir;
   private final ImmutableList<String> sourceJars;
   private final Optional<String> outputDeps;
   private final ImmutableMap<String, String> directJarsToTargets;
@@ -50,7 +49,6 @@ public class TurbineOptions {
       ImmutableList<String> sources,
       ImmutableList<String> processorPath,
       ImmutableSet<String> processors,
-      String tempDir,
       ImmutableList<String> sourceJars,
       @Nullable String outputDeps,
       ImmutableMap<String, String> directJarsToTargets,
@@ -65,7 +63,6 @@ public class TurbineOptions {
     this.sources = checkNotNull(sources, "sources must not be null");
     this.processorPath = checkNotNull(processorPath, "processorPath must not be null");
     this.processors = checkNotNull(processors, "processors must not be null");
-    this.tempDir = tempDir;
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
     this.outputDeps = Optional.fromNullable(outputDeps);
     this.directJarsToTargets =
@@ -96,12 +93,6 @@ public class TurbineOptions {
   /** The output jar. */
   public String outputFile() {
     return output;
-  }
-
-  /** A temporary directory, e.g. for extracting sourcejar entries to before compilation. */
-  @Nullable
-  public String tempDir() {
-    return tempDir;
   }
 
   /** Paths to annotation processor artifacts. */
@@ -166,7 +157,6 @@ public class TurbineOptions {
     private final ImmutableList.Builder<String> sources = ImmutableList.builder();
     private final ImmutableList.Builder<String> processorPath = ImmutableList.builder();
     private final ImmutableSet.Builder<String> processors = ImmutableSet.builder();
-    private String tempDir;
     private final ImmutableList.Builder<String> sourceJars = ImmutableList.builder();
     private final ImmutableSet.Builder<String> bootClassPath = ImmutableSet.builder();
     private String outputDeps;
@@ -186,7 +176,6 @@ public class TurbineOptions {
           sources.build(),
           processorPath.build(),
           processors.build(),
-          tempDir,
           sourceJars.build(),
           outputDeps,
           directJarsToTargets.build(),
@@ -227,8 +216,8 @@ public class TurbineOptions {
       return this;
     }
 
+    // TODO(cushon): remove this when turbine dependency is updated
     public Builder setTempDir(String tempDir) {
-      this.tempDir = tempDir;
       return this;
     }
 

@@ -67,7 +67,6 @@ public class MainTest {
               .setSourceJars(ImmutableList.of(sourcesa.toString(), sourcesb.toString()))
               .addBootClassPathEntries(BOOTCLASSPATH)
               .setOutput(output.toString())
-              .setTempDir("")
               .build());
       fail();
     } catch (IllegalArgumentException e) {
@@ -88,7 +87,6 @@ public class MainTest {
                 .addSources(ImmutableList.of(src.toString()))
                 .addBootClassPathEntries(BOOTCLASSPATH)
                 .setOutput(output.toString())
-                .setTempDir("")
                 .build());
     assertThat(ok).isTrue();
 
@@ -112,7 +110,6 @@ public class MainTest {
                 .setSourceJars(ImmutableList.of(srcjar.toString()))
                 .addBootClassPathEntries(BOOTCLASSPATH)
                 .setOutput(output.toString())
-                .setTempDir("")
                 .build());
     assertThat(ok).isTrue();
 

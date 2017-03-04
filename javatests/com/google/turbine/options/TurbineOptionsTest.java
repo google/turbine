@@ -41,8 +41,6 @@ public class TurbineOptionsTest {
       ImmutableList.of(
           "--output",
           "out.jar",
-          "--temp_dir",
-          "_tmp",
           "--target_label",
           "//java/com/google/test",
           "--rule_kind",
@@ -56,8 +54,6 @@ public class TurbineOptionsTest {
       "--source_jars",
       "sources1.srcjar",
       "sources2.srcjar",
-      "--temp_dir",
-      "_tmp",
       "--processors",
       "com.foo.MyProcessor",
       "com.foo.OtherProcessor",
@@ -90,7 +86,6 @@ public class TurbineOptionsTest {
     assertThat(options.sourceJars())
         .containsExactly("sources1.srcjar", "sources2.srcjar")
         .inOrder();
-    assertThat(options.tempDir()).isEqualTo("_tmp");
     assertThat(options.processors())
         .containsExactly("com.foo.MyProcessor", "com.foo.OtherProcessor")
         .inOrder();
@@ -184,8 +179,6 @@ public class TurbineOptionsTest {
     String[] lines = {
       "--output",
       "out.jar",
-      "--temp_dir",
-      "_tmp",
       "--classpath",
       "liba.jar:libb.jar:libc.jar",
       "--processorpath",
