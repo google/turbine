@@ -17,7 +17,7 @@
 package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.lookup.CompoundScope;
+import com.google.turbine.binder.lookup.ImportScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
@@ -27,13 +27,13 @@ import com.google.turbine.tree.Tree;
 /** A {@link BoundClass} with shared lookup scopes for the current compilation unit and package. */
 public class PackageSourceBoundClass implements BoundClass {
   private final SourceBoundClass base;
-  private final CompoundScope scope;
+  private final ImportScope scope;
   private final MemberImportIndex memberImports;
   private final SourceFile source;
 
   public PackageSourceBoundClass(
       SourceBoundClass base,
-      CompoundScope scope,
+      ImportScope scope,
       MemberImportIndex memberImports,
       SourceFile source) {
     this.base = base;
@@ -66,7 +66,7 @@ public class PackageSourceBoundClass implements BoundClass {
     return base.children();
   }
 
-  public CompoundScope scope() {
+  public ImportScope scope() {
     return scope;
   }
 

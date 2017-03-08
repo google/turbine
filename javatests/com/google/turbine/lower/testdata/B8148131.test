@@ -1,0 +1,25 @@
+=== Test.java ===
+package p;
+
+import p.One.OneInner;
+
+class Test implements OneInner {}
+
+=== One.java ===
+package p;
+
+class One implements Two.ThreeInner {
+  interface OneInner {}
+}
+
+=== Two.java ===
+package p;
+
+class Two extends Three {}
+
+=== Three.java ===
+package p;
+
+class Three {
+  interface ThreeInner {}
+}

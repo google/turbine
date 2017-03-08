@@ -1,0 +1,22 @@
+=== P/Outer.java ===
+package P;
+
+import static P.Outer.Nested.*;
+import static P.Q.C.*;
+
+public class Outer {
+  public static class Nested implements I {
+  }
+}
+=== P/Q/C.java ===
+package P.Q;
+
+public class C extends D {
+}
+=== P/Q/D.java ===
+package P.Q;
+
+public class D {
+  public interface I {
+  }
+}

@@ -24,7 +24,9 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.env.LazyEnv.LazyBindingError;
 import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
+import com.google.turbine.binder.lookup.ImportScope.ResolveFunction;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineVisibility;
@@ -67,6 +69,27 @@ public class Resolve {
     return null;
   }
 
+  /**
+   * Partially applied {@link #resolve}, returning a {@link ResolveFunction} for the given {@code
+   * env} and {@code origin} symbol.
+   */
+  public static ResolveFunction resolveFunction(
+      Env<ClassSymbol, ? extends HeaderBoundClass> env, ClassSymbol origin) {
+    return new ResolveFunction() {
+      @Override
+      public ClassSymbol resolveOne(ClassSymbol base, String name) {
+        try {
+          return Resolve.resolve(env, origin, base, name);
+        } catch (LazyBindingError e) {
+          // This is only used for non-canonical import resolution, and if we discover a cycle
+          // while processing imports we want to continue and only error out if the symbol is
+          // never found.
+          return null;
+        }
+      }
+    };
+  }
+
   static class CanonicalResolver implements CanonicalSymbolResolver {
     private final String packagename;
     private final CompoundEnv<ClassSymbol, BoundClass> env;
@@ -99,13 +122,15 @@ public class Resolve {
       if (sym == null) {
         return null;
       }
-      if (!visible(sym, TurbineVisibility.fromAccess(env.get(sym).access()))) {
+      if (!visible(sym)) {
         return null;
       }
       return sym;
     }
 
-    boolean visible(ClassSymbol sym, TurbineVisibility visibility) {
+    @Override
+    public boolean visible(ClassSymbol sym) {
+      TurbineVisibility visibility = TurbineVisibility.fromAccess(env.get(sym).access());
       switch (visibility) {
         case PUBLIC:
           return true;

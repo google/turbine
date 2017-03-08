@@ -43,6 +43,7 @@ import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.ImportIndex;
+import com.google.turbine.binder.lookup.ImportScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.lookup.TopLevelIndex;
@@ -231,12 +232,14 @@ public class Binder {
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(
               packagename, CompoundEnv.<ClassSymbol, BoundClass>of(ienv).append(classPathEnv));
-      Scope importScope = ImportIndex.create(importResolver, tli, unit.imports());
-      Scope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
+      ImportScope importScope = ImportIndex.create(importResolver, tli, unit.imports());
+      ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
       MemberImportIndex memberImports = new MemberImportIndex(importResolver, tli, unit.imports());
-      CompoundScope scope =
-          topLevel.append(wildImportScope).append(packageScope).append(importScope);
-
+      ImportScope scope =
+          ImportScope.fromScope(topLevel)
+              .append(wildImportScope)
+              .append(ImportScope.fromScope(packageScope))
+              .append(importScope);
       for (ClassSymbol sym : entry.getValue()) {
         env.put(
             sym, new PackageSourceBoundClass(ienv.get(sym), scope, memberImports, unit.source()));

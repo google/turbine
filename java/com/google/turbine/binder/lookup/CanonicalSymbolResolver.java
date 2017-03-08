@@ -19,13 +19,18 @@ package com.google.turbine.binder.lookup;
 import com.google.turbine.binder.sym.ClassSymbol;
 
 /** Canonical type resolution. Breaks a circular dependency between binding and import handling. */
-public interface CanonicalSymbolResolver {
+public interface CanonicalSymbolResolver extends ImportScope.ResolveFunction {
   /**
    * Resolves a type by canonical name (member types must be qualified by the type that declares
    * them, not by types that are inherited into).
    */
+  @Override
   ClassSymbol resolve(LookupResult result);
 
   /** Resolves a single member type of the given symbol by canonical name. */
+  @Override
   ClassSymbol resolveOne(ClassSymbol sym, String bit);
+
+  /** Returns true if the given symbol is visible from the current package. */
+  boolean visible(ClassSymbol sym);
 }

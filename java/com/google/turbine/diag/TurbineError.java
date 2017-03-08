@@ -36,7 +36,8 @@ public class TurbineError extends Error {
     UNEXPECTED_TOKEN("unexpected token %s"),
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
     CANNOT_RESOLVE("cannot resolve %s"),
-    EXPRESSION_ERROR("could not evaluate constant expression");
+    EXPRESSION_ERROR("could not evaluate constant expression"),
+    CYCLIC_HIERARCHY("cycle in class hierarchy: %s");
 
     private final String message;
 

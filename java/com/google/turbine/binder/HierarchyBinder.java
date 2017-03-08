@@ -23,6 +23,7 @@ import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.env.LazyEnv.LazyBindingError;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -171,7 +172,7 @@ public class HierarchyBinder {
       flat.addFirst(curr.name());
     }
     // Resolve the base symbol in the qualified name.
-    LookupResult result = lookup(new LookupKey(flat));
+    LookupResult result = lookup(ty, new LookupKey(flat));
     if (result == null) {
       throw TurbineError.format(base.source(), ty.position(), ErrorKind.SYMBOL_NOT_FOUND, ty);
     }
@@ -179,7 +180,11 @@ public class HierarchyBinder {
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      sym = Resolve.resolve(env, origin, sym, bit);
+      try {
+        sym = Resolve.resolve(env, origin, sym, bit);
+      } catch (LazyBindingError e) {
+        throw error(ty.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+      }
       if (sym == null) {
         throw error(ty.position(), ErrorKind.SYMBOL_NOT_FOUND, bit);
       }
@@ -188,19 +193,24 @@ public class HierarchyBinder {
   }
 
   /** Resolve a qualified type name to a symbol. */
-  private LookupResult lookup(LookupKey lookup) {
+  private LookupResult lookup(Tree tree, LookupKey lookup) {
     // Handle any lexically enclosing class declarations (if we're binding a member class).
     // We could build out scopes for this, but it doesn't seem worth it. (And sharing the scopes
     // with other members of the same enclosing declaration would be complicated.)
     for (ClassSymbol curr = base.owner(); curr != null; curr = env.get(curr).owner()) {
-      ClassSymbol result = Resolve.resolve(env, origin, curr, lookup.first());
+      ClassSymbol result;
+      try {
+        result = Resolve.resolve(env, origin, curr, lookup.first());
+      } catch (LazyBindingError e) {
+        throw error(tree.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+      }
       if (result != null) {
         return new LookupResult(result, lookup);
       }
     }
     // Fall back to the top-level scopes for the compilation unit (imports, same package, then
     // qualified name resolution).
-    return base.scope().lookup(lookup);
+    return base.scope().lookup(lookup, Resolve.resolveFunction(env, origin));
   }
 
   private TurbineError error(int position, ErrorKind kind, Object... args) {

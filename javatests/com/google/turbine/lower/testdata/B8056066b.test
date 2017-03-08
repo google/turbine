@@ -1,0 +1,10 @@
+=== P/Outer.java ===
+package P;
+
+import static P.Outer.Nested.*;
+
+public class Outer {
+  public static class Nested<T extends I> {
+    static class I { }
+  }
+}

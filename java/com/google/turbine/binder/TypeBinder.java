@@ -168,7 +168,10 @@ public class TypeBinder {
     // refer to previous declared type parameters, the superclass type can refer to
     // type parameters, ...). A second scope is created for finding methods and fields
     // once the signature is fully determined.
-    CompoundScope enclosingScope = base.scope().append(new ClassMemberScope(base.owner(), env));
+    CompoundScope enclosingScope =
+        base.scope()
+            .toScope(Resolve.resolveFunction(env, owner))
+            .append(new ClassMemberScope(base.owner(), env));
 
     ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
 
@@ -220,7 +223,10 @@ public class TypeBinder {
       interfaceTypes.add((Type.ClassTy) bindClassTy(bindingScope, i));
     }
 
-    CompoundScope scope = base.scope().append(new ClassMemberScope(owner, env));
+    CompoundScope scope =
+        base.scope()
+            .toScope(Resolve.resolveFunction(env, owner))
+            .append(new ClassMemberScope(owner, env));
 
     List<MethodInfo> methods =
         ImmutableList.<MethodInfo>builder()

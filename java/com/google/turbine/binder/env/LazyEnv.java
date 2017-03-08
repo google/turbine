@@ -67,7 +67,7 @@ public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
     Completer<S, T, V> completer = completers.get(sym);
     if (completer != null) {
       if (!seen.add(sym)) {
-        throw new LazyBindingError("cycle: " + Joiner.on(" -> ").join(seen) + " -> " + sym);
+        throw new LazyBindingError(Joiner.on(" -> ").join(seen) + " -> " + sym);
       }
       v = completer.complete(rec, sym);
       seen.remove(sym);

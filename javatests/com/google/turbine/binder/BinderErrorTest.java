@@ -140,6 +140,21 @@ public class BinderErrorTest {
           "                                       ^",
         },
       },
+      {
+        {
+          "package p;", //
+          "import p.OuterExtendsInner.Inner;",
+          "public class OuterExtendsInner extends Inner {",
+          "  public static class Inner extends Foo {}",
+          "}",
+        },
+        {
+          "<>:4: error: cycle in class hierarchy: p/OuterExtendsInner$Inner"
+              + " -> p/OuterExtendsInner$Inner",
+          "  public static class Inner extends Foo {}",
+          "                                    ^"
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

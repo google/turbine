@@ -18,7 +18,7 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.lookup.CompoundScope;
+import com.google.turbine.binder.lookup.ImportScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -85,7 +85,7 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
     return typeParameters;
   }
 
-  public CompoundScope scope() {
+  public ImportScope scope() {
     return base.scope();
   }
 

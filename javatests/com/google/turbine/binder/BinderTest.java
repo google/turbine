@@ -23,8 +23,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.parse.Parser;
@@ -177,8 +177,9 @@ public class BinderTest {
     try {
       Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
       fail();
-    } catch (LazyEnv.LazyBindingError e) {
-      assertThat(e.getMessage()).contains("cycle: a/A$Inner -> a/A -> b/B -> a/A");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .contains("cycle in class hierarchy: a/A$Inner -> a/A -> b/B -> a/A");
     }
   }
 

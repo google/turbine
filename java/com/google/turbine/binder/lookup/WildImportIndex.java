@@ -30,69 +30,130 @@ import com.google.turbine.tree.Tree.ImportDecl;
  *
  * <p>Static on-demand imports of types are not supported.
  */
-public class WildImportIndex implements Scope {
+public class WildImportIndex implements ImportScope {
 
-  private final ImmutableList<Supplier<Scope>> packages;
+  /** {@link ImportScope}s for all on-demand imports in the compilation unit. */
+  private final ImmutableList<Supplier<ImportScope>> packages;
 
-  public WildImportIndex(ImmutableList<Supplier<Scope>> packages) {
+  public WildImportIndex(ImmutableList<Supplier<ImportScope>> packages) {
     this.packages = packages;
   }
 
   /** Creates an import index for the given top-level environment. */
   public static WildImportIndex create(
-      final CanonicalSymbolResolver resolve,
+      CanonicalSymbolResolver importResolver,
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
-    ImmutableList.Builder<Supplier<Scope>> packageScopes = ImmutableList.builder();
+    ImmutableList.Builder<Supplier<ImportScope>> packageScopes = ImmutableList.builder();
     for (final ImportDecl i : imports) {
-      if (!i.wild()) {
-        continue;
-      }
-
-      // Speculatively include static wildcard imports, in case the import is needed
-      // to resolve children of a static-imported canonical type.
-      // TODO(cushon): consider locking down static wildcard imports of types and backing this out
-
-      packageScopes.add(
-          Suppliers.memoize(
-              new Supplier<Scope>() {
-                @Override
-                public Scope get() {
-                  Scope packageIndex = cpi.lookupPackage(i.type());
-                  if (packageIndex != null) {
-                    // a wildcard import of a package
-                    return packageIndex;
-                  }
-                  LookupResult result = cpi.lookup(new LookupKey(i.type()));
-                  if (result == null) {
-                    return null;
-                  }
-                  ClassSymbol sym = resolve.resolve(result);
-                  if (sym == null) {
-                    return null;
-                  }
-                  // a wildcard import of a type's members
-                  return new Scope() {
-                    @Override
-                    public LookupResult lookup(LookupKey lookupKey) {
-                      ClassSymbol member = resolve.resolveOne(sym, lookupKey.first());
-                      return member != null ? new LookupResult(member, lookupKey) : null;
+      if (i.wild()) {
+        packageScopes.add(
+            Suppliers.memoize(
+                new Supplier<ImportScope>() {
+                  @Override
+                  public ImportScope get() {
+                    if (i.stat()) {
+                      return staticOnDemandImport(cpi, i, importResolver);
+                    } else {
+                      return onDemandImport(cpi, i, importResolver);
                     }
-                  };
-                }
-              }));
+                  }
+                }));
+      }
     }
     return new WildImportIndex(packageScopes.build());
   }
 
+  /** Full resolve the type for a non-static on-demand import. */
+  private static ImportScope onDemandImport(
+      TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
+    Scope packageIndex = cpi.lookupPackage(i.type());
+    if (packageIndex != null) {
+      // a wildcard import of a package
+      return new ImportScope() {
+        @Override
+        public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+          return packageIndex.lookup(lookupKey);
+        }
+      };
+    }
+    LookupResult result = cpi.lookup(new LookupKey(i.type()));
+    if (result == null) {
+      return null;
+    }
+    ClassSymbol member = resolveImportBase(result, importResolver, importResolver);
+    if (member == null) {
+      return null;
+    }
+    return new ImportScope() {
+      @Override
+      public LookupResult lookup(LookupKey lookupKey, ResolveFunction unused) {
+        return resolveMember(member, importResolver, importResolver, lookupKey);
+      }
+    };
+  }
+
+  /**
+   * Resolve the base class symbol of a possibly non-canonical static on-demand import (see {@code
+   * ImportScope#staticNamedImport} for an explanation of why the possibly non-canonical part is
+   * deferred).
+   */
+  private static ImportScope staticOnDemandImport(
+      TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
+    LookupResult result = cpi.lookup(new LookupKey(i.type()));
+    if (result == null) {
+      return null;
+    }
+    return new ImportScope() {
+      @Override
+      public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+        ClassSymbol member = resolveImportBase(result, resolve, importResolver);
+        if (member == null) {
+          return null;
+        }
+        return resolveMember(member, resolve, importResolver, lookupKey);
+      }
+    };
+  }
+
+  private static LookupResult resolveMember(
+      ClassSymbol base,
+      ResolveFunction resolve,
+      CanonicalSymbolResolver importResolver,
+      LookupKey lookupKey) {
+    ClassSymbol member = resolve.resolveOne(base, lookupKey.first());
+    if (member == null) {
+      return null;
+    }
+    if (!importResolver.visible(member)) {
+      return null;
+    }
+    return new LookupResult(member, lookupKey);
+  }
+
+  static ClassSymbol resolveImportBase(
+      LookupResult result, ResolveFunction resolve, CanonicalSymbolResolver importResolver) {
+    ClassSymbol member = (ClassSymbol) result.sym();
+    for (String bit : result.remaining()) {
+      member = resolve.resolveOne(member, bit);
+      if (member == null) {
+        return null;
+      }
+      if (!importResolver.visible(member)) {
+        return null;
+      }
+    }
+    return member;
+  }
+
   @Override
-  public LookupResult lookup(LookupKey lookup) {
-    for (Supplier<Scope> packageScope : packages) {
-      Scope scope = packageScope.get();
+  public LookupResult lookup(LookupKey lookup, ResolveFunction resolve) {
+    for (Supplier<ImportScope> packageScope : packages) {
+      ImportScope scope = packageScope.get();
       if (scope == null) {
         continue;
       }
-      LookupResult result = scope.lookup(lookup);
+      LookupResult result = scope.lookup(lookup, resolve);
       if (result != null) {
         return result;
       }

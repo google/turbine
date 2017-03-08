@@ -289,6 +289,11 @@ public class LowerIntegrationTest {
       "B33513475.test",
       "B33513475b.test",
       "B33513475c.test",
+      "noncanon_static_wild.test",
+      "B8075274.test",
+      "B8148131.test",
+      "B8056066.test",
+      "B8056066b.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
