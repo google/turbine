@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder;
 
-import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
@@ -631,10 +630,9 @@ public class TypeBinder {
     }
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
-    if (result == null) {
+    if (result == null || result.sym() == null) {
       throw error(t.position(), ErrorKind.SYMBOL_NOT_FOUND, t);
     }
-    Verify.verifyNotNull(result, "%s", names);
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
     ImmutableList<AnnoInfo> annos = bindAnnotations(scope, flat.get(annoIdx).annos());
