@@ -15,7 +15,7 @@
   </description>
 
   <properties>
-    <javac.version>9-dev-r3297-1</javac.version>
+    <javac.version>9-dev-r3297-4</javac.version>
   </properties>
 
   <dependencies>
