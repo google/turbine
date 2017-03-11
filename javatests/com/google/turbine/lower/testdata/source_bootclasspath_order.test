@@ -1,0 +1,15 @@
+=== Test.java ===
+import java.lang.String.I;
+class Test {
+  void f(I s) {
+    s.foo();
+  }
+}
+
+=== java/lang/String.java ===
+package java.lang;
+public class String {
+  public static class I {
+    public void foo() {}
+  }
+}

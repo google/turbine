@@ -294,6 +294,7 @@ public class LowerIntegrationTest {
       "B8148131.test",
       "B8056066.test",
       "B8056066b.test",
+      "source_bootclasspath_order.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
