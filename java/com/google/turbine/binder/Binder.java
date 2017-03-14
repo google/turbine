@@ -71,7 +71,7 @@ public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static BindingResult bind(
-      List<CompUnit> units, Iterable<Path> classpath, Iterable<Path> bootclasspath)
+      List<CompUnit> units, Collection<Path> classpath, Collection<Path> bootclasspath)
       throws IOException {
 
     TopLevelIndex.Builder tliBuilder = TopLevelIndex.builder();

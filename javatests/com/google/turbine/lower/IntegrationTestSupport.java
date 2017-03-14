@@ -47,6 +47,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
@@ -424,7 +425,7 @@ public class IntegrationTestSupport {
   }
 
   static Map<String, byte[]> runTurbine(
-      Map<String, String> input, ImmutableList<Path> classpath, Iterable<Path> bootclasspath)
+      Map<String, String> input, ImmutableList<Path> classpath, Collection<Path> bootclasspath)
       throws IOException {
     List<Tree.CompUnit> units =
         input
@@ -439,7 +440,9 @@ public class IntegrationTestSupport {
   }
 
   public static Map<String, byte[]> runJavac(
-      Map<String, String> sources, Iterable<Path> classpath, Iterable<? extends Path> bootclasspath)
+      Map<String, String> sources,
+      Collection<Path> classpath,
+      Collection<? extends Path> bootclasspath)
       throws Exception {
 
     FileSystem fs = Jimfs.newFileSystem(Configuration.unix());

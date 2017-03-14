@@ -18,9 +18,7 @@ package com.google.turbine.main;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.Binder;
@@ -77,10 +75,7 @@ public class Main {
             options.classPath(), options.directJarsToTargets(), options.depsArtifacts());
 
     BindingResult bound =
-        Binder.bind(
-            units,
-            Iterables.transform(reducedClasspath, TO_PATH),
-            Iterables.transform(options.bootClassPath(), TO_PATH));
+        Binder.bind(units, toPaths(reducedClasspath), toPaths(options.bootClassPath()));
 
     // TODO(cushon): parallelize
     Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
@@ -150,11 +145,11 @@ public class Main {
     jos.write(bytes);
   }
 
-  private static final Function<String, Path> TO_PATH =
-      new Function<String, Path>() {
-        @Override
-        public Path apply(String input) {
-          return Paths.get(input);
-        }
-      };
+  private static ImmutableList<Path> toPaths(Iterable<String> paths) {
+    ImmutableList.Builder<Path> result = ImmutableList.builder();
+    for (String path : paths) {
+      result.add(Paths.get(path));
+    }
+    return result.build();
+  }
 }

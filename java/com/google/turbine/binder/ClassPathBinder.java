@@ -29,6 +29,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,7 +51,7 @@ public class ClassPathBinder {
    * them to the top-level index.
    */
   public static CompoundEnv<ClassSymbol, BytecodeBoundClass> bind(
-      Iterable<Path> classpath, Iterable<Path> bootclasspath, TopLevelIndex.Builder tli)
+      Collection<Path> classpath, Collection<Path> bootclasspath, TopLevelIndex.Builder tli)
       throws IOException {
     // TODO(cushon): this is going to require an env eventually,
     // e.g. to look up type parameters in enclosing declarations
@@ -60,7 +61,7 @@ public class ClassPathBinder {
   }
 
   private static Env<ClassSymbol, BytecodeBoundClass> bindClasspath(
-      TopLevelIndex.Builder tli, Iterable<Path> paths) throws IOException {
+      TopLevelIndex.Builder tli, Collection<Path> paths) throws IOException {
     Map<ClassSymbol, BytecodeBoundClass> transitive = new LinkedHashMap<>();
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
     Env<ClassSymbol, BytecodeBoundClass> benv =
