@@ -48,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
@@ -335,7 +336,7 @@ public class LowerTest {
   }
 
   @Test
-  public void invalidBooleanConstant() throws Exception {
+  public void invalidConstants() throws Exception {
     Path lib = temporaryFolder.newFile("lib.jar").toPath();
     try (OutputStream os = Files.newOutputStream(lib);
         JarOutputStream jos = new JarOutputStream(os)) {
@@ -343,26 +344,39 @@ public class LowerTest {
 
       ClassWriter cw = new ClassWriter(0);
       cw.visit(52, Opcodes.ACC_SUPER, "Lib", null, "java/lang/Object", null);
-      FieldVisitor fv =
-          cw.visitField(
-              Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "CONST", "Z", null, Integer.MAX_VALUE);
-      fv.visitEnd();
-      cw.visitEnd();
+      cw.visitField(Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "ZCONST", "Z", null, Integer.MAX_VALUE);
+      cw.visitField(Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "SCONST", "S", null, Integer.MAX_VALUE);
       jos.write(cw.toByteArray());
     }
 
     ImmutableMap<String, String> input =
         ImmutableMap.of(
-            "Test.java", "class Test { static final boolean CONST = Lib.CONST || false; }");
+            "Test.java",
+            Joiner.on('\n')
+                .join(
+                    "class Test {",
+                    "  static final short SCONST = Lib.SCONST + 0;",
+                    "  static final boolean ZCONST = Lib.ZCONST || false;",
+                    "}"));
 
     Map<String, byte[]> actual =
         IntegrationTestSupport.runTurbine(input, ImmutableList.of(lib), BOOTCLASSPATH);
 
-    Map<String, byte[]> expected =
-        IntegrationTestSupport.runJavac(input, ImmutableList.of(lib), BOOTCLASSPATH);
+    Map<String, Object> values = new LinkedHashMap<>();
+    new ClassReader(actual.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM5) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String desc, String signature, Object value) {
+                values.put(name, value);
+                return super.visitField(access, name, desc, signature, value);
+              }
+            },
+            0);
 
-    assertThat(IntegrationTestSupport.dump(actual))
-        .isEqualTo(IntegrationTestSupport.dump(expected));
+    assertThat(values).containsEntry("SCONST", -1);
+    assertThat(values).containsEntry("ZCONST", 1);
   }
 
   @Test
