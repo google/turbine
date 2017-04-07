@@ -481,8 +481,9 @@ public class Parser {
         {
           result = new Tree.VoidTy(position);
           next();
+          int pos = position;
           name = eatIdent();
-          return memberRest(access, annos, typaram, result, name);
+          return memberRest(pos, access, annos, typaram, result, name);
         }
       case BOOLEAN:
       case BYTE:
@@ -494,17 +495,19 @@ public class Parser {
       case FLOAT:
         {
           result = referenceType(ImmutableList.of());
+          int pos = position;
           name = eatIdent();
-          return memberRest(access, annos, typaram, result, name);
+          return memberRest(pos, access, annos, typaram, result, name);
         }
       case IDENT:
         {
+          int pos = position;
           String ident = eatIdent();
           switch (token) {
             case LPAREN:
               {
                 name = ident;
-                return ImmutableList.of(methodRest(access, annos, typaram, null, name));
+                return ImmutableList.of(methodRest(pos, access, annos, typaram, null, name));
               }
             case IDENT:
               {
@@ -515,8 +518,9 @@ public class Parser {
                         ident,
                         ImmutableList.<Type>of(),
                         ImmutableList.of());
+                pos = position;
                 name = eatIdent();
-                return memberRest(access, annos, typaram, result, name);
+                return memberRest(pos, access, annos, typaram, result, name);
               }
             case AT:
             case LBRACK:
@@ -560,10 +564,11 @@ public class Parser {
             result = classty((ClassTy) result);
           }
           result = maybeDims(maybeAnnos(), result);
+          pos = position;
           name = eatIdent();
           switch (token) {
             case LPAREN:
-              return ImmutableList.of(methodRest(access, annos, typaram, result, name));
+              return ImmutableList.of(methodRest(pos, access, annos, typaram, result, name));
             case LBRACK:
             case SEMI:
             case ASSIGN:
@@ -572,7 +577,7 @@ public class Parser {
                 if (!typaram.isEmpty()) {
                   throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
                 }
-                return fieldRest(access, annos, result, name);
+                return fieldRest(pos, access, annos, result, name);
               }
             default:
               throw error(token);
@@ -596,6 +601,7 @@ public class Parser {
   }
 
   private ImmutableList<Tree> memberRest(
+      int pos,
       EnumSet<TurbineModifier> access,
       ImmutableList<Anno> annos,
       ImmutableList<TyParam> typaram,
@@ -610,17 +616,21 @@ public class Parser {
           if (!typaram.isEmpty()) {
             throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
           }
-          return fieldRest(access, annos, result, name);
+          return fieldRest(pos, access, annos, result, name);
         }
       case LPAREN:
-        return ImmutableList.of(methodRest(access, annos, typaram, result, name));
+        return ImmutableList.of(methodRest(pos, access, annos, typaram, result, name));
       default:
         throw error(token);
     }
   }
 
   private ImmutableList<Tree> fieldRest(
-      EnumSet<TurbineModifier> access, ImmutableList<Anno> annos, Type baseTy, String name) {
+      int pos,
+      EnumSet<TurbineModifier> access,
+      ImmutableList<Anno> annos,
+      Type baseTy,
+      String name) {
     ImmutableList.Builder<Tree> result = ImmutableList.builder();
     VariableInitializerParser initializerParser = new VariableInitializerParser(token, lexer);
     List<List<SavedToken>> bits = initializerParser.parseInitializers();
@@ -642,13 +652,14 @@ public class Parser {
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
-      result.add(new VarDecl(position, access, annos, ty, name, Optional.fromNullable(init)));
+      result.add(new VarDecl(pos, access, annos, ty, name, Optional.fromNullable(init)));
     }
     eat(Token.SEMI);
     return result.build();
   }
 
   private Tree methodRest(
+      int pos,
       EnumSet<TurbineModifier> access,
       ImmutableList<Anno> annos,
       ImmutableList<TyParam> typaram,
@@ -697,7 +708,7 @@ public class Parser {
       name = CTOR_NAME;
     }
     return new MethDecl(
-        position,
+        pos,
         access,
         annos,
         typaram,

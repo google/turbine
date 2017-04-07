@@ -59,4 +59,9 @@ public class TyVarSymbol implements Symbol {
     TyVarSymbol other = (TyVarSymbol) obj;
     return name.equals(other.name()) && owner().equals(other.owner());
   }
+
+  @Override
+  public String toString() {
+    return owner + "#" + name;
+  }
 }

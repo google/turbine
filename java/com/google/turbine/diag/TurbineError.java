@@ -40,7 +40,8 @@ public class TurbineError extends Error {
     EXPRESSION_ERROR("could not evaluate constant expression"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),
-    NONREPEATABLE_ANNOTATION("%s is not @Repeatable");
+    NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
+    DUPLICATE_DECLARATION("duplicate declaration of %s");
 
     private final String message;
 

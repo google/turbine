@@ -52,8 +52,10 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Type binding. */
 public class TypeBinder {
@@ -516,10 +518,15 @@ public class TypeBinder {
   }
 
   private ImmutableList<FieldInfo> bindFields(CompoundScope scope, ImmutableList<Tree> members) {
+    Set<FieldSymbol> seen = new HashSet<>();
     ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.VAR_DECL) {
-        fields.add(bindField(scope, (Tree.VarDecl) member));
+        FieldInfo field = bindField(scope, (Tree.VarDecl) member);
+        if (!seen.add(field.sym())) {
+          throw error(member.position(), ErrorKind.DUPLICATE_DECLARATION, "field: " + field.name());
+        }
+        fields.add(field);
       }
     }
     return fields.build();

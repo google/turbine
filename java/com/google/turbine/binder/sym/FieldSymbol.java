@@ -58,4 +58,9 @@ public class FieldSymbol implements Symbol {
     FieldSymbol other = (FieldSymbol) obj;
     return name().equals(other.name()) && owner().equals(other.owner());
   }
+
+  @Override
+  public String toString() {
+    return owner + "#" + name;
+  }
 }

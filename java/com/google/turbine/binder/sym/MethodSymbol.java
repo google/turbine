@@ -58,4 +58,9 @@ public class MethodSymbol implements Symbol {
     MethodSymbol other = (MethodSymbol) obj;
     return name().equals(other.name()) && owner().equals(other.owner());
   }
+
+  @Override
+  public String toString() {
+    return owner + "#" + name;
+  }
 }

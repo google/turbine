@@ -324,6 +324,19 @@ public class BinderErrorTest {
           "              ^",
         },
       },
+      {
+        {
+          "public class Test {", //
+          "  static final String x = 1;",
+          "  static final String x = 2;",
+          "}",
+        },
+        {
+          "<>:3: error: duplicate declaration of field: x", //
+          "  static final String x = 2;",
+          "                      ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
