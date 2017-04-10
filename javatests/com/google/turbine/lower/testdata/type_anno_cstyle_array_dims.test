@@ -1,0 +1,15 @@
+=== Test.java ===
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import java.util.Map;
+
+@Target(ElementType.TYPE_USE) @interface A {}
+@Target(ElementType.TYPE_USE) @interface B {}
+@Target(ElementType.TYPE_USE) @interface C {}
+@Target(ElementType.TYPE_USE) @interface D {}
+@Target(ElementType.TYPE_USE) @interface E {}
+
+class Test {
+  int [] x = {}, y @B @C [] @D @E [] = {{{1}}};
+  void log(@A Object [] params @B @C [] @D @E []) {}
+}

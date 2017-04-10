@@ -48,8 +48,9 @@ import com.google.turbine.tree.Tree.Type;
 import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.tree.Tree.WildTy;
 import com.google.turbine.tree.TurbineModifier;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import javax.annotation.Nullable;
 
@@ -627,38 +628,16 @@ public class Parser {
 
     boolean first = true;
     for (List<SavedToken> bit : bits) {
-
-      Iterator<SavedToken> it = bit.iterator();
-
+      IteratorLexer lexer = new IteratorLexer(this.lexer.source(), bit.iterator());
+      Parser parser = new Parser(lexer);
       if (first) {
         first = false;
       } else {
-        SavedToken next = it.next();
-        if (next.token == Token.IDENT) {
-          name = next.value;
-        } else {
-          throw error(next.token);
-        }
+        name = parser.eatIdent();
       }
-
       Type ty = baseTy;
-      if (it.hasNext()) {
-        SavedToken next = it.next();
-        int extra = 0;
-        while (next.token == Token.LBRACK) {
-          extra++;
-          next = it.next();
-          if (next.token != Token.RBRACK) {
-            throw error(next.token);
-          }
-          if (it.hasNext()) {
-            next = it.next();
-          }
-        }
-        ty = extraDims(ty, extra);
-      }
+      ty = parser.extraDims(ty);
       // TODO(cushon): skip more fields that are definitely non-const
-      IteratorLexer lexer = new IteratorLexer(this.lexer.source(), it);
       Expression init = new ConstExpressionParser(lexer, lexer.next()).expression();
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
@@ -680,14 +659,7 @@ public class Parser {
     formalParams(formals, access);
     eat(Token.RPAREN);
 
-    if (token == Token.LBRACK) {
-      int extra = 0;
-      while (maybe(Token.LBRACK)) {
-        eat(Token.RBRACK);
-        extra++;
-      }
-      result = extraDims(result, extra);
-    }
+    result = extraDims(result);
 
     ImmutableList.Builder<ClassTy> exceptions = ImmutableList.builder();
     if (token == Token.THROWS) {
@@ -743,16 +715,31 @@ public class Parser {
    * <p>For reasons that are unclear from the spec, {@code int @A [] x []} is equivalent to {@code
    * int [] @A [] x}, not {@code int @A [] [] x}.
    */
-  // TODO(cushon): support type annotations here. or not.
-  private Type extraDims(Type type, int extra) {
-    if (extra == 0) {
+  private Type extraDims(Type ty) {
+    ImmutableList<Anno> annos = maybeAnnos();
+    if (!annos.isEmpty() && token != Token.LBRACK) {
+      // orphaned type annotations
+      throw error(token);
+    }
+    Deque<ImmutableList<Anno>> extra = new ArrayDeque<>();
+    while (maybe(Token.LBRACK)) {
+      eat(Token.RBRACK);
+      extra.push(annos);
+      annos = maybeAnnos();
+    }
+    ty = extraDims(ty, extra);
+    return ty;
+  }
+
+  private Type extraDims(Type type, Deque<ImmutableList<Anno>> extra) {
+    if (extra.isEmpty()) {
       return type;
     }
     if (type.kind() == Kind.ARR_TY) {
       ArrTy arrTy = (ArrTy) type;
       return new ArrTy(arrTy.position(), arrTy.annos(), extraDims(arrTy.elem(), extra));
     }
-    return new ArrTy(type.position(), ImmutableList.of(), extraDims(type, extra - 1));
+    return new ArrTy(type.position(), extra.pop(), extraDims(type, extra));
   }
 
   private ImmutableList<ClassTy> exceptions() {
@@ -798,12 +785,7 @@ public class Parser {
       // Overwrite everything up to the terminal 'this' for inner classes; we don't need it
       name = identOrThis();
     }
-    int extra = 0;
-    while (maybe(Token.LBRACK)) {
-      eat(Token.RBRACK);
-      extra++;
-    }
-    ty = extraDims(ty, extra);
+    ty = extraDims(ty);
     return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>absent());
   }
 
