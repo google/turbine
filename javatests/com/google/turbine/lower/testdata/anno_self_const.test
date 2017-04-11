@@ -1,0 +1,23 @@
+=== p/Super.java ===
+package p;
+public abstract class Super {
+  static final String C = "hello";
+}
+
+=== p/Test.java ===
+package p;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+@interface A {
+  String x() default "";
+  Class<?> y() default String.class;
+}
+
+@A(
+    x = N.C,
+    y = N.class
+)
+class N extends Super {}

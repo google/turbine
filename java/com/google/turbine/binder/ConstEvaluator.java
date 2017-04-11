@@ -66,7 +66,10 @@ import java.util.Map;
  */
 public strictfp class ConstEvaluator {
 
-  /** The symbol of the enclosing class. */
+  /** The symbol of the originating class, for visibility checks. */
+  private final ClassSymbol origin;
+
+  /** The symbol of the enclosing class, for lexical field lookups. */
   private final ClassSymbol owner;
 
   /** The bound node of the enclosing class. */
@@ -81,12 +84,14 @@ public strictfp class ConstEvaluator {
   private final CompoundScope scope;
 
   public ConstEvaluator(
+      ClassSymbol origin,
       ClassSymbol owner,
       SourceTypeBoundClass base,
       CompoundScope scope,
       Env<FieldSymbol, Const.Value> values,
       CompoundEnv<ClassSymbol, TypeBoundClass> env) {
 
+    this.origin = origin;
     this.owner = owner;
     this.base = base;
     this.values = values;
@@ -192,7 +197,7 @@ public strictfp class ConstEvaluator {
     }
     ClassSymbol classSym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      classSym = Resolve.resolve(env, owner, classSym, bit);
+      classSym = Resolve.resolve(env, origin, classSym, bit);
       if (classSym == null) {
         throw error(classTy.position(), ErrorKind.SYMBOL_NOT_FOUND, bit);
       }
@@ -227,14 +232,14 @@ public strictfp class ConstEvaluator {
     }
     ClassSymbol classSymbol = base.memberImports().singleMemberImport(simpleName);
     if (classSymbol != null) {
-      field = Resolve.resolveField(env, owner, classSymbol, simpleName);
+      field = Resolve.resolveField(env, origin, classSymbol, simpleName);
       if (field != null) {
         return field;
       }
     }
     Iterator<ClassSymbol> it = base.memberImports().onDemandImports();
     while (it.hasNext()) {
-      field = Resolve.resolveField(env, owner, it.next(), simpleName);
+      field = Resolve.resolveField(env, origin, it.next(), simpleName);
       if (field == null) {
         continue;
       }
@@ -263,7 +268,7 @@ public strictfp class ConstEvaluator {
         return null;
       }
     }
-    return Resolve.resolveField(env, owner, sym, Iterables.getLast(result.remaining()));
+    return Resolve.resolveField(env, origin, sym, Iterables.getLast(result.remaining()));
   }
 
   /** Search for constant variables in lexically enclosing scopes. */
@@ -271,7 +276,7 @@ public strictfp class ConstEvaluator {
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, String name) {
     while (sym != null) {
       TypeBoundClass info = env.get(sym);
-      FieldInfo field = Resolve.resolveField(env, owner, sym, name);
+      FieldInfo field = Resolve.resolveField(env, origin, sym, name);
       if (field != null) {
         return field;
       }
@@ -405,6 +410,7 @@ public strictfp class ConstEvaluator {
         throw new AssertionError(expr.constantTypeKind());
     }
   }
+
   private Const.Value evalCast(TypeCast t) {
     Const.Value expr = evalValue(t.expr());
     if (expr == null) {
@@ -905,6 +911,9 @@ public strictfp class ConstEvaluator {
         throw error(arg.position(), ErrorKind.CANNOT_RESOLVE, key);
       }
       Const value = evalAnnotationValue(expr, ty);
+      if (value == null) {
+        throw error(expr.position(), ErrorKind.EXPRESSION_ERROR);
+      }
       values.put(key, value);
     }
     return new AnnoInfo(sym, args, values.build());

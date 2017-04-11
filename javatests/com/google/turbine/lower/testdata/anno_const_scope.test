@@ -11,7 +11,12 @@ import static a.A.CONST;
   String value() default "";
 }
 
-@Anno(CONST) // this is a/A#Const; Test#ONST is not in scope
+@Anno(CONST) // this is a/A#Const; Test#CONST is not in scope
 class Test {
-  public static final String CONST = "two";
+  public static final String CONST = "test";
+
+  @Anno(CONST) // this is Test#Const; Inner#CONST is not in scope
+  class Inner {
+    public static final String CONST = "inner";
+  }
 }

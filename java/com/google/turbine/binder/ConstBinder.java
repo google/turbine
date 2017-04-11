@@ -58,24 +58,26 @@ import java.util.Map;
 public class ConstBinder {
 
   private final Env<FieldSymbol, Value> constantEnv;
+  private final ClassSymbol origin;
   private final SourceTypeBoundClass base;
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
   private final ConstEvaluator constEvaluator;
 
   public ConstBinder(
       Env<FieldSymbol, Value> constantEnv,
-      ClassSymbol sym,
+      ClassSymbol origin,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       SourceTypeBoundClass base) {
     this.constantEnv = constantEnv;
+    this.origin = origin;
     this.base = base;
     this.env = env;
-    this.constEvaluator = new ConstEvaluator(sym, base, base.scope(), constantEnv, env);
+    this.constEvaluator = new ConstEvaluator(origin, origin, base, base.scope(), constantEnv, env);
   }
 
   public SourceTypeBoundClass bind() {
     ImmutableList<AnnoInfo> annos =
-        new ConstEvaluator(base.owner(), base, base.enclosingScope(), constantEnv, env)
+        new ConstEvaluator(origin, base.owner(), base, base.enclosingScope(), constantEnv, env)
             .evaluateAnnotations(base.annotations());
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());

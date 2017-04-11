@@ -295,6 +295,7 @@ public class LowerIntegrationTest {
       "B8056066.test",
       "B8056066b.test",
       "source_bootclasspath_order.test",
+      "anno_self_const.test",
       "type_anno_cstyle_array_dims.test",
     };
     List<Object[]> tests =

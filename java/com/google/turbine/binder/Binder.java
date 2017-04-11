@@ -314,7 +314,7 @@ public class Binder {
               @Override
               public Const.Value complete(Env<FieldSymbol, Const.Value> env1, FieldSymbol k) {
                 try {
-                  return new ConstEvaluator(sym, info, info.scope(), env1, baseEnv)
+                  return new ConstEvaluator(sym, sym, info, info.scope(), env1, baseEnv)
                       .evalFieldInitializer(field.decl().init().get(), field.type());
                 } catch (LazyEnv.LazyBindingError e) {
                   // fields initializers are allowed to reference the field being initialized,
