@@ -65,7 +65,9 @@ public class TurbineOptionsParser {
       if (arg.isEmpty()) {
         continue;
       }
-      if (arg.startsWith("@") && !arg.startsWith("@@")) {
+      if (arg.startsWith("@@")) {
+        argumentDeque.addLast(arg.substring(1));
+      } else if (arg.startsWith("@")) {
         Path paramsPath = Paths.get(arg.substring(1));
         expandParamsFiles(
             argumentDeque, ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8)));

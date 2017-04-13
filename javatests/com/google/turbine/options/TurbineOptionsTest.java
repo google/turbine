@@ -223,7 +223,7 @@ public class TurbineOptionsTest {
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    assertThat(options.targetLabel()).hasValue("@@other-repo//foo:local-jam");
+    assertThat(options.targetLabel()).hasValue("@other-repo//foo:local-jam");
   }
 
   @Test
