@@ -36,7 +36,8 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.AsmUtils;
-import com.google.turbine.bytecode.JavapUtils;
+import com.google.turbine.bytecode.ByteReader;
+import com.google.turbine.bytecode.ConstantPoolReader;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -252,7 +253,7 @@ public class LowerTest {
             BOOTCLASSPATH);
     Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
     List<String> attributes = new ArrayList<>();
-    new org.objectweb.asm.ClassReader(lowered.get("Test$Inner$InnerMost"))
+    new ClassReader(lowered.get("Test$Inner$InnerMost"))
         .accept(
             new ClassVisitor(Opcodes.ASM5) {
               @Override
@@ -279,17 +280,34 @@ public class LowerTest {
     Map<String, byte[]> actual =
         IntegrationTestSupport.runTurbine(input.sources, ImmutableList.of(), BOOTCLASSPATH);
 
-    assertThat(JavapUtils.dump("Test", actual.get("Test"), ImmutableList.of("-s", "-private")))
-        .isEqualTo(
-            Joiner.on('\n')
-                .join(
-                    "class Test {",
-                    "  A<?[]>.I i;",
-                    "    descriptor: LA$I;",
-                    "  Test();",
-                    "    descriptor: ()V",
-                    "}",
-                    ""));
+    ByteReader reader = new ByteReader(actual.get("Test"), 0);
+    assertThat(reader.u4()).isEqualTo(0xcafebabe); // magic
+    assertThat(reader.u2()).isEqualTo(0); // minor
+    assertThat(reader.u2()).isEqualTo(52); // major
+    ConstantPoolReader pool = ConstantPoolReader.readConstantPool(reader);
+    assertThat(reader.u2()).isEqualTo(TurbineFlag.ACC_SUPER); // access
+    assertThat(pool.classInfo(reader.u2())).isEqualTo("Test"); // this
+    assertThat(pool.classInfo(reader.u2())).isEqualTo("java/lang/Object"); // super
+    assertThat(reader.u2()).isEqualTo(0); // interfaces
+    assertThat(reader.u2()).isEqualTo(1); // field count
+    assertThat(reader.u2()).isEqualTo(0); // access
+    assertThat(pool.utf8(reader.u2())).isEqualTo("i"); // name
+    assertThat(pool.utf8(reader.u2())).isEqualTo("LA$I;"); // descriptor
+    int attributesCount = reader.u2();
+    String signature = null;
+    for (int j = 0; j < attributesCount; j++) {
+      String attributeName = pool.utf8(reader.u2());
+      switch (attributeName) {
+        case "Signature":
+          reader.u4(); // length
+          signature = pool.utf8(reader.u2());
+          break;
+        default:
+          reader.skip(reader.u4());
+          break;
+      }
+    }
+    assertThat(signature).isEqualTo("LA<[*>.I;");
   }
 
   @Test

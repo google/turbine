@@ -20,7 +20,7 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.turbine.model.Const;
 
 /** A JVMS §4.4 constant pool reader. */
-class ConstantPoolReader {
+public class ConstantPoolReader {
 
   // JVMS table 4.3
   static final int CONSTANT_CLASS = 7;
@@ -53,7 +53,7 @@ class ConstantPoolReader {
    * Skips over all constant pool entries, saving the byte offset of each index so it can be read
    * later if it's needed.
    */
-  static ConstantPoolReader readConstantPool(ByteReader reader) {
+  public static ConstantPoolReader readConstantPool(ByteReader reader) {
     int constantPoolCount = reader.u2();
     int[] constantPool = new int[constantPoolCount - 1];
     for (int i = 0; i < constantPoolCount - 1; ) {
@@ -99,7 +99,7 @@ class ConstantPoolReader {
   }
 
   /** Reads the CONSTANT_Class_info at the given index. */
-  String classInfo(int index) {
+  public String classInfo(int index) {
     ByteArrayDataInput reader = byteReader.seek(constantPool[index - 1]);
     byte tag = reader.readByte();
     if (tag != CONSTANT_CLASS) {
@@ -110,7 +110,7 @@ class ConstantPoolReader {
   }
 
   /** Reads the CONSTANT_Utf8_info at the given index. */
-  String utf8(int index) {
+  public String utf8(int index) {
     ByteArrayDataInput reader = byteReader.seek(constantPool[index - 1]);
     byte tag = reader.readByte();
     if (tag != CONSTANT_UTF8) {

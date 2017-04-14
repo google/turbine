@@ -23,7 +23,7 @@ import com.google.common.io.ByteStreams;
 import java.io.ByteArrayInputStream;
 
 /** A {@link ByteArrayDataInput} wrapper that tracks the current byte array index. */
-class ByteReader {
+public class ByteReader {
 
   private final byte[] bytes;
   private final IndexedByteArrayInputStream indexed;
