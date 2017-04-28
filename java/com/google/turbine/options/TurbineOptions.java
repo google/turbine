@@ -41,6 +41,7 @@ public class TurbineOptions {
   private final ImmutableList<String> depsArtifacts;
   private final Optional<String> ruleKind;
   private final ImmutableList<String> javacOpts;
+  private final boolean shouldReduceClassPath;
 
   private TurbineOptions(
       String output,
@@ -56,7 +57,8 @@ public class TurbineOptions {
       @Nullable String targetLabel,
       ImmutableList<String> depsArtifacts,
       @Nullable String ruleKind,
-      ImmutableList<String> javacOpts) {
+      ImmutableList<String> javacOpts,
+      boolean shouldReduceClassPath) {
     this.output = checkNotNull(output, "output must not be null");
     this.classPath = checkNotNull(classPath, "classPath must not be null");
     this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
@@ -73,6 +75,7 @@ public class TurbineOptions {
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
     this.ruleKind = Optional.fromNullable(ruleKind);
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
+    this.shouldReduceClassPath = shouldReduceClassPath;
   }
 
   /** Paths to the Java source files to compile. */
@@ -145,6 +148,11 @@ public class TurbineOptions {
     return javacOpts;
   }
 
+  /** Returns true if the reduced classpath optimization is enabled. */
+  public boolean shouldReduceClassPath() {
+    return shouldReduceClassPath;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -167,6 +175,7 @@ public class TurbineOptions {
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
     @Nullable private String ruleKind;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
+    private boolean shouldReduceClassPath = true;
 
     public TurbineOptions build() {
       return new TurbineOptions(
@@ -183,7 +192,8 @@ public class TurbineOptions {
           targetLabel,
           depsArtifacts.build(),
           ruleKind,
-          javacOpts.build());
+          javacOpts.build(),
+          shouldReduceClassPath);
     }
 
     public Builder setOutput(String output) {
@@ -258,6 +268,11 @@ public class TurbineOptions {
 
     public Builder addAllJavacOpts(Iterable<String> javacOpts) {
       this.javacOpts.addAll(javacOpts);
+      return this;
+    }
+
+    public Builder setShouldReduceClassPath(boolean shouldReduceClassPath) {
+      this.shouldReduceClassPath = shouldReduceClassPath;
       return this;
     }
   }
