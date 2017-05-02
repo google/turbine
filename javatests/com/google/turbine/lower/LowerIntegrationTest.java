@@ -297,6 +297,7 @@ public class LowerIntegrationTest {
       "source_bootclasspath_order.test",
       "anno_self_const.test",
       "type_anno_cstyle_array_dims.test",
+      "packagedecl.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
