@@ -325,7 +325,7 @@ public class Lower {
     String innerName = innerSym.binaryName().substring(inner.owner().binaryName().length() + 1);
 
     int access = inner.access();
-    access &= ~TurbineFlag.ACC_SUPER;
+    access &= ~(TurbineFlag.ACC_SUPER | TurbineFlag.ACC_STRICT);
 
     return new ClassFile.InnerClass(
         innerSym.binaryName(), inner.owner().binaryName(), innerName, access);
@@ -334,7 +334,7 @@ public class Lower {
   /** Updates visibility, and unsets access bits that can only be set in InnerClass. */
   private int classAccess(SourceTypeBoundClass info) {
     int access = info.access();
-    access &= ~(TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PRIVATE);
+    access &= ~(TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_STRICT);
     if ((access & TurbineFlag.ACC_PROTECTED) != 0) {
       access &= ~TurbineFlag.ACC_PROTECTED;
       access |= TurbineFlag.ACC_PUBLIC;

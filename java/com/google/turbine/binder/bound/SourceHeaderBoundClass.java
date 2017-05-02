@@ -32,20 +32,16 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   private final PackageSourceBoundClass base;
   private final ClassSymbol superclass;
   private final ImmutableList<ClassSymbol> interfaces;
-  private final int access;
   private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
   public SourceHeaderBoundClass(
       PackageSourceBoundClass base,
       ClassSymbol superclass,
       ImmutableList<ClassSymbol> interfaces,
-      int access,
       ImmutableMap<String, TyVarSymbol> typeParameters) {
-
     this.base = base;
     this.superclass = superclass;
     this.interfaces = interfaces;
-    this.access = access;
     this.typeParameters = typeParameters;
   }
 
@@ -61,7 +57,7 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
 
   @Override
   public int access() {
-    return access;
+    return base.access();
   }
 
   @Override

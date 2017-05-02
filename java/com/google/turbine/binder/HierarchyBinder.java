@@ -18,7 +18,6 @@ package com.google.turbine.binder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
@@ -30,7 +29,6 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
-import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import java.util.ArrayDeque;
@@ -61,31 +59,6 @@ public class HierarchyBinder {
 
   private SourceHeaderBoundClass bind() {
     Tree.TyDecl decl = base.decl();
-    int access = base.access();
-    switch (decl.tykind()) {
-      case CLASS:
-        access |= TurbineFlag.ACC_SUPER;
-        break;
-      case INTERFACE:
-        access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE;
-        break;
-      case ENUM:
-        access |= TurbineFlag.ACC_ENUM | TurbineFlag.ACC_SUPER;
-        break;
-      case ANNOTATION:
-        access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION;
-        break;
-      default:
-        throw new AssertionError(decl.tykind());
-    }
-
-    if ((access & TurbineFlag.ACC_STATIC) == 0 && implicitStatic(base)) {
-      access |= TurbineFlag.ACC_STATIC;
-    }
-
-    if (decl.tykind() == TurbineTyKind.INTERFACE) {
-      access |= TurbineFlag.ACC_ABSTRACT;
-    }
 
     ClassSymbol superclass;
     if (decl.xtnds().isPresent()) {
@@ -94,11 +67,6 @@ public class HierarchyBinder {
       switch (decl.tykind()) {
         case ENUM:
           superclass = ClassSymbol.ENUM;
-          // Assuming all enums are final is safe, because nothing outside
-          // the compilation unit can extend abstract enums anyways, and
-          // refactoring an existing enum to implement methods in the container
-          // class instead of the constants is not a breaking change.
-          access |= TurbineFlag.ACC_FINAL;
           break;
         case INTERFACE:
         case ANNOTATION:
@@ -130,35 +98,9 @@ public class HierarchyBinder {
       typeParameters.put(p.name(), new TyVarSymbol(origin, p.name()));
     }
 
-    return new SourceHeaderBoundClass(
-        base, superclass, interfaces.build(), access, typeParameters.build());
+    return new SourceHeaderBoundClass(base, superclass, interfaces.build(), typeParameters.build());
   }
 
-  /**
-   * Nested enums, interfaces, and annotations, and any types nested within interfaces and
-   * annotations (JLS 9.5) are implicitly static.
-   */
-  private boolean implicitStatic(BoundClass c) {
-    if (c.owner() == null) {
-      return false;
-    }
-    switch (c.kind()) {
-      case INTERFACE:
-      case ENUM:
-      case ANNOTATION:
-        return true;
-      case CLASS:
-        switch (env.get(c.owner()).kind()) {
-          case INTERFACE:
-          case ANNOTATION:
-            return true;
-          default:
-            return false;
-        }
-      default:
-        throw new AssertionError(c.kind());
-    }
-  }
 
   /**
    * Resolves the {@link ClassSymbol} for the given {@link Tree.ClassTy}, with handling for

@@ -18,14 +18,12 @@ package com.google.turbine.binder;
 
 import static com.google.common.base.Verify.verifyNotNull;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
+import com.google.turbine.binder.CompUnitPreprocessor.PreprocessedCompUnit;
 import com.google.turbine.binder.Resolve.CanonicalResolver;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
@@ -52,19 +50,13 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
-import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
-import com.google.turbine.tree.Tree.PkgDecl;
-import com.google.turbine.tree.Tree.TyDecl;
-import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.Type;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /** The entry point for analysis. */
 public class Binder {
@@ -74,12 +66,12 @@ public class Binder {
       List<CompUnit> units, Collection<Path> classpath, Collection<Path> bootclasspath)
       throws IOException {
 
+    ImmutableList<PreprocessedCompUnit> preProcessedUnits = CompUnitPreprocessor.preprocess(units);
+
     TopLevelIndex.Builder tliBuilder = TopLevelIndex.builder();
 
-    // change data to better represent source binding info
-    Multimap<CompUnit, ClassSymbol> toplevels = LinkedHashMultimap.create();
     SimpleEnv<ClassSymbol, SourceBoundClass> ienv =
-        bindSourceBoundClasses(toplevels, units, tliBuilder);
+        bindSourceBoundClasses(preProcessedUnits, tliBuilder);
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
@@ -94,7 +86,7 @@ public class Binder {
     TopLevelIndex tli = tliBuilder.build();
 
     SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv =
-        bindPackages(ienv, tli, toplevels, classPathEnv);
+        bindPackages(ienv, tli, preProcessedUnits, classPathEnv);
 
     Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
 
@@ -121,113 +113,30 @@ public class Binder {
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
   static SimpleEnv<ClassSymbol, SourceBoundClass> bindSourceBoundClasses(
-      Multimap<CompUnit, ClassSymbol> toplevels,
-      List<CompUnit> units,
-      TopLevelIndex.Builder tliBuilder) {
-    SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envbuilder = SimpleEnv.builder();
-    for (CompUnit unit : units) {
-      Iterable<TyDecl> decls = unit.decls();
-      String packagename;
-      if (unit.pkg().isPresent()) {
-        PkgDecl pkgDecl = unit.pkg().get();
-        packagename = Joiner.on('/').join(pkgDecl.name()) + '/';
-        if (!pkgDecl.annos().isEmpty()) {
-          // "While the file could technically contain the source code
-          // for one or more package-private (default-access) classes,
-          // it would be very bad form." -- JLS 7.4.1
-          decls = Iterables.concat(decls, ImmutableList.of(packageInfoTree(pkgDecl)));
-        }
-      } else {
-        packagename = "";
-      }
-      for (Tree.TyDecl decl : decls) {
-        ClassSymbol sym = new ClassSymbol(packagename + decl.name());
-        ImmutableMap<String, ClassSymbol> children =
-            bindSourceBoundClassMembers(
-                envbuilder, sym, decl.members(), toplevels, unit, decl.tykind());
-        envbuilder.put(
-            sym,
-            new SourceBoundClass(decl, null, decl.tykind(), children, access(null, decl.mods())));
-        toplevels.put(unit, sym);
-        tliBuilder.insert(sym);
+      ImmutableList<PreprocessedCompUnit> units, TopLevelIndex.Builder tliBuilder) {
+    SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envBuilder = SimpleEnv.builder();
+    for (PreprocessedCompUnit unit : units) {
+      for (SourceBoundClass type : unit.types()) {
+        envBuilder.put(type.sym(), type);
+        tliBuilder.insert(type.sym());
       }
     }
-    return envbuilder.build();
-  }
-
-  private static int access(TurbineTyKind enclosing, ImmutableSet<TurbineModifier> mods) {
-    int access = 0;
-    for (TurbineModifier m : mods) {
-      access |= m.flag();
-    }
-    // types declared in interfaces and annotations are implicitly public (JLS 9.5)
-    if (enclosing != null) {
-      switch (enclosing) {
-        case INTERFACE:
-        case ANNOTATION:
-          access = TurbineVisibility.PUBLIC.setAccess(access);
-          break;
-        default:
-          break;
-      }
-    }
-    return access;
-  }
-
-  /** Fakes up the synthetic type declaration for a package-info.java file. */
-  private static TyDecl packageInfoTree(PkgDecl pkgDecl) {
-    return new TyDecl(
-        pkgDecl.position(),
-        ImmutableSet.of(TurbineModifier.ACC_SYNTHETIC),
-        pkgDecl.annos(),
-        "package-info",
-        ImmutableList.of(),
-        Optional.absent(),
-        ImmutableList.of(),
-        ImmutableList.of(),
-        TurbineTyKind.INTERFACE);
-  }
-
-  /** Records member declarations within a top-level class. */
-  private static ImmutableMap<String, ClassSymbol> bindSourceBoundClassMembers(
-      SimpleEnv.Builder<ClassSymbol, SourceBoundClass> env,
-      ClassSymbol owner,
-      ImmutableList<Tree> members,
-      Multimap<CompUnit, ClassSymbol> toplevels,
-      CompUnit unit,
-      TurbineTyKind enclosing) {
-    ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
-    for (Tree member : members) {
-      if (member.kind() == Tree.Kind.TY_DECL) {
-        Tree.TyDecl decl = (Tree.TyDecl) member;
-        ClassSymbol sym = new ClassSymbol(owner.toString() + '$' + decl.name());
-        toplevels.put(unit, sym);
-        result.put(decl.name(), sym);
-        ImmutableMap<String, ClassSymbol> children =
-            bindSourceBoundClassMembers(env, sym, decl.members(), toplevels, unit, decl.tykind());
-        env.put(
-            sym,
-            new SourceBoundClass(
-                decl, owner, decl.tykind(), children, access(enclosing, decl.mods())));
-      }
-    }
-    return result.build();
+    return envBuilder.build();
   }
 
   /** Initializes scopes for compilation unit and package-level lookup. */
   private static SimpleEnv<ClassSymbol, PackageSourceBoundClass> bindPackages(
       Env<ClassSymbol, SourceBoundClass> ienv,
       TopLevelIndex tli,
-      Multimap<CompUnit, ClassSymbol> classes,
+      ImmutableList<PreprocessedCompUnit> units,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
 
     SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
     Scope javaLang = verifyNotNull(tli.lookupPackage(ImmutableList.of("java", "lang")));
     CompoundScope topLevel = CompoundScope.base(tli).append(javaLang);
-    for (Map.Entry<CompUnit, Collection<ClassSymbol>> entry : classes.asMap().entrySet()) {
-      CompUnit unit = entry.getKey();
+    for (PreprocessedCompUnit unit : units) {
       ImmutableList<String> packagename =
-          unit.pkg().isPresent() ? unit.pkg().get().name() : ImmutableList.of();
+          ImmutableList.copyOf(Splitter.on('/').omitEmptyStrings().split(unit.packageName()));
       Scope packageScope = tli.lookupPackage(packagename);
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(
@@ -240,9 +149,8 @@ public class Binder {
               .append(wildImportScope)
               .append(ImportScope.fromScope(packageScope))
               .append(importScope);
-      for (ClassSymbol sym : entry.getValue()) {
-        env.put(
-            sym, new PackageSourceBoundClass(ienv.get(sym), scope, memberImports, unit.source()));
+      for (SourceBoundClass type : unit.types()) {
+        env.put(type.sym(), new PackageSourceBoundClass(type, scope, memberImports, unit.source()));
       }
     }
     return env.build();

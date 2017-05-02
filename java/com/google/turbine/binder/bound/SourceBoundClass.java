@@ -20,27 +20,26 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
-import com.google.turbine.tree.Tree.TyDecl;
 
 /** A {@link BoundClass} that corresponds to a source file being compiled. */
 public class SourceBoundClass implements BoundClass {
-  private final Tree.TyDecl decl;
+  private final ClassSymbol sym;
   private final ClassSymbol owner;
-  private final TurbineTyKind kind;
   private final ImmutableMap<String, ClassSymbol> children;
   private final int access;
+  private final Tree.TyDecl decl;
 
   public SourceBoundClass(
-      TyDecl decl,
+      ClassSymbol sym,
       ClassSymbol owner,
-      TurbineTyKind kind,
       ImmutableMap<String, ClassSymbol> children,
-      int access) {
-    this.decl = decl;
+      int access,
+      Tree.TyDecl decl) {
+    this.sym = sym;
     this.owner = owner;
-    this.kind = kind;
     this.children = children;
     this.access = access;
+    this.decl = decl;
   }
 
   public Tree.TyDecl decl() {
@@ -49,7 +48,7 @@ public class SourceBoundClass implements BoundClass {
 
   @Override
   public TurbineTyKind kind() {
-    return kind;
+    return decl().tykind();
   }
 
   @Override
@@ -65,5 +64,9 @@ public class SourceBoundClass implements BoundClass {
   @Override
   public ImmutableMap<String, ClassSymbol> children() {
     return children;
+  }
+
+  public ClassSymbol sym() {
+    return sym;
   }
 }

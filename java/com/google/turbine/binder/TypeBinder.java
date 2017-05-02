@@ -131,7 +131,6 @@ public class TypeBinder {
     return new TypeBinder(env, sym, base).bind();
   }
 
-  private final boolean isStrictFp;
   private final Env<ClassSymbol, HeaderBoundClass> env;
   private final ClassSymbol owner;
   private final SourceHeaderBoundClass base;
@@ -141,24 +140,6 @@ public class TypeBinder {
     this.env = env;
     this.owner = owner;
     this.base = base;
-    this.isStrictFp = isStrictFp(env, owner);
-  }
-
-  private boolean isStrictFp(Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym) {
-    while (sym != null) {
-      HeaderBoundClass info = env.get(sym);
-      switch (info.kind()) {
-        case ANNOTATION:
-          return false;
-        default:
-          break;
-      }
-      if ((info.access() & TurbineFlag.ACC_STRICT) == TurbineFlag.ACC_STRICT) {
-        return true;
-      }
-      sym = info.owner();
-    }
-    return false;
   }
 
   private SourceTypeBoundClass bind() {
@@ -239,7 +220,7 @@ public class TypeBinder {
         interfaceTypes.build(),
         superClassType,
         typeParameterTypes,
-        base.access() & ~TurbineFlag.ACC_STRICT,
+        base.access(),
         ImmutableList.copyOf(methods),
         fields,
         base.owner(),
@@ -283,9 +264,7 @@ public class TypeBinder {
   private MethodInfo syntheticConstructor(
       ImmutableList<ParamInfo> formals, TurbineVisibility visibility) {
     int access = visibility.flag();
-    if (isStrictFp) {
-      access |= TurbineFlag.ACC_STRICT;
-    }
+    access |= (base.access() & TurbineFlag.ACC_STRICT);
     return new MethodInfo(
         new MethodSymbol(owner, "<init>"),
         ImmutableMap.of(),
@@ -341,9 +320,7 @@ public class TypeBinder {
   private ImmutableList<MethodInfo> syntheticEnumMethods() {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
     int access = 0;
-    if (isStrictFp) {
-      access |= TurbineFlag.ACC_STRICT;
-    }
+    access |= (base.access() & TurbineFlag.ACC_STRICT);
     if (!hasConstructor()) {
       methods.add(syntheticConstructor(ENUM_CTOR_PARAMS, TurbineVisibility.PRIVATE));
     }
@@ -511,7 +488,8 @@ public class TypeBinder {
         break;
     }
 
-    if (isStrictFp && (access & TurbineFlag.ACC_ABSTRACT) == 0) {
+    if (((base.access() & TurbineFlag.ACC_STRICT) == TurbineFlag.ACC_STRICT)
+        && (access & TurbineFlag.ACC_ABSTRACT) == 0) {
       access |= TurbineFlag.ACC_STRICT;
     }
 

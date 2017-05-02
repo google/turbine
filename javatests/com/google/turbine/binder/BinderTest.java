@@ -178,8 +178,7 @@ public class BinderTest {
       Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
       fail();
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
-          .contains("cycle in class hierarchy: a/A$Inner -> a/A -> b/B -> a/A");
+      assertThat(e.getMessage()).contains("cycle in class hierarchy: a/A -> b/B -> a/A");
     }
   }
 
