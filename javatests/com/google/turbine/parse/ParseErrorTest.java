@@ -91,4 +91,21 @@ public class ParseErrorTest {
                       "       ^"));
     }
   }
+
+  @Test
+  public void missingTrailingCloseBrace() {
+    String input = "public class Test {\n\n";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              Joiner.on('\n')
+                  .join(
+                      "<>:2: error: unexpected end of input", //
+                      "",
+                      "^"));
+    }
+  }
 }

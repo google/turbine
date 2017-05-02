@@ -28,6 +28,7 @@ public class TurbineError extends Error {
   public enum ErrorKind {
     UNEXPECTED_INPUT("unexpected input: %c"),
     UNEXPECTED_IDENTIFIER("unexpected identifier '%s'"),
+    UNEXPECTED_EOF("unexpected end of input"),
     EXPECTED_TOKEN("expected token %s"),
     INVALID_LITERAL("invalid literal: %s"),
     UNEXPECTED_TYPE_PARAMETER("unexpected type parameter %s"),

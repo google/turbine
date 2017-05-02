@@ -1168,12 +1168,18 @@ public class Parser {
     switch (token) {
       case IDENT:
         return error(ErrorKind.UNEXPECTED_IDENTIFIER, lexer.stringValue());
+      case EOF:
+        return error(ErrorKind.UNEXPECTED_EOF);
       default:
         return error(ErrorKind.UNEXPECTED_TOKEN, token);
     }
   }
 
   private TurbineError error(ErrorKind kind, Object... args) {
-    return TurbineError.format(lexer.source(), lexer.position(), kind, args);
+    return TurbineError.format(
+        lexer.source(),
+        Math.min(lexer.position(), lexer.source().source().length() - 1),
+        kind,
+        args);
   }
 }
