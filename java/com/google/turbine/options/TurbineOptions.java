@@ -40,6 +40,7 @@ public class TurbineOptions {
   private final Optional<String> targetLabel;
   private final ImmutableList<String> depsArtifacts;
   private final Optional<String> ruleKind;
+  private final boolean javacFallback;
   private final ImmutableList<String> javacOpts;
   private final boolean shouldReduceClassPath;
 
@@ -57,6 +58,7 @@ public class TurbineOptions {
       @Nullable String targetLabel,
       ImmutableList<String> depsArtifacts,
       @Nullable String ruleKind,
+      boolean javacFallback,
       ImmutableList<String> javacOpts,
       boolean shouldReduceClassPath) {
     this.output = checkNotNull(output, "output must not be null");
@@ -74,6 +76,7 @@ public class TurbineOptions {
     this.targetLabel = Optional.fromNullable(targetLabel);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
     this.ruleKind = Optional.fromNullable(ruleKind);
+    this.javacFallback = javacFallback;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
     this.shouldReduceClassPath = shouldReduceClassPath;
   }
@@ -143,6 +146,11 @@ public class TurbineOptions {
     return ruleKind;
   }
 
+  /** Fall back to javac-turbine for error reporting. */
+  public boolean javacFallback() {
+    return javacFallback;
+  }
+
   /** Additional Java compiler flags. */
   public ImmutableList<String> javacOpts() {
     return javacOpts;
@@ -174,6 +182,7 @@ public class TurbineOptions {
     @Nullable private String targetLabel;
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
     @Nullable private String ruleKind;
+    private boolean javacFallback = true;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
     private boolean shouldReduceClassPath = true;
 
@@ -192,6 +201,7 @@ public class TurbineOptions {
           targetLabel,
           depsArtifacts.build(),
           ruleKind,
+          javacFallback,
           javacOpts.build(),
           shouldReduceClassPath);
     }
@@ -263,6 +273,11 @@ public class TurbineOptions {
 
     public Builder setRuleKind(String ruleKind) {
       this.ruleKind = ruleKind;
+      return this;
+    }
+
+    public Builder setJavacFallback(boolean javacFallback) {
+      this.javacFallback = javacFallback;
       return this;
     }
 

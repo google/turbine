@@ -135,6 +135,12 @@ public class TurbineOptionsParser {
         case "--rule_kind":
           builder.setRuleKind(readOne(argumentDeque));
           break;
+        case "--javac_fallback":
+          builder.setJavacFallback(true);
+          break;
+        case "--nojavac_fallback":
+          builder.setJavacFallback(false);
+          break;
         default:
           if (next.isEmpty() && !argumentDeque.isEmpty()) {
             throw new IllegalArgumentException("unknown option: " + next);
