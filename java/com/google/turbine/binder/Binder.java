@@ -141,9 +141,12 @@ public class Binder {
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(
               packagename, CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv));
-      ImportScope importScope = ImportIndex.create(importResolver, tli, unit.imports());
-      ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
-      MemberImportIndex memberImports = new MemberImportIndex(importResolver, tli, unit.imports());
+      ImportScope importScope =
+          ImportIndex.create(unit.source(), importResolver, tli, unit.imports());
+      ImportScope wildImportScope =
+          WildImportIndex.create(unit.source(), importResolver, tli, unit.imports());
+      MemberImportIndex memberImports =
+          new MemberImportIndex(unit.source(), importResolver, tli, unit.imports());
       ImportScope scope =
           ImportScope.fromScope(topLevel)
               .append(wildImportScope)

@@ -1083,6 +1083,7 @@ public class Parser {
   private ImportDecl importDeclaration() {
     boolean stat = maybe(Token.STATIC);
 
+    int pos = position;
     ImmutableList.Builder<String> type = ImmutableList.builder();
     type.add(eatIdent());
     boolean wild = false;
@@ -1101,7 +1102,7 @@ public class Parser {
       }
     }
     eat(Token.SEMI);
-    return new ImportDecl(position, type.build(), stat, wild);
+    return new ImportDecl(pos, type.build(), stat, wild);
   }
 
   private PkgDecl packageDeclaration(ImmutableList<Anno> annos) {

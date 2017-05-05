@@ -17,6 +17,9 @@
 package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 
 /**
  * A scope for imports. Non-canonical imports depend on hierarchy analysis, so to break the cycle we
@@ -34,12 +37,12 @@ public interface ImportScope {
 
     ClassSymbol resolveOne(ClassSymbol base, String name);
 
-    default ClassSymbol resolve(LookupResult result) {
+    default ClassSymbol resolve(SourceFile source, int position, LookupResult result) {
       ClassSymbol sym = (ClassSymbol) result.sym();
       for (String bit : result.remaining()) {
         sym = resolveOne(sym, bit);
         if (sym == null) {
-          return null;
+          throw TurbineError.format(source, position, ErrorKind.SYMBOL_NOT_FOUND, bit);
         }
       }
       return sym;

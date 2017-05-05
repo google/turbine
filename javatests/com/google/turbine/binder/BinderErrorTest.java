@@ -155,6 +155,97 @@ public class BinderErrorTest {
           "                                    ^"
         },
       },
+      {
+        {
+          "package p;", //
+          "import java.lang.NoSuch;",
+          "public class Test extends NoSuch {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found java.lang.NoSuch", //
+          "import java.lang.NoSuch;",
+          "       ^"
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import java.util.List.NoSuch;",
+          "public class Test extends NoSuch {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found NoSuch", //
+          "import java.util.List.NoSuch;",
+          "       ^"
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import static java.util.List.NoSuch;",
+          "public class Test extends NoSuch {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found NoSuch", //
+          "import static java.util.List.NoSuch;",
+          "              ^"
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import java.util.NoSuch.*;",
+          "public class Test extends NoSuchOther {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found java.util.NoSuch", //
+          "import java.util.NoSuch.*;",
+          "       ^"
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import java.util.List.NoSuch.*;",
+          "public class Test extends NoSuchOther {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found NoSuch", //
+          "import java.util.List.NoSuch.*;",
+          "       ^"
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import static java.util.NoSuch.*;",
+          "public class Test extends NoSuchOther {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found java.util.NoSuch", //
+          "import static java.util.NoSuch.*;",
+          "              ^"
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import static java.util.List.NoSuch.*;",
+          "public class Test extends NoSuchOther {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found NoSuch", //
+          "import static java.util.List.NoSuch.*;",
+          "              ^"
+        },
+      }
     };
     return Arrays.asList((Object[][]) testCases);
   }

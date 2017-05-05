@@ -126,6 +126,7 @@ public class TopLevelIndex implements Scope {
 
   /** Looks up top-level qualified type names. */
   @Override
+  @Nullable
   public LookupResult lookup(LookupKey lookupKey) {
     Node curr = root;
     while (true) {

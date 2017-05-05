@@ -223,30 +223,6 @@ public class BinderTest {
   }
 
   @Test
-  public void missingWildImport() throws Exception {
-    List<Tree.CompUnit> units = new ArrayList<>();
-    units.add(
-        parseLines(
-            "package lib;", //
-            "public class Lib {",
-            "  public static class Inner {}",
-            "}"));
-    units.add(
-        parseLines(
-            "package other;", //
-            "import no.such.*;",
-            "import lib.Lib.*;",
-            "public class Foo extends Inner {",
-            "}"));
-
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
-
-    assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
-        .isEqualTo(new ClassSymbol("lib/Lib$Inner"));
-  }
-
-  @Test
   public void incompleteClasspath() throws Exception {
 
     Map<String, byte[]> lib =

@@ -22,6 +22,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -36,7 +37,10 @@ public class MemberImportIndex {
   private final ImmutableList<Supplier<ClassSymbol>> classes;
 
   public MemberImportIndex(
-      CanonicalSymbolResolver resolve, TopLevelIndex tli, ImmutableList<ImportDecl> imports) {
+      SourceFile source,
+      CanonicalSymbolResolver resolve,
+      TopLevelIndex tli,
+      ImmutableList<ImportDecl> imports) {
     ImmutableList.Builder<Supplier<ClassSymbol>> packageScopes = ImmutableList.builder();
     for (ImportDecl i : imports) {
       if (!i.stat()) {
@@ -49,7 +53,7 @@ public class MemberImportIndex {
                   @Override
                   public ClassSymbol get() {
                     LookupResult result = tli.lookup(new LookupKey(i.type()));
-                    return result != null ? resolve.resolve(result) : null;
+                    return result != null ? resolve.resolve(source, i.position(), result) : null;
                   }
                 }));
       } else {

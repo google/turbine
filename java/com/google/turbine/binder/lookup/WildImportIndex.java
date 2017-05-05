@@ -16,10 +16,14 @@
 
 package com.google.turbine.binder.lookup;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.tree.Tree.ImportDecl;
 
 /**
@@ -41,6 +45,7 @@ public class WildImportIndex implements ImportScope {
 
   /** Creates an import index for the given top-level environment. */
   public static WildImportIndex create(
+      SourceFile source,
       CanonicalSymbolResolver importResolver,
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
@@ -53,9 +58,9 @@ public class WildImportIndex implements ImportScope {
                   @Override
                   public ImportScope get() {
                     if (i.stat()) {
-                      return staticOnDemandImport(cpi, i, importResolver);
+                      return staticOnDemandImport(source, cpi, i, importResolver);
                     } else {
-                      return onDemandImport(cpi, i, importResolver);
+                      return onDemandImport(source, cpi, i, importResolver);
                     }
                   }
                 }));
@@ -66,7 +71,10 @@ public class WildImportIndex implements ImportScope {
 
   /** Full resolve the type for a non-static on-demand import. */
   private static ImportScope onDemandImport(
-      TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
+      SourceFile source,
+      TopLevelIndex cpi,
+      ImportDecl i,
+      final CanonicalSymbolResolver importResolver) {
     Scope packageIndex = cpi.lookupPackage(i.type());
     if (packageIndex != null) {
       // a wildcard import of a package
@@ -79,9 +87,11 @@ public class WildImportIndex implements ImportScope {
     }
     LookupResult result = cpi.lookup(new LookupKey(i.type()));
     if (result == null) {
-      return null;
+      throw TurbineError.format(
+          source, i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(i.type()));
     }
-    ClassSymbol member = resolveImportBase(result, importResolver, importResolver);
+    ClassSymbol member =
+        resolveImportBase(source, i.position(), result, importResolver, importResolver);
     if (member == null) {
       return null;
     }
@@ -99,15 +109,20 @@ public class WildImportIndex implements ImportScope {
    * deferred).
    */
   private static ImportScope staticOnDemandImport(
-      TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
+      SourceFile source,
+      TopLevelIndex cpi,
+      ImportDecl i,
+      final CanonicalSymbolResolver importResolver) {
     LookupResult result = cpi.lookup(new LookupKey(i.type()));
     if (result == null) {
-      return null;
+      throw TurbineError.format(
+          source, i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(i.type()));
     }
     return new ImportScope() {
       @Override
       public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
-        ClassSymbol member = resolveImportBase(result, resolve, importResolver);
+        ClassSymbol member =
+            resolveImportBase(source, i.position(), result, resolve, importResolver);
         if (member == null) {
           return null;
         }
@@ -132,12 +147,16 @@ public class WildImportIndex implements ImportScope {
   }
 
   static ClassSymbol resolveImportBase(
-      LookupResult result, ResolveFunction resolve, CanonicalSymbolResolver importResolver) {
+      SourceFile source,
+      int position,
+      LookupResult result,
+      ResolveFunction resolve,
+      CanonicalSymbolResolver importResolver) {
     ClassSymbol member = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
       member = resolve.resolveOne(member, bit);
       if (member == null) {
-        return null;
+        throw TurbineError.format(source, position, ErrorKind.SYMBOL_NOT_FOUND, bit);
       }
       if (!importResolver.visible(member)) {
         return null;

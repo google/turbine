@@ -18,11 +18,15 @@ package com.google.turbine.binder.lookup;
 
 import static com.google.common.collect.Iterables.getLast;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.HashMap;
@@ -51,7 +55,10 @@ public class ImportIndex implements ImportScope {
 
   /** Creates an import index for the given top-level environment. */
   public static ImportIndex create(
-      CanonicalSymbolResolver resolve, final TopLevelIndex cpi, ImmutableList<ImportDecl> imports) {
+      SourceFile source,
+      CanonicalSymbolResolver resolve,
+      final TopLevelIndex cpi,
+      ImmutableList<ImportDecl> imports) {
     Map<String, Supplier<ImportScope>> thunks = new HashMap<>();
     for (final Tree.ImportDecl i : imports) {
       if (i.stat() || i.wild()) {
@@ -63,7 +70,7 @@ public class ImportIndex implements ImportScope {
               new Supplier<ImportScope>() {
                 @Override
                 public ImportScope get() {
-                  return namedImport(cpi, i, resolve);
+                  return namedImport(source, cpi, i, resolve);
                 }
               }));
     }
@@ -83,7 +90,7 @@ public class ImportIndex implements ImportScope {
               new Supplier<ImportScope>() {
                 @Override
                 public ImportScope get() {
-                  return staticNamedImport(cpi, i);
+                  return staticNamedImport(source, cpi, i);
                 }
               }));
     }
@@ -92,12 +99,13 @@ public class ImportIndex implements ImportScope {
 
   /** Fully resolve the canonical name of a non-static named import. */
   private static ImportScope namedImport(
-      TopLevelIndex cpi, ImportDecl i, CanonicalSymbolResolver resolve) {
+      SourceFile source, TopLevelIndex cpi, ImportDecl i, CanonicalSymbolResolver resolve) {
     LookupResult result = cpi.lookup(new LookupKey(i.type()));
     if (result == null) {
-      return null;
+      throw TurbineError.format(
+          source, i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(i.type()));
     }
-    ClassSymbol sym = resolve.resolve(result);
+    ClassSymbol sym = resolve.resolve(source, i.position(), result);
     return new ImportScope() {
       @Override
       public LookupResult lookup(LookupKey lookupKey, ResolveFunction unused) {
@@ -113,7 +121,7 @@ public class ImportIndex implements ImportScope {
    * hierarchy analysis is complete, so for now we resolve the base {@code java.util.HashMap} and
    * defer the rest.
    */
-  private static ImportScope staticNamedImport(TopLevelIndex cpi, ImportDecl i) {
+  private static ImportScope staticNamedImport(SourceFile source, TopLevelIndex cpi, ImportDecl i) {
     LookupResult base = cpi.lookup(new LookupKey(i.type()));
     if (base == null) {
       return null;
@@ -121,10 +129,7 @@ public class ImportIndex implements ImportScope {
     return new ImportScope() {
       @Override
       public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
-        ClassSymbol result = resolve.resolve(base);
-        if (result == null) {
-          return null;
-        }
+        ClassSymbol result = resolve.resolve(source, i.position(), base);
         return new LookupResult(result, lookupKey);
       }
     };
