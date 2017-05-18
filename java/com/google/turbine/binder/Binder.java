@@ -143,8 +143,7 @@ public class Binder {
               packagename, CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv));
       ImportScope importScope =
           ImportIndex.create(unit.source(), importResolver, tli, unit.imports());
-      ImportScope wildImportScope =
-          WildImportIndex.create(unit.source(), importResolver, tli, unit.imports());
+      ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
       MemberImportIndex memberImports =
           new MemberImportIndex(unit.source(), importResolver, tli, unit.imports());
       ImportScope scope =

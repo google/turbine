@@ -1,0 +1,9 @@
+=== a/A.java ===
+package a;
+
+import static a.A.Inner.*;
+
+public class A implements Runnable {
+  @Override public void run() {}
+  public interface Inner {}
+}

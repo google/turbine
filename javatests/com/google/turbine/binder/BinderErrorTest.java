@@ -202,9 +202,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:2: error: symbol not found java.util.NoSuch", //
-          "import java.util.NoSuch.*;",
-          "       ^"
+          "<>:3: error: symbol not found NoSuchOther",
+          "public class Test extends NoSuchOther {",
+          "                          ^",
         },
       },
       {
@@ -215,9 +215,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:2: error: symbol not found NoSuch", //
-          "import java.util.List.NoSuch.*;",
-          "       ^"
+          "<>:3: error: symbol not found NoSuchOther",
+          "public class Test extends NoSuchOther {",
+          "                          ^",
         },
       },
       {
@@ -228,9 +228,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:2: error: symbol not found java.util.NoSuch", //
-          "import static java.util.NoSuch.*;",
-          "              ^"
+          "<>:3: error: symbol not found NoSuchOther",
+          "public class Test extends NoSuchOther {",
+          "                          ^",
         },
       },
       {
@@ -241,9 +241,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:2: error: symbol not found NoSuch", //
-          "import static java.util.List.NoSuch.*;",
-          "              ^"
+          "<>:3: error: symbol not found NoSuchOther",
+          "public class Test extends NoSuchOther {",
+          "                          ^",
         },
       }
     };
