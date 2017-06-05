@@ -34,7 +34,7 @@ public class TurbineError extends Error {
     UNEXPECTED_TYPE_PARAMETER("unexpected type parameter %s"),
     SYMBOL_NOT_FOUND("symbol not found %s"),
     TYPE_PARAMETER_QUALIFIER("type parameter used as type qualifier"),
-    UNEXPECTED_TOKEN("unexpected token %s"),
+    UNEXPECTED_TOKEN("unexpected token: %s"),
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
     CANNOT_RESOLVE("cannot resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),

@@ -69,7 +69,7 @@ public class ParseErrorTest {
           .isEqualTo(
               Joiner.on('\n')
                   .join(
-                      "<>:1: error: unexpected token VOID",
+                      "<>:1: error: unexpected token: void",
                       "public static void main(String[] args) {}",
                       "              ^"));
     }
