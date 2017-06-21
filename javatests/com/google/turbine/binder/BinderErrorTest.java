@@ -245,6 +245,18 @@ public class BinderErrorTest {
           "public class Test extends NoSuchOther {",
           "                          ^",
         },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @Object int x;",
+          "}",
+        },
+        {
+          "<>:2: error: java/lang/Object is not an annotation", //
+          "  @Object int x;",
+          "   ^",
+        },
       }
     };
     return Arrays.asList((Object[][]) testCases);

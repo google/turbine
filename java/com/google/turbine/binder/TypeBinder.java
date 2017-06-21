@@ -554,6 +554,9 @@ public class TypeBinder {
       for (String name : lookupResult.remaining()) {
         sym = Resolve.resolve(env, owner, sym, name);
       }
+      if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
+        throw error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
+      }
       result.add(new AnnoInfo(sym, tree.args(), null));
     }
     return result.build();

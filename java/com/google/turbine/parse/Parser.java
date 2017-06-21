@@ -1121,6 +1121,7 @@ public class Parser {
   }
 
   private Anno annotation() {
+    int pos = position;
     ImmutableList<String> name = qualIdent();
 
     ImmutableList.Builder<Expression> args = ImmutableList.builder();
@@ -1141,7 +1142,7 @@ public class Parser {
       eat(Token.RPAREN);
     }
 
-    return new Anno(position, name, args.build());
+    return new Anno(pos, name, args.build());
   }
 
   private String eatIdent() {

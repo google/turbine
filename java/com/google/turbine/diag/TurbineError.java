@@ -38,7 +38,8 @@ public class TurbineError extends Error {
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
     CANNOT_RESOLVE("cannot resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
-    CYCLIC_HIERARCHY("cycle in class hierarchy: %s");
+    CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
+    NOT_AN_ANNOTATION("%s is not an annotation");
 
     private final String message;
 
