@@ -221,4 +221,46 @@ public class TransitiveTest {
         .containsExactly(
             "b/B.class", "META-INF/TRANSITIVE/a/A.class", "META-INF/TRANSITIVE/a/A$I.class");
   }
+
+  @Test
+  public void childClass() throws Exception {
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/S.java", //
+                    "package a;",
+                    "public class S {}")
+                .addSourceLines(
+                    "a/A.java", //
+                    "package a;",
+                    "public class A {",
+                    "  public class I extends S {}",
+                    "}")
+                .build(),
+            ImmutableList.of());
+
+    System.err.println("===");
+
+    Path libb =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "b/B.java", //
+                    "package b;",
+                    "public class B extends a.A.I {",
+                    "  class I extends a.A {",
+                    "  }",
+                    "}")
+                .build(),
+            ImmutableList.of(liba));
+
+    assertThat(readJar(libb).keySet())
+        .containsExactly(
+            "b/B.class",
+            "b/B$I.class",
+            "META-INF/TRANSITIVE/a/A.class",
+            "META-INF/TRANSITIVE/a/A$I.class",
+            "META-INF/TRANSITIVE/a/S.class");
+  }
 }

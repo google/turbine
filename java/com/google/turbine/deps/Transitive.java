@@ -107,6 +107,14 @@ public class Transitive {
     for (ClassSymbol sym : bound.units().keySet()) {
       addSuperTypes(closure, env, sym);
     }
+    Set<ClassSymbol> directChildren = new LinkedHashSet<>();
+    for (ClassSymbol sym : closure) {
+      TypeBoundClass info = env.get(sym);
+      if (info != null) {
+        directChildren.addAll(info.children().values());
+      }
+    }
+    closure.addAll(directChildren);
     return closure;
   }
 
@@ -119,7 +127,6 @@ public class Transitive {
     if (info == null) {
       return;
     }
-    closure.addAll(info.children().values());
     if (info.superclass() != null) {
       addSuperTypes(closure, env, info.superclass());
     }
