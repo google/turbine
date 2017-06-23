@@ -122,8 +122,8 @@ public class StreamLexer implements Lexer {
                       sawStar = true;
                       break;
                     case '/':
-                      eat();
                       if (sawStar) {
+                        eat();
                         continue OUTER;
                       }
                       sawStar = false;

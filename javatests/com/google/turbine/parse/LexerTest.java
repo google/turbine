@@ -329,6 +329,11 @@ public class LexerTest {
     lexerComparisonTest("\"asd\\\"dsa\"");
   }
 
+  @Test
+  public void blockCommentEndingSlash() {
+    lexerComparisonTest("foo /*/*/ bar");
+  }
+
   private void lexerComparisonTest(String s) {
     assertThat(lex(s)).containsExactlyElementsIn(JavacLexer.javacLex(s));
   }
