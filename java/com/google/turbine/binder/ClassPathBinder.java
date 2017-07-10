@@ -16,26 +16,23 @@
 
 package com.google.turbine.binder;
 
+import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
-import java.io.IOError;
+import com.google.turbine.zip.Zip;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /** Sets up an environment for symbols on the classpath. */
 public class ClassPathBinder {
@@ -95,14 +92,9 @@ public class ClassPathBinder {
       Env<ClassSymbol, BytecodeBoundClass> benv,
       Map<ClassSymbol, BytecodeBoundClass> transitive)
       throws IOException {
-    // TODO(cushon): consider creating a nio-friendly jar reading abstraction for testing,
-    // that yields something like `Iterable<Pair<String, Supplier<byte[]>>>`
-    // TODO(cushon): don't leak jar files
-    final JarFile jf = new JarFile(path.toFile());
-    Enumeration<JarEntry> entries = jf.entries();
-    while (entries.hasMoreElements()) {
-      final JarEntry je = entries.nextElement();
-      String name = je.getName();
+    // TODO(cushon): don't leak file descriptors
+    for (Zip.Entry ze : new Zip.ZipIterable(path)) {
+      String name = ze.name();
       if (!name.endsWith(".class")) {
         continue;
       }
@@ -110,30 +102,30 @@ public class ClassPathBinder {
         ClassSymbol sym =
             new ClassSymbol(
                 name.substring(TRANSITIVE_PREFIX.length(), name.length() - ".class".length()));
-        if (!transitive.containsKey(sym)) {
-          transitive.put(
-              sym, new BytecodeBoundClass(sym, toByteArrayOrDie(jf, je), benv, path.toString()));
-        }
+        transitive.computeIfAbsent(
+            sym,
+            new Function<ClassSymbol, BytecodeBoundClass>() {
+              @Override
+              public BytecodeBoundClass apply(ClassSymbol sym) {
+                return new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString());
+              }
+            });
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
       if (!env.containsKey(sym)) {
-        env.put(sym, new BytecodeBoundClass(sym, toByteArrayOrDie(jf, je), benv, path.toString()));
+        env.put(sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString()));
         tli.insert(sym);
       }
     }
   }
 
-  private static Supplier<byte[]> toByteArrayOrDie(JarFile jf, JarEntry je) {
+  private static Supplier<byte[]> toByteArrayOrDie(Zip.Entry ze) {
     return Suppliers.memoize(
         new Supplier<byte[]>() {
           @Override
           public byte[] get() {
-            try {
-              return ByteStreams.toByteArray(jf.getInputStream(je));
-            } catch (IOException e) {
-              throw new IOError(e);
-            }
+            return ze.data();
           }
         });
   }

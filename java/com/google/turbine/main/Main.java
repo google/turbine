@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -34,6 +33,7 @@ import com.google.turbine.options.TurbineOptionsParser;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.tree.Tree.CompUnit;
+import com.google.turbine.zip.Zip;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,10 +42,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -105,14 +103,10 @@ public class Main {
               new SourceFile(source, new String(Files.readAllBytes(Paths.get(source)), UTF_8))));
     }
     for (String sourceJar : options.sourceJars()) {
-      try (JarFile jf = new JarFile(sourceJar)) {
-        Enumeration<JarEntry> entries = jf.entries();
-        while (entries.hasMoreElements()) {
-          JarEntry je = entries.nextElement();
-          if (je.getName().endsWith(".java")) {
-            String source = new String(ByteStreams.toByteArray(jf.getInputStream(je)), UTF_8);
-            units.add(Parser.parse(new SourceFile(je.getName(), source)));
-          }
+      for (Zip.Entry ze : new Zip.ZipIterable(Paths.get(sourceJar))) {
+        if (ze.name().endsWith(".java")) {
+          String source = new String(ze.data(), UTF_8);
+          units.add(Parser.parse(new SourceFile(ze.name(), source)));
         }
       }
     }
