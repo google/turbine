@@ -128,4 +128,33 @@ public class MainTest {
     }
     return data;
   }
+
+  @Test
+  public void moduleInfos() throws IOException {
+    Path srcjar = temporaryFolder.newFile("lib.srcjar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(srcjar))) {
+      jos.putNextEntry(new JarEntry("module-info.java"));
+      jos.write("module foo {}".getBytes(UTF_8));
+      jos.putNextEntry(new JarEntry("bar/module-info.java"));
+      jos.write("module bar {}".getBytes(UTF_8));
+    }
+
+    Path src = temporaryFolder.newFile("module-info.java").toPath();
+    Files.write(src, "module baz {}".getBytes(UTF_8));
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    boolean ok =
+        Main.compile(
+            TurbineOptions.builder()
+                .addSources(ImmutableList.of(src.toString()))
+                .setSourceJars(ImmutableList.of(srcjar.toString()))
+                .addBootClassPathEntries(BOOTCLASSPATH)
+                .setOutput(output.toString())
+                .build());
+    assertThat(ok).isTrue();
+
+    Map<String, byte[]> data = readJar(output);
+    assertThat(data.keySet()).isEmpty();
+  }
 }

@@ -98,20 +98,33 @@ public class Main {
   private static ImmutableList<CompUnit> parseAll(TurbineOptions options) throws IOException {
     ImmutableList.Builder<CompUnit> units = ImmutableList.builder();
     for (String source : options.sources()) {
-      units.add(
-          Parser.parse(
-              new SourceFile(source, new String(Files.readAllBytes(Paths.get(source)), UTF_8))));
+      Path path = Paths.get(source);
+      if (path.getFileName().toString().equals(MODULE_INFO_FILE_NAME)) {
+        continue;
+      }
+      units.add(Parser.parse(new SourceFile(source, new String(Files.readAllBytes(path), UTF_8))));
     }
     for (String sourceJar : options.sourceJars()) {
       for (Zip.Entry ze : new Zip.ZipIterable(Paths.get(sourceJar))) {
         if (ze.name().endsWith(".java")) {
+          String name = ze.name();
+          int idx = name.lastIndexOf('/');
+          String fileName = idx != -1 ? name.substring(idx + 1) : name;
+          if (fileName.equals(MODULE_INFO_FILE_NAME)) {
+            continue;
+          }
           String source = new String(ze.data(), UTF_8);
-          units.add(Parser.parse(new SourceFile(ze.name(), source)));
+          units.add(Parser.parse(new SourceFile(name, source)));
         }
       }
     }
     return units.build();
   }
+
+  // turbine currently ignores module-info.java files, because they are not needed for header
+  // compilation.
+  // TODO(b/36109466): understand requirements for full Java 9 source support (e.g. module paths)
+  static final String MODULE_INFO_FILE_NAME = "module-info.java";
 
   /** Write bytecode to the output jar. */
   private static void writeOutput(
