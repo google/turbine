@@ -112,7 +112,7 @@ public class AnnotationWriter {
     }
   }
 
-  private void writeConst(char tag, short index) {
+  private void writeConst(char tag, int index) {
     output.writeByte(tag);
     output.writeShort(index);
   }

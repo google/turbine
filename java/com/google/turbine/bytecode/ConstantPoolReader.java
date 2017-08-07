@@ -105,7 +105,7 @@ public class ConstantPoolReader {
     if (tag != CONSTANT_CLASS) {
       throw new AssertionError(String.format("bad tag: %x", tag));
     }
-    int nameIndex = reader.readShort();
+    int nameIndex = reader.readUnsignedShort();
     return utf8(nameIndex);
   }
 
@@ -136,7 +136,7 @@ public class ConstantPoolReader {
       case CONSTANT_INTEGER:
         return new Const.IntValue(reader.readInt());
       case CONSTANT_STRING:
-        return new Const.StringValue(utf8(reader.readShort()));
+        return new Const.StringValue(utf8(reader.readUnsignedShort()));
       default:
         throw new AssertionError(String.format("bad tag: %x", tag));
     }

@@ -22,7 +22,6 @@ import com.google.turbine.model.Const.DoubleValue;
 import com.google.turbine.model.Const.FloatValue;
 import com.google.turbine.model.Const.IntValue;
 import com.google.turbine.model.Const.LongValue;
-import com.google.turbine.model.Const.ShortValue;
 import com.google.turbine.model.Const.StringValue;
 import com.google.turbine.model.Const.Value;
 import java.util.List;
@@ -87,27 +86,28 @@ public class ClassWriter {
     for (ConstantPool.Entry e : constantPool.constants()) {
       output.writeByte(e.kind().tag());
       Value value = e.value();
-      switch (value.constantTypeKind()) {
+      switch (e.kind()) {
+        case CLASS_INFO:
         case STRING:
-          output.writeUTF(((StringValue) value).value());
+          output.writeShort(((IntValue) value).value());
           break;
-        case SHORT:
-          output.writeShort(((ShortValue) value).value());
-          break;
-        case INT:
+        case INTEGER:
           output.writeInt(((IntValue) value).value());
-          break;
-        case LONG:
-          output.writeLong(((LongValue) value).value());
-          break;
-        case FLOAT:
-          output.writeFloat(((FloatValue) value).value());
           break;
         case DOUBLE:
           output.writeDouble(((DoubleValue) value).value());
           break;
+        case FLOAT:
+          output.writeFloat(((FloatValue) value).value());
+          break;
+        case LONG:
+          output.writeLong(((LongValue) value).value());
+          break;
+        case UTF8:
+          output.writeUTF(((StringValue) value).value());
+          break;
         default:
-          throw new AssertionError(value.constantTypeKind());
+          throw new AssertionError(e.kind());
       }
     }
   }

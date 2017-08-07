@@ -18,7 +18,7 @@ package com.google.turbine.bytecode;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.model.Const;
-import com.google.turbine.model.Const.ShortValue;
+import com.google.turbine.model.Const.IntValue;
 import com.google.turbine.model.Const.StringValue;
 import com.google.turbine.model.Const.Value;
 import java.util.ArrayList;
@@ -31,15 +31,15 @@ import java.util.Objects;
 public class ConstantPool {
 
   /** The next available constant pool entry. */
-  short nextEntry = 1;
+  int nextEntry = 1;
 
-  private final Map<String, Short> utf8Pool = new HashMap<>();
-  private final Map<Short, Short> classInfoPool = new HashMap<>();
-  private final Map<Short, Short> stringPool = new HashMap<>();
-  private final Map<Integer, Short> integerPool = new HashMap<>();
-  private final Map<Double, Short> doublePool = new HashMap<>();
-  private final Map<Float, Short> floatPool = new HashMap<>();
-  private final Map<Long, Short> longPool = new HashMap<>();
+  private final Map<String, Integer> utf8Pool = new HashMap<>();
+  private final Map<Integer, Integer> classInfoPool = new HashMap<>();
+  private final Map<Integer, Integer> stringPool = new HashMap<>();
+  private final Map<Integer, Integer> integerPool = new HashMap<>();
+  private final Map<Double, Integer> doublePool = new HashMap<>();
+  private final Map<Float, Integer> floatPool = new HashMap<>();
+  private final Map<Long, Integer> longPool = new HashMap<>();
 
   private final List<Entry> constants = new ArrayList<>();
 
@@ -89,79 +89,82 @@ public class ConstantPool {
   }
 
   /** Adds a CONSTANT_Class_info entry to the pool. */
-  short classInfo(String value) {
+  int classInfo(String value) {
     Objects.requireNonNull(value);
-    short utf8 = utf8(value);
+    int utf8 = utf8(value);
     if (classInfoPool.containsKey(utf8)) {
       return classInfoPool.get(utf8);
     }
-    short index = insert(new Entry(Kind.CLASS_INFO, new ShortValue(utf8)));
+    int index = insert(new Entry(Kind.CLASS_INFO, new IntValue(utf8)));
     classInfoPool.put(utf8, index);
     return index;
   }
 
   /** Adds a CONSTANT_Utf8_info entry to the pool. */
-  short utf8(String value) {
+  int utf8(String value) {
     Objects.requireNonNull(value);
     if (utf8Pool.containsKey(value)) {
       return utf8Pool.get(value);
     }
-    short index = insert(new Entry(Kind.UTF8, new StringValue(value)));
+    int index = insert(new Entry(Kind.UTF8, new StringValue(value)));
     utf8Pool.put(value, index);
     return index;
   }
 
-  short integer(int value) {
+  int integer(int value) {
     if (integerPool.containsKey(value)) {
       return integerPool.get(value);
     }
-    short index = insert(new Entry(Kind.INTEGER, new Const.IntValue(value)));
+    int index = insert(new Entry(Kind.INTEGER, new Const.IntValue(value)));
     integerPool.put(value, index);
     return index;
   }
 
-  short longInfo(long value) {
+  int longInfo(long value) {
     if (longPool.containsKey(value)) {
       return longPool.get(value);
     }
-    short index = insert(new Entry(Kind.LONG, new Const.LongValue(value)));
+    int index = insert(new Entry(Kind.LONG, new Const.LongValue(value)));
     longPool.put(value, index);
     return index;
   }
 
-  short doubleInfo(double value) {
+  int doubleInfo(double value) {
     if (doublePool.containsKey(value)) {
       return doublePool.get(value);
     }
-    short index = insert(new Entry(Kind.DOUBLE, new Const.DoubleValue(value)));
+    int index = insert(new Entry(Kind.DOUBLE, new Const.DoubleValue(value)));
     doublePool.put(value, index);
     return index;
   }
 
-  short floatInfo(float value) {
+  int floatInfo(float value) {
     if (floatPool.containsKey(value)) {
       return floatPool.get(value);
     }
-    short index = insert(new Entry(Kind.FLOAT, new Const.FloatValue(value)));
+    int index = insert(new Entry(Kind.FLOAT, new Const.FloatValue(value)));
     floatPool.put(value, index);
     return index;
   }
 
-  short string(String value) {
+  int string(String value) {
     Objects.requireNonNull(value);
-    short utf8 = utf8(value);
+    int utf8 = utf8(value);
     if (stringPool.containsKey(utf8)) {
       return stringPool.get(utf8);
     }
-    short index = insert(new Entry(Kind.STRING, new ShortValue(utf8)));
+    int index = insert(new Entry(Kind.STRING, new IntValue(utf8)));
     stringPool.put(utf8, index);
     return index;
   }
 
-  private short insert(Entry key) {
-    short entry = nextEntry;
+  private int insert(Entry key) {
+    int entry = nextEntry;
     constants.add(key);
     nextEntry += width(key.kind());
+    if ((nextEntry & 0xffff) != nextEntry) {
+      throw new AssertionError("constant pool has more than 2^16 entries");
+    }
     return entry;
   }
 
