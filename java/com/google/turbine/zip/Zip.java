@@ -94,6 +94,8 @@ public class Zip {
   static final int CENCOM = 32; // comment length
   static final int CENOFF = 42; // LOC header offset
 
+  static final int LOCEXT = 28; // extra field length
+
   static final int ZIP64_ENDSIZ = 40; // central directory size in bytes
 
   static final int ZIP64_MAGICCOUNT = 0xFFFF;
@@ -104,11 +106,13 @@ public class Zip {
     /** A reader for the backing storage. */
     private final FileChannel chan;
 
+    private final Path path;
     private int cdindex = 0;
     private final MappedByteBuffer cd;
     private final CharsetDecoder decoder = UTF_8.newDecoder();
 
-    ZipIterator(FileChannel chan, MappedByteBuffer cd) {
+    ZipIterator(Path path, FileChannel chan, MappedByteBuffer cd) {
+      this.path = path;
       this.chan = chan;
       this.cd = cd;
     }
@@ -122,11 +126,11 @@ public class Zip {
     @Override
     public Entry next() {
       // TODO(cushon): technically we're supposed to throw NSEE
-      checkSignature(cd, cdindex, 2, 1, "CENSIG");
+      checkSignature(path, cd, cdindex, 2, 1, "CENSIG");
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);
       int commentLength = cd.getChar(cdindex + CENCOM);
-      Entry entry = new Entry(chan, string(cd, cdindex + CENHDR, nameLength), cd, cdindex);
+      Entry entry = new Entry(path, chan, string(cd, cdindex + CENHDR, nameLength), cd, cdindex);
       cdindex += CENHDR + nameLength + extLength + commentLength;
       return entry;
     }
@@ -147,10 +151,12 @@ public class Zip {
   /** Provides an {@link Iterable} of {@link Entry} over a zip archive. */
   public static class ZipIterable implements Iterable<Entry>, Closeable {
 
+    private final Path path;
     private final FileChannel chan;
     private final MappedByteBuffer cd;
 
     public ZipIterable(Path path) throws IOException {
+      this.path = path;
       this.chan = FileChannel.open(path, StandardOpenOption.READ);
       // Locate the EOCD, assuming that the archive does not contain trailing garbage or a zip file
       // comment.
@@ -161,7 +167,7 @@ public class Zip {
       long eocdOffset = size - ENDHDR;
       MappedByteBuffer eocd = chan.map(MapMode.READ_ONLY, eocdOffset, ENDHDR);
       eocd.order(ByteOrder.LITTLE_ENDIAN);
-      checkSignature(eocd, 0, 6, 5, "CENSIG");
+      checkSignature(path, eocd, 0, 6, 5, "ENDSIG");
       int totalEntries = eocd.getChar(ENDTOT);
       long cdsize = UnsignedInts.toLong(eocd.getInt(ENDSIZ));
       // If the number of entries is 0xffff, check if the archive has a zip64 EOCD locator.
@@ -174,7 +180,7 @@ public class Zip {
         // entries and the last entry's data could contain a ZIP64_ENDSIG. Some implementations
         // read the full EOCD records and compare them.
         if (zip64eocd.getInt(0) == ZIP64_ENDSIG) {
-          cdsize = zip64eocdOffset - zip64eocd.getLong(ZIP64_ENDSIZ);
+          cdsize = zip64eocd.getLong(ZIP64_ENDSIZ);
           eocdOffset = zip64eocdOffset;
         }
       }
@@ -184,7 +190,7 @@ public class Zip {
 
     @Override
     public Iterator<Entry> iterator() {
-      return new ZipIterator(chan, cd);
+      return new ZipIterator(path, chan, cd);
     }
 
     @Override
@@ -196,12 +202,14 @@ public class Zip {
   /** An entry in a zip archive. */
   public static class Entry {
 
+    private final Path path;
     private final FileChannel chan;
     private final String name;
     private final ByteBuffer cd;
     private final int cdindex;
 
-    public Entry(FileChannel chan, String name, ByteBuffer cd, int cdindex) {
+    public Entry(Path path, FileChannel chan, String name, ByteBuffer cd, int cdindex) {
+      this.path = path;
       this.chan = chan;
       this.name = name;
       this.cd = cd;
@@ -215,34 +223,66 @@ public class Zip {
 
     /** The entry data. */
     public byte[] data() {
-      // Read the offset and variable lengths from the central directory and then blindly trust that
-      // they match the local header so we can map in the data section in one shot.
-      // Are we being excessively brave?
+      // Read the offset and variable lengths from the central directory and then try to map in the
+      // data section in one shot.
       long offset = UnsignedInts.toLong(cd.getInt(cdindex + CENOFF));
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);
-      long fileOffset = offset + LOCHDR + nameLength + extLength;
       int compression = cd.getChar(cdindex + CENHOW);
       switch (compression) {
         case 0x8:
           return getBytes(
-              fileOffset, UnsignedInts.toLong(cd.getInt(cdindex + CENSIZ)), /*deflate=*/ true);
+              offset,
+              nameLength,
+              extLength,
+              UnsignedInts.toLong(cd.getInt(cdindex + CENSIZ)),
+              /*deflate=*/ true);
         case 0x0:
           return getBytes(
-              fileOffset, UnsignedInts.toLong(cd.getInt(cdindex + CENLEN)), /*deflate=*/ false);
+              offset,
+              nameLength,
+              extLength,
+              UnsignedInts.toLong(cd.getInt(cdindex + CENLEN)),
+              /*deflate=*/ false);
         default:
           throw new AssertionError(
               String.format("unsupported compression mode: 0x%x", compression));
       }
     }
 
-    private byte[] getBytes(long fileOffset, long size, boolean deflate) {
+    /**
+     * Number of extra bytes to read for each file, to avoid re-mapping the data if the local header
+     * reports more extra field data than the central directory.
+     */
+    static final int EXTRA_FIELD_SLACK = 128;
+
+    private byte[] getBytes(
+        long offset, int nameLength, int cenExtLength, long size, boolean deflate) {
       if (size > Integer.MAX_VALUE) {
         throw new IllegalArgumentException("unsupported zip entry size: " + size);
       }
       try {
+        MappedByteBuffer fc =
+            chan.map(
+                MapMode.READ_ONLY,
+                offset,
+                Math.min(
+                    LOCHDR + nameLength + cenExtLength + size + EXTRA_FIELD_SLACK,
+                    chan.size() - offset));
+        fc.order(ByteOrder.LITTLE_ENDIAN);
+        checkSignature(path, fc, /* offset= */ 0, 4, 3, "LOCSIG");
+        int locExtLength = fc.getChar(LOCEXT);
+        if (locExtLength > cenExtLength + EXTRA_FIELD_SLACK) {
+          // If the local header's extra fields don't match the central directory and we didn't
+          // leave enough slac, re-map the data section with the correct extra field length.
+          fc = chan.map(MapMode.READ_ONLY, offset + LOCHDR + nameLength + locExtLength, size);
+          fc.order(ByteOrder.LITTLE_ENDIAN);
+        } else {
+          // Otherwise seek past the local header, name, and extra fields to the data.
+          fc.position(LOCHDR + nameLength + locExtLength);
+          fc.limit((int) (LOCHDR + nameLength + locExtLength + size));
+        }
         byte[] bytes = new byte[(int) size];
-        MappedByteBuffer fc = chan.map(MapMode.READ_ONLY, fileOffset, size);
         fc.get(bytes);
         if (deflate) {
           bytes =
@@ -257,15 +297,16 @@ public class Zip {
     }
   }
 
-  static void checkSignature(MappedByteBuffer buf, int index, int i, int j, String name) {
+  static void checkSignature(
+      Path path, MappedByteBuffer buf, int index, int i, int j, String name) {
     if (!((buf.get(index) == 'P')
         && (buf.get(index + 1) == 'K')
         && (buf.get(index + 2) == j)
         && (buf.get(index + 3) == i))) {
       throw new AssertionError(
           String.format(
-              "bad %s (expected: 0x%02x%02x%02x%02x, actual: 0x%08x)",
-              name, i, j, (int) 'K', (int) 'P', buf.getInt(index)));
+              "%s: bad %s (expected: 0x%02x%02x%02x%02x, actual: 0x%08x)",
+              path, name, i, j, (int) 'K', (int) 'P', buf.getInt(index)));
     }
   }
 }

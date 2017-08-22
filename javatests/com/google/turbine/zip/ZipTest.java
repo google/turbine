@@ -19,11 +19,16 @@ package com.google.turbine.zip;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -110,5 +115,23 @@ public class ZipTest {
       }
     }
     return result;
+  }
+
+  @Test
+  public void attributes() throws Exception {
+    Path path = temporaryFolder.newFile("test.jar").toPath();
+    Files.delete(path);
+    try (FileSystem fs =
+        FileSystems.newFileSystem(
+            URI.create("jar:file:" + path.toAbsolutePath()), ImmutableMap.of("create", "true"))) {
+      for (int i = 0; i < 3; i++) {
+        String name = "entry" + i;
+        byte[] bytes = name.getBytes(UTF_8);
+        Path entry = fs.getPath(name);
+        Files.write(entry, bytes);
+        Files.setLastModifiedTime(entry, FileTime.fromMillis(0));
+      }
+    }
+    assertThat(actual(path)).isEqualTo(expected(path));
   }
 }
