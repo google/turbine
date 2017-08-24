@@ -31,7 +31,7 @@ import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.FieldInfo;
 import com.google.turbine.bytecode.ClassFile.InnerClass;
 import com.google.turbine.bytecode.ClassWriter;
-import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.model.TurbineFlag;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -56,7 +56,7 @@ public class Transitive {
         // don't export symbols loaded from the bootclasspath
         continue;
       }
-      transitive.put(sym.binaryName(), ClassWriter.writeClass(trimClass(sym, info)));
+      transitive.put(sym.binaryName(), ClassWriter.writeClass(trimClass(info.classFile())));
     }
     return transitive.build();
   }
@@ -64,8 +64,7 @@ public class Transitive {
   /**
    * Removes information from repackaged classes that will not be needed by upstream compilations.
    */
-  private static ClassFile trimClass(ClassSymbol sym, BytecodeBoundClass info) {
-    ClassFile cf = info.classFile();
+  public static ClassFile trimClass(ClassFile cf) {
     // drop non-constant fields
     Builder<FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : cf.fields()) {
@@ -79,7 +78,7 @@ public class Transitive {
     // children or parent of the current class.
     Builder<InnerClass> innerClasses = ImmutableList.builder();
     for (InnerClass i : cf.innerClasses()) {
-      if (i.innerClass().equals(sym.binaryName()) || i.outerClass().equals(sym.binaryName())) {
+      if (i.innerClass().equals(cf.name()) || i.outerClass().equals(cf.name())) {
         innerClasses.add(i);
       }
     }
@@ -90,7 +89,9 @@ public class Transitive {
         cf.superName(),
         cf.interfaces(),
         // drop methods, except for annotations where we need to resolve key/value information
-        info.kind() == TurbineTyKind.ANNOTATION ? cf.methods() : ImmutableList.of(),
+        (cf.access() & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION
+            ? cf.methods()
+            : ImmutableList.of(),
         fields.build(),
         // unnecessary annotations are dropped during class reading, the only remaining ones are
         // well-known @interface meta-annotations (e.g. @Retention, etc.)
