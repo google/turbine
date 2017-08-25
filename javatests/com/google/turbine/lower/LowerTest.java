@@ -423,4 +423,67 @@ public class LowerTest {
             0);
     assertThat((acc[0] & Opcodes.ACC_DEPRECATED) == Opcodes.ACC_DEPRECATED).isTrue();
   }
+
+  @Test
+  public void lazyImports() throws Exception {
+    ImmutableMap<String, String> sources =
+        ImmutableMap.<String, String>builder()
+            .put(
+                "b/B.java",
+                lines(
+                    "package b;", //
+                    "public class B {",
+                    "  public static class A {",
+                    "    public static final int X = 0;",
+                    "  }",
+                    "  public static class C {}",
+                    "}"))
+            .put(
+                "anno/Anno.java",
+                lines(
+                    "package anno;", //
+                    "public @interface Anno {",
+                    "  int value() default 0;",
+                    "}"))
+            .put(
+                "a/A.java",
+                lines(
+                    "package a;", //
+                    "import b.B;",
+                    "import anno.Anno;",
+                    "import static b.B.nosuch.A;",
+                    "@Anno(A.X)",
+                    "public class A extends B {",
+                    "  public A a;",
+                    "  public static final int X = 1;",
+                    "}"))
+            .put(
+                "a/C.java",
+                lines(
+                    "package c;", //
+                    "import static b.B.nosuch.C;",
+                    "class C {",
+                    "  C c;",
+                    "}"))
+            .build();
+
+    ImmutableMap<String, String> noImports;
+    {
+      ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+      sources.forEach(
+          (k, v) -> builder.put(k, v.replaceAll("import static b\\.B\\.nosuch\\..*;", "")));
+      noImports = builder.build();
+    }
+
+    Map<String, byte[]> expected =
+        IntegrationTestSupport.runJavac(noImports, ImmutableList.of(), BOOTCLASSPATH);
+    Map<String, byte[]> actual =
+        IntegrationTestSupport.runTurbine(sources, ImmutableList.of(), BOOTCLASSPATH);
+    assertThat(IntegrationTestSupport.dump(IntegrationTestSupport.sortMembers(actual)))
+        .isEqualTo(IntegrationTestSupport.dump(IntegrationTestSupport.canonicalize(expected)));
+  }
+
+  static String lines(String... lines) {
+    return Joiner.on("\n").join(lines);
+  }
 }

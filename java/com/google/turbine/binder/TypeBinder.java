@@ -151,12 +151,12 @@ public class TypeBinder {
     CompoundScope enclosingScope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
+            .append(new SingletonScope(base.decl().name(), owner))
             .append(new ClassMemberScope(base.owner(), env));
 
     ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
 
-    CompoundScope bindingScope =
-        enclosingScope.append(new SingletonScope(base.decl().name(), owner));
+    CompoundScope bindingScope = enclosingScope;
 
     // type parameters can refer to each other in f-bounds, so update the scope first
     bindingScope = bindingScope.append(new MapScope(base.typeParameters()));
@@ -206,6 +206,7 @@ public class TypeBinder {
     CompoundScope scope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
+            .append(new SingletonScope(base.decl().name(), owner))
             .append(new ClassMemberScope(owner, env));
 
     List<MethodInfo> methods =
