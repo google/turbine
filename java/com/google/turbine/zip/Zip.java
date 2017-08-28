@@ -65,7 +65,7 @@ import java.util.zip.ZipException;
  *       supported.
  *   <li>UTF-8 is the only supported encoding.
  *   <li>STORED and DEFLATE are the only supported compression methods.
- *   <li>Jar file comments and zip64 extensible data sectors are not supported.
+ *   <li>zip64 extensible data sectors are not supported.
  *   <li>Zip files larger than Integer.MAX_VALUE bytes are not supported.
  *   <li>The only supported ZIP64 field is ENDTOT. This implementation assumes that the ZIP64 end
  *       header is present only if ENDTOT in EOCD header is 0xFFFF.
@@ -73,8 +73,6 @@ import java.util.zip.ZipException;
  */
 public class Zip {
 
-  static final int CENSIG = 0x02014b50;
-  static final int ENDSIG = 0x06054b50;
   static final int ZIP64_ENDSIG = 0x06064b50;
 
   static final int LOCHDR = 30; // LOC header size
@@ -85,6 +83,7 @@ public class Zip {
 
   static final int ENDTOT = 10; // total number of entries
   static final int ENDSIZ = 12; // central directory size in bytes
+  static final int ENDCOM = 20; // zip file comment length
 
   static final int CENHOW = 10; // compression method
   static final int CENLEN = 24; // uncompressed size
@@ -126,7 +125,7 @@ public class Zip {
     @Override
     public Entry next() {
       // TODO(cushon): technically we're supposed to throw NSEE
-      checkSignature(path, cd, cdindex, 2, 1, "CENSIG");
+      checkSignature(path, cd, cdindex, 1, 2, "CENSIG");
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);
       int commentLength = cd.getChar(cdindex + CENCOM);
@@ -158,8 +157,7 @@ public class Zip {
     public ZipIterable(Path path) throws IOException {
       this.path = path;
       this.chan = FileChannel.open(path, StandardOpenOption.READ);
-      // Locate the EOCD, assuming that the archive does not contain trailing garbage or a zip file
-      // comment.
+      // Locate the EOCD
       long size = chan.size();
       if (size < ENDHDR) {
         throw new ZipException("invalid zip archive");
@@ -167,9 +165,33 @@ public class Zip {
       long eocdOffset = size - ENDHDR;
       MappedByteBuffer eocd = chan.map(MapMode.READ_ONLY, eocdOffset, ENDHDR);
       eocd.order(ByteOrder.LITTLE_ENDIAN);
-      checkSignature(path, eocd, 0, 6, 5, "ENDSIG");
-      int totalEntries = eocd.getChar(ENDTOT);
-      long cdsize = UnsignedInts.toLong(eocd.getInt(ENDSIZ));
+      int index = 0;
+      int commentSize = 0;
+      if (!isSignature(eocd, 0, 5, 6)) {
+        // The archive may contain a zip file comment; keep looking for the EOCD.
+        long start = Math.max(0, size - ENDHDR - 0xFFFF);
+        eocd = chan.map(MapMode.READ_ONLY, start, (size - start));
+        eocd.order(ByteOrder.LITTLE_ENDIAN);
+        index = (int) ((size - start) - ENDHDR);
+        while (index > 0) {
+          index--;
+          eocd.position(index);
+          if (isSignature(eocd, index, 5, 6)) {
+            commentSize = (int) ((size - start) - ENDHDR) - index;
+            eocdOffset = start + index;
+            break;
+          }
+        }
+      }
+      checkSignature(path, eocd, index, 5, 6, "ENDSIG");
+      int totalEntries = eocd.getChar(index + ENDTOT);
+      long cdsize = UnsignedInts.toLong(eocd.getInt(index + ENDSIZ));
+      int actualCommentSize = eocd.getChar(index + ENDCOM);
+      if (commentSize != actualCommentSize) {
+        throw new ZipException(
+            String.format(
+                "zip file comment length was %d, expected %d", commentSize, actualCommentSize));
+      }
       // If the number of entries is 0xffff, check if the archive has a zip64 EOCD locator.
       if (totalEntries == ZIP64_MAGICCOUNT) {
         // Assume the zip64 EOCD has the usual size; we don't support zip64 extensible data sectors.
@@ -270,7 +292,7 @@ public class Zip {
                     LOCHDR + nameLength + cenExtLength + size + EXTRA_FIELD_SLACK,
                     chan.size() - offset));
         fc.order(ByteOrder.LITTLE_ENDIAN);
-        checkSignature(path, fc, /* offset= */ 0, 4, 3, "LOCSIG");
+        checkSignature(path, fc, /* index= */ 0, 3, 4, "LOCSIG");
         int locExtLength = fc.getChar(LOCEXT);
         if (locExtLength > cenExtLength + EXTRA_FIELD_SLACK) {
           // If the local header's extra fields don't match the central directory and we didn't
@@ -299,14 +321,18 @@ public class Zip {
 
   static void checkSignature(
       Path path, MappedByteBuffer buf, int index, int i, int j, String name) {
-    if (!((buf.get(index) == 'P')
-        && (buf.get(index + 1) == 'K')
-        && (buf.get(index + 2) == j)
-        && (buf.get(index + 3) == i))) {
+    if (!isSignature(buf, index, i, j)) {
       throw new AssertionError(
           String.format(
               "%s: bad %s (expected: 0x%02x%02x%02x%02x, actual: 0x%08x)",
               path, name, i, j, (int) 'K', (int) 'P', buf.getInt(index)));
     }
+  }
+
+  static boolean isSignature(MappedByteBuffer buf, int index, int i, int j) {
+    return (buf.get(index) == 'P')
+        && (buf.get(index + 1) == 'K')
+        && (buf.get(index + 2) == i)
+        && (buf.get(index + 3) == j);
   }
 }

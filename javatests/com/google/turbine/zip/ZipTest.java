@@ -18,6 +18,7 @@ package com.google.turbine.zip;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
@@ -28,6 +29,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -35,6 +37,8 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.zip.ZipException;
+import java.util.zip.ZipOutputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -83,7 +87,7 @@ public class ZipTest {
     assertThat(actual(path)).isEqualTo(expected(path));
   }
 
-  private static void createEntry(JarOutputStream jos, String name, byte[] bytes)
+  private static void createEntry(ZipOutputStream jos, String name, byte[] bytes)
       throws IOException {
     JarEntry je = new JarEntry(name);
     je.setMethod(JarEntry.STORED);
@@ -133,5 +137,35 @@ public class ZipTest {
       }
     }
     assertThat(actual(path)).isEqualTo(expected(path));
+  }
+
+  @Test
+  public void zipFileCommentsAreSupported() throws Exception {
+    Path path = temporaryFolder.newFile("test.jar").toPath();
+    Files.delete(path);
+    try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(path))) {
+      createEntry(zos, "hello", "world".getBytes(UTF_8));
+      zos.setComment("this is a comment");
+    }
+    assertThat(actual(path)).isEqualTo(expected(path));
+  }
+
+  @Test
+  public void malformedComment() throws Exception {
+    Path path = temporaryFolder.newFile("test.jar").toPath();
+    Files.delete(path);
+
+    try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(path))) {
+      createEntry(zos, "hello", "world".getBytes(UTF_8));
+      zos.setComment("this is a comment");
+    }
+    Files.write(path, "trailing garbage".getBytes(UTF_8), StandardOpenOption.APPEND);
+
+    try {
+      actual(path);
+      fail();
+    } catch (ZipException e) {
+      assertThat(e).hasMessage("zip file comment length was 33, expected 17");
+    }
   }
 }
