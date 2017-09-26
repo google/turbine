@@ -257,6 +257,18 @@ public class BinderErrorTest {
           "  @Object int x;",
           "   ^",
         },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @Deprecated @Deprecated int x;",
+          "}",
+        },
+        {
+          "<>:2: error: java/lang/Deprecated is not @Repeatable", //
+          "  @Deprecated @Deprecated int x;",
+          "   ^",
+        },
       }
     };
     return Arrays.asList((Object[][]) testCases);

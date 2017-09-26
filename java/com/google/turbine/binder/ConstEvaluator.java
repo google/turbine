@@ -878,7 +878,7 @@ public strictfp class ConstEvaluator {
   ImmutableList<AnnoInfo> evaluateAnnotations(ImmutableList<AnnoInfo> annotations) {
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (AnnoInfo annotation : annotations) {
-      result.add(evaluateAnnotation(annotation.sym(), annotation.args()));
+      result.add(evaluateAnnotation(annotation));
     }
     return result.build();
   }
@@ -887,14 +887,14 @@ public strictfp class ConstEvaluator {
    * Evaluates annotation arguments given the symbol of the annotation declaration and a list of
    * expression trees.
    */
-  AnnoInfo evaluateAnnotation(ClassSymbol sym, ImmutableList<Expression> args) {
+  AnnoInfo evaluateAnnotation(AnnoInfo info) {
     Map<String, Type> template = new LinkedHashMap<>();
-    for (MethodInfo method : env.get(sym).methods()) {
+    for (MethodInfo method : env.get(info.sym()).methods()) {
       template.put(method.name(), method.returnType());
     }
 
     ImmutableMap.Builder<String, Const> values = ImmutableMap.builder();
-    for (Expression arg : args) {
+    for (Expression arg : info.args()) {
       Expression expr;
       String key;
       if (arg.kind() == Tree.Kind.ASSIGN) {
@@ -916,7 +916,7 @@ public strictfp class ConstEvaluator {
       }
       values.put(key, value);
     }
-    return new AnnoInfo(sym, args, values.build());
+    return info.withValues(values.build());
   }
 
   private AnnotationValue evalAnno(Tree.Anno t) {
@@ -925,7 +925,7 @@ public strictfp class ConstEvaluator {
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);
     }
-    AnnoInfo annoInfo = evaluateAnnotation(sym, t.args());
+    AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(base.source(), sym, t, null));
     return new AnnotationValue(annoInfo.sym(), annoInfo.values());
   }
 

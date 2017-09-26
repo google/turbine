@@ -39,7 +39,8 @@ public class TurbineError extends Error {
     CANNOT_RESOLVE("cannot resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
-    NOT_AN_ANNOTATION("%s is not an annotation");
+    NOT_AN_ANNOTATION("%s is not an annotation"),
+    NONREPEATABLE_ANNOTATION("%s is not @Repeatable");
 
     private final String message;
 

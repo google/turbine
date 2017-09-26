@@ -31,6 +31,8 @@ import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -248,10 +250,13 @@ public class DisambiguateTypeAnnotations {
         }
         ClassSymbol container = env.get(symbol).annotationMetadata().repeatable();
         if (container == null) {
-          throw new AssertionError(symbol);
+          AnnoInfo anno = infos.iterator().next();
+          throw TurbineError.format(
+              anno.source(), anno.position(), ErrorKind.NONREPEATABLE_ANNOTATION, symbol);
         }
         result.add(
             new AnnoInfo(
+                null,
                 container,
                 null,
                 ImmutableMap.of("value", new Const.ArrayInitValue(elements.build()))));

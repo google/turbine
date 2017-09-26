@@ -21,25 +21,40 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.Const;
+import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.Expression;
 
 /** An annotation use. */
 public class AnnoInfo {
+  private final SourceFile source;
   private final ClassSymbol sym;
-  private final ImmutableList<Expression> args;
+  private final Tree.Anno tree;
   private final ImmutableMap<String, Const> values;
 
   public AnnoInfo(
-      ClassSymbol sym, ImmutableList<Expression> args, ImmutableMap<String, Const> values) {
+      SourceFile source, ClassSymbol sym, Anno tree, ImmutableMap<String, Const> values) {
+    this.source = source;
     this.sym = requireNonNull(sym);
-    this.args = args;
+    this.tree = tree;
     this.values = values;
+  }
+
+  /** The annotation's source, for diagnostics. */
+  public SourceFile source() {
+    return source;
+  }
+
+  /** The annotation's diagnostic position. */
+  public int position() {
+    return tree.position();
   }
 
   /** Arguments, either assignments or a single expression. */
   public ImmutableList<Expression> args() {
-    return args;
+    return tree.args();
   }
 
   /** Bound element-value pairs. */
@@ -50,5 +65,9 @@ public class AnnoInfo {
   /** The annotation's declaration. */
   public ClassSymbol sym() {
     return sym;
+  }
+
+  public AnnoInfo withValues(ImmutableMap<String, Const> values) {
+    return new AnnoInfo(source, sym, tree, values);
   }
 }
