@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
@@ -549,11 +550,14 @@ public class TypeBinder {
     for (Tree.Anno tree : trees) {
       LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
       if (lookupResult == null) {
-        throw error(tree.position(), ErrorKind.SYMBOL_NOT_FOUND, tree.name());
+        throw error(tree.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(tree.name()));
       }
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
       for (String name : lookupResult.remaining()) {
         sym = Resolve.resolve(env, owner, sym, name);
+        if (sym == null) {
+          throw error(tree.position(), ErrorKind.SYMBOL_NOT_FOUND, name);
+        }
       }
       if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
         throw error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);

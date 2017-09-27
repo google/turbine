@@ -269,7 +269,31 @@ public class BinderErrorTest {
           "  @Deprecated @Deprecated int x;",
           "   ^",
         },
-      }
+      },
+      {
+        {
+          "public class Test {", //
+          "  @NoSuch.NoSuch int x;",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found NoSuch.NoSuch", //
+          "  @NoSuch.NoSuch int x;",
+          "   ^",
+        },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @Deprecated.NoSuch int x;",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found NoSuch", //
+          "  @Deprecated.NoSuch int x;",
+          "   ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
