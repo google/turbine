@@ -294,6 +294,36 @@ public class BinderErrorTest {
           "   ^",
         },
       },
+      {
+        {
+          "public class Test {", //
+          "  @interface Anno {",
+          "    int[] value() default 0;",
+          "  }",
+          "  @Anno(value=Test.NO_SUCH) int x;",
+          "}",
+        },
+        {
+          "<>:5: error: could not evaluate constant expression", //
+          "  @Anno(value=Test.NO_SUCH) int x;",
+          "              ^",
+        },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @interface Anno {",
+          "    String value() default \"\";",
+          "  }",
+          "  @Anno(value=null) int x;",
+          "}",
+        },
+        {
+          "<>:5: error: invalid annotation argument", //
+          "  @Anno(value=null) int x;",
+          "              ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

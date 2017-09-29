@@ -946,6 +946,9 @@ public strictfp class ConstEvaluator {
       throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
     }
     Const value = eval(tree);
+    if (value == null) {
+      throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
+    }
     switch (ty.tyKind()) {
       case PRIM_TY:
         return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
