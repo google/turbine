@@ -26,30 +26,50 @@ import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.CheckReturnValue;
+import javax.annotation.Nullable;
 
 /** A JVMS §4 class file reader. */
 public class ClassReader {
 
   /** Reads the given bytes into an {@link ClassFile}. */
+  @Deprecated
   public static ClassFile read(byte[] bytes) {
-    return new ClassReader(bytes).read();
+    return read(null, bytes);
   }
 
+  /** Reads the given bytes into an {@link ClassFile}. */
+  public static ClassFile read(@Nullable String path, byte[] bytes) {
+    return new ClassReader(path, bytes).read();
+  }
+
+  @Nullable private final String path;
   private final ByteReader reader;
 
-  private ClassReader(byte[] bytes) {
+  private ClassReader(@Nullable String path, byte[] bytes) {
+    this.path = path;
     this.reader = new ByteReader(bytes, 0);
+  }
+
+  @CheckReturnValue
+  Error error(String format, Object... args) {
+    StringBuilder sb = new StringBuilder();
+    if (path != null) {
+      sb.append(path).append(": ");
+    }
+    sb.append(String.format(format, args));
+    return new AssertionError(sb.toString());
   }
 
   private ClassFile read() {
     int magic = reader.u4();
     if (magic != 0xcafebabe) {
-      throw new AssertionError(String.format("bad magic: 0x%x", magic));
+      throw error("bad magic: 0x%x", path, magic);
     }
     int minorVersion = reader.u2();
     int majorVersion = reader.u2();
-    if (majorVersion < 45 || majorVersion > 52) {
-      throw new AssertionError(String.format("bad version: %d.%d", majorVersion, minorVersion));
+    if (majorVersion < 45 || majorVersion > 53) {
+      throw error("bad version: %d.%d", majorVersion, minorVersion);
     }
     ConstantPoolReader constantPool = ConstantPoolReader.readConstantPool(reader);
     int accessFlags = reader.u2();
@@ -253,7 +273,7 @@ public class ClassReader {
           break;
         }
       default:
-        throw new AssertionError(String.format("bad tag value %c", tag));
+        throw error("bad tag value %c", tag);
     }
     return null;
   }

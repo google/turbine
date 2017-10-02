@@ -83,7 +83,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
             new Supplier<ClassFile>() {
               @Override
               public ClassFile get() {
-                ClassFile cf = ClassReader.read(bytes.get());
+                ClassFile cf = ClassReader.read(jarFile + "!" + sym, bytes.get());
                 verify(
                     cf.name().equals(sym.binaryName()),
                     "expected class data for %s, saw %s instead",

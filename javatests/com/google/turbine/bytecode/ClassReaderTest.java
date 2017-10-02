@@ -60,7 +60,7 @@ public class ClassReaderTest {
     cw.visitMethod(0, "h", "(I)V", null, null);
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(bytes);
+    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
 
     assertThat(classFile.access())
         .isEqualTo(TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_SUPER);
@@ -110,7 +110,7 @@ public class ClassReaderTest {
     cw.visitEnd();
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(bytes);
+    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
 
     assertThat(classFile.access())
         .isEqualTo(
@@ -157,7 +157,7 @@ public class ClassReaderTest {
     cw.visitEnd();
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(bytes);
+    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
 
     assertThat(classFile.fields()).hasSize(3);
 
@@ -193,7 +193,7 @@ public class ClassReaderTest {
     cw.visitInnerClass("test/Hello$Inner$InnerMost", "test/Hello$Inner", "InnerMost", 0);
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(bytes);
+    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
 
     assertThat(classFile.innerClasses()).hasSize(2);
 
@@ -217,7 +217,22 @@ public class ClassReaderTest {
     cw.visit(52, Opcodes.ACC_SUPER, jumbo, null, "java/lang/Object", null);
     byte[] bytes = cw.toByteArray();
 
-    ClassFile cf = ClassReader.read(bytes);
+    ClassFile cf = ClassReader.read(null, bytes);
     assertThat(cf.name()).isEqualTo(jumbo);
+  }
+
+  @Test
+  public void v53() {
+    ClassWriter cw = new ClassWriter(0);
+    cw.visitAnnotation("Ljava/lang/Deprecated;", true);
+    cw.visit(
+        53,
+        Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+        "Hello",
+        null,
+        "java/lang/Object",
+        null);
+    ClassFile cf = ClassReader.read(null, cw.toByteArray());
+    assertThat(cf.name()).isEqualTo("Hello");
   }
 }

@@ -84,7 +84,7 @@ public class ClassWriterTest {
     assertThat(task.call()).named(collector.getDiagnostics().toString()).isTrue();
 
     byte[] original = Files.readAllBytes(out.resolve("test/Test.class"));
-    byte[] actual = ClassWriter.writeClass(ClassReader.read(original));
+    byte[] actual = ClassWriter.writeClass(ClassReader.read(null, original));
 
     assertThat(AsmUtils.textify(original)).isEqualTo(AsmUtils.textify(actual));
   }

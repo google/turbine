@@ -129,7 +129,7 @@ public abstract class AbstractTransitiveTest {
             "META-INF/TRANSITIVE/a/A$Anno.class",
             "META-INF/TRANSITIVE/a/A$Inner.class");
 
-    ClassFile a = ClassReader.read(readJar(libb).get("META-INF/TRANSITIVE/a/A.class"));
+    ClassFile a = ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A.class"));
     // methods and non-constant fields are removed
     assertThat(getOnlyElement(a.fields()).name()).isEqualTo("CONST");
     assertThat(a.methods()).isEmpty();
@@ -137,7 +137,9 @@ public abstract class AbstractTransitiveTest {
         .containsExactly("a/A$Anno", "a/A$Inner");
 
     // annotation interface methods are preserved
-    assertThat(ClassReader.read(readJar(libb).get("META-INF/TRANSITIVE/a/A$Anno.class")).methods())
+    assertThat(
+            ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A$Anno.class"))
+                .methods())
         .hasSize(1);
 
     // A class that references members of the transitive supertype A by simple name
