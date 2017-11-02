@@ -52,6 +52,7 @@ public class Dependencies {
       Lowered lowered) {
     DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
     Set<ClassSymbol> closure = superTypeClosure(bound, lowered);
+    addPackageInfos(closure, bound);
     Set<String> jars = new LinkedHashSet<>();
     for (ClassSymbol sym : closure) {
       BytecodeBoundClass info = bound.classPathEnv().get(sym);
@@ -105,6 +106,22 @@ public class Dependencies {
     }
     for (ClassSymbol i : info.interfaces()) {
       addSuperTypes(closure, env, i);
+    }
+  }
+
+  private static void addPackageInfos(Set<ClassSymbol> closure, BindingResult bound) {
+    Set<ClassSymbol> packages = new LinkedHashSet<>();
+    for (ClassSymbol sym : closure) {
+      int idx = sym.binaryName().lastIndexOf('/');
+      if (idx == -1) {
+        continue;
+      }
+      packages.add(new ClassSymbol(sym.binaryName().substring(0, idx) + "/package-info"));
+    }
+    for (ClassSymbol pkg : packages) {
+      if (bound.classPathEnv().get(pkg) != null) {
+        closure.add(pkg);
+      }
     }
   }
 

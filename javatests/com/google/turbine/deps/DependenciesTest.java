@@ -296,6 +296,50 @@ public class DependenciesTest {
         .inOrder();
   }
 
+  @Test
+  public void packageInfo() throws Exception {
+    Path libpackageInfo =
+        new LibraryBuilder()
+            .addSourceLines(
+                "p/Anno.java",
+                "package p;",
+                "import java.lang.annotation.Retention;",
+                "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
+                "@Retention(RUNTIME)",
+                "@interface Anno {}")
+            .addSourceLines(
+                "p/package-info.java", //
+                "@Anno",
+                "package p;")
+            .compileToJar("libpackage-info.jar");
+    Path libp =
+        new LibraryBuilder()
+            .setClasspath(libpackageInfo)
+            .addSourceLines(
+                "p/P.java", //
+                "package p;",
+                "public class P {}")
+            .compileToJar("libp.jar");
+    {
+      DepsProto.Dependencies deps =
+          new DepsBuilder()
+              .setClasspath(libp, libpackageInfo)
+              .addSourceLines(
+                  "Test.java", //
+                  "import p.P;",
+                  "class Test {",
+                  "  P p;",
+                  "}")
+              .run();
+      assertThat(depsMap(deps))
+          .containsExactly(
+              libpackageInfo,
+              DepsProto.Dependency.Kind.EXPLICIT,
+              libp,
+              DepsProto.Dependency.Kind.EXPLICIT);
+    }
+  }
+
   void writeDeps(Path path, ImmutableMap<String, DepsProto.Dependency.Kind> deps)
       throws IOException {
     DepsProto.Dependencies.Builder builder =
