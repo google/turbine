@@ -127,7 +127,7 @@ public class ZipTest {
     Files.delete(path);
     try (FileSystem fs =
         FileSystems.newFileSystem(
-            URI.create("jar:file:" + path.toAbsolutePath()), ImmutableMap.of("create", "true"))) {
+            URI.create("jar:" + path.toUri()), ImmutableMap.of("create", "true"))) {
       for (int i = 0; i < 3; i++) {
         String name = "entry" + i;
         byte[] bytes = name.getBytes(UTF_8);

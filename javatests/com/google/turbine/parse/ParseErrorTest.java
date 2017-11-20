@@ -67,11 +67,10 @@ public class ParseErrorTest {
     } catch (TurbineError e) {
       assertThat(e.getMessage())
           .isEqualTo(
-              Joiner.on('\n')
-                  .join(
-                      "<>:1: error: unexpected token: void",
-                      "public static void main(String[] args) {}",
-                      "              ^"));
+              lines(
+                  "<>:1: error: unexpected token: void",
+                  "public static void main(String[] args) {}",
+                  "              ^"));
     }
   }
 
@@ -84,11 +83,10 @@ public class ParseErrorTest {
     } catch (TurbineError e) {
       assertThat(e.getMessage())
           .isEqualTo(
-              Joiner.on('\n')
-                  .join(
-                      "<>:1: error: unexpected identifier 'clas'", //
-                      "public clas Test {}",
-                      "       ^"));
+              lines(
+                  "<>:1: error: unexpected identifier 'clas'", //
+                  "public clas Test {}",
+                  "       ^"));
     }
   }
 
@@ -101,11 +99,14 @@ public class ParseErrorTest {
     } catch (TurbineError e) {
       assertThat(e.getMessage())
           .isEqualTo(
-              Joiner.on('\n')
-                  .join(
-                      "<>:2: error: unexpected end of input", //
-                      "",
-                      "^"));
+              lines(
+                  "<>:2: error: unexpected end of input", //
+                  "",
+                  "^"));
     }
+  }
+
+  private static String lines(String... lines) {
+    return Joiner.on(System.lineSeparator()).join(lines);
   }
 }

@@ -365,6 +365,6 @@ public class BinderErrorTest {
   }
 
   private static String lines(String... lines) {
-    return Joiner.on('\n').join(lines);
+    return Joiner.on(System.lineSeparator()).join(lines);
   }
 }
