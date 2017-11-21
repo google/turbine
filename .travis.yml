@@ -2,7 +2,8 @@ language: java
 
 jdk:
   - oraclejdk8
-  - oraclejdk9
+
+# TODO(cushon): enable oraclejdk9
 
 # use travis-ci docker based infrastructure
 sudo: false
