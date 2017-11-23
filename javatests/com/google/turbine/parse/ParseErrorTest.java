@@ -106,6 +106,22 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void annotationArgument() {
+    String input = "@A(x = System.err.println()) class Test {}\n";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              lines(
+                  "<>:1: error: invalid annotation argument", //
+                  "@A(x = System.err.println()) class Test {}",
+                  "                         ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

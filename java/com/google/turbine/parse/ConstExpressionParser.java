@@ -565,9 +565,10 @@ public class ConstExpressionParser {
     if (token == Token.LPAREN) {
       eat();
       while (token != Token.RPAREN) {
+        int pos = position;
         Tree.Expression expression = expression();
         if (expression == null) {
-          throw new AssertionError("invalid annotation expression");
+          throw TurbineError.format(lexer.source(), pos, ErrorKind.INVALID_ANNOTATION_ARGUMENT);
         }
         args.add(expression);
         if (token != Token.COMMA) {
