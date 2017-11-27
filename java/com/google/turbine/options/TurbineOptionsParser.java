@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,8 +70,15 @@ public class TurbineOptionsParser {
         argumentDeque.addLast(arg.substring(1));
       } else if (arg.startsWith("@")) {
         Path paramsPath = Paths.get(arg.substring(1));
-        expandParamsFiles(
-            argumentDeque, ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8)));
+        if (!Files.exists(paramsPath)) {
+          throw new AssertionError("params file does not exist: " + paramsPath);
+        }
+        Iterable<String> split =
+            ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8));
+        if (Iterables.isEmpty(split)) {
+          throw new AssertionError("empty params file: " + paramsPath);
+        }
+        expandParamsFiles(argumentDeque, split);
       } else {
         argumentDeque.addLast(arg);
       }

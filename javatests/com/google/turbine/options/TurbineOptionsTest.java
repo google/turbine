@@ -235,4 +235,40 @@ public class TurbineOptionsTest {
       assertThat(e).hasMessage("output must not be null");
     }
   }
+
+  @Test
+  public void paramsFileExists() throws Exception {
+    String[] lines = {
+      "@/NOSUCH", "--javacopts", "-source", "7",
+    };
+    AssertionError expected = null;
+    try {
+      TurbineOptionsParser.parse(Arrays.asList(lines));
+    } catch (AssertionError e) {
+      expected = e;
+    }
+    if (expected == null) {
+      fail();
+    }
+    assertThat(expected).hasMessageThat().contains("params file does not exist");
+  }
+
+  @Test
+  public void emptyParamsFiles() throws Exception {
+    Path params = tmpFolder.newFile("params.txt").toPath();
+    Files.write(params, new byte[0]);
+    String[] lines = {
+      "@" + params.toAbsolutePath(), "--javacopts", "-source", "7",
+    };
+    AssertionError expected = null;
+    try {
+      TurbineOptionsParser.parse(Arrays.asList(lines));
+    } catch (AssertionError e) {
+      expected = e;
+    }
+    if (expected == null) {
+      fail();
+    }
+    assertThat(expected).hasMessageThat().contains("empty params file");
+  }
 }
