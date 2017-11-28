@@ -103,13 +103,13 @@ public class TurbineOptionsParser {
           builder.addProcessors(readList(argumentDeque));
           break;
         case "--processorpath":
-          builder.addProcessorPathEntries(splitClasspath(readList(argumentDeque)));
+          builder.addProcessorPathEntries(readList(argumentDeque));
           break;
         case "--classpath":
-          builder.addClassPathEntries(splitClasspath(readList(argumentDeque)));
+          builder.addClassPathEntries(readList(argumentDeque));
           break;
         case "--bootclasspath":
-          builder.addBootClassPathEntries(splitClasspath(readList(argumentDeque)));
+          builder.addBootClassPathEntries(readList(argumentDeque));
           break;
         case "--javacopts":
           builder.addAllJavacOpts(readList(argumentDeque));
@@ -173,17 +173,5 @@ public class TurbineOptionsParser {
       result.add(argumentDeque.pollFirst());
     }
     return result.build();
-  }
-
-  private static final Splitter CLASSPATH_SPLITTER =
-      Splitter.on(':').trimResults().omitEmptyStrings();
-
-  // TODO(cushon): stop splitting classpaths once cl/127006119 is released
-  private static ImmutableList<String> splitClasspath(Iterable<String> paths) {
-    ImmutableList.Builder<String> classpath = ImmutableList.builder();
-    for (String path : paths) {
-      classpath.addAll(CLASSPATH_SPLITTER.split(path));
-    }
-    return classpath.build();
   }
 }

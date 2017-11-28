@@ -58,11 +58,14 @@ public class TurbineOptionsTest {
       "com.foo.MyProcessor",
       "com.foo.OtherProcessor",
       "--processorpath",
-      "libproc1.jar:libproc2.jar",
+      "libproc1.jar",
+      "libproc2.jar",
       "--classpath",
-      "lib1.jar:lib2.jar",
+      "lib1.jar",
+      "lib2.jar",
       "--bootclasspath",
-      "rt.jar:zipfs.jar",
+      "rt.jar",
+      "zipfs.jar",
       "--javacopts",
       "-source",
       "8",
@@ -139,9 +142,13 @@ public class TurbineOptionsTest {
   public void classpathArgs() throws Exception {
     String[] lines = {
       "--classpath",
-      "liba.jar:libb.jar:libc.jar",
+      "liba.jar",
+      "libb.jar",
+      "libc.jar",
       "--processorpath",
-      "libpa.jar:libpb.jar:libpc.jar",
+      "libpa.jar",
+      "libpb.jar",
+      "libpc.jar",
     };
 
     TurbineOptions options =
@@ -158,7 +165,8 @@ public class TurbineOptionsTest {
     String[] lines = {
       "--classpath",
       "liba.jar",
-      "libb.jar:libc.jar",
+      "libb.jar",
+      "libc.jar",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",
@@ -180,9 +188,13 @@ public class TurbineOptionsTest {
       "--output",
       "out.jar",
       "--classpath",
-      "liba.jar:libb.jar:libc.jar",
+      "liba.jar",
+      "libb.jar",
+      "libc.jar",
       "--processorpath",
-      "libpa.jar:libpb.jar:libpc.jar",
+      "libpa.jar",
+      "libpb.jar",
+      "libpc.jar",
     };
 
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(lines));
