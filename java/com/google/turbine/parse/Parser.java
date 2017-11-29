@@ -183,6 +183,7 @@ public class Parser {
 
   private TyDecl interfaceDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
     eat(Token.INTERFACE);
+    int pos = position;
     String name = eatIdent();
     ImmutableList<TyParam> typarams;
     if (token == Token.LT) {
@@ -201,7 +202,7 @@ public class Parser {
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(
-        position,
+        pos,
         access,
         annos,
         name,
@@ -214,12 +215,13 @@ public class Parser {
 
   private TyDecl annotationDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
     eat(Token.INTERFACE);
+    int pos = position;
     String name = eatIdent();
     eat(Token.LBRACE);
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(
-        position,
+        pos,
         access,
         annos,
         name,
@@ -232,6 +234,7 @@ public class Parser {
 
   private TyDecl enumDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
     eat(Token.ENUM);
+    int pos = position;
     String name = eatIdent();
     ImmutableList.Builder<ClassTy> interfaces = ImmutableList.builder();
     if (token == Token.IMPLEMENTS) {
@@ -245,7 +248,7 @@ public class Parser {
         ImmutableList.<Tree>builder().addAll(enumMembers(name)).addAll(classMembers()).build();
     eat(Token.RBRACE);
     return new TyDecl(
-        position,
+        pos,
         access,
         annos,
         name,
@@ -316,6 +319,7 @@ public class Parser {
 
   private TyDecl classDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
     eat(Token.CLASS);
+    int pos = position;
     String name = eatIdent();
     ImmutableList<TyParam> tyParams = ImmutableList.of();
     if (token == Token.LT) {
@@ -337,7 +341,7 @@ public class Parser {
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(
-        position,
+        pos,
         access,
         annos,
         name,

@@ -337,6 +337,32 @@ public class BinderErrorTest {
           "                      ^",
         },
       },
+      {
+        {
+          "class Test {", //
+          "}",
+          "class Test {",
+          "}",
+        },
+        {
+          "<>:3: error: duplicate declaration of Test", //
+          "class Test {",
+          "      ^",
+        },
+      },
+      {
+        {
+          "public class Test {", //
+          "  static class Inner {}",
+          "  static class Inner {}",
+          "}",
+        },
+        {
+          "<>:3: error: duplicate declaration of Test$Inner", //
+          "  static class Inner {}",
+          "               ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

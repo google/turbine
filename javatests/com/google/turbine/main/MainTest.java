@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -69,8 +70,8 @@ public class MainTest {
               .setOutput(output.toString())
               .build());
       fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).contains("Multiple entries with same key: Test");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage()).contains("error: duplicate declaration of Test");
     }
   }
 

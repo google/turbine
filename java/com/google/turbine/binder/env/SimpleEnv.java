@@ -18,6 +18,8 @@ package com.google.turbine.binder.env;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.Symbol;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /** A simple {@link ImmutableMap}-backed {@link Env}. */
 public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
@@ -38,14 +40,14 @@ public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
 
   /** A builder for {@link SimpleEnv}static. */
   public static class Builder<K extends Symbol, V> {
-    private final ImmutableMap.Builder<K, V> map = ImmutableMap.builder();
+    private final Map<K, V> map = new LinkedHashMap<>();
 
-    public void put(K sym, V v) {
-      map.put(sym, v);
+    public V put(K sym, V v) {
+      return map.put(sym, v);
     }
 
     public SimpleEnv<K, V> build() {
-      return new SimpleEnv<>(map.build());
+      return new SimpleEnv<>(ImmutableMap.copyOf(map));
     }
   }
 

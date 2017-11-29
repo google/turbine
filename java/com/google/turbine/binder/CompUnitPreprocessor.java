@@ -25,6 +25,8 @@ import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
@@ -33,7 +35,9 @@ import com.google.turbine.tree.Tree.ImportDecl;
 import com.google.turbine.tree.Tree.PkgDecl;
 import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.TurbineModifier;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Processes compilation units before binding, creating symbols for type declarations and desugaring
@@ -104,28 +108,34 @@ public class CompUnitPreprocessor {
           new ClassSymbol((!packageName.isEmpty() ? packageName + "/" : "") + decl.name());
       int access = access(decl.mods(), decl.tykind());
       ImmutableMap<String, ClassSymbol> children =
-          preprocessChildren(types, sym, decl.members(), access);
+          preprocessChildren(unit.source(), types, sym, decl.members(), access);
       types.add(new SourceBoundClass(sym, null, children, access, decl));
     }
     return new PreprocessedCompUnit(unit.imports(), types.build(), unit.source(), packageName);
   }
 
   private static ImmutableMap<String, ClassSymbol> preprocessChildren(
+      SourceFile source,
       ImmutableList.Builder<SourceBoundClass> types,
       ClassSymbol owner,
       ImmutableList<Tree> members,
       int enclosing) {
     ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
+    Set<String> seen = new HashSet<>();
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.TY_DECL) {
         Tree.TyDecl decl = (Tree.TyDecl) member;
         ClassSymbol sym = new ClassSymbol(owner.binaryName() + '$' + decl.name());
+        if (!seen.add(decl.name())) {
+          throw TurbineError.format(
+              source, member.position(), ErrorKind.DUPLICATE_DECLARATION, sym);
+        }
         result.put(decl.name(), sym);
 
         int access = innerClassAccess(enclosing, decl);
 
         ImmutableMap<String, ClassSymbol> children =
-            preprocessChildren(types, sym, decl.members(), access);
+            preprocessChildren(source, types, sym, decl.members(), access);
         types.add(new SourceBoundClass(sym, owner, children, access, decl));
       }
     }

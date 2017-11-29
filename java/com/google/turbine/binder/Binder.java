@@ -48,6 +48,8 @@ import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
@@ -117,7 +119,11 @@ public class Binder {
     SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envBuilder = SimpleEnv.builder();
     for (PreprocessedCompUnit unit : units) {
       for (SourceBoundClass type : unit.types()) {
-        envBuilder.put(type.sym(), type);
+        SourceBoundClass prev = envBuilder.put(type.sym(), type);
+        if (prev != null) {
+          throw TurbineError.format(
+              unit.source(), type.decl().position(), ErrorKind.DUPLICATE_DECLARATION, type.sym());
+        }
         tliBuilder.insert(type.sym());
       }
     }
