@@ -51,7 +51,7 @@ public class SigIntegrationTest {
         }
         new ClassReader(jarFile.getInputStream(entry))
             .accept(
-                new ClassVisitor(Opcodes.ASM5) {
+                new ClassVisitor(Opcodes.ASM6) {
                   @Override
                   public void visit(
                       int version,
