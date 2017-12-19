@@ -113,6 +113,12 @@ public class TurbineOptionsParser {
           break;
         case "--javacopts":
           builder.addAllJavacOpts(readList(argumentDeque));
+          if (!argumentDeque.isEmpty() && argumentDeque.peekFirst().equals("--")) {
+            // Support --javacopts terminated with "--", in preparation for requiring javacopts
+            // to be terminated with "--", in preparation for supporting --javacopts that start
+            // with "--".
+            argumentDeque.removeFirst();
+          }
           break;
         case "--sources":
           builder.addSources(readList(argumentDeque));
