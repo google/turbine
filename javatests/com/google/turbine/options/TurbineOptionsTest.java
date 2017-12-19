@@ -105,8 +105,6 @@ public class TurbineOptionsTest {
   @Test
   public void strictJavaDepsArgs() throws Exception {
     String[] lines = {
-      "--strict_java_deps",
-      "OFF",
       "--direct_dependency",
       "blaze-out/foo/libbar.jar",
       "//foo/bar",
@@ -282,5 +280,15 @@ public class TurbineOptionsTest {
       fail();
     }
     assertThat(expected).hasMessageThat().contains("empty params file");
+  }
+
+  @Test
+  public void unknownOption() throws Exception {
+    try {
+      TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList("--nosuch")));
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessageThat().contains("unknown option");
+    }
   }
 }

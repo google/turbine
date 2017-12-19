@@ -150,9 +150,7 @@ public class TurbineOptionsParser {
           builder.setJavacFallback(false);
           break;
         default:
-          if (next.isEmpty() && !argumentDeque.isEmpty()) {
-            throw new IllegalArgumentException("unknown option: " + next);
-          }
+          throw new IllegalArgumentException("unknown option: " + next);
       }
     }
   }
