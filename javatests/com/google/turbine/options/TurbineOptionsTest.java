@@ -114,6 +114,10 @@ public class TurbineOptionsTest {
       "--indirect_dependency",
       "blaze-out/foo/libbaz2.jar",
       "//foo/baz2",
+      "--indirect_dependency",
+      "blaze-out/proto/libproto.jar",
+      "//proto",
+      "java_proto_library",
       "--deps_artifacts",
       "foo.jdeps",
       "bar.jdeps",
@@ -124,15 +128,14 @@ public class TurbineOptionsTest {
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
-    // TODO(cushon): containsExactlyEntriesIn once it makes a truth release
     assertThat(options.directJarsToTargets())
-        .isEqualTo(ImmutableMap.of("blaze-out/foo/libbar.jar", "//foo/bar"));
-    // TODO(cushon): containsExactlyEntriesIn once it makes a truth release
+        .containsExactlyEntriesIn(ImmutableMap.of("blaze-out/foo/libbar.jar", "//foo/bar"));
     assertThat(options.indirectJarsToTargets())
-        .isEqualTo(
+        .containsExactlyEntriesIn(
             ImmutableMap.of(
                 "blaze-out/foo/libbaz1.jar", "//foo/baz1",
-                "blaze-out/foo/libbaz2.jar", "//foo/baz2"));
+                "blaze-out/foo/libbaz2.jar", "//foo/baz2",
+                "blaze-out/proto/libproto.jar", "//proto"));
     assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
   }
 

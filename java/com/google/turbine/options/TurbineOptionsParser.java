@@ -131,6 +131,9 @@ public class TurbineOptionsParser {
             String jar = readOne(argumentDeque);
             String target = readOne(argumentDeque);
             builder.addDirectJarToTarget(jar, target);
+            if (!argumentDeque.isEmpty() && !argumentDeque.peekFirst().startsWith("--")) {
+              argumentDeque.removeFirst(); // the aspect that created the dependency
+            }
             break;
           }
         case "--indirect_dependency":
@@ -138,6 +141,9 @@ public class TurbineOptionsParser {
             String jar = readOne(argumentDeque);
             String target = readOne(argumentDeque);
             builder.addIndirectJarToTarget(jar, target);
+            if (!argumentDeque.isEmpty() && !argumentDeque.peekFirst().startsWith("--")) {
+              argumentDeque.removeFirst(); // the aspect that created the dependency
+            }
             break;
           }
         case "--deps_artifacts":
