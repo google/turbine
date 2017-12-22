@@ -299,6 +299,7 @@ public class LowerIntegrationTest {
       "type_anno_cstyle_array_dims.test",
       "packagedecl.test",
       "static_member_type_import_recursive.test",
+      "B70953542.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

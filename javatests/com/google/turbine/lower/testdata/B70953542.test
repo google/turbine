@@ -1,0 +1,7 @@
+=== Test.java ===
+class Test<T> {
+  class B<U> extends Test<U> {}
+  class A<V> extends B<V> {
+    B<V> b;
+  }
+}

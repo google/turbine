@@ -195,7 +195,8 @@ public class Canonicalize {
         }
         break;
       }
-      curr = canon(env, curr.sym(), env.get(curr.sym()).superClassType());
+      TypeBoundClass info = env.get(curr.sym());
+      curr = canon(env, info.owner(), info.superClassType());
     }
     simples.add(ty);
     return new ClassTy(simples.build());
