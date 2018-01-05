@@ -79,7 +79,7 @@ public class WildImportIndex implements ImportScope {
         }
       };
     }
-    LookupResult result = cpi.lookup(new LookupKey(i.type()));
+    LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
       return null;
     }
@@ -104,7 +104,7 @@ public class WildImportIndex implements ImportScope {
       TopLevelIndex cpi,
       ImportDecl i,
       final CanonicalSymbolResolver importResolver) {
-    LookupResult result = cpi.lookup(new LookupKey(i.type()));
+    LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
       return null;
     }

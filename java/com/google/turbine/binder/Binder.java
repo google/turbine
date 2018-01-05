@@ -40,10 +40,12 @@ import com.google.turbine.binder.env.LazyEnv;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
 import com.google.turbine.binder.lookup.CompoundScope;
+import com.google.turbine.binder.lookup.CompoundTopLevelIndex;
 import com.google.turbine.binder.lookup.ImportIndex;
 import com.google.turbine.binder.lookup.ImportScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.lookup.Scope;
+import com.google.turbine.binder.lookup.SimpleTopLevelIndex;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -70,22 +72,19 @@ public class Binder {
 
     ImmutableList<PreprocessedCompUnit> preProcessedUnits = CompUnitPreprocessor.preprocess(units);
 
-    TopLevelIndex.Builder tliBuilder = TopLevelIndex.builder();
-
-    SimpleEnv<ClassSymbol, SourceBoundClass> ienv =
-        bindSourceBoundClasses(preProcessedUnits, tliBuilder);
+    SimpleEnv<ClassSymbol, SourceBoundClass> ienv = bindSourceBoundClasses(preProcessedUnits);
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
+    ClassPath cp = ClassPathBinder.bindClasspath(classpath);
+    ClassPath bcp = ClassPathBinder.bindClasspath(bootclasspath);
+
+    CompoundTopLevelIndex tli =
+        CompoundTopLevelIndex.of(
+            SimpleTopLevelIndex.of(ienv.asMap().keySet()), bcp.index(), cp.index());
+
     CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv =
-        ClassPathBinder.bind(classpath, bootclasspath, tliBuilder);
-
-    // Insertion order into the top-level index is important:
-    // * the first insert into the TLI wins
-    // * we search sources, bootclasspath, and classpath in that order
-    // * the first entry within a location wins.
-
-    TopLevelIndex tli = tliBuilder.build();
+        CompoundEnv.of(cp.env()).append(bcp.env());
 
     SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv =
         bindPackages(ienv, tli, preProcessedUnits, classPathEnv);
@@ -115,7 +114,7 @@ public class Binder {
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
   static SimpleEnv<ClassSymbol, SourceBoundClass> bindSourceBoundClasses(
-      ImmutableList<PreprocessedCompUnit> units, TopLevelIndex.Builder tliBuilder) {
+      ImmutableList<PreprocessedCompUnit> units) {
     SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envBuilder = SimpleEnv.builder();
     for (PreprocessedCompUnit unit : units) {
       for (SourceBoundClass type : unit.types()) {
@@ -124,7 +123,6 @@ public class Binder {
           throw TurbineError.format(
               unit.source(), type.decl().position(), ErrorKind.DUPLICATE_DECLARATION, type.sym());
         }
-        tliBuilder.insert(type.sym());
       }
     }
     return envBuilder.build();
@@ -139,7 +137,7 @@ public class Binder {
 
     SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
     Scope javaLang = verifyNotNull(tli.lookupPackage(ImmutableList.of("java", "lang")));
-    CompoundScope topLevel = CompoundScope.base(tli).append(javaLang);
+    CompoundScope topLevel = CompoundScope.base(tli.scope()).append(javaLang);
     for (PreprocessedCompUnit unit : units) {
       ImmutableList<String> packagename =
           ImmutableList.copyOf(Splitter.on('/').omitEmptyStrings().split(unit.packageName()));

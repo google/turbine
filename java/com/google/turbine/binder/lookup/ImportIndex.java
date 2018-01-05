@@ -100,7 +100,7 @@ public class ImportIndex implements ImportScope {
   /** Fully resolve the canonical name of a non-static named import. */
   private static ImportScope namedImport(
       SourceFile source, TopLevelIndex cpi, ImportDecl i, CanonicalSymbolResolver resolve) {
-    LookupResult result = cpi.lookup(new LookupKey(i.type()));
+    LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
       throw TurbineError.format(
           source, i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(i.type()));
@@ -122,7 +122,7 @@ public class ImportIndex implements ImportScope {
    * defer the rest.
    */
   private static ImportScope staticNamedImport(SourceFile source, TopLevelIndex cpi, ImportDecl i) {
-    LookupResult base = cpi.lookup(new LookupKey(i.type()));
+    LookupResult base = cpi.scope().lookup(new LookupKey(i.type()));
     if (base == null) {
       return null;
     }

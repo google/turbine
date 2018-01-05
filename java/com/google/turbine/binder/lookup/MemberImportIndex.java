@@ -52,7 +52,7 @@ public class MemberImportIndex {
                 new Supplier<ClassSymbol>() {
                   @Override
                   public ClassSymbol get() {
-                    LookupResult result = tli.lookup(new LookupKey(i.type()));
+                    LookupResult result = tli.scope().lookup(new LookupKey(i.type()));
                     return result != null ? resolve.resolve(source, i.position(), result) : null;
                   }
                 }));
@@ -63,13 +63,13 @@ public class MemberImportIndex {
                 new Supplier<ClassSymbol>() {
                   @Override
                   public ClassSymbol get() {
-                    LookupResult result1 = tli.lookup(new LookupKey(i.type()));
-                    if (result1 == null) {
+                    LookupResult result = tli.scope().lookup(new LookupKey(i.type()));
+                    if (result == null) {
                       return null;
                     }
-                    ClassSymbol sym = (ClassSymbol) result1.sym();
-                    for (int i = 0; i < result1.remaining().size() - 1; i++) {
-                      sym = resolve.resolveOne(sym, result1.remaining().get(i));
+                    ClassSymbol sym = (ClassSymbol) result.sym();
+                    for (int i = 0; i < result.remaining().size() - 1; i++) {
+                      sym = resolve.resolveOne(sym, result.remaining().get(i));
                     }
                     return sym;
                   }

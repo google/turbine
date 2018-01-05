@@ -21,9 +21,9 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
-import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
+import com.google.turbine.binder.lookup.SimpleTopLevelIndex;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.zip.Zip;
@@ -43,22 +43,10 @@ public class ClassPathBinder {
    */
   public static final String TRANSITIVE_PREFIX = "META-INF/TRANSITIVE/";
 
-  /**
-   * Creates an environment containing symbols in the given classpath and bootclasspath, and adds
-   * them to the top-level index.
-   */
-  public static CompoundEnv<ClassSymbol, BytecodeBoundClass> bind(
-      Collection<Path> classpath, Collection<Path> bootclasspath, TopLevelIndex.Builder tli)
-      throws IOException {
+  /** Creates an environment containing symbols in the given classpath. */
+  public static ClassPath bindClasspath(Collection<Path> paths) throws IOException {
     // TODO(cushon): this is going to require an env eventually,
     // e.g. to look up type parameters in enclosing declarations
-    Env<ClassSymbol, BytecodeBoundClass> cp = bindClasspath(tli, classpath);
-    Env<ClassSymbol, BytecodeBoundClass> bcp = bindClasspath(tli, bootclasspath);
-    return CompoundEnv.of(cp).append(bcp);
-  }
-
-  private static Env<ClassSymbol, BytecodeBoundClass> bindClasspath(
-      TopLevelIndex.Builder tli, Collection<Path> paths) throws IOException {
     Map<ClassSymbol, BytecodeBoundClass> transitive = new LinkedHashMap<>();
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
     Env<ClassSymbol, BytecodeBoundClass> benv =
@@ -70,7 +58,7 @@ public class ClassPathBinder {
         };
     for (Path path : paths) {
       try {
-        bindJar(tli, path, map, benv, transitive);
+        bindJar(path, map, benv, transitive);
       } catch (IOException e) {
         throw new IOException("error reading " + path, e);
       }
@@ -79,14 +67,24 @@ public class ClassPathBinder {
       ClassSymbol symbol = entry.getKey();
       if (!map.containsKey(symbol)) {
         map.put(symbol, entry.getValue());
-        tli.insert(symbol);
       }
     }
-    return new SimpleEnv<>(ImmutableMap.copyOf(map));
+    SimpleEnv<ClassSymbol, BytecodeBoundClass> env = new SimpleEnv<>(ImmutableMap.copyOf(map));
+    TopLevelIndex index = SimpleTopLevelIndex.of(env.asMap().keySet());
+    return new ClassPath() {
+      @Override
+      public Env<ClassSymbol, BytecodeBoundClass> env() {
+        return env;
+      }
+
+      @Override
+      public TopLevelIndex index() {
+        return index;
+      }
+    };
   }
 
   private static void bindJar(
-      TopLevelIndex.Builder tli,
       Path path,
       Map<ClassSymbol, BytecodeBoundClass> env,
       Env<ClassSymbol, BytecodeBoundClass> benv,
@@ -115,7 +113,6 @@ public class ClassPathBinder {
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
       if (!env.containsKey(sym)) {
         env.put(sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString()));
-        tli.insert(sym);
       }
     }
   }

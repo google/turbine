@@ -102,7 +102,7 @@ public class Lower {
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
-      CompoundEnv<ClassSymbol, BytecodeBoundClass> classpath) {
+      Env<ClassSymbol, BytecodeBoundClass> classpath) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();

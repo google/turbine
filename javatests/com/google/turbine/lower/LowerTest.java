@@ -25,12 +25,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bytecode.BytecodeBoundClass;
-import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.SimpleEnv;
-import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
@@ -77,8 +75,7 @@ public class LowerTest {
 
   @Test
   public void hello() throws Exception {
-    CompoundEnv<ClassSymbol, BytecodeBoundClass> classpath =
-        ClassPathBinder.bind(ImmutableList.of(), BOOTCLASSPATH, TopLevelIndex.builder());
+    ClassPath classpath = ClassPathBinder.bindClasspath(BOOTCLASSPATH);
 
     ImmutableList<Type.ClassTy> interfaceTypes =
         ImmutableList.of(
@@ -219,7 +216,7 @@ public class LowerTest {
         Lower.lowerAll(
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
-                classpath)
+                classpath.env())
             .bytes();
 
     assertThat(AsmUtils.textify(bytes.get("test/Test")))

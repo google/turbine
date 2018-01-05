@@ -32,16 +32,17 @@ public class TopLevelIndexTest {
   private static final TopLevelIndex index = buildIndex();
 
   private static TopLevelIndex buildIndex() {
-    TopLevelIndex.Builder builder = TopLevelIndex.builder();
-    builder.insert(new ClassSymbol("java/util/Map"));
-    builder.insert(new ClassSymbol("java/util/List"));
-    builder.insert(new ClassSymbol("com/google/common/base/Optional"));
-    return builder.build();
+    return SimpleTopLevelIndex.of(
+        ImmutableList.of(
+            new ClassSymbol("java/util/Map"),
+            new ClassSymbol("java/util/List"),
+            new ClassSymbol("com/google/common/base/Optional")));
   }
 
   @Test
   public void simple() {
-    LookupResult result = index.lookup(new LookupKey(ImmutableList.of("java", "util", "Map")));
+    LookupResult result =
+        index.scope().lookup(new LookupKey(ImmutableList.of("java", "util", "Map")));
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
     assertThat(result.remaining()).isEmpty();
   }
@@ -49,14 +50,15 @@ public class TopLevelIndexTest {
   @Test
   public void nested() {
     LookupResult result =
-        index.lookup(new LookupKey(ImmutableList.of("java", "util", "Map", "Entry")));
+        index.scope().lookup(new LookupKey(ImmutableList.of("java", "util", "Map", "Entry")));
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
     assertThat(result.remaining()).containsExactly("Entry");
   }
 
   @Test
   public void empty() {
-    assertThat(index.lookup(new LookupKey(ImmutableList.of("java", "NoSuch", "Entry")))).isNull();
+    assertThat(index.scope().lookup(new LookupKey(ImmutableList.of("java", "NoSuch", "Entry"))))
+        .isNull();
     assertThat(index.lookupPackage(ImmutableList.of("java", "math"))).isNull();
     assertThat(index.lookupPackage(ImmutableList.of("java", "util", "Map"))).isNull();
   }
@@ -76,23 +78,21 @@ public class TopLevelIndexTest {
   public void overrideClass() {
     {
       // the use of Foo as a class name in the package java is "sticky"
-      TopLevelIndex.Builder builder = TopLevelIndex.builder();
-      builder.insert(new ClassSymbol("java/Foo"));
-      assertThat(builder.insert(new ClassSymbol("java/Foo/Bar"))).isFalse();
-      TopLevelIndex index = builder.build();
+      TopLevelIndex index =
+          SimpleTopLevelIndex.of(
+              ImmutableList.of(new ClassSymbol("java/Foo"), new ClassSymbol("java/Foo/Bar")));
 
-      LookupResult result = index.lookup(new LookupKey(ImmutableList.of("java", "Foo")));
+      LookupResult result = index.scope().lookup(new LookupKey(ImmutableList.of("java", "Foo")));
       assertThat(result.sym()).isEqualTo(new ClassSymbol("java/Foo"));
       assertThat(result.remaining()).isEmpty();
     }
     {
       // the use of Foo as a package name under java is "sticky"
-      TopLevelIndex.Builder builder = TopLevelIndex.builder();
-      builder.insert(new ClassSymbol("java/Foo/Bar"));
-      assertThat(builder.insert(new ClassSymbol("java/Foo"))).isFalse();
-      TopLevelIndex index = builder.build();
+      TopLevelIndex index =
+          SimpleTopLevelIndex.of(
+              ImmutableList.of(new ClassSymbol("java/Foo/Bar"), new ClassSymbol("java/Foo")));
 
-      assertThat(index.lookup(new LookupKey(ImmutableList.of("java", "Foo")))).isNull();
+      assertThat(index.scope().lookup(new LookupKey(ImmutableList.of("java", "Foo")))).isNull();
       LookupResult packageResult =
           index
               .lookupPackage(ImmutableList.of("java", "Foo"))
