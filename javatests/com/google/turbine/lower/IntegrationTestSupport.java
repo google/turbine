@@ -17,6 +17,7 @@
 package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
@@ -27,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.bytecode.AsmUtils;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.parse.Parser;
@@ -424,8 +426,7 @@ public class IntegrationTestSupport {
             });
   }
 
-  static Map<String, byte[]> runTurbine(
-      Map<String, String> input, ImmutableList<Path> classpath, Collection<Path> bootclasspath)
+  static Map<String, byte[]> runTurbine(Map<String, String> input, ImmutableList<Path> classpath)
       throws IOException {
     List<Tree.CompUnit> units =
         input
@@ -435,15 +436,13 @@ public class IntegrationTestSupport {
             .map(Parser::parse)
             .collect(toList());
 
-    Binder.BindingResult bound = Binder.bind(units, classpath, bootclasspath);
+    Binder.BindingResult bound =
+        Binder.bind(units, ClassPathBinder.bindClasspath(classpath), TURBINE_BOOTCLASSPATH);
     return Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
   }
 
   public static Map<String, byte[]> runJavac(
-      Map<String, String> sources,
-      Collection<Path> classpath,
-      Collection<? extends Path> bootclasspath)
-      throws Exception {
+      Map<String, String> sources, Collection<Path> classpath) throws Exception {
 
     FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
 
@@ -465,7 +464,6 @@ public class IntegrationTestSupport {
     JavacTool compiler = JavacTool.create();
     DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
     JavacFileManager fileManager = new JavacFileManager(new Context(), true, UTF_8);
-    fileManager.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, bootclasspath);
     fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
     fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
 
@@ -474,7 +472,7 @@ public class IntegrationTestSupport {
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             fileManager,
             collector,
-            ImmutableList.of("-parameters"),
+            ImmutableList.of("-parameters", "-source", "8", "-target", "8"),
             ImmutableList.of(),
             fileManager.getJavaFileObjectsFromPaths(inputs));
 

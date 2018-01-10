@@ -57,9 +57,6 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.type.Type;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 
 /** The entry point for analysis. */
@@ -67,8 +64,7 @@ public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static BindingResult bind(
-      List<CompUnit> units, Collection<Path> classpath, Collection<Path> bootclasspath)
-      throws IOException {
+      List<CompUnit> units, ClassPath classpath, ClassPath bootclasspath) {
 
     ImmutableList<PreprocessedCompUnit> preProcessedUnits = CompUnitPreprocessor.preprocess(units);
 
@@ -76,15 +72,14 @@ public class Binder {
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
-    ClassPath cp = ClassPathBinder.bindClasspath(classpath);
-    ClassPath bcp = ClassPathBinder.bindClasspath(bootclasspath);
-
     CompoundTopLevelIndex tli =
         CompoundTopLevelIndex.of(
-            SimpleTopLevelIndex.of(ienv.asMap().keySet()), bcp.index(), cp.index());
+            SimpleTopLevelIndex.of(ienv.asMap().keySet()),
+            bootclasspath.index(),
+            classpath.index());
 
     CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv =
-        CompoundEnv.of(cp.env()).append(bcp.env());
+        CompoundEnv.of(classpath.env()).append(bootclasspath.env());
 
     SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv =
         bindPackages(ienv, tli, preProcessedUnits, classPathEnv);

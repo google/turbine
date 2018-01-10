@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -24,8 +25,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree.CompUnit;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
@@ -35,9 +34,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class BinderErrorTest {
-
-  private static final ImmutableList<Path> BOOTCLASSPATH =
-      ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
 
   @Parameters
   public static Iterable<Object[]> parameters() {
@@ -378,7 +374,10 @@ public class BinderErrorTest {
   @Test
   public void test() throws Exception {
     try {
-      Binder.bind(ImmutableList.of(parseLines(source)), Collections.emptyList(), BOOTCLASSPATH)
+      Binder.bind(
+              ImmutableList.of(parseLines(source)),
+              ClassPathBinder.bindClasspath(Collections.emptyList()),
+              TURBINE_BOOTCLASSPATH)
           .units();
       fail();
     } catch (TurbineError e) {

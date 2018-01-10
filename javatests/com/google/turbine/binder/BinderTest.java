@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -33,7 +34,6 @@ import java.io.OutputStream;
 import java.lang.annotation.ElementType;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,9 +50,6 @@ import org.junit.runners.JUnit4;
 public class BinderTest {
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-  private static final ImmutableList<Path> BOOTCLASSPATH =
-      ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
 
   @Test
   public void hello() throws Exception {
@@ -74,7 +71,11 @@ public class BinderTest {
             "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                TURBINE_BOOTCLASSPATH)
+            .units();
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -115,7 +116,11 @@ public class BinderTest {
             "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                TURBINE_BOOTCLASSPATH)
+            .units();
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -150,7 +155,11 @@ public class BinderTest {
             "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                TURBINE_BOOTCLASSPATH)
+            .units();
 
     assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
         .isEqualTo(new ClassSymbol("com/test/Test$Inner"));
@@ -175,7 +184,8 @@ public class BinderTest {
             "}"));
 
     try {
-      Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH);
+      Binder.bind(
+          units, ClassPathBinder.bindClasspath(Collections.emptyList()), TURBINE_BOOTCLASSPATH);
       fail();
     } catch (TurbineError e) {
       assertThat(e.getMessage()).contains("cycle in class hierarchy: a/A -> b/B -> a/A");
@@ -192,7 +202,11 @@ public class BinderTest {
             "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                TURBINE_BOOTCLASSPATH)
+            .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("com/test/Annotation"));
     assertThat(a.access())
@@ -216,7 +230,11 @@ public class BinderTest {
             "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, Collections.emptyList(), BOOTCLASSPATH).units();
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                TURBINE_BOOTCLASSPATH)
+            .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
     assertThat(a.interfaces()).containsExactly(new ClassSymbol("java/util/Map$Entry"));
@@ -230,8 +248,7 @@ public class BinderTest {
             ImmutableMap.of(
                 "A.java", "class A {}",
                 "B.java", "class B extends A {}"),
-            ImmutableList.of(),
-            BOOTCLASSPATH);
+            ImmutableList.of());
 
     // create a jar containing only B
     Path libJar = temporaryFolder.newFile("lib.jar").toPath();
@@ -252,7 +269,11 @@ public class BinderTest {
             "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(units, ImmutableList.of(libJar), BOOTCLASSPATH).units();
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+                TURBINE_BOOTCLASSPATH)
+            .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("C$A"));
     assertThat(a.annotationMetadata().target()).containsExactly(ElementType.TYPE_USE);

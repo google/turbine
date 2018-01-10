@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.deps.Dependencies;
 import com.google.turbine.deps.Transitive;
@@ -68,21 +69,23 @@ public class Main {
 
     ImmutableList<CompUnit> units = parseAll(options);
 
+    ClassPath bootclasspath = ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+
     Collection<String> reducedClasspath =
         Dependencies.reduceClasspath(
             options.classPath(), options.directJarsToTargets(), options.depsArtifacts());
+    ClassPath classpath = ClassPathBinder.bindClasspath(toPaths(reducedClasspath));
 
-    BindingResult bound =
-        Binder.bind(units, toPaths(reducedClasspath), toPaths(options.bootClassPath()));
+    BindingResult bound = Binder.bind(units, classpath, bootclasspath);
 
     // TODO(cushon): parallelize
     Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
 
-    Map<String, byte[]> transitive = Transitive.collectDeps(options.bootClassPath(), bound);
+    Map<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
 
     if (options.outputDeps().isPresent()) {
       DepsProto.Dependencies deps =
-          Dependencies.collectDeps(options.targetLabel(), options.bootClassPath(), bound, lowered);
+          Dependencies.collectDeps(options.targetLabel(), bootclasspath, bound, lowered);
       try (OutputStream os =
           new BufferedOutputStream(Files.newOutputStream(Paths.get(options.outputDeps().get())))) {
         deps.writeTo(os);

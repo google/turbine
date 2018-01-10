@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
@@ -36,7 +37,6 @@ import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,14 +49,10 @@ public class ClassPathBinderTest {
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  private static final ImmutableList<Path> BOOTCLASSPATH =
-      ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
-
   @Test
   public void classPathLookup() throws IOException {
-    ClassPath classPath = ClassPathBinder.bindClasspath(BOOTCLASSPATH);
 
-    Scope javaLang = classPath.index().lookupPackage(ImmutableList.of("java", "lang"));
+    Scope javaLang = TURBINE_BOOTCLASSPATH.index().lookupPackage(ImmutableList.of("java", "lang"));
 
     LookupResult result = javaLang.lookup(new LookupKey(Arrays.asList("String")));
     assertThat(result.remaining()).isEmpty();
@@ -69,8 +65,7 @@ public class ClassPathBinderTest {
 
   @Test
   public void classPathClasses() throws IOException {
-    ClassPath classPath = ClassPathBinder.bindClasspath(BOOTCLASSPATH);
-    Env<ClassSymbol, BytecodeBoundClass> env = classPath.env();
+    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
 
     HeaderBoundClass c = env.get(new ClassSymbol("java/util/Map$Entry"));
     assertThat(c.owner()).isEqualTo(new ClassSymbol("java/util/Map"));

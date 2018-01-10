@@ -77,8 +77,8 @@ public class ClassWriterTest {
                     new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
                 fileManager,
                 collector,
-                ImmutableList.of(),
-                ImmutableList.of(),
+                ImmutableList.of("-source", "8", "-target", "8"),
+                /* classes= */ null,
                 fileManager.getJavaFileObjects(path));
 
     assertThat(task.call()).named(collector.getDiagnostics().toString()).isTrue();

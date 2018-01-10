@@ -22,16 +22,16 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
+import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -56,9 +56,6 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class DependenciesTest {
 
-  static final ImmutableSet<Path> BOOTCLASSPATH =
-      ImmutableSet.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
-
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   class LibraryBuilder {
@@ -77,8 +74,7 @@ public class DependenciesTest {
 
     Path compileToJar(String path) throws Exception {
       Path lib = temporaryFolder.newFile(path).toPath();
-      Map<String, byte[]> classes =
-          IntegrationTestSupport.runJavac(sources, classpath, BOOTCLASSPATH);
+      Map<String, byte[]> classes = IntegrationTestSupport.runJavac(sources, classpath);
       try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
         for (Map.Entry<String, byte[]> entry : classes.entrySet()) {
           jos.putNextEntry(new JarEntry(entry.getKey() + ".class"));
@@ -104,15 +100,16 @@ public class DependenciesTest {
     }
 
     DepsProto.Dependencies run() throws IOException {
-      BindingResult bound = Binder.bind(units, classpath, BOOTCLASSPATH);
+      BindingResult bound =
+          Binder.bind(
+              units,
+              ClassPathBinder.bindClasspath(classpath),
+              TestClassPaths.TURBINE_BOOTCLASSPATH);
 
       Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
 
       return Dependencies.collectDeps(
-          Optional.of("//test"),
-          ImmutableSet.copyOf(Iterables.transform(BOOTCLASSPATH, Path::toString)),
-          bound,
-          lowered);
+          Optional.of("//test"), TestClassPaths.TURBINE_BOOTCLASSPATH, bound, lowered);
     }
   }
 

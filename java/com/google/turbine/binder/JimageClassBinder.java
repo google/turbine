@@ -66,7 +66,7 @@ public class JimageClassBinder {
     return new JimageClassBinder(packageMap.build(), modules);
   }
 
-  static ClassPath bind() throws IOException {
+  public static ClassPath bind() throws IOException {
     Map<String, ?> env = new HashMap<>();
     FileSystem fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), env);
     return JimageClassBinder.create(fileSystem).new JimageClassPath();

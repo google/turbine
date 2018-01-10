@@ -19,8 +19,8 @@ package com.google.turbine.deps;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -43,7 +43,7 @@ import java.util.Set;
 public class Transitive {
 
   public static ImmutableMap<String, byte[]> collectDeps(
-      ImmutableSet<String> bootClassPath, BindingResult bound) {
+      ClassPath bootClassPath, BindingResult bound) {
     ImmutableMap.Builder<String, byte[]> transitive = ImmutableMap.builder();
     for (ClassSymbol sym : superClosure(bound)) {
       BytecodeBoundClass info = bound.classPathEnv().get(sym);
@@ -51,8 +51,7 @@ public class Transitive {
         // the symbol wasn't loaded from the classpath
         continue;
       }
-      String jarFile = info.jarFile();
-      if (bootClassPath.contains(jarFile)) {
+      if (bootClassPath.env().get(sym) != null) {
         // don't export symbols loaded from the bootclasspath
         continue;
       }
