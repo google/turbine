@@ -53,38 +53,6 @@ public class TurbineOptionsParser {
     parse(builder, argumentDeque);
   }
 
-  private static final Splitter ARG_SPLITTER =
-      Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().trimResults();
-
-  /**
-   * Pre-processes an argument list, expanding arguments of the form {@code @filename} by reading
-   * the content of the file and appending whitespace-delimited options to {@code argumentDeque}.
-   */
-  private static void expandParamsFiles(Deque<String> argumentDeque, Iterable<String> args)
-      throws IOException {
-    for (String arg : args) {
-      if (arg.isEmpty()) {
-        continue;
-      }
-      if (arg.startsWith("@@")) {
-        argumentDeque.addLast(arg.substring(1));
-      } else if (arg.startsWith("@")) {
-        Path paramsPath = Paths.get(arg.substring(1));
-        if (!Files.exists(paramsPath)) {
-          throw new AssertionError("params file does not exist: " + paramsPath);
-        }
-        Iterable<String> split =
-            ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8));
-        if (Iterables.isEmpty(split)) {
-          throw new AssertionError("empty params file: " + paramsPath);
-        }
-        expandParamsFiles(argumentDeque, split);
-      } else {
-        argumentDeque.addLast(arg);
-      }
-    }
-  }
-
   private static void parse(TurbineOptions.Builder builder, Deque<String> argumentDeque) {
     while (!argumentDeque.isEmpty()) {
       String next = argumentDeque.pollFirst();
@@ -110,6 +78,12 @@ public class TurbineOptionsParser {
           break;
         case "--bootclasspath":
           builder.addBootClassPathEntries(readList(argumentDeque));
+          break;
+        case "--release":
+          builder.setRelease(readOne(argumentDeque));
+          break;
+        case "--system":
+          builder.setSystem(readOne(argumentDeque));
           break;
         case "--javacopts":
           builder.addAllJavacOpts(readList(argumentDeque));
@@ -163,6 +137,38 @@ public class TurbineOptionsParser {
           break;
         default:
           throw new IllegalArgumentException("unknown option: " + next);
+      }
+    }
+  }
+
+  private static final Splitter ARG_SPLITTER =
+      Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().trimResults();
+
+  /**
+   * Pre-processes an argument list, expanding arguments of the form {@code @filename} by reading
+   * the content of the file and appending whitespace-delimited options to {@code argumentDeque}.
+   */
+  private static void expandParamsFiles(Deque<String> argumentDeque, Iterable<String> args)
+      throws IOException {
+    for (String arg : args) {
+      if (arg.isEmpty()) {
+        continue;
+      }
+      if (arg.startsWith("@@")) {
+        argumentDeque.addLast(arg.substring(1));
+      } else if (arg.startsWith("@")) {
+        Path paramsPath = Paths.get(arg.substring(1));
+        if (!Files.exists(paramsPath)) {
+          throw new AssertionError("params file does not exist: " + paramsPath);
+        }
+        Iterable<String> split =
+            ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8));
+        if (Iterables.isEmpty(split)) {
+          throw new AssertionError("empty params file: " + paramsPath);
+        }
+        expandParamsFiles(argumentDeque, split);
+      } else {
+        argumentDeque.addLast(arg);
       }
     }
   }

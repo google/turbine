@@ -18,11 +18,10 @@ package com.google.turbine.deps;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.turbine.main.Main;
-import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.runner.RunWith;
@@ -37,11 +36,10 @@ public class TransitiveTest extends AbstractTransitiveTest {
     Path out = temporaryFolder.newFolder().toPath().resolve("out.jar");
     boolean ok =
         Main.compile(
-            TurbineOptions.builder()
+            optionsWithBootclasspath()
                 .addSources(sources.stream().map(Path::toString).collect(toImmutableList()))
                 .addClassPathEntries(
                     classpath.stream().map(Path::toString).collect(toImmutableList()))
-                .addBootClassPathEntries(Iterables.transform(BOOTCLASSPATH, Path::toString))
                 .setOutput(out.toString())
                 .build());
     assertThat(ok).isTrue();

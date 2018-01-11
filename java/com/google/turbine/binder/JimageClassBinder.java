@@ -21,6 +21,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -66,9 +67,19 @@ public class JimageClassBinder {
     return new JimageClassBinder(packageMap.build(), modules);
   }
 
-  public static ClassPath bind() throws IOException {
-    Map<String, ?> env = new HashMap<>();
-    FileSystem fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), env);
+  /** Returns a platform classpath for the host JDK's jimage file. */
+  public static ClassPath bindDefault() throws IOException {
+    return JimageClassBinder.create(FileSystems.getFileSystem(URI.create("jrt:/")))
+    .new JimageClassPath();
+  }
+
+  /** Returns a platform classpath for the given JDK's jimage file. */
+  public static ClassPath bind(String javaHome) throws IOException {
+    if (javaHome.equals(System.getProperty("java.home"))) {
+      return bindDefault();
+    }
+    FileSystem fileSystem =
+        FileSystems.newFileSystem(URI.create("jrt:/"), ImmutableMap.of("java.home", javaHome));
     return JimageClassBinder.create(fileSystem).new JimageClassPath();
   }
 

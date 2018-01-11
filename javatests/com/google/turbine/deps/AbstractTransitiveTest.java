@@ -19,6 +19,7 @@ package com.google.turbine.deps;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -28,12 +29,10 @@ import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.InnerClass;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.main.Main;
-import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -52,9 +51,6 @@ public abstract class AbstractTransitiveTest {
 
   protected abstract Path runTurbine(ImmutableList<Path> sources, ImmutableList<Path> classpath)
       throws IOException;
-
-  protected static final ImmutableList<Path> BOOTCLASSPATH =
-      ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar"));
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -162,11 +158,10 @@ public abstract class AbstractTransitiveTest {
             .collect(toImmutableList());
     boolean ok =
         Main.compile(
-            TurbineOptions.builder()
+            optionsWithBootclasspath()
                 .addSources(sources)
                 .addClassPathEntries(
                     ImmutableList.of(libb).stream().map(Path::toString).collect(toImmutableList()))
-                .addBootClassPathEntries(Iterables.transform(BOOTCLASSPATH, Path::toString))
                 .setOutput(libc.toString())
                 .build());
     assertThat(ok).isTrue();

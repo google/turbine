@@ -24,6 +24,8 @@ import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
+import com.google.turbine.binder.CtSymClassBinder;
+import com.google.turbine.binder.JimageClassBinder;
 import com.google.turbine.deps.Dependencies;
 import com.google.turbine.deps.Transitive;
 import com.google.turbine.diag.SourceFile;
@@ -69,7 +71,7 @@ public class Main {
 
     ImmutableList<CompUnit> units = parseAll(options);
 
-    ClassPath bootclasspath = ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+    ClassPath bootclasspath = bootclasspath(options);
 
     Collection<String> reducedClasspath =
         Dependencies.reduceClasspath(
@@ -94,6 +96,37 @@ public class Main {
 
     writeOutput(Paths.get(options.outputFile()), lowered.bytes(), transitive);
     return true;
+  }
+
+  private static ClassPath bootclasspath(TurbineOptions options) throws IOException {
+    if (((!options.bootClassPath().isEmpty() ? 1 : 0)
+            + (options.release().isPresent() ? 1 : 0)
+            + (options.system().isPresent() ? 1 : 0))
+        != 1) {
+      throw new IllegalArgumentException(
+          "expected exactly one of --bootclasspath, --release, and --system");
+    }
+
+    if (!options.bootClassPath().isEmpty()) {
+      return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+    }
+
+    if (options.release().isPresent()) {
+      String release = options.release().get();
+      if (release.equals(System.getProperty("java.specification.version"))) {
+        // if --release matches the host JDK, use its jimage instead of ct.sym
+        return JimageClassBinder.bindDefault();
+      }
+      // ... otherwise, search ct.sym for a matching release
+      ClassPath bootclasspath = CtSymClassBinder.bind(release);
+      if (bootclasspath == null) {
+        throw new IllegalArgumentException("not a supported release: " + release);
+      }
+      return bootclasspath;
+    }
+
+    // look for a jimage in the given JDK
+    return JimageClassBinder.bind(options.system().get());
   }
 
   /** Parse all source files and source jars. */

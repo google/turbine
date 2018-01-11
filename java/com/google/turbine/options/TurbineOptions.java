@@ -30,6 +30,8 @@ public class TurbineOptions {
   private final String output;
   private final ImmutableList<String> classPath;
   private final ImmutableSet<String> bootClassPath;
+  private final Optional<String> release;
+  private final Optional<String> system;
   private final ImmutableList<String> sources;
   private final ImmutableList<String> processorPath;
   private final ImmutableSet<String> processors;
@@ -48,6 +50,8 @@ public class TurbineOptions {
       String output,
       ImmutableList<String> classPath,
       ImmutableSet<String> bootClassPath,
+      String release,
+      String system,
       ImmutableList<String> sources,
       ImmutableList<String> processorPath,
       ImmutableSet<String> processors,
@@ -64,6 +68,8 @@ public class TurbineOptions {
     this.output = checkNotNull(output, "output must not be null");
     this.classPath = checkNotNull(classPath, "classPath must not be null");
     this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
+    this.release = Optional.fromNullable(release);
+    this.system = Optional.fromNullable(system);
     this.sources = checkNotNull(sources, "sources must not be null");
     this.processorPath = checkNotNull(processorPath, "processorPath must not be null");
     this.processors = checkNotNull(processors, "processors must not be null");
@@ -94,6 +100,16 @@ public class TurbineOptions {
   /** Paths to compilation bootclasspath artifacts. */
   public ImmutableSet<String> bootClassPath() {
     return bootClassPath;
+  }
+
+  /** The target platform version. */
+  public Optional<String> release() {
+    return release;
+  }
+
+  /** The target platform's system modules. */
+  public Optional<String> system() {
+    return system;
   }
 
   /** The output jar. */
@@ -175,6 +191,8 @@ public class TurbineOptions {
     private final ImmutableSet.Builder<String> processors = ImmutableSet.builder();
     private final ImmutableList.Builder<String> sourceJars = ImmutableList.builder();
     private final ImmutableSet.Builder<String> bootClassPath = ImmutableSet.builder();
+    @Nullable private String release;
+    @Nullable private String system;
     private String outputDeps;
     private final ImmutableMap.Builder<String, String> directJarsToTargets = ImmutableMap.builder();
     private final ImmutableMap.Builder<String, String> indirectJarsToTargets =
@@ -191,6 +209,8 @@ public class TurbineOptions {
           output,
           classPath.build(),
           bootClassPath.build(),
+          release,
+          system,
           sources.build(),
           processorPath.build(),
           processors.build(),
@@ -218,6 +238,16 @@ public class TurbineOptions {
 
     public Builder addBootClassPathEntries(Iterable<String> bootClassPath) {
       this.bootClassPath.addAll(bootClassPath);
+      return this;
+    }
+
+    public Builder setRelease(String release) {
+      this.release = release;
+      return this;
+    }
+
+    public Builder setSystem(String system) {
+      this.system = system;
       return this;
     }
 

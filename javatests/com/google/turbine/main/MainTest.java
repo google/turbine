@@ -17,17 +17,16 @@
 package com.google.turbine.main;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.diag.TurbineError;
-import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,9 +41,6 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class MainTest {
-
-  static final ImmutableList<String> BOOTCLASSPATH =
-      ImmutableList.of(Paths.get(System.getProperty("java.home")).resolve("lib/rt.jar").toString());
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -64,9 +60,8 @@ public class MainTest {
 
     try {
       Main.compile(
-          TurbineOptions.builder()
+          optionsWithBootclasspath()
               .setSourceJars(ImmutableList.of(sourcesa.toString(), sourcesb.toString()))
-              .addBootClassPathEntries(BOOTCLASSPATH)
               .setOutput(output.toString())
               .build());
       fail();
@@ -84,9 +79,8 @@ public class MainTest {
 
     boolean ok =
         Main.compile(
-            TurbineOptions.builder()
+            optionsWithBootclasspath()
                 .addSources(ImmutableList.of(src.toString()))
-                .addBootClassPathEntries(BOOTCLASSPATH)
                 .setOutput(output.toString())
                 .build());
     assertThat(ok).isTrue();
@@ -107,9 +101,8 @@ public class MainTest {
 
     boolean ok =
         Main.compile(
-            TurbineOptions.builder()
+            optionsWithBootclasspath()
                 .setSourceJars(ImmutableList.of(srcjar.toString()))
-                .addBootClassPathEntries(BOOTCLASSPATH)
                 .setOutput(output.toString())
                 .build());
     assertThat(ok).isTrue();
@@ -147,10 +140,9 @@ public class MainTest {
 
     boolean ok =
         Main.compile(
-            TurbineOptions.builder()
+            optionsWithBootclasspath()
                 .addSources(ImmutableList.of(src.toString()))
                 .setSourceJars(ImmutableList.of(srcjar.toString()))
-                .addBootClassPathEntries(BOOTCLASSPATH)
                 .setOutput(output.toString())
                 .build());
     assertThat(ok).isTrue();

@@ -23,7 +23,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
-import com.google.turbine.binder.JimageClassBinder;
+import com.google.turbine.binder.CtSymClassBinder;
+import com.google.turbine.options.TurbineOptions;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,24 +38,40 @@ public class TestClassPaths {
   private static final Splitter CLASS_PATH_SPLITTER =
       Splitter.on(File.pathSeparatorChar).omitEmptyStrings();
 
+  private static final ImmutableList<Path> BOOTCLASSPATH =
+      Streams.stream(
+              CLASS_PATH_SPLITTER.split(
+                  Optional.ofNullable(System.getProperty("sun.boot.class.path")).orElse("")))
+          .map(Paths::get)
+          .filter(Files::exists)
+          .collect(toImmutableList());
+
   public static final ClassPath TURBINE_BOOTCLASSPATH = getTurbineBootclasspath();
 
   private static ClassPath getTurbineBootclasspath() {
     try {
-      ImmutableList<Path> bootclasspath =
-          Streams.stream(
-                  CLASS_PATH_SPLITTER.split(
-                      Optional.ofNullable(System.getProperty("sun.boot.class.path")).orElse("")))
-              .map(Paths::get)
-              .filter(Files::exists)
-              .collect(toImmutableList());
-      if (!bootclasspath.isEmpty()) {
-        return ClassPathBinder.bindClasspath(bootclasspath);
+      if (!BOOTCLASSPATH.isEmpty()) {
+        return ClassPathBinder.bindClasspath(BOOTCLASSPATH);
       }
-      return JimageClassBinder.bind();
+      return CtSymClassBinder.bind("8");
     } catch (IOException e) {
       e.printStackTrace();
       throw new UncheckedIOException(e);
     }
+  }
+
+  /**
+   * Return an {@link TurbineOptions} builder, with either {@code --bootclasspath} or {@link
+   * --release} set to a JDK 8 equivalent.
+   */
+  public static TurbineOptions.Builder optionsWithBootclasspath() {
+    TurbineOptions.Builder options = TurbineOptions.builder();
+    if (!BOOTCLASSPATH.isEmpty()) {
+      options.addBootClassPathEntries(
+          BOOTCLASSPATH.stream().map(Path::toString).collect(toImmutableList()));
+    } else {
+      options.setRelease("8");
+    }
+    return options;
   }
 }

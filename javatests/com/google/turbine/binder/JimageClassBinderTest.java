@@ -36,7 +36,7 @@ public class JimageClassBinderTest {
       // only run on JDK 9 and later
       return;
     }
-    ClassPath binder = JimageClassBinder.bind();
+    ClassPath binder = JimageClassBinder.bindDefault();
 
     BytecodeBoundClass objectInfo = binder.env().get(new ClassSymbol("java/lang/Object"));
     assertThat(objectInfo).isNotNull();
