@@ -71,6 +71,7 @@ public class TurbineOptionsTest {
       "8",
       "-target",
       "8",
+      "--",
       "--sources",
       "Source1.java",
       "Source2.java",
@@ -207,7 +208,8 @@ public class TurbineOptionsTest {
   @Test
   public void paramsFile() throws Exception {
     Iterable<String> paramsArgs =
-        Iterables.concat(BASE_ARGS, Arrays.asList("--javacopts", "-source", "8", "-target", "8"));
+        Iterables.concat(
+            BASE_ARGS, Arrays.asList("--javacopts", "-source", "8", "-target", "8", "--"));
     Path params = tmpFolder.newFile("params.txt").toPath();
     Files.write(params, paramsArgs, StandardCharsets.UTF_8);
 
@@ -252,7 +254,7 @@ public class TurbineOptionsTest {
   @Test
   public void paramsFileExists() throws Exception {
     String[] lines = {
-      "@/NOSUCH", "--javacopts", "-source", "7",
+      "@/NOSUCH", "--javacopts", "-source", "7", "--",
     };
     AssertionError expected = null;
     try {
@@ -271,7 +273,7 @@ public class TurbineOptionsTest {
     Path params = tmpFolder.newFile("params.txt").toPath();
     Files.write(params, new byte[0]);
     String[] lines = {
-      "@" + params.toAbsolutePath(), "--javacopts", "-source", "7",
+      "@" + params.toAbsolutePath(), "--javacopts", "-source", "7", "--",
     };
     AssertionError expected = null;
     try {
@@ -288,13 +290,13 @@ public class TurbineOptionsTest {
   @Test
   public void javacopts() throws Exception {
     String[] lines = {
-      "--javacopts", "-source", "9", "-target", "9", "--", "--sources", "Test.java",
+      "--javacopts", "--release", "9", "--", "--sources", "Test.java",
     };
 
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    assertThat(options.javacOpts()).containsExactly("-source", "9", "-target", "9").inOrder();
+    assertThat(options.javacOpts()).containsExactly("--release", "9").inOrder();
     assertThat(options.sources()).containsExactly("Test.java");
   }
 
@@ -305,6 +307,17 @@ public class TurbineOptionsTest {
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessageThat().contains("unknown option");
+    }
+  }
+
+  @Test
+  public void unterminatedJavacopts() throws Exception {
+    try {
+      TurbineOptionsParser.parse(
+          Iterables.concat(BASE_ARGS, Arrays.asList("--javacopts", "--release", "8")));
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessageThat().contains("javacopts should be terminated by `--`");
     }
   }
 }

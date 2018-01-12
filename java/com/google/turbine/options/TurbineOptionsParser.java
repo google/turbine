@@ -86,13 +86,7 @@ public class TurbineOptionsParser {
           builder.setSystem(readOne(argumentDeque));
           break;
         case "--javacopts":
-          builder.addAllJavacOpts(readList(argumentDeque));
-          if (!argumentDeque.isEmpty() && argumentDeque.peekFirst().equals("--")) {
-            // Support --javacopts terminated with "--", in preparation for requiring javacopts
-            // to be terminated with "--", in preparation for supporting --javacopts that start
-            // with "--".
-            argumentDeque.removeFirst();
-          }
+          builder.addAllJavacOpts(readJavacopts(argumentDeque));
           break;
         case "--sources":
           builder.addSources(readList(argumentDeque));
@@ -189,5 +183,21 @@ public class TurbineOptionsParser {
       result.add(argumentDeque.pollFirst());
     }
     return result.build();
+  }
+
+  /**
+   * Returns a list of javacopts. Reads options until a terminating {@code "--"} is reached, to
+   * support parsing javacopts that start with {@code --} (e.g. --release).
+   */
+  private static ImmutableList<String> readJavacopts(Deque<String> argumentDeque) {
+    ImmutableList.Builder<String> result = ImmutableList.builder();
+    while (!argumentDeque.isEmpty()) {
+      String arg = argumentDeque.pollFirst();
+      if (arg.equals("--")) {
+        return result.build();
+      }
+      result.add(arg);
+    }
+    throw new IllegalArgumentException("javacopts should be terminated by `--`");
   }
 }
