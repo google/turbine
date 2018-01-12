@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import javax.annotation.Nullable;
 
 /** A command line options parser for {@link TurbineOptions}. */
@@ -86,8 +87,12 @@ public class TurbineOptionsParser {
           builder.setSystem(readOne(argumentDeque));
           break;
         case "--javacopts":
-          builder.addAllJavacOpts(readJavacopts(argumentDeque));
-          break;
+          {
+            ImmutableList<String> javacopts = readJavacopts(argumentDeque);
+            setReleaseFromJavacopts(builder, javacopts);
+            builder.addAllJavacOpts(javacopts);
+            break;
+          }
         case "--sources":
           builder.addSources(readList(argumentDeque));
           break;
@@ -199,5 +204,19 @@ public class TurbineOptionsParser {
       result.add(arg);
     }
     throw new IllegalArgumentException("javacopts should be terminated by `--`");
+  }
+
+  /**
+   * Parses the given javacopts for {@code --release}, and if found sets turbine's {@code --release}
+   * flag.
+   */
+  private static void setReleaseFromJavacopts(
+      TurbineOptions.Builder builder, ImmutableList<String> javacopts) {
+    Iterator<String> it = javacopts.iterator();
+    while (it.hasNext()) {
+      if (it.next().equals("--release") && it.hasNext()) {
+        builder.setRelease(it.next());
+      }
+    }
   }
 }
