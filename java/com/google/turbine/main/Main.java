@@ -99,16 +99,9 @@ public class Main {
   }
 
   private static ClassPath bootclasspath(TurbineOptions options) throws IOException {
-    if (((!options.bootClassPath().isEmpty() ? 1 : 0)
-            + (options.release().isPresent() ? 1 : 0)
-            + (options.system().isPresent() ? 1 : 0))
-        != 1) {
-      throw new IllegalArgumentException(
-          "expected exactly one of --bootclasspath, --release, and --system");
-    }
-
-    if (!options.bootClassPath().isEmpty()) {
-      return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+    // if both --release and --bootclasspath are specified, --release wins
+    if (options.release().isPresent() && options.system().isPresent()) {
+      throw new IllegalArgumentException("expected at most one of --release and --system");
     }
 
     if (options.release().isPresent()) {
@@ -125,8 +118,16 @@ public class Main {
       return bootclasspath;
     }
 
-    // look for a jimage in the given JDK
-    return JimageClassBinder.bind(options.system().get());
+    if (options.system().isPresent()) {
+      // look for a jimage in the given JDK
+      return JimageClassBinder.bind(options.system().get());
+    }
+
+    if (!options.bootClassPath().isEmpty()) {
+      return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+    }
+
+    throw new IllegalArgumentException("expected one of --bootclasspath, --release, and --system");
   }
 
   /** Parse all source files and source jars. */
