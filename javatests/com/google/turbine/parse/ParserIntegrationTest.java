@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Function;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.io.CharStreams;
 import com.google.turbine.tree.Tree;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -72,6 +74,7 @@ public class ParserIntegrationTest {
       "packinfo1.input",
       "weirdstring.input",
       "type_annotations.input",
+      "module-info.input",
     };
     return Iterables.transform(
         Arrays.asList(tests),
@@ -97,9 +100,9 @@ public class ParserIntegrationTest {
     try (InputStreamReader in = new InputStreamReader(stream, UTF_8)) {
       result = CharStreams.toString(in);
     }
-    String[] pieces = result.split("===+");
-    String input = pieces[0].trim();
-    String expected = pieces.length > 1 ? pieces[1].trim() : input;
+    List<String> pieces = Splitter.onPattern("===+").splitToList(result);
+    String input = pieces.get(0).trim();
+    String expected = pieces.size() > 1 ? pieces.get(1).trim() : input;
     Tree.CompUnit unit = Parser.parse(input);
     assertThat(unit.toString().trim()).isEqualTo(expected);
   }

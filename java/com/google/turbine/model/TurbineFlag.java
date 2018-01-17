@@ -30,6 +30,8 @@ public class TurbineFlag {
   public static final int ACC_FINAL = 0x0010;
   public static final int ACC_SYNCHRONIZED = 0x0020;
   public static final int ACC_SUPER = 0x0020;
+  public static final int ACC_TRANSITIVE = 0x0020;
+  public static final int ACC_STATIC_PHASE = 0x0040;
   public static final int ACC_BRIDGE = 0x0040;
   public static final int ACC_VOLATILE = 0x0040;
   public static final int ACC_VARARGS = 0x0080;

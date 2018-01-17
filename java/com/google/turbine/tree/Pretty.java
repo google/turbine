@@ -22,6 +22,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassLiteral;
+import com.google.turbine.tree.Tree.ModDecl;
+import com.google.turbine.tree.Tree.ModDirective;
+import com.google.turbine.tree.Tree.ModExports;
+import com.google.turbine.tree.Tree.ModOpens;
+import com.google.turbine.tree.Tree.ModProvides;
+import com.google.turbine.tree.Tree.ModRequires;
+import com.google.turbine.tree.Tree.ModUses;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -236,6 +243,10 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     }
     for (Tree.ImportDecl i : compUnit.imports()) {
       i.accept(this, null);
+    }
+    if (compUnit.mod().isPresent()) {
+      printLine();
+      compUnit.mod().get().accept(this, null);
     }
     for (Tree.TyDecl decl : compUnit.decls()) {
       printLine();
@@ -472,6 +483,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
         case NATIVE:
         case TRANSIENT:
         case DEFAULT:
+        case TRANSITIVE:
           append(mod.toString()).append(' ');
           break;
         case ACC_SUPER:
@@ -513,6 +525,111 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       printLine();
     }
     append("package ").append(Joiner.on('.').join(pkgDecl.name())).append(';');
+    return null;
+  }
+
+  @Override
+  public Void visitModDecl(ModDecl modDecl, Void input) {
+    for (Tree.Anno anno : modDecl.annos()) {
+      anno.accept(this, null);
+      printLine();
+    }
+    if (modDecl.open()) {
+      append("open ");
+    }
+    append("module ").append(Joiner.on('.').join(modDecl.moduleName())).append(" {");
+    indent++;
+    append('\n');
+    for (ModDirective directive : modDecl.directives()) {
+      directive.accept(this, null);
+    }
+    indent--;
+    append("}\n");
+    return null;
+  }
+
+  @Override
+  public Void visitModRequires(ModRequires modRequires, Void input) {
+    append("requires ");
+    printModifiers(modRequires.mods());
+    append(Joiner.on('.').join(modRequires.moduleName()));
+    append(";");
+    append('\n');
+    return null;
+  }
+
+  @Override
+  public Void visitModExports(ModExports modExports, Void input) {
+    append("exports ");
+    append(Joiner.on('.').join(modExports.packageName()));
+    if (!modExports.moduleNames().isEmpty()) {
+      append(" to").append('\n');
+      indent += 2;
+      boolean first = true;
+      for (ImmutableList<String> moduleName : modExports.moduleNames()) {
+        if (!first) {
+          append(',').append('\n');
+        }
+        append(Joiner.on('.').join(moduleName));
+        first = false;
+      }
+      indent -= 2;
+    }
+    append(";");
+    append('\n');
+    return null;
+  }
+
+  @Override
+  public Void visitModOpens(ModOpens modOpens, Void input) {
+    append("opens ");
+    append(Joiner.on('.').join(modOpens.packageName()));
+    if (!modOpens.moduleNames().isEmpty()) {
+      append(" to").append('\n');
+      indent += 2;
+      boolean first = true;
+      for (ImmutableList<String> moduleName : modOpens.moduleNames()) {
+        if (!first) {
+          append(',').append('\n');
+        }
+        append(Joiner.on('.').join(moduleName));
+        first = false;
+      }
+      indent -= 2;
+    }
+    append(";");
+    append('\n');
+    return null;
+  }
+
+  @Override
+  public Void visitModUses(ModUses modUses, Void input) {
+    append("uses ");
+    append(Joiner.on('.').join(modUses.typeName()));
+    append(";");
+    append('\n');
+    return null;
+  }
+
+  @Override
+  public Void visitModProvides(ModProvides modProvides, Void input) {
+    append("provides ");
+    append(Joiner.on('.').join(modProvides.typeName()));
+    if (!modProvides.implNames().isEmpty()) {
+      append(" with").append('\n');
+      indent += 2;
+      boolean first = true;
+      for (ImmutableList<String> implName : modProvides.implNames()) {
+        if (!first) {
+          append(',').append('\n');
+        }
+        append(Joiner.on('.').join(implName));
+        first = false;
+      }
+      indent -= 2;
+    }
+    append(";");
+    append('\n');
     return null;
   }
 }

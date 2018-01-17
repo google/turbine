@@ -40,6 +40,13 @@ import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.Tree.ImportDecl;
 import com.google.turbine.tree.Tree.Kind;
 import com.google.turbine.tree.Tree.MethDecl;
+import com.google.turbine.tree.Tree.ModDecl;
+import com.google.turbine.tree.Tree.ModDirective;
+import com.google.turbine.tree.Tree.ModExports;
+import com.google.turbine.tree.Tree.ModOpens;
+import com.google.turbine.tree.Tree.ModProvides;
+import com.google.turbine.tree.Tree.ModRequires;
+import com.google.turbine.tree.Tree.ModUses;
 import com.google.turbine.tree.Tree.PkgDecl;
 import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.Tree.TyDecl;
@@ -52,6 +59,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 
 /**
@@ -85,6 +93,7 @@ public class Parser {
     // and make it bug-compatible with javac:
     // http://mail.openjdk.java.net/pipermail/compiler-dev/2013-August/006968.html
     Optional<PkgDecl> pkg = Optional.absent();
+    Optional<ModDecl> mod = Optional.absent();
     EnumSet<TurbineModifier> access = EnumSet.noneOf(TurbineModifier.class);
     ImmutableList.Builder<ImportDecl> imports = ImmutableList.builder();
     ImmutableList.Builder<TyDecl> decls = ImmutableList.builder();
@@ -165,11 +174,30 @@ public class Parser {
           break;
         case EOF:
           // TODO(cushon): check for dangling modifiers?
-          return new CompUnit(position, pkg, imports.build(), decls.build(), lexer.source());
+          return new CompUnit(position, pkg, mod, imports.build(), decls.build(), lexer.source());
         case SEMI:
           // TODO(cushon): check for dangling modifiers?
           next();
           continue;
+        case IDENT:
+          {
+            String ident = lexer.stringValue();
+            if (access.isEmpty() && (ident.equals("module") || ident.equals("open"))) {
+              boolean open = false;
+              if (ident.equals("open")) {
+                ident = eatIdent();
+                open = true;
+              }
+              if (!ident.equals("module")) {
+                throw error(token);
+              }
+              next();
+              mod = Optional.of(moduleDeclaration(open, annos.build()));
+              annos = ImmutableList.builder();
+              break;
+            }
+          }
+          // fall through
         default:
           throw error(token);
       }
@@ -257,6 +285,121 @@ public class Parser {
         interfaces.build(),
         members,
         TurbineTyKind.ENUM);
+  }
+
+  private ModDecl moduleDeclaration(boolean open, ImmutableList<Anno> annos) {
+    ImmutableList<String> moduleName = qualIdent();
+    eat(Token.LBRACE);
+    ImmutableList.Builder<ModDirective> directives = ImmutableList.builder();
+    OUTER:
+    while (true) {
+      switch (token) {
+        case IDENT:
+          {
+            String ident = lexer.stringValue();
+            next();
+            switch (ident) {
+              case "requires":
+                directives.add(moduleRequires());
+                break;
+              case "exports":
+                directives.add(moduleExports());
+                break;
+              case "opens":
+                directives.add(moduleOpens());
+                break;
+              case "uses":
+                directives.add(moduleUses());
+                break;
+              case "provides":
+                directives.add(moduleProvides());
+                break;
+              default: // fall out
+            }
+            break;
+          }
+        case RBRACE:
+          break OUTER;
+        default:
+          throw error(token);
+      }
+    }
+    eat(Token.RBRACE);
+    return new ModDecl(position, annos, open, moduleName, directives.build());
+  }
+
+  private ModRequires moduleRequires() {
+    int pos = position;
+    EnumSet<TurbineModifier> access = EnumSet.noneOf(TurbineModifier.class);
+    while (true) {
+      if (token == Token.IDENT && lexer.stringValue().equals("transitive")) {
+        next();
+        access.add(TurbineModifier.TRANSITIVE);
+        break;
+      }
+      if (token == Token.STATIC) {
+        next();
+        // TODO(cushon): note that this needs to lower to ACC_STATIC_PHASE, not ACC_STATIC
+        access.add(TurbineModifier.STATIC);
+        break;
+      }
+      break;
+    }
+    ImmutableList<String> moduleName = qualIdent();
+    eat(Token.SEMI);
+    return new ModRequires(pos, ImmutableSet.copyOf(access), moduleName);
+  }
+
+  private ModExports moduleExports() {
+    int pos = position;
+    ImmutableList<String> packageName = qualIdent();
+    ImmutableList.Builder<ImmutableList<String>> moduleNames = ImmutableList.builder();
+    if (lexer.stringValue().equals("to")) {
+      next();
+      do {
+        ImmutableList<String> moduleName = qualIdent();
+        moduleNames.add(moduleName);
+      } while (maybe(Token.COMMA));
+    }
+    eat(Token.SEMI);
+    return new ModExports(pos, packageName, moduleNames.build());
+  }
+
+  private ModOpens moduleOpens() {
+    int pos = position;
+    ImmutableList<String> packageName = qualIdent();
+    ImmutableList.Builder<ImmutableList<String>> moduleNames = ImmutableList.builder();
+    if (lexer.stringValue().equals("to")) {
+      next();
+      do {
+        ImmutableList<String> moduleName = qualIdent();
+        moduleNames.add(moduleName);
+      } while (maybe(Token.COMMA));
+    }
+    eat(Token.SEMI);
+    return new ModOpens(pos, packageName, moduleNames.build());
+  }
+
+  private ModUses moduleUses() {
+    int pos = position;
+    ImmutableList<String> uses = qualIdent();
+    eat(Token.SEMI);
+    return new ModUses(pos, uses);
+  }
+
+  private ModProvides moduleProvides() {
+    int pos = position;
+    ImmutableList<String> typeName = qualIdent();
+    if (!eatIdent().equals("with")) {
+      throw error(token);
+    }
+    ImmutableList.Builder<ImmutableList<String>> implNames = ImmutableList.builder();
+    do {
+      ImmutableList<String> implName = qualIdent();
+      implNames.add(implName);
+    } while (maybe(Token.COMMA));
+    eat(Token.SEMI);
+    return new ModProvides(pos, typeName, implNames.build());
   }
 
   private static final ImmutableSet<TurbineModifier> ENUM_CONSTANT_MODIFIERS =
@@ -1181,6 +1324,7 @@ public class Parser {
     return false;
   }
 
+  @CheckReturnValue
   TurbineError error(Token token) {
     switch (token) {
       case IDENT:
@@ -1192,6 +1336,7 @@ public class Parser {
     }
   }
 
+  @CheckReturnValue
   private TurbineError error(ErrorKind kind, Object... args) {
     return TurbineError.format(
         lexer.source(),

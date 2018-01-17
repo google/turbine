@@ -1,0 +1,29 @@
+import a.A;
+import a.B;
+import com.google.Foo;
+import com.google.Baz;
+
+@A
+@B
+module com.google.m {
+  requires java.compiler;
+  requires transitive jdk.compiler;
+  requires static java.base;
+  exports com.google.p1;
+  exports com.google.p2 to
+      java.base;
+  exports com.google.p3 to
+      java.base,
+      java.compiler;
+  opens com.google.p1;
+  opens com.google.p2 to
+      java.base;
+  opens com.google.p3 to
+      java.base,
+      java.compiler;
+  uses Foo;
+  uses com.google.Bar;
+  provides com.google.Baz with
+      Foo,
+      com.google.Bar;
+}

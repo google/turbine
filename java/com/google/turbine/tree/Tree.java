@@ -71,7 +71,13 @@ public abstract class Tree {
     ANNO_EXPR,
     TY_DECL,
     TY_PARAM,
-    PKG_DECL
+    PKG_DECL,
+    MOD_DECL,
+    MOD_REQUIRES,
+    MOD_EXPORTS,
+    MOD_OPENS,
+    MOD_USES,
+    MOD_PROVIDES
   }
 
   /** A type use. */
@@ -524,6 +530,7 @@ public abstract class Tree {
   /** A JLS 7.3 compilation unit. */
   public static class CompUnit extends Tree {
     private final Optional<PkgDecl> pkg;
+    private final Optional<ModDecl> mod;
     private final ImmutableList<ImportDecl> imports;
     private final ImmutableList<TyDecl> decls;
     private final SourceFile source;
@@ -531,11 +538,13 @@ public abstract class Tree {
     public CompUnit(
         int position,
         Optional<PkgDecl> pkg,
+        Optional<ModDecl> mod,
         ImmutableList<ImportDecl> imports,
         ImmutableList<TyDecl> decls,
         SourceFile source) {
       super(position);
       this.pkg = pkg;
+      this.mod = mod;
       this.imports = imports;
       this.decls = decls;
       this.source = source;
@@ -553,6 +562,10 @@ public abstract class Tree {
 
     public Optional<PkgDecl> pkg() {
       return pkg;
+    }
+
+    public Optional<ModDecl> mod() {
+      return mod;
     }
 
     public ImmutableList<ImportDecl> imports() {
@@ -936,6 +949,257 @@ public abstract class Tree {
     }
   }
 
+  /** A JLS 7.7 module declaration. */
+  public static class ModDecl extends Tree {
+
+    private final ImmutableList<Anno> annos;
+    private final boolean open;
+    private final ImmutableList<String> moduleName;
+    private final ImmutableList<ModDirective> directives;
+
+    public ModDecl(
+        int position,
+        ImmutableList<Anno> annos,
+        boolean open,
+        ImmutableList<String> moduleName,
+        ImmutableList<ModDirective> directives) {
+      super(position);
+      this.annos = annos;
+      this.open = open;
+      this.moduleName = moduleName;
+      this.directives = directives;
+    }
+
+    public boolean open() {
+      return open;
+    }
+
+    public ImmutableList<Anno> annos() {
+      return annos;
+    }
+
+    public ImmutableList<String> moduleName() {
+      return moduleName;
+    }
+
+    public ImmutableList<ModDirective> directives() {
+      return directives;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.MOD_DECL;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitModDecl(this, input);
+    }
+  }
+
+  /** A kind of module directive. */
+  public abstract static class ModDirective extends Tree {
+
+    /** A module directive kind. */
+    public enum DirectiveKind {
+      REQUIRES,
+      EXPORTS,
+      OPENS,
+      USES,
+      PROVIDES
+    }
+
+    public abstract DirectiveKind directiveKind();
+
+    protected ModDirective(int position) {
+      super(position);
+    }
+  }
+
+  /** A JLS 7.7.1 module requires directive. */
+  public static class ModRequires extends ModDirective {
+
+    private final ImmutableSet<TurbineModifier> mods;
+    private final ImmutableList<String> moduleName;
+
+    @Override
+    public Kind kind() {
+      return Kind.MOD_REQUIRES;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitModRequires(this, input);
+    }
+
+    public ModRequires(
+        int position, ImmutableSet<TurbineModifier> mods, ImmutableList<String> moduleName) {
+      super(position);
+      this.mods = mods;
+      this.moduleName = moduleName;
+    }
+
+    public ImmutableSet<TurbineModifier> mods() {
+      return mods;
+    }
+
+    public ImmutableList<String> moduleName() {
+      return moduleName;
+    }
+
+    @Override
+    public DirectiveKind directiveKind() {
+      return DirectiveKind.REQUIRES;
+    }
+  }
+
+  /** A JLS 7.7.2 module exports directive. */
+  public static class ModExports extends ModDirective {
+
+    private final ImmutableList<String> packageName;
+    private final ImmutableList<ImmutableList<String>> moduleNames;
+
+    @Override
+    public Kind kind() {
+      return Kind.MOD_EXPORTS;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitModExports(this, input);
+    }
+
+    public ModExports(
+        int position,
+        ImmutableList<String> packageName,
+        ImmutableList<ImmutableList<String>> moduleNames) {
+      super(position);
+      this.packageName = packageName;
+      this.moduleNames = moduleNames;
+    }
+
+    public ImmutableList<String> packageName() {
+      return packageName;
+    }
+
+    public ImmutableList<ImmutableList<String>> moduleNames() {
+      return moduleNames;
+    }
+
+    @Override
+    public DirectiveKind directiveKind() {
+      return DirectiveKind.EXPORTS;
+    }
+  }
+
+  /** A JLS 7.7.2 module opens directive. */
+  public static class ModOpens extends ModDirective {
+
+    private final ImmutableList<String> packageName;
+    private final ImmutableList<ImmutableList<String>> moduleNames;
+
+    public ModOpens(
+        int position,
+        ImmutableList<String> packageName,
+        ImmutableList<ImmutableList<String>> moduleNames) {
+      super(position);
+      this.packageName = packageName;
+      this.moduleNames = moduleNames;
+    }
+
+    public ImmutableList<String> packageName() {
+      return packageName;
+    }
+
+    public ImmutableList<ImmutableList<String>> moduleNames() {
+      return moduleNames;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.MOD_OPENS;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitModOpens(this, input);
+    }
+
+    @Override
+    public DirectiveKind directiveKind() {
+      return DirectiveKind.OPENS;
+    }
+  }
+
+  /** A JLS 7.7.3 module uses directive. */
+  public static class ModUses extends ModDirective {
+
+    private final ImmutableList<String> typeName;
+
+    public ModUses(int position, ImmutableList<String> typeName) {
+      super(position);
+      this.typeName = typeName;
+    }
+
+    public ImmutableList<String> typeName() {
+      return typeName;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.MOD_USES;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitModUses(this, input);
+    }
+
+    @Override
+    public DirectiveKind directiveKind() {
+      return DirectiveKind.USES;
+    }
+  }
+
+  /** A JLS 7.7.4 module uses directive. */
+  public static class ModProvides extends ModDirective {
+
+    private final ImmutableList<String> typeName;
+    private final ImmutableList<ImmutableList<String>> implNames;
+
+    public ModProvides(
+        int position,
+        ImmutableList<String> typeName,
+        ImmutableList<ImmutableList<String>> implNames) {
+      super(position);
+      this.typeName = typeName;
+      this.implNames = implNames;
+    }
+
+    public ImmutableList<String> typeName() {
+      return typeName;
+    }
+
+    public ImmutableList<ImmutableList<String>> implNames() {
+      return implNames;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.MOD_PROVIDES;
+    }
+
+    @Override
+    public <I, O> O accept(Visitor<I, O> visitor, I input) {
+      return visitor.visitModProvides(this, input);
+    }
+
+    @Override
+    public DirectiveKind directiveKind() {
+      return DirectiveKind.PROVIDES;
+    }
+  }
+
   /** A visitor for {@link Tree}s. */
   public interface Visitor<I, O> {
     O visitWildTy(WildTy visitor, I input);
@@ -981,5 +1245,17 @@ public abstract class Tree {
     O visitTyParam(TyParam tyParam, I input);
 
     O visitPkgDecl(PkgDecl pkgDecl, I input);
+
+    O visitModDecl(ModDecl modDecl, I input);
+
+    O visitModRequires(ModRequires modRequires, I input);
+
+    O visitModExports(ModExports modExports, I input);
+
+    O visitModOpens(ModOpens modOpens, I input);
+
+    O visitModUses(ModUses modUses, I input);
+
+    O visitModProvides(ModProvides modProvides, I input);
   }
 }
