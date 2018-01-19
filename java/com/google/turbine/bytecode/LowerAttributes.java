@@ -42,6 +42,9 @@ public class LowerAttributes {
     if (classfile.signature() != null) {
       attributes.add(new Signature(classfile.signature()));
     }
+    if (classfile.module() != null) {
+      attributes.add(new Attribute.Module(classfile.module()));
+    }
     return attributes;
   }
 

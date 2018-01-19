@@ -19,6 +19,7 @@ package com.google.turbine.bytecode;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const.Value;
 import java.util.List;
@@ -39,7 +40,8 @@ interface Attribute {
     DEPRECATED("Deprecated"),
     RUNTIME_VISIBLE_TYPE_ANNOTATIONS("RuntimeVisibleTypeAnnotations"),
     RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations"),
-    METHOD_PARAMETERS("MethodParameters");
+    METHOD_PARAMETERS("MethodParameters"),
+    MODULE("Module");
 
     private final String signature;
 
@@ -286,6 +288,25 @@ interface Attribute {
     @Override
     public Kind kind() {
       return Kind.METHOD_PARAMETERS;
+    }
+  }
+
+  /** A JVMS §4.7.25 Module attribute. */
+  class Module implements Attribute {
+
+    private final ModuleInfo module;
+
+    public Module(ModuleInfo module) {
+      this.module = module;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.MODULE;
+    }
+
+    public ModuleInfo module() {
+      return module;
     }
   }
 }

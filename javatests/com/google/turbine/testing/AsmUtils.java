@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.turbine.bytecode;
+package com.google.turbine.testing;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

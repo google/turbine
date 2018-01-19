@@ -40,6 +40,8 @@ public class ConstantPool {
   private final Map<Double, Integer> doublePool = new HashMap<>();
   private final Map<Float, Integer> floatPool = new HashMap<>();
   private final Map<Long, Integer> longPool = new HashMap<>();
+  private final Map<Integer, Integer> modulePool = new HashMap<>();
+  private final Map<Integer, Integer> packagePool = new HashMap<>();
 
   private final List<Entry> constants = new ArrayList<>();
 
@@ -56,6 +58,8 @@ public class ConstantPool {
       case INTEGER:
       case UTF8:
       case FLOAT:
+      case MODULE:
+      case PACKAGE:
         return 1;
       case LONG:
       case DOUBLE:
@@ -158,6 +162,30 @@ public class ConstantPool {
     return index;
   }
 
+  /** Adds a CONSTANT_Module_info entry to the pool. */
+  int moduleInfo(String value) {
+    Objects.requireNonNull(value);
+    int utf8 = utf8(value);
+    if (modulePool.containsKey(utf8)) {
+      return modulePool.get(utf8);
+    }
+    int index = insert(new Entry(Kind.MODULE, new IntValue(utf8)));
+    modulePool.put(utf8, index);
+    return index;
+  }
+
+  /** Adds a CONSTANT_Package_info entry to the pool. */
+  int packageInfo(String value) {
+    Objects.requireNonNull(value);
+    int utf8 = utf8(value);
+    if (packagePool.containsKey(utf8)) {
+      return packagePool.get(utf8);
+    }
+    int index = insert(new Entry(Kind.PACKAGE, new IntValue(utf8)));
+    packagePool.put(utf8, index);
+    return index;
+  }
+
   private int insert(Entry key) {
     int entry = nextEntry;
     constants.add(key);
@@ -176,7 +204,9 @@ public class ConstantPool {
     DOUBLE(6),
     FLOAT(4),
     LONG(5),
-    UTF8(1);
+    UTF8(1),
+    MODULE(19),
+    PACKAGE(20);
 
     private final short tag;
 

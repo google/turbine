@@ -27,6 +27,12 @@ import com.google.turbine.bytecode.Attribute.Signature;
 import com.google.turbine.bytecode.Attribute.TypeAnnotations;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.ExportInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.OpenInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.ProvideInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.RequireInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.UseInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const;
 import java.util.List;
@@ -77,6 +83,9 @@ public class AttributeWriter {
         break;
       case METHOD_PARAMETERS:
         writeMethodParameters((Attribute.MethodParameters) attribute);
+        break;
+      case MODULE:
+        writeModule((Attribute.Module) attribute);
         break;
       default:
         throw new AssertionError(attribute.kind());
@@ -202,5 +211,61 @@ public class AttributeWriter {
       output.writeShort(parameter.name() != null ? pool.utf8(parameter.name()) : 0);
       output.writeShort(parameter.access());
     }
+  }
+
+  private void writeModule(Attribute.Module attribute) {
+    ModuleInfo module = attribute.module();
+
+    ByteArrayDataOutput tmp = ByteStreams.newDataOutput();
+
+    tmp.writeShort(pool.moduleInfo(module.name()));
+    tmp.writeShort(module.flags());
+    tmp.writeShort(pool.utf8(module.version()));
+
+    tmp.writeShort(module.requires().size());
+    for (RequireInfo require : module.requires()) {
+      tmp.writeShort(pool.moduleInfo(require.moduleName()));
+      tmp.writeShort(require.flags());
+      tmp.writeShort(pool.utf8(require.version()));
+    }
+
+    tmp.writeShort(module.exports().size());
+    for (ExportInfo export : module.exports()) {
+      tmp.writeShort(pool.packageInfo(export.moduleName()));
+      tmp.writeShort(export.flags());
+      tmp.writeShort(export.modules().size());
+      for (String exportedModule : export.modules()) {
+        tmp.writeShort(pool.moduleInfo(exportedModule));
+      }
+    }
+
+    tmp.writeShort(module.opens().size());
+    for (OpenInfo opens : module.opens()) {
+      tmp.writeShort(pool.packageInfo(opens.moduleName()));
+      tmp.writeShort(opens.flags());
+      tmp.writeShort(opens.modules().size());
+      for (String openModule : opens.modules()) {
+        tmp.writeShort(pool.moduleInfo(openModule));
+      }
+    }
+
+    tmp.writeShort(module.uses().size());
+    for (UseInfo use : module.uses()) {
+      tmp.writeShort(pool.classInfo(use.descriptor()));
+    }
+
+    tmp.writeShort(module.provides().size());
+    for (ProvideInfo provide : module.provides()) {
+      tmp.writeShort(pool.classInfo(provide.descriptor()));
+      tmp.writeShort(provide.implDescriptors().size());
+      for (String impl : provide.implDescriptors()) {
+        tmp.writeShort(pool.classInfo(impl));
+      }
+    }
+
+    byte[] data = tmp.toByteArray();
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(data.length);
+    output.write(data);
   }
 }

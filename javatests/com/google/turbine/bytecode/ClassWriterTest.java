@@ -24,6 +24,7 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import com.google.turbine.testing.AsmUtils;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -42,6 +43,8 @@ import javax.tools.StandardLocation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.objectweb.asm.ModuleVisitor;
+import org.objectweb.asm.Opcodes;
 
 @RunWith(JUnit4.class)
 public class ClassWriterTest {
@@ -107,5 +110,44 @@ public class ClassWriterTest {
     for (Map.Entry<Integer, String> entry : entries.entrySet()) {
       assertThat(reader.classInfo(entry.getKey())).isEqualTo(entry.getValue());
     }
+  }
+
+  @Test
+  public void module() throws Exception {
+
+    org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(0);
+
+    cw.visit(53, /* access= */ 53, "module-info", null, null, null);
+
+    ModuleVisitor mv = cw.visitModule("mod", Opcodes.ACC_OPEN, "mod-ver");
+
+    mv.visitRequire("r1", Opcodes.ACC_TRANSITIVE, "r1-ver");
+    mv.visitRequire("r2", Opcodes.ACC_STATIC_PHASE, "r2-ver");
+    mv.visitRequire("r3", Opcodes.ACC_STATIC_PHASE | Opcodes.ACC_TRANSITIVE, "r3-ver");
+
+    mv.visitExport("e1", Opcodes.ACC_SYNTHETIC, "e1m1", "e1m2", "e1m3");
+    mv.visitExport("e2", Opcodes.ACC_MANDATED, "e2m1", "e2m2");
+    mv.visitExport("e3", /* access= */ 0, "e3m1");
+
+    mv.visitOpen("o1", Opcodes.ACC_SYNTHETIC, "o1m1", "o1m2", "o1m3");
+    mv.visitOpen("o2", Opcodes.ACC_MANDATED, "o2m1", "o2m2");
+    mv.visitOpen("o3", /* access= */ 0, "o3m1");
+
+    mv.visitUse("u1");
+    mv.visitUse("u2");
+    mv.visitUse("u3");
+    mv.visitUse("u4");
+
+    mv.visitProvide("p1", "p1i1", "p1i2");
+    mv.visitProvide("p2", "p2i1", "p2i2", "p2i3");
+
+    byte[] inputBytes = cw.toByteArray();
+    byte[] outputBytes = ClassWriter.writeClass(ClassReader.read("module-info", inputBytes));
+
+    assertThat(AsmUtils.textify(inputBytes)).isEqualTo(AsmUtils.textify(outputBytes));
+
+    // test a round trip
+    outputBytes = ClassWriter.writeClass(ClassReader.read("module-info", outputBytes));
+    assertThat(AsmUtils.textify(inputBytes)).isEqualTo(AsmUtils.textify(outputBytes));
   }
 }

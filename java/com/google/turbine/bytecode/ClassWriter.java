@@ -31,8 +31,10 @@ public class ClassWriter {
 
   private static final int MAGIC = 0xcafebabe;
   private static final int MINOR_VERSION = 0;
-  // TODO(cushon): configuration?
+  // use the lowest classfile version possible given the class file features
+  // TODO(cushon): is there a reason to support --release?
   private static final int MAJOR_VERSION = 52;
+  private static final int MODULE_MAJOR_VERSION = 53;
 
   /** Writes a {@link ClassFile} to bytecode. */
   public static byte[] writeClass(ClassFile classfile) {
@@ -54,7 +56,7 @@ public class ClassWriter {
       writeMethod(pool, output, m);
     }
     writeAttributes(pool, output, LowerAttributes.classAttributes(classfile));
-    return finishClass(pool, output);
+    return finishClass(pool, output, classfile);
   }
 
   private static void writeMethod(
@@ -89,6 +91,8 @@ public class ClassWriter {
       switch (e.kind()) {
         case CLASS_INFO:
         case STRING:
+        case MODULE:
+        case PACKAGE:
           output.writeShort(((IntValue) value).value());
           break;
         case INTEGER:
@@ -112,11 +116,12 @@ public class ClassWriter {
     }
   }
 
-  private static byte[] finishClass(ConstantPool pool, ByteArrayDataOutput body) {
+  private static byte[] finishClass(
+      ConstantPool pool, ByteArrayDataOutput body, ClassFile classfile) {
     ByteArrayDataOutput result = ByteStreams.newDataOutput();
     result.writeInt(MAGIC);
     result.writeShort(MINOR_VERSION);
-    result.writeShort(MAJOR_VERSION);
+    result.writeShort(classfile.module() != null ? MODULE_MAJOR_VERSION : MAJOR_VERSION);
     writeConstantPool(pool, result);
     result.write(body.toByteArray());
     return result.toByteArray();
