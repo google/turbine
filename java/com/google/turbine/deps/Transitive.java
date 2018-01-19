@@ -96,7 +96,8 @@ public class Transitive {
         // well-known @interface meta-annotations (e.g. @Retention, etc.)
         cf.annotations(),
         innerClasses.build(),
-        cf.typeAnnotations());
+        cf.typeAnnotations(),
+        /* module= */ null);
   }
 
   private static Set<ClassSymbol> superClosure(BindingResult bound) {

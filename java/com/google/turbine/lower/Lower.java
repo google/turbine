@@ -174,7 +174,8 @@ public class Lower {
             fields.build(),
             annotations,
             inners,
-            typeAnnotations);
+            typeAnnotations,
+            /* module= */ null);
 
     symbols.addAll(sig.classes);
 

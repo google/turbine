@@ -41,6 +41,7 @@ public class ClassFile {
   private final List<AnnotationInfo> annotations;
   private final List<InnerClass> innerClasses;
   private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
+  @Nullable private final ModuleInfo module;
 
   public ClassFile(
       int access,
@@ -52,7 +53,8 @@ public class ClassFile {
       List<FieldInfo> fields,
       List<AnnotationInfo> annotations,
       List<InnerClass> innerClasses,
-      ImmutableList<TypeAnnotationInfo> typeAnnotations) {
+      ImmutableList<TypeAnnotationInfo> typeAnnotations,
+      @Nullable ModuleInfo module) {
     this.access = access;
     this.name = name;
     this.signature = signature;
@@ -63,6 +65,7 @@ public class ClassFile {
     this.annotations = annotations;
     this.innerClasses = innerClasses;
     this.typeAnnotations = typeAnnotations;
+    this.module = module;
   }
 
   /** Class access and property flags. */
@@ -113,6 +116,12 @@ public class ClassFile {
   /** Type annotations. */
   public ImmutableList<TypeAnnotationInfo> typeAnnotations() {
     return typeAnnotations;
+  }
+
+  /** A module attribute. */
+  @Nullable
+  public ModuleInfo module() {
+    return module;
   }
 
   /** The contents of a JVMS §4.5 field_info structure. */
@@ -746,6 +755,182 @@ public class ClassFile {
           flat.addFirst(curr);
         }
         return ImmutableList.copyOf(flat);
+      }
+    }
+  }
+
+  /** A JVMS 4.7.25 module attribute. */
+  public static class ModuleInfo {
+
+    private final String name;
+    private final String version;
+    private final int flags;
+    private final ImmutableList<RequireInfo> requires;
+    private final ImmutableList<ExportInfo> exports;
+    private final ImmutableList<OpenInfo> opens;
+    private final ImmutableList<UseInfo> uses;
+    private final ImmutableList<ProvideInfo> provides;
+
+    public ModuleInfo(
+        String name,
+        int flags,
+        String version,
+        ImmutableList<RequireInfo> requires,
+        ImmutableList<ExportInfo> exports,
+        ImmutableList<OpenInfo> opens,
+        ImmutableList<UseInfo> uses,
+        ImmutableList<ProvideInfo> provides) {
+      this.name = name;
+      this.flags = flags;
+      this.version = version;
+      this.requires = requires;
+      this.exports = exports;
+      this.opens = opens;
+      this.uses = uses;
+      this.provides = provides;
+    }
+
+    public String name() {
+      return name;
+    }
+
+    public int flags() {
+      return flags;
+    }
+
+    public String version() {
+      return version;
+    }
+
+    public ImmutableList<RequireInfo> requires() {
+      return requires;
+    }
+
+    public ImmutableList<ExportInfo> exports() {
+      return exports;
+    }
+
+    public ImmutableList<OpenInfo> opens() {
+      return opens;
+    }
+
+    public ImmutableList<UseInfo> uses() {
+      return uses;
+    }
+
+    public ImmutableList<ProvideInfo> provides() {
+      return provides;
+    }
+
+    /** A JVMS 4.7.25 module requires directive. */
+    public static class RequireInfo {
+
+      private final String moduleName;
+      private final int flags;
+      private final String version;
+
+      public RequireInfo(String moduleName, int flags, String version) {
+        this.moduleName = moduleName;
+        this.flags = flags;
+        this.version = version;
+      }
+
+      public String moduleName() {
+        return moduleName;
+      }
+
+      public int flags() {
+        return flags;
+      }
+
+      public String version() {
+        return version;
+      }
+    }
+
+    /** A JVMS 4.7.25 module exports directive. */
+    public static class ExportInfo {
+
+      private final String moduleName;
+      private final int flags;
+      private final ImmutableList<String> modules;
+
+      public ExportInfo(String moduleName, int flags, ImmutableList<String> modules) {
+        this.moduleName = moduleName;
+        this.flags = flags;
+        this.modules = modules;
+      }
+
+      public String moduleName() {
+        return moduleName;
+      }
+
+      public int flags() {
+        return flags;
+      }
+
+      public ImmutableList<String> modules() {
+        return modules;
+      }
+    }
+
+    /** A JVMS 4.7.25 module opens directive. */
+    public static class OpenInfo {
+
+      private final String moduleName;
+      private final int flags;
+      private final ImmutableList<String> modules;
+
+      public OpenInfo(String moduleName, int flags, ImmutableList<String> modules) {
+        this.moduleName = moduleName;
+        this.flags = flags;
+        this.modules = modules;
+      }
+
+      public String moduleName() {
+        return moduleName;
+      }
+
+      public int flags() {
+        return flags;
+      }
+
+      public ImmutableList<String> modules() {
+        return modules;
+      }
+    }
+
+    /** A JVMS 4.7.25 module uses directive. */
+    public static class UseInfo {
+
+      private final String descriptor;
+
+      public UseInfo(String descriptor) {
+        this.descriptor = descriptor;
+      }
+
+      public String descriptor() {
+        return descriptor;
+      }
+    }
+
+    /** A JVMS 4.7.25 module provides directive. */
+    public static class ProvideInfo {
+
+      private final String descriptor;
+      private final ImmutableList<String> implDescriptors;
+
+      public ProvideInfo(String descriptor, ImmutableList<String> implDescriptors) {
+        this.descriptor = descriptor;
+        this.implDescriptors = implDescriptors;
+      }
+
+      public String descriptor() {
+        return descriptor;
+      }
+
+      public ImmutableList<String> implDescriptors() {
+        return implDescriptors;
       }
     }
   }

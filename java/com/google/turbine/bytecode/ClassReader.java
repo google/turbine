@@ -21,6 +21,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.ExportInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.OpenInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.ProvideInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.RequireInfo;
+import com.google.turbine.bytecode.ClassFile.ModuleInfo.UseInfo;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
@@ -94,6 +100,7 @@ public class ClassReader {
     String signature = null;
     List<ClassFile.InnerClass> innerclasses = Collections.emptyList();
     List<ClassFile.AnnotationInfo> annotations = Collections.emptyList();
+    ClassFile.ModuleInfo module = null;
     int attributesCount = reader.u2();
     for (int j = 0; j < attributesCount; j++) {
       int attributeNameIndex = reader.u2();
@@ -107,6 +114,9 @@ public class ClassReader {
           break;
         case "InnerClasses":
           innerclasses = readInnerClasses(constantPool, thisClass);
+          break;
+        case "Module":
+          module = readModule(constantPool);
           break;
         default:
           reader.skip(reader.u4());
@@ -124,7 +134,8 @@ public class ClassReader {
         fieldinfos,
         annotations,
         innerclasses,
-        ImmutableList.of());
+        ImmutableList.of(),
+        module);
   }
 
   /** Reads a JVMS 4.7.9 Signature attribute. */
@@ -180,6 +191,84 @@ public class ClassReader {
       }
     }
     return annotations;
+  }
+
+  /** Processes a JVMS 4.7.25 Module attribute. */
+  private ModuleInfo readModule(ConstantPoolReader constantPool) {
+    reader.u4(); // length
+    String name = constantPool.moduleInfo(reader.u2());
+    int flags = reader.u2();
+    int versionIndex = reader.u2();
+    String version = (versionIndex != 0) ? constantPool.utf8(versionIndex) : null;
+
+    ImmutableList.Builder<ClassFile.ModuleInfo.RequireInfo> requires = ImmutableList.builder();
+    int numRequires = reader.u2();
+    for (int i = 0; i < numRequires; i++) {
+      String requiresModule = constantPool.moduleInfo(reader.u2());
+      int requiresFlags = reader.u2();
+      int requiresVersionIndex = reader.u2();
+      String requiresVersion =
+          (requiresVersionIndex != 0) ? constantPool.utf8(requiresVersionIndex) : null;
+      requires.add(new RequireInfo(requiresModule, requiresFlags, requiresVersion));
+    }
+
+    ImmutableList.Builder<ClassFile.ModuleInfo.ExportInfo> exports = ImmutableList.builder();
+    int numExports = reader.u2();
+    for (int i = 0; i < numExports; i++) {
+      String exportsModule = constantPool.packageInfo(reader.u2());
+      int exportsFlags = reader.u2();
+      int numExportsTo = reader.u2();
+      ImmutableList.Builder<String> exportsToModules = ImmutableList.builder();
+      for (int n = 0; n < numExportsTo; n++) {
+        String exportsToModule = constantPool.moduleInfo(reader.u2());
+        exportsToModules.add(exportsToModule);
+      }
+      exports.add(new ExportInfo(exportsModule, exportsFlags, exportsToModules.build()));
+    }
+
+    ImmutableList.Builder<ClassFile.ModuleInfo.OpenInfo> opens = ImmutableList.builder();
+    int numOpens = reader.u2();
+    for (int i = 0; i < numOpens; i++) {
+      String opensModule = constantPool.packageInfo(reader.u2());
+      int opensFlags = reader.u2();
+      int numOpensTo = reader.u2();
+      ImmutableList.Builder<String> opensToModules = ImmutableList.builder();
+      for (int n = 0; n < numOpensTo; n++) {
+        String opensToModule = constantPool.moduleInfo(reader.u2());
+        opensToModules.add(opensToModule);
+      }
+      opens.add(new OpenInfo(opensModule, opensFlags, opensToModules.build()));
+    }
+
+    ImmutableList.Builder<ClassFile.ModuleInfo.UseInfo> uses = ImmutableList.builder();
+    int numUses = reader.u2();
+    for (int i = 0; i < numUses; i++) {
+      String use = constantPool.classInfo(reader.u2());
+      uses.add(new UseInfo(use));
+    }
+
+    ImmutableList.Builder<ClassFile.ModuleInfo.ProvideInfo> provides = ImmutableList.builder();
+    int numProvides = reader.u2();
+    for (int i = 0; i < numProvides; i++) {
+      String typeName = constantPool.classInfo(reader.u2());
+      int numProvidesWith = reader.u2();
+      ImmutableList.Builder<String> impls = ImmutableList.builder();
+      for (int n = 0; n < numProvidesWith; n++) {
+        String impl = constantPool.classInfo(reader.u2());
+        impls.add(impl);
+      }
+      provides.add(new ProvideInfo(typeName, impls.build()));
+    }
+
+    return new ClassFile.ModuleInfo(
+        name,
+        flags,
+        version,
+        requires.build(),
+        exports.build(),
+        opens.build(),
+        uses.build(),
+        provides.build());
   }
 
   /**
