@@ -72,12 +72,21 @@ public class ConstBinder {
     this.origin = origin;
     this.base = base;
     this.env = env;
-    this.constEvaluator = new ConstEvaluator(origin, origin, base, base.scope(), constantEnv, env);
+    this.constEvaluator =
+        new ConstEvaluator(
+            origin, origin, base.memberImports(), base.source(), base.scope(), constantEnv, env);
   }
 
   public SourceTypeBoundClass bind() {
     ImmutableList<AnnoInfo> annos =
-        new ConstEvaluator(origin, base.owner(), base, base.enclosingScope(), constantEnv, env)
+        new ConstEvaluator(
+                origin,
+                base.owner(),
+                base.memberImports(),
+                base.source(),
+                base.enclosingScope(),
+                constantEnv,
+                env)
             .evaluateAnnotations(base.annotations());
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());

@@ -24,7 +24,6 @@ import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
-import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -33,8 +32,10 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
+import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
@@ -72,8 +73,11 @@ public strictfp class ConstEvaluator {
   /** The symbol of the enclosing class, for lexical field lookups. */
   private final ClassSymbol owner;
 
-  /** The bound node of the enclosing class. */
-  private final SourceTypeBoundClass base;
+  /** Member imports of the enclosing compilation unit. */
+  private final MemberImportIndex memberImports;
+
+  /** The current source file. */
+  private final SourceFile source;
 
   /** The constant variable environment. */
   private final Env<FieldSymbol, Const.Value> values;
@@ -86,14 +90,16 @@ public strictfp class ConstEvaluator {
   public ConstEvaluator(
       ClassSymbol origin,
       ClassSymbol owner,
-      SourceTypeBoundClass base,
+      MemberImportIndex memberImports,
+      SourceFile source,
       CompoundScope scope,
       Env<FieldSymbol, Const.Value> values,
       CompoundEnv<ClassSymbol, TypeBoundClass> env) {
 
     this.origin = origin;
     this.owner = owner;
-    this.base = base;
+    this.memberImports = memberImports;
+    this.source = source;
     this.values = values;
     this.env = env;
     this.scope = scope;
@@ -230,14 +236,14 @@ public strictfp class ConstEvaluator {
     if (field != null) {
       return field;
     }
-    ClassSymbol classSymbol = base.memberImports().singleMemberImport(simpleName);
+    ClassSymbol classSymbol = memberImports.singleMemberImport(simpleName);
     if (classSymbol != null) {
       field = Resolve.resolveField(env, origin, classSymbol, simpleName);
       if (field != null) {
         return field;
       }
     }
-    Iterator<ClassSymbol> it = base.memberImports().onDemandImports();
+    Iterator<ClassSymbol> it = memberImports.onDemandImports();
     while (it.hasNext()) {
       field = Resolve.resolveField(env, origin, it.next(), simpleName);
       if (field == null) {
@@ -925,7 +931,7 @@ public strictfp class ConstEvaluator {
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);
     }
-    AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(base.source(), sym, t, null));
+    AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, null));
     return new AnnotationValue(annoInfo.sym(), annoInfo.values());
   }
 
@@ -974,7 +980,7 @@ public strictfp class ConstEvaluator {
   }
 
   private TurbineError error(int position, ErrorKind kind, Object... args) {
-    return TurbineError.format(base.source(), position, kind, args);
+    return TurbineError.format(source, position, kind, args);
   }
 
   public Const.Value evalFieldInitializer(Expression expression, Type type) {
