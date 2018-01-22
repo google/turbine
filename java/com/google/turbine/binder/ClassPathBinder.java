@@ -20,12 +20,15 @@ import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.bound.ModuleInfo;
+import com.google.turbine.binder.bytecode.BytecodeBinder;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.SimpleTopLevelIndex;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -49,6 +52,7 @@ public class ClassPathBinder {
     // e.g. to look up type parameters in enclosing declarations
     Map<ClassSymbol, BytecodeBoundClass> transitive = new LinkedHashMap<>();
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
+    Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
     Env<ClassSymbol, BytecodeBoundClass> benv =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
@@ -58,7 +62,7 @@ public class ClassPathBinder {
         };
     for (Path path : paths) {
       try {
-        bindJar(path, map, benv, transitive);
+        bindJar(path, map, modules, benv, transitive);
       } catch (IOException e) {
         throw new IOException("error reading " + path, e);
       }
@@ -70,11 +74,17 @@ public class ClassPathBinder {
       }
     }
     SimpleEnv<ClassSymbol, BytecodeBoundClass> env = new SimpleEnv<>(ImmutableMap.copyOf(map));
+    SimpleEnv<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.copyOf(modules));
     TopLevelIndex index = SimpleTopLevelIndex.of(env.asMap().keySet());
     return new ClassPath() {
       @Override
       public Env<ClassSymbol, BytecodeBoundClass> env() {
         return env;
+      }
+
+      @Override
+      public Env<ModuleSymbol, ModuleInfo> moduleEnv() {
+        return moduleEnv;
       }
 
       @Override
@@ -87,6 +97,7 @@ public class ClassPathBinder {
   private static void bindJar(
       Path path,
       Map<ClassSymbol, BytecodeBoundClass> env,
+      Map<ModuleSymbol, ModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> benv,
       Map<ClassSymbol, BytecodeBoundClass> transitive)
       throws IOException {
@@ -108,6 +119,12 @@ public class ClassPathBinder {
                 return new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString());
               }
             });
+        continue;
+      }
+      if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.class")) {
+        ModuleInfo moduleInfo =
+            BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(ze));
+        modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));

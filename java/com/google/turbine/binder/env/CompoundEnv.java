@@ -16,7 +16,10 @@
 
 package com.google.turbine.binder.env;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.turbine.binder.sym.Symbol;
+import javax.annotation.Nullable;
 
 /** An {@link Env} that chains two existing envs together. */
 public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {
@@ -24,9 +27,9 @@ public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {
   private final Env<S, ? extends V> base;
   private final Env<S, ? extends V> env;
 
-  private CompoundEnv(Env<S, ? extends V> base, Env<S, ? extends V> env) {
+  private CompoundEnv(@Nullable Env<S, ? extends V> base, Env<S, ? extends V> env) {
     this.base = base;
-    this.env = env;
+    this.env = requireNonNull(env);
   }
 
   @Override

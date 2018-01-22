@@ -19,12 +19,14 @@ package com.google.turbine.binder;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.SimpleTopLevelIndex;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -79,11 +81,18 @@ public class CtSymClassBinder {
       return null;
     }
     SimpleEnv<ClassSymbol, BytecodeBoundClass> env = new SimpleEnv<>(ImmutableMap.copyOf(map));
+    // TODO(cushon): support ct.sym module-infos once they exist (JDK 10?)
+    Env<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.of());
     TopLevelIndex index = SimpleTopLevelIndex.of(env.asMap().keySet());
     return new ClassPath() {
       @Override
       public Env<ClassSymbol, BytecodeBoundClass> env() {
         return env;
+      }
+
+      @Override
+      public Env<ModuleSymbol, ModuleInfo> moduleEnv() {
+        return moduleEnv;
       }
 
       @Override

@@ -220,13 +220,13 @@ public class AttributeWriter {
 
     tmp.writeShort(pool.moduleInfo(module.name()));
     tmp.writeShort(module.flags());
-    tmp.writeShort(pool.utf8(module.version()));
+    tmp.writeShort(module.version() != null ? pool.utf8(module.version()) : 0);
 
     tmp.writeShort(module.requires().size());
     for (RequireInfo require : module.requires()) {
       tmp.writeShort(pool.moduleInfo(require.moduleName()));
       tmp.writeShort(require.flags());
-      tmp.writeShort(pool.utf8(require.version()));
+      tmp.writeShort(require.version() != null ? pool.utf8(require.version()) : 0);
     }
 
     tmp.writeShort(module.exports().size());

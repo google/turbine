@@ -18,6 +18,7 @@ package com.google.turbine.main;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 import com.google.turbine.binder.Binder;
@@ -78,10 +79,11 @@ public class Main {
             options.classPath(), options.directJarsToTargets(), options.depsArtifacts());
     ClassPath classpath = ClassPathBinder.bindClasspath(toPaths(reducedClasspath));
 
-    BindingResult bound = Binder.bind(units, classpath, bootclasspath);
+    BindingResult bound =
+        Binder.bind(units, classpath, bootclasspath, /* moduleVersion=*/ Optional.absent());
 
     // TODO(cushon): parallelize
-    Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
+    Lowered lowered = Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv());
 
     Map<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
 

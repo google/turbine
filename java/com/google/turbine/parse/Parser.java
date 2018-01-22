@@ -17,12 +17,15 @@
 package com.google.turbine.parse;
 
 import static com.google.turbine.parse.Token.COMMA;
+import static com.google.turbine.parse.Token.IDENT;
 import static com.google.turbine.parse.Token.INTERFACE;
 import static com.google.turbine.parse.Token.LPAREN;
 import static com.google.turbine.parse.Token.RPAREN;
+import static com.google.turbine.parse.Token.STATIC;
 import static com.google.turbine.tree.TurbineModifier.PROTECTED;
 import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -287,8 +290,17 @@ public class Parser {
         TurbineTyKind.ENUM);
   }
 
+  private String moduleName() {
+    return Joiner.on('.').join(qualIdent());
+  }
+
+  private String packageName() {
+    return Joiner.on('/').join(qualIdent());
+  }
+
   private ModDecl moduleDeclaration(boolean open, ImmutableList<Anno> annos) {
-    ImmutableList<String> moduleName = qualIdent();
+    int pos = position;
+    String moduleName = moduleName();
     eat(Token.LBRACE);
     ImmutableList.Builder<ModDirective> directives = ImmutableList.builder();
     OUTER:
@@ -325,7 +337,7 @@ public class Parser {
       }
     }
     eat(Token.RBRACE);
-    return new ModDecl(position, annos, open, moduleName, directives.build());
+    return new ModDecl(pos, annos, open, moduleName, directives.build());
   }
 
   private ModRequires moduleRequires() {
@@ -339,25 +351,24 @@ public class Parser {
       }
       if (token == Token.STATIC) {
         next();
-        // TODO(cushon): note that this needs to lower to ACC_STATIC_PHASE, not ACC_STATIC
         access.add(TurbineModifier.STATIC);
         break;
       }
       break;
     }
-    ImmutableList<String> moduleName = qualIdent();
+    String moduleName = moduleName();
     eat(Token.SEMI);
     return new ModRequires(pos, ImmutableSet.copyOf(access), moduleName);
   }
 
   private ModExports moduleExports() {
     int pos = position;
-    ImmutableList<String> packageName = qualIdent();
-    ImmutableList.Builder<ImmutableList<String>> moduleNames = ImmutableList.builder();
+    String packageName = packageName();
+    ImmutableList.Builder<String> moduleNames = ImmutableList.builder();
     if (lexer.stringValue().equals("to")) {
       next();
       do {
-        ImmutableList<String> moduleName = qualIdent();
+        String moduleName = moduleName();
         moduleNames.add(moduleName);
       } while (maybe(Token.COMMA));
     }
@@ -367,12 +378,12 @@ public class Parser {
 
   private ModOpens moduleOpens() {
     int pos = position;
-    ImmutableList<String> packageName = qualIdent();
-    ImmutableList.Builder<ImmutableList<String>> moduleNames = ImmutableList.builder();
+    String packageName = packageName();
+    ImmutableList.Builder<String> moduleNames = ImmutableList.builder();
     if (lexer.stringValue().equals("to")) {
       next();
       do {
-        ImmutableList<String> moduleName = qualIdent();
+        String moduleName = moduleName();
         moduleNames.add(moduleName);
       } while (maybe(Token.COMMA));
     }

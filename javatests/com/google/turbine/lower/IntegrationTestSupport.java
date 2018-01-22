@@ -23,11 +23,13 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.parse.Parser;
@@ -428,6 +430,16 @@ public class IntegrationTestSupport {
 
   static Map<String, byte[]> runTurbine(Map<String, String> input, ImmutableList<Path> classpath)
       throws IOException {
+    return runTurbine(
+        input, classpath, TURBINE_BOOTCLASSPATH, /* moduleVersion= */ Optional.absent());
+  }
+
+  static Map<String, byte[]> runTurbine(
+      Map<String, String> input,
+      ImmutableList<Path> classpath,
+      ClassPath bootClassPath,
+      Optional<String> moduleVersion)
+      throws IOException {
     List<Tree.CompUnit> units =
         input
             .entrySet()
@@ -437,12 +449,19 @@ public class IntegrationTestSupport {
             .collect(toList());
 
     Binder.BindingResult bound =
-        Binder.bind(units, ClassPathBinder.bindClasspath(classpath), TURBINE_BOOTCLASSPATH);
-    return Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
+        Binder.bind(units, ClassPathBinder.bindClasspath(classpath), bootClassPath, moduleVersion);
+    return Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
   }
 
   public static Map<String, byte[]> runJavac(
       Map<String, String> sources, Collection<Path> classpath) throws Exception {
+    return runJavac(
+        sources, classpath, ImmutableList.of("-parameters", "-source", "8", "-target", "8"));
+  }
+
+  public static Map<String, byte[]> runJavac(
+      Map<String, String> sources, Collection<Path> classpath, ImmutableList<String> options)
+      throws Exception {
 
     FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
 
@@ -466,13 +485,20 @@ public class IntegrationTestSupport {
     JavacFileManager fileManager = new JavacFileManager(new Context(), true, UTF_8);
     fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
     fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
+    fileManager.setLocationFromPaths(StandardLocation.locationFor("MODULE_PATH"), classpath);
+    if (inputs.stream().filter(i -> i.getFileName().toString().equals("module-info.java")).count()
+        > 1) {
+      // multi-module mode
+      fileManager.setLocationFromPaths(
+          StandardLocation.locationFor("MODULE_SOURCE_PATH"), ImmutableList.of(srcs));
+    }
 
     JavacTask task =
         compiler.getTask(
             new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
             fileManager,
             collector,
-            ImmutableList.of("-parameters", "-source", "8", "-target", "8"),
+            options,
             ImmutableList.of(),
             fileManager.getJavaFileObjectsFromPaths(inputs));
 

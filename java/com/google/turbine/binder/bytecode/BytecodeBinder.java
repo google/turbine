@@ -17,8 +17,11 @@
 package com.google.turbine.binder.bytecode;
 
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.bytecode.ClassFile;
+import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
@@ -26,9 +29,11 @@ import com.google.turbine.bytecode.sig.Sig.WildTySig;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.TyVar;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Bind {@link Type}s from bytecode. */
 public class BytecodeBinder {
@@ -87,5 +92,25 @@ public class BytecodeBinder {
 
   private static Type bindArrayTy(Sig.ArrayTySig arrayTySig, Function<String, TyVarSymbol> scope) {
     return new ArrayTy(bindTy(arrayTySig.elementType(), scope), ImmutableList.of());
+  }
+
+  /**
+   * Returns a {@link ModuleInfo} given a module-info class file. Currently only the module's name,
+   * version, and flags are populated, since the directives are not needed by turbine at compile
+   * time.
+   */
+  public static ModuleInfo bindModuleInfo(String path, Supplier<byte[]> bytes) throws IOException {
+    ClassFile classFile = ClassReader.read(path, bytes.get());
+    ClassFile.ModuleInfo module = classFile.module();
+    return new ModuleInfo(
+        module.name(),
+        module.version(),
+        module.flags(),
+        /* annos= */ ImmutableList.of(),
+        /* requires= */ ImmutableList.of(),
+        /* exports= */ ImmutableList.of(),
+        /* opens= */ ImmutableList.of(),
+        /* uses= */ ImmutableList.of(),
+        /* provides= */ ImmutableList.of());
   }
 }

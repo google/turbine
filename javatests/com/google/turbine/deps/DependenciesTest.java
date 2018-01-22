@@ -104,9 +104,10 @@ public class DependenciesTest {
           Binder.bind(
               units,
               ClassPathBinder.bindClasspath(classpath),
-              TestClassPaths.TURBINE_BOOTCLASSPATH);
+              TestClassPaths.TURBINE_BOOTCLASSPATH,
+              /* moduleVersion=*/ Optional.absent());
 
-      Lowered lowered = Lower.lowerAll(bound.units(), bound.classPathEnv());
+      Lowered lowered = Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv());
 
       return Dependencies.collectDeps(
           Optional.of("//test"), TestClassPaths.TURBINE_BOOTCLASSPATH, bound, lowered);

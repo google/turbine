@@ -537,7 +537,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     if (modDecl.open()) {
       append("open ");
     }
-    append("module ").append(Joiner.on('.').join(modDecl.moduleName())).append(" {");
+    append("module ").append(modDecl.moduleName()).append(" {");
     indent++;
     append('\n');
     for (ModDirective directive : modDecl.directives()) {
@@ -552,7 +552,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   public Void visitModRequires(ModRequires modRequires, Void input) {
     append("requires ");
     printModifiers(modRequires.mods());
-    append(Joiner.on('.').join(modRequires.moduleName()));
+    append(modRequires.moduleName());
     append(";");
     append('\n');
     return null;
@@ -561,16 +561,16 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   @Override
   public Void visitModExports(ModExports modExports, Void input) {
     append("exports ");
-    append(Joiner.on('.').join(modExports.packageName()));
+    append(modExports.packageName().replace('/', '.'));
     if (!modExports.moduleNames().isEmpty()) {
       append(" to").append('\n');
       indent += 2;
       boolean first = true;
-      for (ImmutableList<String> moduleName : modExports.moduleNames()) {
+      for (String moduleName : modExports.moduleNames()) {
         if (!first) {
           append(',').append('\n');
         }
-        append(Joiner.on('.').join(moduleName));
+        append(moduleName);
         first = false;
       }
       indent -= 2;
@@ -583,16 +583,16 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   @Override
   public Void visitModOpens(ModOpens modOpens, Void input) {
     append("opens ");
-    append(Joiner.on('.').join(modOpens.packageName()));
+    append(modOpens.packageName().replace('/', '.'));
     if (!modOpens.moduleNames().isEmpty()) {
       append(" to").append('\n');
       indent += 2;
       boolean first = true;
-      for (ImmutableList<String> moduleName : modOpens.moduleNames()) {
+      for (String moduleName : modOpens.moduleNames()) {
         if (!first) {
           append(',').append('\n');
         }
-        append(Joiner.on('.').join(moduleName));
+        append(moduleName);
         first = false;
       }
       indent -= 2;

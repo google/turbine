@@ -21,6 +21,7 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.parse.Parser;
@@ -377,7 +378,8 @@ public class BinderErrorTest {
       Binder.bind(
               ImmutableList.of(parseLines(source)),
               ClassPathBinder.bindClasspath(Collections.emptyList()),
-              TURBINE_BOOTCLASSPATH)
+              TURBINE_BOOTCLASSPATH,
+              /* moduleVersion=*/ Optional.absent())
           .units();
       fail();
     } catch (TurbineError e) {

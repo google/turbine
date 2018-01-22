@@ -21,6 +21,7 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
@@ -211,6 +212,7 @@ public class LowerTest {
         Lower.lowerAll(
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
+                ImmutableList.of(),
                 TURBINE_BOOTCLASSPATH.env())
             .bytes();
 
@@ -242,8 +244,10 @@ public class LowerTest {
                             "  }",
                             "}"))),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH);
-    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion=*/ Optional.absent());
+    Map<String, byte[]> lowered =
+        Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
     List<String> attributes = new ArrayList<>();
     new ClassReader(lowered.get("Test$Inner$InnerMost"))
         .accept(
@@ -318,8 +322,10 @@ public class LowerTest {
                             "  public @Anno int[][] xs;",
                             "}"))),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH);
-    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion=*/ Optional.absent());
+    Map<String, byte[]> lowered =
+        Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
     TypePath[] path = new TypePath[1];
     new ClassReader(lowered.get("Test"))
         .accept(
@@ -394,8 +400,10 @@ public class LowerTest {
         Binder.bind(
             ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH);
-    Map<String, byte[]> lowered = Lower.lowerAll(bound.units(), bound.classPathEnv()).bytes();
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion=*/ Optional.absent());
+    Map<String, byte[]> lowered =
+        Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
     int[] acc = {0};
     new ClassReader(lowered.get("Test"))
         .accept(

@@ -29,10 +29,10 @@ import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
-import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.lookup.MemberImportIndex;
+import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.diag.SourceFile;
@@ -85,14 +85,14 @@ public strictfp class ConstEvaluator {
   /** The class environment. */
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
 
-  private final CompoundScope scope;
+  private final Scope scope;
 
   public ConstEvaluator(
       ClassSymbol origin,
       ClassSymbol owner,
       MemberImportIndex memberImports,
       SourceFile source,
-      CompoundScope scope,
+      Scope scope,
       Env<FieldSymbol, Const.Value> values,
       CompoundEnv<ClassSymbol, TypeBoundClass> env) {
 

@@ -41,7 +41,8 @@ public class TurbineError extends Error {
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),
     NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
-    DUPLICATE_DECLARATION("duplicate declaration of %s");
+    DUPLICATE_DECLARATION("duplicate declaration of %s"),
+    BAD_MODULE_INFO("unexpected declaration found in module-info");
 
     private final String message;
 

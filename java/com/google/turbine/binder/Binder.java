@@ -27,7 +27,9 @@ import com.google.turbine.binder.CompUnitPreprocessor.PreprocessedCompUnit;
 import com.google.turbine.binder.Resolve.CanonicalResolver;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
+import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bound.PackageSourceBoundClass;
+import com.google.turbine.binder.bound.PackageSourceBoundModule;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -50,12 +52,14 @@ import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
+import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.type.Type;
 import java.util.List;
 
@@ -64,7 +68,10 @@ public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static BindingResult bind(
-      List<CompUnit> units, ClassPath classpath, ClassPath bootclasspath) {
+      List<CompUnit> units,
+      ClassPath classpath,
+      ClassPath bootclasspath,
+      Optional<String> moduleVersion) {
 
     ImmutableList<PreprocessedCompUnit> preProcessedUnits = CompUnitPreprocessor.preprocess(units);
 
@@ -81,8 +88,14 @@ public class Binder {
     CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv =
         CompoundEnv.of(classpath.env()).append(bootclasspath.env());
 
-    SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv =
+    CompoundEnv<ModuleSymbol, ModuleInfo> classPathModuleEnv =
+        CompoundEnv.of(classpath.moduleEnv()).append(bootclasspath.moduleEnv());
+
+    BindPackagesResult bindPackagesResult =
         bindPackages(ienv, tli, preProcessedUnits, classPathEnv);
+
+    SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv = bindPackagesResult.classes;
+    SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules = bindPackagesResult.modules;
 
     Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(syms, psenv, classPathEnv);
 
@@ -100,11 +113,18 @@ public class Binder {
         canonicalizeTypes(
             syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
 
+    ImmutableList<ModuleInfo> boundModules =
+        bindModules(
+            modules,
+            CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
+            classPathModuleEnv,
+            moduleVersion);
+
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
       result.put(sym, tenv.get(sym));
     }
-    return new BindingResult(result.build(), classPathEnv);
+    return new BindingResult(result.build(), boundModules, classPathEnv);
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
@@ -123,14 +143,27 @@ public class Binder {
     return envBuilder.build();
   }
 
+  static class BindPackagesResult {
+    final SimpleEnv<ClassSymbol, PackageSourceBoundClass> classes;
+    final SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules;
+
+    BindPackagesResult(
+        SimpleEnv<ClassSymbol, PackageSourceBoundClass> classes,
+        SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules) {
+      this.classes = classes;
+      this.modules = modules;
+    }
+  }
+
   /** Initializes scopes for compilation unit and package-level lookup. */
-  private static SimpleEnv<ClassSymbol, PackageSourceBoundClass> bindPackages(
+  private static BindPackagesResult bindPackages(
       Env<ClassSymbol, SourceBoundClass> ienv,
       TopLevelIndex tli,
       ImmutableList<PreprocessedCompUnit> units,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
 
     SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
+    SimpleEnv.Builder<ModuleSymbol, PackageSourceBoundModule> modules = SimpleEnv.builder();
     Scope javaLang = verifyNotNull(tli.lookupPackage(ImmutableList.of("java", "lang")));
     CompoundScope topLevel = CompoundScope.base(tli.scope()).append(javaLang);
     for (PreprocessedCompUnit unit : units) {
@@ -150,11 +183,17 @@ public class Binder {
               .append(wildImportScope)
               .append(ImportScope.fromScope(packageScope))
               .append(importScope);
+      if (unit.module().isPresent()) {
+        ModDecl module = unit.module().get();
+        modules.put(
+            new ModuleSymbol(module.moduleName()),
+            new PackageSourceBoundModule(module, scope, memberImports, unit.source()));
+      }
       for (SourceBoundClass type : unit.types()) {
         env.put(type.sym(), new PackageSourceBoundClass(type, scope, memberImports, unit.source()));
       }
     }
-    return env.build();
+    return new BindPackagesResult(env.build(), modules.build());
   }
 
   /** Binds the type hierarchy (superclasses and interfaces) for all classes in the compilation. */
@@ -199,6 +238,43 @@ public class Binder {
       builder.put(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
     }
     return builder.build();
+  }
+
+  private static ImmutableList<ModuleInfo> bindModules(
+      SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules,
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      CompoundEnv<ModuleSymbol, ModuleInfo> moduleEnv,
+      Optional<String> moduleVersion) {
+    // Allow resolution of modules in the current compilation. Currently this is only needed for
+    // version strings in requires directives.
+    moduleEnv =
+        moduleEnv.append(
+            new Env<ModuleSymbol, ModuleInfo>() {
+              @Override
+              public ModuleInfo get(ModuleSymbol sym) {
+                if (modules.asMap().containsKey(sym)) {
+                  PackageSourceBoundModule info = modules.get(sym);
+                  if (info != null) {
+                    return new ModuleInfo(
+                        info.module().moduleName(),
+                        moduleVersion.orNull(),
+                        /* flags= */ 0,
+                        /* annos= */ ImmutableList.of(),
+                        /* requires= */ ImmutableList.of(),
+                        /* exports= */ ImmutableList.of(),
+                        /* opens= */ ImmutableList.of(),
+                        /* uses= */ ImmutableList.of(),
+                        /* provides= */ ImmutableList.of());
+                  }
+                }
+                return null;
+              }
+            });
+    ImmutableList.Builder<ModuleInfo> bound = ImmutableList.builder();
+    for (PackageSourceBoundModule module : modules.asMap().values()) {
+      bound.add(ModuleBinder.bind(module, env, moduleEnv, moduleVersion));
+    }
+    return bound.build();
   }
 
   private static Env<ClassSymbol, SourceTypeBoundClass> constants(
@@ -298,18 +374,25 @@ public class Binder {
   /** The result of binding: bound nodes for sources in the compilation, and the classpath. */
   public static class BindingResult {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
+    private final ImmutableList<ModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
 
     public BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
+        ImmutableList<ModuleInfo> modules,
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
       this.units = units;
+      this.modules = modules;
       this.classPathEnv = classPathEnv;
     }
 
     /** Bound nodes for sources in the compilation. */
     public ImmutableMap<ClassSymbol, SourceTypeBoundClass> units() {
       return units;
+    }
+
+    public ImmutableList<ModuleInfo> modules() {
+      return modules;
     }
 
     /** The classpath. */

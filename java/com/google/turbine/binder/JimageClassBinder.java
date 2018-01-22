@@ -25,6 +25,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import com.google.turbine.binder.bound.ModuleInfo;
+import com.google.turbine.binder.bytecode.BytecodeBinder;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
@@ -32,6 +34,7 @@ import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.ModuleSymbol;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -84,16 +87,40 @@ public class JimageClassBinder {
   }
 
   private final Multimap<String, String> packageMap;
-  private final Path modules;
+  private final Path modulesRoot;
 
   private final Set<String> loadedPackages = new HashSet<>();
   private final Table<String, String, ClassSymbol> packageClassesBySimpleName =
       HashBasedTable.create();
+  private final Map<String, ModuleInfo> moduleMap = new HashMap<>();
   private final Map<ClassSymbol, BytecodeBoundClass> env = new HashMap<>();
 
   public JimageClassBinder(ImmutableMultimap<String, String> packageMap, Path modules) {
     this.packageMap = packageMap;
-    this.modules = modules;
+    this.modulesRoot = modules;
+  }
+
+  Path modulePath(String moduleName) {
+    Path path = modulesRoot.resolve(moduleName);
+    return Files.exists(path) ? path : null;
+  }
+
+  ModuleInfo module(String moduleName) {
+    ModuleInfo result = moduleMap.get(moduleName);
+    if (result == null) {
+      Path path = modulePath(moduleName);
+      if (path == null) {
+        return null;
+      }
+      try {
+        path = path.resolve("module-info.class");
+        result = BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(path));
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+      moduleMap.put(moduleName, result);
+    }
+    return result;
   }
 
   boolean initPackage(String packageName) {
@@ -113,7 +140,7 @@ public class JimageClassBinder {
         };
     for (String moduleName : moduleNames) {
       if (moduleName != null) {
-        Path modulePath = modules.resolve(moduleName);
+        Path modulePath = modulePath(moduleName);
         Path modulePackagePath = modulePath.resolve(packageName);
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(modulePackagePath)) {
           for (Path path : ds) {
@@ -209,7 +236,7 @@ public class JimageClassBinder {
 
   private class JimageClassPath implements ClassPath {
 
-    TopLevelIndex index = new JimageTopLevelIndex();
+    final TopLevelIndex index = new JimageTopLevelIndex();
 
     @Override
     public Env<ClassSymbol, BytecodeBoundClass> env() {
@@ -217,6 +244,16 @@ public class JimageClassBinder {
         @Override
         public BytecodeBoundClass get(ClassSymbol sym) {
           return initPackage(packageName(sym)) ? env.get(sym) : null;
+        }
+      };
+    }
+
+    @Override
+    public Env<ModuleSymbol, ModuleInfo> moduleEnv() {
+      return new Env<ModuleSymbol, ModuleInfo>() {
+        @Override
+        public ModuleInfo get(ModuleSymbol module) {
+          return module(module.name());
         }
       };
     }

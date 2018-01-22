@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * Copyright 2018 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,34 @@ package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
 
-/** The top interface for all symbols. */
+/** A module symbol. */
 @Immutable
-public interface Symbol {
-  /** The symbol kind. */
-  enum Kind {
-    CLASS,
-    TY_PARAM,
-    METHOD,
-    FIELD,
-    MODULE
+public class ModuleSymbol implements Symbol {
+
+  private final String name;
+
+  public ModuleSymbol(String name) {
+    this.name = name;
   }
 
-  /** The symbol kind. */
-  Kind symKind();
+  public String name() {
+    return name;
+  }
+
+  @Override
+  public Kind symKind() {
+    return Kind.MODULE;
+  }
+
+  @Override
+  public int hashCode() {
+    return name.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof ModuleSymbol && name.equals(((ModuleSymbol) other).name);
+  }
+
+  public static final ModuleSymbol JAVA_BASE = new ModuleSymbol("java.base");
 }

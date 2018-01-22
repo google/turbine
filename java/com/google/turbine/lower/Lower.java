@@ -16,6 +16,7 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeated;
 
 import com.google.common.base.Function;
@@ -26,6 +27,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.ModuleInfo;
+import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
+import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
+import com.google.turbine.binder.bound.ModuleInfo.ProvideInfo;
+import com.google.turbine.binder.bound.ModuleInfo.RequireInfo;
+import com.google.turbine.binder.bound.ModuleInfo.UseInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -102,6 +109,7 @@ public class Lower {
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
+      ImmutableList<ModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> classpath) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
@@ -109,6 +117,16 @@ public class Lower {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     for (ClassSymbol sym : units.keySet()) {
       result.put(sym.binaryName(), lower(units.get(sym), env, sym, symbols));
+    }
+    if (modules.size() == 1) {
+      // single module mode: the module-info.class file is at the root
+      result.put("module-info", lower(getOnlyElement(modules), env, symbols));
+    } else {
+      // multi-module mode: the output module-info.class are in a directory corresponding to their
+      // package
+      for (ModuleInfo module : modules) {
+        result.put(module.name().replace('.', '/') + "/module-info", lower(module, env, symbols));
+      }
     }
     return new Lowered(result.build(), ImmutableSet.copyOf(symbols));
   }
@@ -122,11 +140,92 @@ public class Lower {
     return new Lower(env).lower(info, sym, symbols);
   }
 
+  private static byte[] lower(
+      ModuleInfo module, CompoundEnv<ClassSymbol, TypeBoundClass> env, Set<ClassSymbol> symbols) {
+    return new Lower(env).lower(module, symbols);
+  }
+
   private final LowerSignature sig = new LowerSignature();
   private final Env<ClassSymbol, TypeBoundClass> env;
 
   public Lower(Env<ClassSymbol, TypeBoundClass> env) {
     this.env = env;
+  }
+
+  private byte[] lower(ModuleInfo module, Set<ClassSymbol> symbols) {
+    String name = "module-info";
+    ImmutableList<AnnotationInfo> annotations = lowerAnnotations(module.annos());
+    ClassFile.ModuleInfo moduleInfo = lowerModule(module);
+
+    ImmutableList.Builder<ClassFile.InnerClass> innerClasses = ImmutableList.builder();
+    {
+      Set<ClassSymbol> all = new LinkedHashSet<>();
+      for (ClassSymbol sym : sig.classes) {
+        addEnclosing(env, all, sym);
+      }
+      for (ClassSymbol innerSym : all) {
+        innerClasses.add(innerClass(env, innerSym));
+      }
+    }
+
+    ClassFile classfile =
+        new ClassFile(
+            /* access= */ TurbineFlag.ACC_MODULE,
+            name,
+            /* signature= */ null,
+            /* superClass= */ null,
+            /* interfaces= */ ImmutableList.of(),
+            /* methods= */ ImmutableList.of(),
+            /* fields= */ ImmutableList.of(),
+            annotations,
+            innerClasses.build(),
+            /* typeAnnotations= */ ImmutableList.of(),
+            moduleInfo);
+    symbols.addAll(sig.classes);
+    return ClassWriter.writeClass(classfile);
+  }
+
+  private ClassFile.ModuleInfo lowerModule(ModuleInfo module) {
+    ImmutableList.Builder<ClassFile.ModuleInfo.RequireInfo> requires = ImmutableList.builder();
+    for (RequireInfo require : module.requires()) {
+      requires.add(
+          new ClassFile.ModuleInfo.RequireInfo(
+              require.moduleName(), require.flags(), require.version()));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.ExportInfo> exports = ImmutableList.builder();
+    for (ExportInfo export : module.exports()) {
+      int exportAccess = 0; // not synthetic or mandated
+      exports.add(
+          new ClassFile.ModuleInfo.ExportInfo(
+              export.packageName(), exportAccess, export.modules()));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.OpenInfo> opens = ImmutableList.builder();
+    for (OpenInfo open : module.opens()) {
+      int openAccess = 0; // not synthetic or mandated
+      opens.add(new ClassFile.ModuleInfo.OpenInfo(open.packageName(), openAccess, open.modules()));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.UseInfo> uses = ImmutableList.builder();
+    for (UseInfo use : module.uses()) {
+      uses.add(new ClassFile.ModuleInfo.UseInfo(sig.descriptor(use.sym())));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.ProvideInfo> provides = ImmutableList.builder();
+    for (ProvideInfo provide : module.provides()) {
+      ImmutableList.Builder<String> impls = ImmutableList.builder();
+      for (ClassSymbol impl : provide.impls()) {
+        impls.add(sig.descriptor(impl));
+      }
+      provides.add(
+          new ClassFile.ModuleInfo.ProvideInfo(sig.descriptor(provide.sym()), impls.build()));
+    }
+    return new ClassFile.ModuleInfo(
+        module.name(),
+        module.flags(),
+        module.version(),
+        requires.build(),
+        exports.build(),
+        opens.build(),
+        uses.build(),
+        provides.build());
   }
 
   private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
@@ -308,6 +407,10 @@ public class Lower {
    */
   private void addEnclosing(
       Env<ClassSymbol, TypeBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
+    TypeBoundClass info = env.get(sym);
+    if (info == null) {
+      throw new AssertionError(sym);
+    }
     ClassSymbol owner = env.get(sym).owner();
     if (owner != null) {
       addEnclosing(env, all, owner);

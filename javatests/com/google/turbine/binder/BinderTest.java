@@ -21,6 +21,7 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -74,7 +75,8 @@ public class BinderTest {
         Binder.bind(
                 units,
                 ClassPathBinder.bindClasspath(Collections.emptyList()),
-                TURBINE_BOOTCLASSPATH)
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.absent())
             .units();
 
     assertThat(bound.keySet())
@@ -119,7 +121,8 @@ public class BinderTest {
         Binder.bind(
                 units,
                 ClassPathBinder.bindClasspath(Collections.emptyList()),
-                TURBINE_BOOTCLASSPATH)
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.absent())
             .units();
 
     assertThat(bound.keySet())
@@ -158,7 +161,8 @@ public class BinderTest {
         Binder.bind(
                 units,
                 ClassPathBinder.bindClasspath(Collections.emptyList()),
-                TURBINE_BOOTCLASSPATH)
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.absent())
             .units();
 
     assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
@@ -185,7 +189,10 @@ public class BinderTest {
 
     try {
       Binder.bind(
-          units, ClassPathBinder.bindClasspath(Collections.emptyList()), TURBINE_BOOTCLASSPATH);
+          units,
+          ClassPathBinder.bindClasspath(Collections.emptyList()),
+          TURBINE_BOOTCLASSPATH,
+          /* moduleVersion=*/ Optional.absent());
       fail();
     } catch (TurbineError e) {
       assertThat(e.getMessage()).contains("cycle in class hierarchy: a/A -> b/B -> a/A");
@@ -205,7 +212,8 @@ public class BinderTest {
         Binder.bind(
                 units,
                 ClassPathBinder.bindClasspath(Collections.emptyList()),
-                TURBINE_BOOTCLASSPATH)
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.absent())
             .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("com/test/Annotation"));
@@ -233,7 +241,8 @@ public class BinderTest {
         Binder.bind(
                 units,
                 ClassPathBinder.bindClasspath(Collections.emptyList()),
-                TURBINE_BOOTCLASSPATH)
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.absent())
             .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
@@ -272,7 +281,8 @@ public class BinderTest {
         Binder.bind(
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
-                TURBINE_BOOTCLASSPATH)
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.absent())
             .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("C$A"));

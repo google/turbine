@@ -954,14 +954,14 @@ public abstract class Tree {
 
     private final ImmutableList<Anno> annos;
     private final boolean open;
-    private final ImmutableList<String> moduleName;
+    private final String moduleName;
     private final ImmutableList<ModDirective> directives;
 
     public ModDecl(
         int position,
         ImmutableList<Anno> annos,
         boolean open,
-        ImmutableList<String> moduleName,
+        String moduleName,
         ImmutableList<ModDirective> directives) {
       super(position);
       this.annos = annos;
@@ -978,7 +978,7 @@ public abstract class Tree {
       return annos;
     }
 
-    public ImmutableList<String> moduleName() {
+    public String moduleName() {
       return moduleName;
     }
 
@@ -1020,7 +1020,7 @@ public abstract class Tree {
   public static class ModRequires extends ModDirective {
 
     private final ImmutableSet<TurbineModifier> mods;
-    private final ImmutableList<String> moduleName;
+    private final String moduleName;
 
     @Override
     public Kind kind() {
@@ -1032,8 +1032,7 @@ public abstract class Tree {
       return visitor.visitModRequires(this, input);
     }
 
-    public ModRequires(
-        int position, ImmutableSet<TurbineModifier> mods, ImmutableList<String> moduleName) {
+    public ModRequires(int position, ImmutableSet<TurbineModifier> mods, String moduleName) {
       super(position);
       this.mods = mods;
       this.moduleName = moduleName;
@@ -1043,7 +1042,7 @@ public abstract class Tree {
       return mods;
     }
 
-    public ImmutableList<String> moduleName() {
+    public String moduleName() {
       return moduleName;
     }
 
@@ -1056,8 +1055,8 @@ public abstract class Tree {
   /** A JLS 7.7.2 module exports directive. */
   public static class ModExports extends ModDirective {
 
-    private final ImmutableList<String> packageName;
-    private final ImmutableList<ImmutableList<String>> moduleNames;
+    private final String packageName;
+    private final ImmutableList<String> moduleNames;
 
     @Override
     public Kind kind() {
@@ -1069,20 +1068,17 @@ public abstract class Tree {
       return visitor.visitModExports(this, input);
     }
 
-    public ModExports(
-        int position,
-        ImmutableList<String> packageName,
-        ImmutableList<ImmutableList<String>> moduleNames) {
+    public ModExports(int position, String packageName, ImmutableList<String> moduleNames) {
       super(position);
       this.packageName = packageName;
       this.moduleNames = moduleNames;
     }
 
-    public ImmutableList<String> packageName() {
+    public String packageName() {
       return packageName;
     }
 
-    public ImmutableList<ImmutableList<String>> moduleNames() {
+    public ImmutableList<String> moduleNames() {
       return moduleNames;
     }
 
@@ -1095,23 +1091,20 @@ public abstract class Tree {
   /** A JLS 7.7.2 module opens directive. */
   public static class ModOpens extends ModDirective {
 
-    private final ImmutableList<String> packageName;
-    private final ImmutableList<ImmutableList<String>> moduleNames;
+    private final String packageName;
+    private final ImmutableList<String> moduleNames;
 
-    public ModOpens(
-        int position,
-        ImmutableList<String> packageName,
-        ImmutableList<ImmutableList<String>> moduleNames) {
+    public ModOpens(int position, String packageName, ImmutableList<String> moduleNames) {
       super(position);
       this.packageName = packageName;
       this.moduleNames = moduleNames;
     }
 
-    public ImmutableList<String> packageName() {
+    public String packageName() {
       return packageName;
     }
 
-    public ImmutableList<ImmutableList<String>> moduleNames() {
+    public ImmutableList<String> moduleNames() {
       return moduleNames;
     }
 

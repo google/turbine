@@ -32,6 +32,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.ImportDecl;
+import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.tree.Tree.PkgDecl;
 import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.TurbineModifier;
@@ -49,16 +50,19 @@ public class CompUnitPreprocessor {
   public static class PreprocessedCompUnit {
     private final ImmutableList<Tree.ImportDecl> imports;
     private final ImmutableList<SourceBoundClass> types;
+    private final Optional<ModDecl> module;
     private final SourceFile source;
     private final String packageName;
 
     public PreprocessedCompUnit(
         ImmutableList<ImportDecl> imports,
         ImmutableList<SourceBoundClass> types,
+        Optional<ModDecl> module,
         SourceFile source,
         String packageName) {
       this.imports = imports;
       this.types = types;
+      this.module = module;
       this.source = source;
       this.packageName = packageName;
     }
@@ -69,6 +73,10 @@ public class CompUnitPreprocessor {
 
     public ImmutableList<SourceBoundClass> types() {
       return types;
+    }
+
+    Optional<ModDecl> module() {
+      return module;
     }
 
     public SourceFile source() {
@@ -111,7 +119,8 @@ public class CompUnitPreprocessor {
           preprocessChildren(unit.source(), types, sym, decl.members(), access);
       types.add(new SourceBoundClass(sym, null, children, access, decl));
     }
-    return new PreprocessedCompUnit(unit.imports(), types.build(), unit.source(), packageName);
+    return new PreprocessedCompUnit(
+        unit.imports(), types.build(), unit.mod(), unit.source(), packageName);
   }
 
   private static ImmutableMap<String, ClassSymbol> preprocessChildren(

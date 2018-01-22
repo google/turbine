@@ -16,10 +16,12 @@
 
 package com.google.turbine.binder;
 
+import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.ModuleSymbol;
 
 /**
  * A compilation classpath, e.g. the user or platform class path. Maybe backed by a search path of
@@ -28,6 +30,9 @@ import com.google.turbine.binder.sym.ClassSymbol;
 public interface ClassPath {
   /** The classpath's environment. */
   Env<ClassSymbol, BytecodeBoundClass> env();
+
+  /** The classpath's module environment. */
+  Env<ModuleSymbol, ModuleInfo> moduleEnv();
 
   /** The classpath's top level index. */
   TopLevelIndex index();
