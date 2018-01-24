@@ -60,9 +60,11 @@ public class TurbineOptionsTest {
       "--processorpath",
       "libproc1.jar",
       "libproc2.jar",
-      "--classpath",
+      "--dependencies",
       "lib1.jar",
+      "//:lib1",
       "lib2.jar",
+      "//:lib2",
       "--bootclasspath",
       "rt.jar",
       "zipfs.jar",
@@ -106,6 +108,46 @@ public class TurbineOptionsTest {
   @Test
   public void strictJavaDepsArgs() throws Exception {
     String[] lines = {
+      "--dependencies",
+      "blaze-out/foo/libbar.jar",
+      "//foo/bar",
+      "blaze-out/foo/libbaz1.jar",
+      "//foo/baz1",
+      "blaze-out/foo/libbaz2.jar",
+      "//foo/baz2",
+      "blaze-out/proto/libproto.jar",
+      "//proto",
+      "--direct_dependencies",
+      "blaze-out/foo/libbar.jar",
+      "--deps_artifacts",
+      "foo.jdeps",
+      "bar.jdeps",
+      "",
+    };
+
+    TurbineOptions options =
+        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
+
+    assertThat(options.targetLabel()).hasValue("//java/com/google/test");
+    assertThat(options.directJarsToTargets())
+        .containsExactlyEntriesIn(ImmutableMap.of("blaze-out/foo/libbar.jar", "//foo/bar"));
+    assertThat(options.indirectJarsToTargets())
+        .containsExactlyEntriesIn(
+            ImmutableMap.of(
+                "blaze-out/foo/libbaz1.jar", "//foo/baz1",
+                "blaze-out/foo/libbaz2.jar", "//foo/baz2",
+                "blaze-out/proto/libproto.jar", "//proto"));
+    assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
+  }
+
+  /**
+   * Makes sure turbine accepts old-style arguments.
+   *
+   * <p>TODO(b/72379900): Remove this.
+   */
+  @Test
+  public void testLegacyStrictJavaDepsArgs() throws Exception {
+    String[] lines = {
       "--direct_dependency",
       "blaze-out/foo/libbar.jar",
       "//foo/bar",
@@ -143,10 +185,13 @@ public class TurbineOptionsTest {
   @Test
   public void classpathArgs() throws Exception {
     String[] lines = {
-      "--classpath",
+      "--dependencies",
       "liba.jar",
+      "//:liba",
       "libb.jar",
+      "//:libb",
       "libc.jar",
+      "//:libc",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",
@@ -165,10 +210,13 @@ public class TurbineOptionsTest {
   @Test
   public void repeatedClasspath() throws Exception {
     String[] lines = {
-      "--classpath",
+      "--dependencies",
       "liba.jar",
+      "//:liba",
       "libb.jar",
+      "//:libb",
       "libc.jar",
+      "//:libc",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",
@@ -189,10 +237,13 @@ public class TurbineOptionsTest {
     String[] lines = {
       "--output",
       "out.jar",
-      "--classpath",
+      "--dependencies",
       "liba.jar",
+      "//:liba",
       "libb.jar",
+      "//:libb",
       "libc.jar",
+      "//:libc",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",

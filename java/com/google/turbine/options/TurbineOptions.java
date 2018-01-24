@@ -22,6 +22,10 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /** Header compilation options. */
@@ -194,6 +198,8 @@ public class TurbineOptions {
     @Nullable private String release;
     @Nullable private String system;
     private String outputDeps;
+    private final Map<String, String> jarToTarget = new HashMap<>();
+    private final Set<String> directJars = new HashSet<>();
     private final ImmutableMap.Builder<String, String> directJarsToTargets = ImmutableMap.builder();
     private final ImmutableMap.Builder<String, String> indirectJarsToTargets =
         ImmutableMap.builder();
@@ -205,6 +211,15 @@ public class TurbineOptions {
     private boolean shouldReduceClassPath = true;
 
     public TurbineOptions build() {
+      for (Map.Entry<String, String> entry : jarToTarget.entrySet()) {
+        String jar = entry.getKey();
+        String target = entry.getValue();
+        if (directJars.contains(jar)) {
+          directJarsToTargets.put(jar, target);
+        } else {
+          indirectJarsToTargets.put(jar, target);
+        }
+      }
       return new TurbineOptions(
           output,
           classPath.build(),
@@ -281,11 +296,13 @@ public class TurbineOptions {
       return this;
     }
 
+    // TODO(b/72379900): Remove this
     public Builder addDirectJarToTarget(String jar, String target) {
       directJarsToTargets.put(jar, target);
       return this;
     }
 
+    // TODO(b/72379900): Remove this
     public Builder addIndirectJarToTarget(String jar, String target) {
       indirectJarsToTargets.put(jar, target);
       return this;
@@ -318,6 +335,17 @@ public class TurbineOptions {
 
     public Builder setShouldReduceClassPath(boolean shouldReduceClassPath) {
       this.shouldReduceClassPath = shouldReduceClassPath;
+      return this;
+    }
+
+    public Builder addDependency(String jar, String target) {
+      this.jarToTarget.put(jar, target);
+      this.classPath.add(jar);
+      return this;
+    }
+
+    public Builder addDirectJars(ImmutableList<String> jars) {
+      this.directJars.addAll(jars);
       return this;
     }
   }
