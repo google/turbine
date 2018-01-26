@@ -22,10 +22,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /** Header compilation options. */
@@ -41,8 +38,8 @@ public class TurbineOptions {
   private final ImmutableSet<String> processors;
   private final ImmutableList<String> sourceJars;
   private final Optional<String> outputDeps;
-  private final ImmutableMap<String, String> directJarsToTargets;
-  private final ImmutableMap<String, String> indirectJarsToTargets;
+  private final ImmutableMap<String, String> jarToTarget;
+  private final ImmutableSet<String> directJars;
   private final Optional<String> targetLabel;
   private final ImmutableList<String> depsArtifacts;
   private final Optional<String> ruleKind;
@@ -61,8 +58,8 @@ public class TurbineOptions {
       ImmutableSet<String> processors,
       ImmutableList<String> sourceJars,
       @Nullable String outputDeps,
-      ImmutableMap<String, String> directJarsToTargets,
-      ImmutableMap<String, String> indirectJarsToTargets,
+      ImmutableMap<String, String> jarToTarget,
+      ImmutableSet<String> directJars,
       @Nullable String targetLabel,
       ImmutableList<String> depsArtifacts,
       @Nullable String ruleKind,
@@ -79,10 +76,8 @@ public class TurbineOptions {
     this.processors = checkNotNull(processors, "processors must not be null");
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
     this.outputDeps = Optional.fromNullable(outputDeps);
-    this.directJarsToTargets =
-        checkNotNull(directJarsToTargets, "directJarsToTargets must not be null");
-    this.indirectJarsToTargets =
-        checkNotNull(indirectJarsToTargets, "indirectJarsToTargets must not be null");
+    this.jarToTarget = checkNotNull(jarToTarget, "jarToTarget must not be null");
+    this.directJars = checkNotNull(directJars, "directJars must not be null");
     this.targetLabel = Optional.fromNullable(targetLabel);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
     this.ruleKind = Optional.fromNullable(ruleKind);
@@ -141,14 +136,38 @@ public class TurbineOptions {
     return outputDeps;
   }
 
+  /** The direct dependencies. */
+  public ImmutableSet<String> directJars() {
+    return directJars;
+  }
+
+  /** The mapping from the path to a dependency to its build label. */
+  public ImmutableMap<String, String> jarToTarget() {
+    return jarToTarget;
+  }
+
   /** The mapping from the path to a direct dependency to its build label. */
   public ImmutableMap<String, String> directJarsToTargets() {
-    return directJarsToTargets;
+    ImmutableMap.Builder<String, String> result = ImmutableMap.builder();
+    for (Map.Entry<String, String> entry : jarToTarget.entrySet()) {
+      String jar = entry.getKey();
+      if (directJars.contains(jar)) {
+        result.put(jar, entry.getValue());
+      }
+    }
+    return result.build();
   }
 
   /** The mapping from the path to an indirect dependency to its build label. */
   public ImmutableMap<String, String> indirectJarsToTargets() {
-    return indirectJarsToTargets;
+    ImmutableMap.Builder<String, String> result = ImmutableMap.builder();
+    for (Map.Entry<String, String> entry : jarToTarget.entrySet()) {
+      String jar = entry.getKey();
+      if (!directJars.contains(jar)) {
+        result.put(jar, entry.getValue());
+      }
+    }
+    return result.build();
   }
 
   /** The label of the target being compiled. */
@@ -198,11 +217,8 @@ public class TurbineOptions {
     @Nullable private String release;
     @Nullable private String system;
     private String outputDeps;
-    private final Map<String, String> jarToTarget = new HashMap<>();
-    private final Set<String> directJars = new HashSet<>();
-    private final ImmutableMap.Builder<String, String> directJarsToTargets = ImmutableMap.builder();
-    private final ImmutableMap.Builder<String, String> indirectJarsToTargets =
-        ImmutableMap.builder();
+    private final ImmutableMap.Builder<String, String> jarToTarget = ImmutableMap.builder();
+    private final ImmutableSet.Builder<String> directJars = ImmutableSet.builder();
     @Nullable private String targetLabel;
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
     @Nullable private String ruleKind;
@@ -211,15 +227,6 @@ public class TurbineOptions {
     private boolean shouldReduceClassPath = true;
 
     public TurbineOptions build() {
-      for (Map.Entry<String, String> entry : jarToTarget.entrySet()) {
-        String jar = entry.getKey();
-        String target = entry.getValue();
-        if (directJars.contains(jar)) {
-          directJarsToTargets.put(jar, target);
-        } else {
-          indirectJarsToTargets.put(jar, target);
-        }
-      }
       return new TurbineOptions(
           output,
           classPath.build(),
@@ -231,8 +238,8 @@ public class TurbineOptions {
           processors.build(),
           sourceJars.build(),
           outputDeps,
-          directJarsToTargets.build(),
-          indirectJarsToTargets.build(),
+          jarToTarget.build(),
+          directJars.build(),
           targetLabel,
           depsArtifacts.build(),
           ruleKind,
@@ -298,13 +305,14 @@ public class TurbineOptions {
 
     // TODO(b/72379900): Remove this
     public Builder addDirectJarToTarget(String jar, String target) {
-      directJarsToTargets.put(jar, target);
+      directJars.add(jar);
+      jarToTarget.put(jar, target);
       return this;
     }
 
     // TODO(b/72379900): Remove this
     public Builder addIndirectJarToTarget(String jar, String target) {
-      indirectJarsToTargets.put(jar, target);
+      jarToTarget.put(jar, target);
       return this;
     }
 

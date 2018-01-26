@@ -116,7 +116,7 @@ public class TurbineOptionsTest {
       "blaze-out/foo/libbaz2.jar",
       "//foo/baz2",
       "blaze-out/proto/libproto.jar",
-      "//proto",
+      "//proto;java_proto_library",
       "--direct_dependencies",
       "blaze-out/foo/libbar.jar",
       "--deps_artifacts",
@@ -136,15 +136,20 @@ public class TurbineOptionsTest {
             ImmutableMap.of(
                 "blaze-out/foo/libbaz1.jar", "//foo/baz1",
                 "blaze-out/foo/libbaz2.jar", "//foo/baz2",
-                "blaze-out/proto/libproto.jar", "//proto"));
+                "blaze-out/proto/libproto.jar", "//proto;java_proto_library"));
+    assertThat(options.jarToTarget())
+        .containsExactlyEntriesIn(
+            ImmutableMap.of(
+                "blaze-out/foo/libbar.jar", "//foo/bar",
+                "blaze-out/foo/libbaz1.jar", "//foo/baz1",
+                "blaze-out/foo/libbaz2.jar", "//foo/baz2",
+                "blaze-out/proto/libproto.jar", "//proto;java_proto_library"));
+    assertThat(options.directJars()).containsExactly("blaze-out/foo/libbar.jar");
     assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
   }
 
-  /**
-   * Makes sure turbine accepts old-style arguments.
-   *
-   * <p>TODO(b/72379900): Remove this.
-   */
+  /** Makes sure turbine accepts old-style arguments. */
+  // TODO(b/72379900): Remove this.
   @Test
   public void testLegacyStrictJavaDepsArgs() throws Exception {
     String[] lines = {
