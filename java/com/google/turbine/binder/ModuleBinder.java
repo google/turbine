@@ -93,7 +93,7 @@ public class ModuleBinder {
             env);
     ImmutableList.Builder<AnnoInfo> annoInfos = ImmutableList.builder();
     for (Tree.Anno annoTree : module.module().annos()) {
-      ClassSymbol sym = resolve(annoTree.name());
+      ClassSymbol sym = resolve(annoTree.position(), annoTree.name());
       annoInfos.add(new AnnoInfo(module.source(), sym, annoTree, null));
     }
     ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(annoInfos.build());
@@ -175,10 +175,7 @@ public class ModuleBinder {
       }
     }
     ModuleInfo requires = moduleEnv.get(new ModuleSymbol(moduleName));
-    if (requires == null) {
-      throw error(ErrorKind.SYMBOL_NOT_FOUND, moduleName);
-    }
-    return new RequireInfo(moduleName, flags, requires.version());
+    return new RequireInfo(moduleName, flags, requires != null ? requires.version() : null);
   }
 
   private ExportInfo bindExports(ModExports directive) {
@@ -190,36 +187,36 @@ public class ModuleBinder {
   }
 
   private UseInfo bindUses(ModUses directive) {
-    return new UseInfo(resolve(directive.typeName()));
+    return new UseInfo(resolve(directive.position(), directive.typeName()));
   }
 
   private ProvideInfo bindProvides(ModProvides directive) {
-    ClassSymbol sym = resolve(directive.typeName());
+    ClassSymbol sym = resolve(directive.position(), directive.typeName());
     ImmutableList.Builder<ClassSymbol> impls = ImmutableList.builder();
     for (ImmutableList<String> impl : directive.implNames()) {
-      impls.add(resolve(impl));
+      impls.add(resolve(directive.position(), impl));
     }
     return new ProvideInfo(sym, impls.build());
   }
 
   /* Resolves qualified class names. */
-  private ClassSymbol resolve(ImmutableList<String> simpleNames) {
+  private ClassSymbol resolve(int pos, ImmutableList<String> simpleNames) {
     LookupKey key = new LookupKey(simpleNames);
     LookupResult result = scope.lookup(key);
     if (result == null) {
-      throw error(ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(simpleNames));
+      throw error(ErrorKind.SYMBOL_NOT_FOUND, pos, Joiner.on('.').join(simpleNames));
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, /* origin= */ null, sym, name);
       if (sym == null) {
-        throw error(ErrorKind.SYMBOL_NOT_FOUND, name);
+        throw error(ErrorKind.SYMBOL_NOT_FOUND, pos, name);
       }
     }
     return sym;
   }
 
-  private TurbineError error(ErrorKind kind, Object... args) {
-    return TurbineError.format(module.source(), module.module().position(), kind, args);
+  private TurbineError error(ErrorKind kind, int pos, Object... args) {
+    return TurbineError.format(module.source(), pos, kind, args);
   }
 }
