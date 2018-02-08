@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -125,6 +126,11 @@ public class MainTest {
 
   @Test
   public void moduleInfos() throws IOException {
+    if (Double.parseDouble(System.getProperty("java.class.version")) < 53) {
+      // only run on JDK 9 and later
+      return;
+    }
+
     Path srcjar = temporaryFolder.newFile("lib.srcjar").toPath();
     try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(srcjar))) {
       jos.putNextEntry(new JarEntry("module-info.java"));
@@ -140,7 +146,8 @@ public class MainTest {
 
     boolean ok =
         Main.compile(
-            optionsWithBootclasspath()
+            TurbineOptions.builder()
+                .setRelease("9")
                 .addSources(ImmutableList.of(src.toString()))
                 .setSourceJars(ImmutableList.of(srcjar.toString()))
                 .setOutput(output.toString())
@@ -148,6 +155,7 @@ public class MainTest {
     assertThat(ok).isTrue();
 
     Map<String, byte[]> data = readJar(output);
-    assertThat(data.keySet()).isEmpty();
+    assertThat(data.keySet())
+        .containsExactly("foo/module-info.class", "bar/module-info.class", "baz/module-info.class");
   }
 }
