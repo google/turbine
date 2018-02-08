@@ -28,12 +28,16 @@ import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Enumeration;
+import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -157,5 +161,33 @@ public class MainTest {
     Map<String, byte[]> data = readJar(output);
     assertThat(data.keySet())
         .containsExactly("foo/module-info.class", "bar/module-info.class", "baz/module-info.class");
+  }
+
+  @Test
+  public void testManifest() throws IOException {
+    Path src = temporaryFolder.newFile("Foo.java").toPath();
+    Files.write(src, "class Foo {}".getBytes(UTF_8));
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    boolean ok =
+        Main.compile(
+            optionsWithBootclasspath()
+                .addSources(ImmutableList.of(src.toString()))
+                .setTargetLabel("//foo:foo")
+                .setInjectingRuleKind("foo_library")
+                .setOutput(output.toString())
+                .build());
+    assertThat(ok).isTrue();
+
+    try (JarFile jarFile = new JarFile(output.toFile())) {
+      Manifest manifest = jarFile.getManifest();
+      Attributes attributes = manifest.getMainAttributes();
+      assertThat(attributes.getValue("Target-Label")).isEqualTo("//foo:foo");
+      assertThat(attributes.getValue("Injecting-Rule-Kind")).isEqualTo("foo_library");
+      assertThat(jarFile.getEntry(JarFile.MANIFEST_NAME).getLastModifiedTime().toInstant())
+          .isEqualTo(
+              Instant.ofEpochMilli(new GregorianCalendar(1980, 0, 1, 0, 0, 0).getTimeInMillis()));
+    }
   }
 }

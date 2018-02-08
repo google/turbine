@@ -134,6 +134,9 @@ public class TurbineOptionsParser {
         case "--target_label":
           builder.setTargetLabel(readOne(argumentDeque));
           break;
+        case "--injecting_rule_kind":
+          builder.setInjectingRuleKind(readOne(argumentDeque));
+          break;
         case "--rule_kind":
           builder.setRuleKind(readOne(argumentDeque));
           break;

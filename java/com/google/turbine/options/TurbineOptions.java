@@ -41,6 +41,7 @@ public class TurbineOptions {
   private final ImmutableMap<String, String> jarToTarget;
   private final ImmutableSet<String> directJars;
   private final Optional<String> targetLabel;
+  private final Optional<String> injectingRuleKind;
   private final ImmutableList<String> depsArtifacts;
   private final Optional<String> ruleKind;
   private final boolean javacFallback;
@@ -61,6 +62,7 @@ public class TurbineOptions {
       ImmutableMap<String, String> jarToTarget,
       ImmutableSet<String> directJars,
       @Nullable String targetLabel,
+      @Nullable String injectingRuleKind,
       ImmutableList<String> depsArtifacts,
       @Nullable String ruleKind,
       boolean javacFallback,
@@ -79,6 +81,7 @@ public class TurbineOptions {
     this.jarToTarget = checkNotNull(jarToTarget, "jarToTarget must not be null");
     this.directJars = checkNotNull(directJars, "directJars must not be null");
     this.targetLabel = Optional.fromNullable(targetLabel);
+    this.injectingRuleKind = Optional.fromNullable(injectingRuleKind);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
     this.ruleKind = Optional.fromNullable(ruleKind);
     this.javacFallback = javacFallback;
@@ -175,6 +178,15 @@ public class TurbineOptions {
     return targetLabel;
   }
 
+  /**
+   * If present, the name of the rule that injected an aspect that compiles this target.
+   *
+   * <p>Note that this rule will have a completely different label to {@link #targetLabel} above.
+   */
+  public Optional<String> injectingRuleKind() {
+    return injectingRuleKind;
+  }
+
   /** The .jdeps artifacts for direct dependencies. */
   public ImmutableList<String> depsArtifacts() {
     return depsArtifacts;
@@ -220,6 +232,7 @@ public class TurbineOptions {
     private final ImmutableMap.Builder<String, String> jarToTarget = ImmutableMap.builder();
     private final ImmutableSet.Builder<String> directJars = ImmutableSet.builder();
     @Nullable private String targetLabel;
+    @Nullable private String injectingRuleKind;
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
     @Nullable private String ruleKind;
     private boolean javacFallback = true;
@@ -241,6 +254,7 @@ public class TurbineOptions {
           jarToTarget.build(),
           directJars.build(),
           targetLabel,
+          injectingRuleKind,
           depsArtifacts.build(),
           ruleKind,
           javacFallback,
@@ -318,6 +332,11 @@ public class TurbineOptions {
 
     public Builder setTargetLabel(String targetLabel) {
       this.targetLabel = targetLabel;
+      return this;
+    }
+
+    public Builder setInjectingRuleKind(String injectingRuleKind) {
+      this.injectingRuleKind = injectingRuleKind;
       return this;
     }
 

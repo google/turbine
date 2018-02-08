@@ -81,6 +81,8 @@ public class TurbineOptionsTest {
       "out.jdeps",
       "--target_label",
       "//java/com/google/test",
+      "--injecting_rule_kind",
+      "foo_library",
       "--rule_kind",
       "java_library",
     };
@@ -102,6 +104,7 @@ public class TurbineOptionsTest {
     assertThat(options.sources()).containsExactly("Source1.java", "Source2.java");
     assertThat(options.outputDeps()).hasValue("out.jdeps");
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
+    assertThat(options.injectingRuleKind()).hasValue("foo_library");
     assertThat(options.ruleKind()).hasValue("java_library");
   }
 
@@ -259,6 +262,7 @@ public class TurbineOptionsTest {
 
     assertThat(options.ruleKind()).isAbsent();
     assertThat(options.targetLabel()).isAbsent();
+    assertThat(options.injectingRuleKind()).isAbsent();
   }
 
   @Test

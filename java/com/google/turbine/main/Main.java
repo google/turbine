@@ -39,6 +39,7 @@ import com.google.turbine.proto.DepsProto;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.zip.Zip;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -47,14 +48,24 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 /** Main entry point for the turbine CLI. */
 public class Main {
 
   private static final int BUFFER_SIZE = 65536;
+
+  // These attributes are used by JavaBuilder, Turbine, and ijar.
+  // They must all be kept in sync.
+  static final String MANIFEST_DIR = "META-INF/";
+  static final String MANIFEST_NAME = JarFile.MANIFEST_NAME;
+  static final Attributes.Name TARGET_LABEL = new Attributes.Name("Target-Label");
+  static final Attributes.Name INJECTING_RULE_KIND = new Attributes.Name("Injecting-Rule-Kind");
 
   public static void main(String[] args) throws IOException {
     compile(args);
@@ -96,7 +107,7 @@ public class Main {
       }
     }
 
-    writeOutput(Paths.get(options.outputFile()), lowered.bytes(), transitive);
+    writeOutput(options, lowered.bytes(), transitive);
     return true;
   }
 
@@ -154,7 +165,9 @@ public class Main {
 
   /** Write bytecode to the output jar. */
   private static void writeOutput(
-      Path path, Map<String, byte[]> lowered, Map<String, byte[]> transitive) throws IOException {
+      TurbineOptions options, Map<String, byte[]> lowered, Map<String, byte[]> transitive)
+      throws IOException {
+    Path path = Paths.get(options.outputFile());
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {
@@ -164,6 +177,10 @@ public class Main {
       for (Map.Entry<String, byte[]> entry : transitive.entrySet()) {
         addEntry(
             jos, ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ".class", entry.getValue());
+      }
+      if (options.targetLabel().isPresent()) {
+        addEntry(jos, MANIFEST_DIR, new byte[] {});
+        addEntry(jos, MANIFEST_NAME, manifestContent(options));
       }
     }
   }
@@ -176,6 +193,25 @@ public class Main {
     je.setCrc(Hashing.crc32().hashBytes(bytes).padToLong());
     jos.putNextEntry(je);
     jos.write(bytes);
+  }
+
+  private static byte[] manifestContent(TurbineOptions turbineOptions) throws IOException {
+    Manifest manifest = new Manifest();
+    Attributes attributes = manifest.getMainAttributes();
+    attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+    Attributes.Name createdBy = new Attributes.Name("Created-By");
+    if (attributes.getValue(createdBy) == null) {
+      attributes.put(createdBy, "bazel");
+    }
+    if (turbineOptions.targetLabel().isPresent()) {
+      attributes.put(TARGET_LABEL, turbineOptions.targetLabel().get());
+    }
+    if (turbineOptions.injectingRuleKind().isPresent()) {
+      attributes.put(INJECTING_RULE_KIND, turbineOptions.injectingRuleKind().get());
+    }
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    manifest.write(out);
+    return out.toByteArray();
   }
 
   private static ImmutableList<Path> toPaths(Iterable<String> paths) {
