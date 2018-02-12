@@ -45,6 +45,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -185,9 +187,17 @@ public class Main {
     }
   }
 
+  /** Normalize timestamps. */
+  static final long DEFAULT_TIMESTAMP =
+      LocalDateTime.of(2010, 1, 1, 0, 0, 0)
+          .atZone(ZoneId.systemDefault())
+          .toInstant()
+          .toEpochMilli();
+
   private static void addEntry(JarOutputStream jos, String name, byte[] bytes) throws IOException {
     JarEntry je = new JarEntry(name);
-    je.setTime(0L); // normalize timestamps to the DOS epoch
+    // TODO(cushon): switch to setLocalTime after we migrate to JDK 9
+    je.setTime(DEFAULT_TIMESTAMP);
     je.setMethod(ZipEntry.STORED);
     je.setSize(bytes.length);
     je.setCrc(Hashing.crc32().hashBytes(bytes).padToLong());

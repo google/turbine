@@ -28,9 +28,9 @@ import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.jar.Attributes;
@@ -187,7 +187,7 @@ public class MainTest {
       assertThat(attributes.getValue("Injecting-Rule-Kind")).isEqualTo("foo_library");
       assertThat(jarFile.getEntry(JarFile.MANIFEST_NAME).getLastModifiedTime().toInstant())
           .isEqualTo(
-              Instant.ofEpochMilli(new GregorianCalendar(1980, 0, 1, 0, 0, 0).getTimeInMillis()));
+              LocalDateTime.of(2010, 1, 1, 0, 0, 0).atZone(ZoneId.systemDefault()).toInstant());
     }
   }
 }
