@@ -38,13 +38,7 @@ public class TurbineOptionsTest {
   @Rule public final TemporaryFolder tmpFolder = new TemporaryFolder();
 
   static final ImmutableList<String> BASE_ARGS =
-      ImmutableList.of(
-          "--output",
-          "out.jar",
-          "--target_label",
-          "//java/com/google/test",
-          "--rule_kind",
-          "java_library");
+      ImmutableList.of("--output", "out.jar", "--target_label", "//java/com/google/test");
 
   @Test
   public void exhaustiveArgs() throws Exception {
@@ -83,8 +77,6 @@ public class TurbineOptionsTest {
       "//java/com/google/test",
       "--injecting_rule_kind",
       "foo_library",
-      "--rule_kind",
-      "java_library",
     };
 
     TurbineOptions options =
@@ -105,7 +97,6 @@ public class TurbineOptionsTest {
     assertThat(options.outputDeps()).hasValue("out.jdeps");
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
     assertThat(options.injectingRuleKind()).hasValue("foo_library");
-    assertThat(options.ruleKind()).hasValue("java_library");
   }
 
   @Test
@@ -241,7 +232,7 @@ public class TurbineOptionsTest {
   }
 
   @Test
-  public void optionalTargetLabelAndRuleKind() throws Exception {
+  public void optionalTargetLabel() throws Exception {
     String[] lines = {
       "--output",
       "out.jar",
@@ -260,7 +251,6 @@ public class TurbineOptionsTest {
 
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(lines));
 
-    assertThat(options.ruleKind()).isAbsent();
     assertThat(options.targetLabel()).isAbsent();
     assertThat(options.injectingRuleKind()).isAbsent();
   }

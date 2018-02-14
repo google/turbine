@@ -43,7 +43,6 @@ public class TurbineOptions {
   private final Optional<String> targetLabel;
   private final Optional<String> injectingRuleKind;
   private final ImmutableList<String> depsArtifacts;
-  private final Optional<String> ruleKind;
   private final boolean javacFallback;
   private final ImmutableList<String> javacOpts;
   private final boolean shouldReduceClassPath;
@@ -64,7 +63,6 @@ public class TurbineOptions {
       @Nullable String targetLabel,
       @Nullable String injectingRuleKind,
       ImmutableList<String> depsArtifacts,
-      @Nullable String ruleKind,
       boolean javacFallback,
       ImmutableList<String> javacOpts,
       boolean shouldReduceClassPath) {
@@ -83,7 +81,6 @@ public class TurbineOptions {
     this.targetLabel = Optional.fromNullable(targetLabel);
     this.injectingRuleKind = Optional.fromNullable(injectingRuleKind);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
-    this.ruleKind = Optional.fromNullable(ruleKind);
     this.javacFallback = javacFallback;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
     this.shouldReduceClassPath = shouldReduceClassPath;
@@ -192,11 +189,6 @@ public class TurbineOptions {
     return depsArtifacts;
   }
 
-  /** The kind of the build rule being compiled (e.g. {@code java_library}). */
-  public Optional<String> ruleKind() {
-    return ruleKind;
-  }
-
   /** Fall back to javac-turbine for error reporting. */
   public boolean javacFallback() {
     return javacFallback;
@@ -234,7 +226,6 @@ public class TurbineOptions {
     @Nullable private String targetLabel;
     @Nullable private String injectingRuleKind;
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
-    @Nullable private String ruleKind;
     private boolean javacFallback = true;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
     private boolean shouldReduceClassPath = true;
@@ -256,7 +247,6 @@ public class TurbineOptions {
           targetLabel,
           injectingRuleKind,
           depsArtifacts.build(),
-          ruleKind,
           javacFallback,
           javacOpts.build(),
           shouldReduceClassPath);
@@ -342,11 +332,6 @@ public class TurbineOptions {
 
     public Builder addAllDepsArtifacts(Iterable<String> depsArtifacts) {
       this.depsArtifacts.addAll(depsArtifacts);
-      return this;
-    }
-
-    public Builder setRuleKind(String ruleKind) {
-      this.ruleKind = ruleKind;
       return this;
     }
 
