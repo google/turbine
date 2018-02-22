@@ -137,10 +137,6 @@ public class TurbineOptionsParser {
         case "--injecting_rule_kind":
           builder.setInjectingRuleKind(readOne(argumentDeque));
           break;
-        case "--rule_kind":
-          // TODO(b/67925924): Remove this when nobody passes it
-          readOne(argumentDeque);
-          break;
         case "--javac_fallback":
           builder.setJavacFallback(true);
           break;
