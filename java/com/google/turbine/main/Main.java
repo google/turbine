@@ -89,7 +89,7 @@ public class Main {
 
     Collection<String> reducedClasspath =
         Dependencies.reduceClasspath(
-            options.classPath(), options.directJarsToTargets(), options.depsArtifacts());
+            options.classPath(), options.directJars(), options.depsArtifacts());
     ClassPath classpath = ClassPathBinder.bindClasspath(toPaths(reducedClasspath));
 
     BindingResult bound =

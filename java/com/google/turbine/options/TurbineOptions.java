@@ -20,9 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Header compilation options. */
@@ -38,7 +36,6 @@ public class TurbineOptions {
   private final ImmutableSet<String> processors;
   private final ImmutableList<String> sourceJars;
   private final Optional<String> outputDeps;
-  private final ImmutableMap<String, String> jarToTarget;
   private final ImmutableSet<String> directJars;
   private final Optional<String> targetLabel;
   private final Optional<String> injectingRuleKind;
@@ -58,7 +55,6 @@ public class TurbineOptions {
       ImmutableSet<String> processors,
       ImmutableList<String> sourceJars,
       @Nullable String outputDeps,
-      ImmutableMap<String, String> jarToTarget,
       ImmutableSet<String> directJars,
       @Nullable String targetLabel,
       @Nullable String injectingRuleKind,
@@ -76,7 +72,6 @@ public class TurbineOptions {
     this.processors = checkNotNull(processors, "processors must not be null");
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
     this.outputDeps = Optional.fromNullable(outputDeps);
-    this.jarToTarget = checkNotNull(jarToTarget, "jarToTarget must not be null");
     this.directJars = checkNotNull(directJars, "directJars must not be null");
     this.targetLabel = Optional.fromNullable(targetLabel);
     this.injectingRuleKind = Optional.fromNullable(injectingRuleKind);
@@ -141,35 +136,6 @@ public class TurbineOptions {
     return directJars;
   }
 
-  /** The mapping from the path to a dependency to its build label. */
-  public ImmutableMap<String, String> jarToTarget() {
-    return jarToTarget;
-  }
-
-  /** The mapping from the path to a direct dependency to its build label. */
-  public ImmutableMap<String, String> directJarsToTargets() {
-    ImmutableMap.Builder<String, String> result = ImmutableMap.builder();
-    for (Map.Entry<String, String> entry : jarToTarget.entrySet()) {
-      String jar = entry.getKey();
-      if (directJars.contains(jar)) {
-        result.put(jar, entry.getValue());
-      }
-    }
-    return result.build();
-  }
-
-  /** The mapping from the path to an indirect dependency to its build label. */
-  public ImmutableMap<String, String> indirectJarsToTargets() {
-    ImmutableMap.Builder<String, String> result = ImmutableMap.builder();
-    for (Map.Entry<String, String> entry : jarToTarget.entrySet()) {
-      String jar = entry.getKey();
-      if (!directJars.contains(jar)) {
-        result.put(jar, entry.getValue());
-      }
-    }
-    return result.build();
-  }
-
   /** The label of the target being compiled. */
   public Optional<String> targetLabel() {
     return targetLabel;
@@ -221,7 +187,6 @@ public class TurbineOptions {
     @Nullable private String release;
     @Nullable private String system;
     private String outputDeps;
-    private final ImmutableMap.Builder<String, String> jarToTarget = ImmutableMap.builder();
     private final ImmutableSet.Builder<String> directJars = ImmutableSet.builder();
     @Nullable private String targetLabel;
     @Nullable private String injectingRuleKind;
@@ -242,7 +207,6 @@ public class TurbineOptions {
           processors.build(),
           sourceJars.build(),
           outputDeps,
-          jarToTarget.build(),
           directJars.build(),
           targetLabel,
           injectingRuleKind,
@@ -308,15 +272,8 @@ public class TurbineOptions {
     }
 
     // TODO(b/72379900): Remove this
-    public Builder addDirectJarToTarget(String jar, String target) {
+    public Builder addDirectJarToTarget(String jar) {
       directJars.add(jar);
-      jarToTarget.put(jar, target);
-      return this;
-    }
-
-    // TODO(b/72379900): Remove this
-    public Builder addIndirectJarToTarget(String jar, String target) {
-      jarToTarget.put(jar, target);
       return this;
     }
 
@@ -347,12 +304,6 @@ public class TurbineOptions {
 
     public Builder setShouldReduceClassPath(boolean shouldReduceClassPath) {
       this.shouldReduceClassPath = shouldReduceClassPath;
-      return this;
-    }
-
-    public Builder addDependency(String jar, String target) {
-      this.jarToTarget.put(jar, target);
-      this.classPath.add(jar);
       return this;
     }
 

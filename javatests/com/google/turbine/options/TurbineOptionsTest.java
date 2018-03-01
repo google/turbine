@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -54,11 +53,9 @@ public class TurbineOptionsTest {
       "--processorpath",
       "libproc1.jar",
       "libproc2.jar",
-      "--dependencies",
+      "--classpath",
       "lib1.jar",
-      "//:lib1",
       "lib2.jar",
-      "//:lib2",
       "--bootclasspath",
       "rt.jar",
       "zipfs.jar",
@@ -102,15 +99,11 @@ public class TurbineOptionsTest {
   @Test
   public void strictJavaDepsArgs() throws Exception {
     String[] lines = {
-      "--dependencies",
+      "--classpath",
       "blaze-out/foo/libbar.jar",
-      "//foo/bar",
       "blaze-out/foo/libbaz1.jar",
-      "//foo/baz1",
       "blaze-out/foo/libbaz2.jar",
-      "//foo/baz2",
       "blaze-out/proto/libproto.jar",
-      "//proto;java_proto_library",
       "--direct_dependencies",
       "blaze-out/foo/libbar.jar",
       "--deps_artifacts",
@@ -123,21 +116,6 @@ public class TurbineOptionsTest {
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
-    assertThat(options.directJarsToTargets())
-        .containsExactlyEntriesIn(ImmutableMap.of("blaze-out/foo/libbar.jar", "//foo/bar"));
-    assertThat(options.indirectJarsToTargets())
-        .containsExactlyEntriesIn(
-            ImmutableMap.of(
-                "blaze-out/foo/libbaz1.jar", "//foo/baz1",
-                "blaze-out/foo/libbaz2.jar", "//foo/baz2",
-                "blaze-out/proto/libproto.jar", "//proto;java_proto_library"));
-    assertThat(options.jarToTarget())
-        .containsExactlyEntriesIn(
-            ImmutableMap.of(
-                "blaze-out/foo/libbar.jar", "//foo/bar",
-                "blaze-out/foo/libbaz1.jar", "//foo/baz1",
-                "blaze-out/foo/libbaz2.jar", "//foo/baz2",
-                "blaze-out/proto/libproto.jar", "//proto;java_proto_library"));
     assertThat(options.directJars()).containsExactly("blaze-out/foo/libbar.jar");
     assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
   }
@@ -170,27 +148,16 @@ public class TurbineOptionsTest {
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
-    assertThat(options.directJarsToTargets())
-        .containsExactlyEntriesIn(ImmutableMap.of("blaze-out/foo/libbar.jar", "//foo/bar"));
-    assertThat(options.indirectJarsToTargets())
-        .containsExactlyEntriesIn(
-            ImmutableMap.of(
-                "blaze-out/foo/libbaz1.jar", "//foo/baz1",
-                "blaze-out/foo/libbaz2.jar", "//foo/baz2",
-                "blaze-out/proto/libproto.jar", "//proto"));
     assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
   }
 
   @Test
   public void classpathArgs() throws Exception {
     String[] lines = {
-      "--dependencies",
+      "--classpath",
       "liba.jar",
-      "//:liba",
       "libb.jar",
-      "//:libb",
       "libc.jar",
-      "//:libc",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",
@@ -209,13 +176,10 @@ public class TurbineOptionsTest {
   @Test
   public void repeatedClasspath() throws Exception {
     String[] lines = {
-      "--dependencies",
+      "--classpath",
       "liba.jar",
-      "//:liba",
       "libb.jar",
-      "//:libb",
       "libc.jar",
-      "//:libc",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",
@@ -236,13 +200,10 @@ public class TurbineOptionsTest {
     String[] lines = {
       "--output",
       "out.jar",
-      "--dependencies",
+      "--classpath",
       "liba.jar",
-      "//:liba",
       "libb.jar",
-      "//:libb",
       "libc.jar",
-      "//:libc",
       "--processorpath",
       "libpa.jar",
       "libpb.jar",

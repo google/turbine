@@ -100,9 +100,6 @@ public class TurbineOptionsParser {
         case "--output_deps":
           builder.setOutputDeps(readOne(argumentDeque));
           break;
-        case "--dependencies":
-          collectDependencies(builder, argumentDeque);
-          break;
         case "--direct_dependencies":
           builder.addDirectJars(readList(argumentDeque));
           break;
@@ -110,8 +107,8 @@ public class TurbineOptionsParser {
           {
             // TODO(b/72379900): Remove this
             String jar = readOne(argumentDeque);
-            String target = readOne(argumentDeque);
-            builder.addDirectJarToTarget(jar, target);
+            readOne(argumentDeque);
+            builder.addDirectJarToTarget(jar);
             if (!argumentDeque.isEmpty() && !argumentDeque.peekFirst().startsWith("--")) {
               argumentDeque.removeFirst(); // the aspect that created the dependency
             }
@@ -120,9 +117,8 @@ public class TurbineOptionsParser {
         case "--indirect_dependency":
           {
             // TODO(b/72379900): Remove this
-            String jar = readOne(argumentDeque);
-            String target = readOne(argumentDeque);
-            builder.addIndirectJarToTarget(jar, target);
+            readOne(argumentDeque);
+            readOne(argumentDeque);
             if (!argumentDeque.isEmpty() && !argumentDeque.peekFirst().startsWith("--")) {
               argumentDeque.removeFirst(); // the aspect that created the dependency
             }
@@ -226,22 +222,6 @@ public class TurbineOptionsParser {
       if (it.next().equals("--release") && it.hasNext()) {
         builder.setRelease(it.next());
       }
-    }
-  }
-
-  private static void collectDependencies(TurbineOptions.Builder builder, Deque<String> args) {
-    while (true) {
-      String nextArg = args.pollFirst();
-      if (nextArg == null) {
-        break;
-      }
-      if (nextArg.startsWith("--")) {
-        args.addFirst(nextArg);
-        break;
-      }
-      String jar = nextArg;
-      String target = args.remove();
-      builder.addDependency(jar, target);
     }
   }
 }

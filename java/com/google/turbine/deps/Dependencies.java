@@ -20,7 +20,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -130,13 +130,13 @@ public class Dependencies {
    */
   public static Collection<String> reduceClasspath(
       ImmutableList<String> transitiveClasspath,
-      ImmutableMap<String, String> directJarsToTargets,
+      ImmutableSet<String> directJars,
       ImmutableList<String> depsArtifacts) {
-    if (directJarsToTargets.isEmpty()) {
+    if (directJars.isEmpty()) {
       // the compilation doesn't support strict deps (e.g. proto libraries)
       return transitiveClasspath;
     }
-    Set<String> reduced = new HashSet<>(directJarsToTargets.keySet());
+    Set<String> reduced = new HashSet<>(directJars);
     for (String path : depsArtifacts) {
       DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
       try (InputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(path)))) {

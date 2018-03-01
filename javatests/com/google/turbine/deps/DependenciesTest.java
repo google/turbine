@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -256,9 +257,9 @@ public class DependenciesTest {
         ImmutableList.of(
             "a.jar", "b.jar", "c.jar", "d.jar", "e.jar", "f.jar", "g.jar", "h.jar", "i.jar",
             "j.jar");
-    ImmutableMap<String, String> directJarsToTargets = ImmutableMap.of();
+    ImmutableSet<String> directJars = ImmutableSet.of();
     ImmutableList<String> depsArtifacts = ImmutableList.of();
-    assertThat(Dependencies.reduceClasspath(classpath, directJarsToTargets, depsArtifacts))
+    assertThat(Dependencies.reduceClasspath(classpath, directJars, depsArtifacts))
         .isEqualTo(classpath);
   }
 
@@ -271,11 +272,7 @@ public class DependenciesTest {
         ImmutableList.of(
             "a.jar", "b.jar", "c.jar", "d.jar", "e.jar", "f.jar", "g.jar", "h.jar", "i.jar",
             "j.jar");
-    ImmutableMap<String, String> directJarsToTargets =
-        ImmutableMap.of(
-            "c.jar", "//a",
-            "d.jar", "//d",
-            "g.jar", "//e");
+    ImmutableSet<String> directJars = ImmutableSet.of("c.jar", "d.jar", "g.jar");
     ImmutableList<String> depsArtifacts =
         ImmutableList.of(cdeps.toString(), ddeps.toString(), gdeps.toString());
     writeDeps(
@@ -289,7 +286,7 @@ public class DependenciesTest {
             "f.jar", DepsProto.Dependency.Kind.UNUSED,
             "j.jar", DepsProto.Dependency.Kind.UNUSED));
     writeDeps(gdeps, ImmutableMap.of("i.jar", DepsProto.Dependency.Kind.IMPLICIT));
-    assertThat(Dependencies.reduceClasspath(classpath, directJarsToTargets, depsArtifacts))
+    assertThat(Dependencies.reduceClasspath(classpath, directJars, depsArtifacts))
         .containsExactly("b.jar", "c.jar", "d.jar", "e.jar", "g.jar", "i.jar")
         .inOrder();
   }
