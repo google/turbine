@@ -1,0 +1,9 @@
+=== B74332665.java ===
+class B74332665 {
+  interface I {
+    private boolean f() {
+      return false;
+    }
+    boolean g();
+  }
+}

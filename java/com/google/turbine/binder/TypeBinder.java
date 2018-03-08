@@ -476,7 +476,10 @@ public class TypeBinder {
     switch (base.kind()) {
       case INTERFACE:
       case ANNOTATION:
-        access |= TurbineFlag.ACC_PUBLIC;
+        // interface members have default public visibility
+        if ((access & TurbineVisibility.VISIBILITY_MASK) == 0) {
+          access |= TurbineFlag.ACC_PUBLIC;
+        }
         if ((access
                 & (TurbineFlag.ACC_DEFAULT | TurbineFlag.ACC_STATIC | TurbineFlag.ACC_SYNTHETIC))
             == 0) {

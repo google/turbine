@@ -39,9 +39,11 @@ public enum TurbineVisibility {
     return flag;
   }
 
+  public static final int VISIBILITY_MASK =
+      TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_PROTECTED;
+
   public static TurbineVisibility fromAccess(int access) {
-    switch (access
-        & (TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_PROTECTED)) {
+    switch (access & VISIBILITY_MASK) {
       case TurbineFlag.ACC_PUBLIC:
         return PUBLIC;
       case TurbineFlag.ACC_PRIVATE:
