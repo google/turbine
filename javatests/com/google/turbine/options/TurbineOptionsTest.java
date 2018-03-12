@@ -284,18 +284,11 @@ public class TurbineOptionsTest {
     Path params = tmpFolder.newFile("params.txt").toPath();
     Files.write(params, new byte[0]);
     String[] lines = {
-      "@" + params.toAbsolutePath(), "--javacopts", "-source", "7", "--",
+      "--sources", "A.java", "@" + params.toAbsolutePath(), "B.java",
     };
-    AssertionError expected = null;
-    try {
-      TurbineOptionsParser.parse(Arrays.asList(lines));
-    } catch (AssertionError e) {
-      expected = e;
-    }
-    if (expected == null) {
-      fail();
-    }
-    assertThat(expected).hasMessageThat().contains("empty params file");
+    TurbineOptions options =
+        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
+    assertThat(options.sources()).containsExactly("A.java", "B.java").inOrder();
   }
 
   @Test

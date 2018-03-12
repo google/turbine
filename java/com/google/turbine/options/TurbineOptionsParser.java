@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -165,12 +164,8 @@ public class TurbineOptionsParser {
         if (!Files.exists(paramsPath)) {
           throw new AssertionError("params file does not exist: " + paramsPath);
         }
-        Iterable<String> split =
-            ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8));
-        if (Iterables.isEmpty(split)) {
-          throw new AssertionError("empty params file: " + paramsPath);
-        }
-        expandParamsFiles(argumentDeque, split);
+        expandParamsFiles(
+            argumentDeque, ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8)));
       } else {
         argumentDeque.addLast(arg);
       }
