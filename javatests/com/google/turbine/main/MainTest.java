@@ -190,4 +190,43 @@ public class MainTest {
               LocalDateTime.of(2010, 1, 1, 0, 0, 0).atZone(ZoneId.systemDefault()).toInstant());
     }
   }
+
+  @Test
+  public void emptyBootClassPath() throws IOException {
+    Path src = temporaryFolder.newFolder().toPath().resolve("java/lang/Object.java");
+    Files.createDirectories(src.getParent());
+    Files.write(src, "package java.lang; public class Object {}".getBytes(UTF_8));
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    boolean ok =
+        Main.compile(
+            TurbineOptions.builder()
+                .addSources(ImmutableList.of(src.toString()))
+                .setOutput(output.toString())
+                .build());
+    assertThat(ok).isTrue();
+
+    Map<String, byte[]> data = readJar(output);
+    assertThat(data.keySet()).containsExactly("java/lang/Object.class");
+  }
+
+  @Test
+  public void emptyBootClassPath_noJavaLang() throws IOException {
+    Path src = temporaryFolder.newFile("Test.java").toPath();
+    Files.write(src, "public class Test {}".getBytes(UTF_8));
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    try {
+      Main.compile(
+          TurbineOptions.builder()
+              .addSources(ImmutableList.of(src.toString()))
+              .setOutput(output.toString())
+              .build());
+      fail();
+    } catch (IllegalArgumentException expected) {
+      assertThat(expected).hasMessageThat().contains("java.lang");
+    }
+  }
 }

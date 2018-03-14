@@ -138,11 +138,8 @@ public class Main {
       return JimageClassBinder.bind(options.system().get());
     }
 
-    if (!options.bootClassPath().isEmpty()) {
-      return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
-    }
-
-    throw new IllegalArgumentException("expected one of --bootclasspath, --release, and --system");
+    // the bootclasspath might be empty, e.g. when compiling java.lang
+    return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
   }
 
   /** Parse all source files and source jars. */

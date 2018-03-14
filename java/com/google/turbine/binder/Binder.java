@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder;
 
-import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
@@ -164,7 +163,12 @@ public class Binder {
 
     SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
     SimpleEnv.Builder<ModuleSymbol, PackageSourceBoundModule> modules = SimpleEnv.builder();
-    Scope javaLang = verifyNotNull(tli.lookupPackage(ImmutableList.of("java", "lang")));
+    Scope javaLang = tli.lookupPackage(ImmutableList.of("java", "lang"));
+    if (javaLang == null) {
+      // TODO(cushon): add support for diagnostics without a source position, and make this one
+      // of those
+      throw new IllegalArgumentException("Could not find java.lang on bootclasspath");
+    }
     CompoundScope topLevel = CompoundScope.base(tli.scope()).append(javaLang);
     for (PreprocessedCompUnit unit : units) {
       ImmutableList<String> packagename =
