@@ -271,12 +271,6 @@ public class TurbineOptions {
       return this;
     }
 
-    // TODO(b/72379900): Remove this
-    public Builder addDirectJarToTarget(String jar) {
-      directJars.add(jar);
-      return this;
-    }
-
     public Builder setTargetLabel(String targetLabel) {
       this.targetLabel = targetLabel;
       return this;

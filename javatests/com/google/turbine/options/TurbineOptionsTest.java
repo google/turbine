@@ -120,37 +120,6 @@ public class TurbineOptionsTest {
     assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
   }
 
-  /** Makes sure turbine accepts old-style arguments. */
-  // TODO(b/72379900): Remove this.
-  @Test
-  public void testLegacyStrictJavaDepsArgs() throws Exception {
-    String[] lines = {
-      "--direct_dependency",
-      "blaze-out/foo/libbar.jar",
-      "//foo/bar",
-      "--indirect_dependency",
-      "blaze-out/foo/libbaz1.jar",
-      "//foo/baz1",
-      "--indirect_dependency",
-      "blaze-out/foo/libbaz2.jar",
-      "//foo/baz2",
-      "--indirect_dependency",
-      "blaze-out/proto/libproto.jar",
-      "//proto",
-      "java_proto_library",
-      "--deps_artifacts",
-      "foo.jdeps",
-      "bar.jdeps",
-      "",
-    };
-
-    TurbineOptions options =
-        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
-
-    assertThat(options.targetLabel()).hasValue("//java/com/google/test");
-    assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
-  }
-
   @Test
   public void classpathArgs() throws Exception {
     String[] lines = {
