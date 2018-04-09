@@ -31,6 +31,7 @@ import com.google.turbine.binder.bound.PackageSourceBoundClass;
 import com.google.turbine.binder.bound.PackageSourceBoundModule;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.bound.SourceHeaderBoundClass;
+import com.google.turbine.binder.bound.SourceModuleInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -112,7 +113,7 @@ public class Binder {
         canonicalizeTypes(
             syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
 
-    ImmutableList<ModuleInfo> boundModules =
+    ImmutableList<SourceModuleInfo> boundModules =
         bindModules(
             modules,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
@@ -244,7 +245,7 @@ public class Binder {
     return builder.build();
   }
 
-  private static ImmutableList<ModuleInfo> bindModules(
+  private static ImmutableList<SourceModuleInfo> bindModules(
       SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       CompoundEnv<ModuleSymbol, ModuleInfo> moduleEnv,
@@ -274,7 +275,7 @@ public class Binder {
                 return null;
               }
             });
-    ImmutableList.Builder<ModuleInfo> bound = ImmutableList.builder();
+    ImmutableList.Builder<SourceModuleInfo> bound = ImmutableList.builder();
     for (PackageSourceBoundModule module : modules.asMap().values()) {
       bound.add(ModuleBinder.bind(module, env, moduleEnv, moduleVersion));
     }
@@ -378,12 +379,12 @@ public class Binder {
   /** The result of binding: bound nodes for sources in the compilation, and the classpath. */
   public static class BindingResult {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
-    private final ImmutableList<ModuleInfo> modules;
+    private final ImmutableList<SourceModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
 
     public BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
-        ImmutableList<ModuleInfo> modules,
+        ImmutableList<SourceModuleInfo> modules,
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
       this.units = units;
       this.modules = modules;
@@ -395,7 +396,7 @@ public class Binder {
       return units;
     }
 
-    public ImmutableList<ModuleInfo> modules() {
+    public ImmutableList<SourceModuleInfo> modules() {
       return modules;
     }
 

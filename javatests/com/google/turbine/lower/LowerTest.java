@@ -19,6 +19,7 @@ package com.google.turbine.lower;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -36,6 +37,7 @@ import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ByteReader;
 import com.google.turbine.bytecode.ConstantPoolReader;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -478,6 +480,122 @@ public class LowerTest {
     Map<String, byte[]> actual = IntegrationTestSupport.runTurbine(sources, ImmutableList.of());
     assertThat(IntegrationTestSupport.dump(IntegrationTestSupport.sortMembers(actual)))
         .isEqualTo(IntegrationTestSupport.dump(IntegrationTestSupport.canonicalize(expected)));
+  }
+
+  @Test
+  public void missingOuter() throws Exception {
+
+    Map<String, byte[]> lib =
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of(
+                "A.java",
+                    lines(
+                        "interface A {", //
+                        "  interface M {",
+                        "    interface I {}",
+                        "  } ",
+                        "}"),
+                "B.java",
+                    lines(
+                        "interface B extends A {",
+                        "  interface BM extends M {",
+                        "    interface BI extends I {}",
+                        "  }",
+                        "}")),
+            ImmutableList.of());
+
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("A$M.class"));
+      jos.write(lib.get("A$M"));
+      jos.putNextEntry(new JarEntry("A$M$I.class"));
+      jos.write(lib.get("A$M$I"));
+      jos.putNextEntry(new JarEntry("B.class"));
+      jos.write(lib.get("B"));
+      jos.putNextEntry(new JarEntry("B$BM.class"));
+      jos.write(lib.get("B$BM"));
+      jos.putNextEntry(new JarEntry("B$BM$BI.class"));
+      jos.write(lib.get("B$BM$BI"));
+    }
+
+    ImmutableMap<String, String> sources =
+        ImmutableMap.<String, String>builder()
+            .put(
+                "Test.java",
+                lines(
+                    "public class Test extends B.BM {", //
+                    "  I i;",
+                    "}"))
+            .build();
+
+    try {
+      IntegrationTestSupport.runTurbine(sources, ImmutableList.of(libJar));
+      fail();
+    } catch (TurbineError error) {
+      assertThat(error)
+          .hasMessageThat()
+          .contains("Test.java: error: could not locate class file for A");
+    }
+  }
+
+  @Test
+  public void missingOuter2() throws Exception {
+
+    Map<String, byte[]> lib =
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of(
+                "A.java",
+                lines(
+                    "class A {", //
+                    "  class M { ",
+                    "    class I {} ",
+                    "  } ",
+                    "}"),
+                "B.java",
+                lines(
+                    "class B extends A { ",
+                    "  class BM extends M { ",
+                    "    class BI extends I {} ",
+                    "  } ",
+                    "}")),
+            ImmutableList.of());
+
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("A$M.class"));
+      jos.write(lib.get("A$M"));
+      jos.putNextEntry(new JarEntry("A$M$I.class"));
+      jos.write(lib.get("A$M$I"));
+      jos.putNextEntry(new JarEntry("B.class"));
+      jos.write(lib.get("B"));
+      jos.putNextEntry(new JarEntry("B$BM.class"));
+      jos.write(lib.get("B$BM"));
+      jos.putNextEntry(new JarEntry("B$BM$BI.class"));
+      jos.write(lib.get("B$BM$BI"));
+    }
+
+    ImmutableMap<String, String> sources =
+        ImmutableMap.<String, String>builder()
+            .put(
+                "Test.java",
+                lines(
+                    "public class Test extends B {", //
+                    "  class M extends BM {",
+                    "     I i;",
+                    "  }",
+                    "}"))
+            .build();
+
+    try {
+      IntegrationTestSupport.runTurbine(sources, ImmutableList.of(libJar));
+      fail();
+    } catch (TurbineError error) {
+      assertThat(error)
+          .hasMessageThat()
+          .contains("Test.java: error: could not locate class file for A");
+    }
   }
 
   static String lines(String... lines) {

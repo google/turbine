@@ -33,6 +33,7 @@ public class TurbineError extends Error {
     INVALID_LITERAL("invalid literal: %s"),
     UNEXPECTED_TYPE_PARAMETER("unexpected type parameter %s"),
     SYMBOL_NOT_FOUND("symbol not found %s"),
+    CLASS_FILE_NOT_FOUND("could not locate class file for %s"),
     TYPE_PARAMETER_QUALIFIER("type parameter used as type qualifier"),
     UNEXPECTED_TOKEN("unexpected token: %s"),
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
@@ -58,7 +59,20 @@ public class TurbineError extends Error {
   /**
    * Formats a diagnostic.
    *
-   * @param source the source file
+   * @param source the current source file
+   * @param kind the error kind
+   * @param args format args
+   */
+  public static TurbineError format(SourceFile source, ErrorKind kind, Object... args) {
+    String path = firstNonNull(source.path(), "<>");
+    String message = kind.format(args);
+    String diagnostic = path + ": error: " + message.trim() + System.lineSeparator();
+    return new TurbineError(kind, diagnostic);
+  }
+
+  /**
+   * Formats a diagnostic.
+   *
    * @param position the diagnostic position
    * @param kind the error kind
    * @param args format args

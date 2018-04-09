@@ -27,12 +27,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
-import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
 import com.google.turbine.binder.bound.ModuleInfo.ProvideInfo;
 import com.google.turbine.binder.bound.ModuleInfo.RequireInfo;
 import com.google.turbine.binder.bound.ModuleInfo.UseInfo;
+import com.google.turbine.binder.bound.SourceModuleInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -60,6 +60,9 @@ import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.MethodSig;
 import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.SigWriter;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
@@ -109,7 +112,7 @@ public class Lower {
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
-      ImmutableList<ModuleInfo> modules,
+      ImmutableList<SourceModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> classpath) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
@@ -124,7 +127,7 @@ public class Lower {
     } else {
       // multi-module mode: the output module-info.class are in a directory corresponding to their
       // package
-      for (ModuleInfo module : modules) {
+      for (SourceModuleInfo module : modules) {
         result.put(module.name().replace('.', '/') + "/module-info", lower(module, env, symbols));
       }
     }
@@ -141,7 +144,9 @@ public class Lower {
   }
 
   private static byte[] lower(
-      ModuleInfo module, CompoundEnv<ClassSymbol, TypeBoundClass> env, Set<ClassSymbol> symbols) {
+      SourceModuleInfo module,
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      Set<ClassSymbol> symbols) {
     return new Lower(env).lower(module, symbols);
   }
 
@@ -152,7 +157,7 @@ public class Lower {
     this.env = env;
   }
 
-  private byte[] lower(ModuleInfo module, Set<ClassSymbol> symbols) {
+  private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols) {
     String name = "module-info";
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(module.annos());
     ClassFile.ModuleInfo moduleInfo = lowerModule(module);
@@ -161,7 +166,7 @@ public class Lower {
     {
       Set<ClassSymbol> all = new LinkedHashSet<>();
       for (ClassSymbol sym : sig.classes) {
-        addEnclosing(env, all, sym);
+        addEnclosing(module.source(), env, all, sym);
       }
       for (ClassSymbol innerSym : all) {
         innerClasses.add(innerClass(env, innerSym));
@@ -185,7 +190,7 @@ public class Lower {
     return ClassWriter.writeClass(classfile);
   }
 
-  private ClassFile.ModuleInfo lowerModule(ModuleInfo module) {
+  private ClassFile.ModuleInfo lowerModule(SourceModuleInfo module) {
     ImmutableList.Builder<ClassFile.ModuleInfo.RequireInfo> requires = ImmutableList.builder();
     for (RequireInfo require : module.requires()) {
       requires.add(
@@ -258,7 +263,7 @@ public class Lower {
 
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(info.annotations());
 
-    ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(sym, info);
+    ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(info.source(), sym, info);
 
     ImmutableList<TypeAnnotationInfo> typeAnnotations = classTypeAnnotations(info);
 
@@ -382,14 +387,14 @@ public class Lower {
 
   /** Creates inner class attributes for all referenced inner classes. */
   private ImmutableList<ClassFile.InnerClass> collectInnerClasses(
-      ClassSymbol origin, SourceTypeBoundClass info) {
+      SourceFile source, ClassSymbol origin, SourceTypeBoundClass info) {
     Set<ClassSymbol> all = new LinkedHashSet<>();
-    addEnclosing(env, all, origin);
+    addEnclosing(source, env, all, origin);
     for (ClassSymbol sym : info.children().values()) {
-      addEnclosing(env, all, sym);
+      addEnclosing(source, env, all, sym);
     }
     for (ClassSymbol sym : sig.classes) {
-      addEnclosing(env, all, sym);
+      addEnclosing(source, env, all, sym);
     }
     ImmutableList.Builder<ClassFile.InnerClass> inners = ImmutableList.builder();
     for (ClassSymbol innerSym : all) {
@@ -406,14 +411,17 @@ public class Lower {
    * classes' entries.
    */
   private void addEnclosing(
-      Env<ClassSymbol, TypeBoundClass> env, Set<ClassSymbol> all, ClassSymbol sym) {
+      SourceFile source,
+      Env<ClassSymbol, TypeBoundClass> env,
+      Set<ClassSymbol> all,
+      ClassSymbol sym) {
     TypeBoundClass info = env.get(sym);
     if (info == null) {
-      throw new AssertionError(sym);
+      throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
     }
     ClassSymbol owner = env.get(sym).owner();
     if (owner != null) {
-      addEnclosing(env, all, owner);
+      addEnclosing(source, env, all, owner);
       all.add(sym);
     }
   }

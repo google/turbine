@@ -22,6 +22,9 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -63,35 +66,38 @@ public class Canonicalize {
 
   /** Canonicalizes the given type. */
   public static Type canonicalize(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, Type type) {
+      SourceFile source, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, Type type) {
     switch (type.tyKind()) {
       case PRIM_TY:
       case VOID_TY:
       case TY_VAR:
         return type;
       case WILD_TY:
-        return canonicalizeWildTy(env, base, (WildTy) type);
+        return canonicalizeWildTy(source, env, base, (WildTy) type);
       case ARRAY_TY:
         {
           Type.ArrayTy arrayTy = (Type.ArrayTy) type;
-          return new Type.ArrayTy(canonicalize(env, base, arrayTy.elementType()), arrayTy.annos());
+          return new Type.ArrayTy(
+              canonicalize(source, env, base, arrayTy.elementType()), arrayTy.annos());
         }
       case CLASS_TY:
-        return canonicalizeClassTy(env, base, (ClassTy) type);
+        return canonicalizeClassTy(source, env, base, (ClassTy) type);
       default:
         throw new AssertionError(type.tyKind());
     }
   }
 
   /** Canonicalize a qualified class type, excluding type arguments. */
-  private static ClassTy canon(Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
+  private static ClassTy canon(
+      SourceFile source, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
     if (isRaw(env, ty)) {
       return Erasure.eraseClassTy(ty);
     }
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
     // for the enclosing declarations
     Iterator<ClassTy.SimpleClassTy> it = ty.classes.iterator();
-    Collection<ClassTy.SimpleClassTy> lexicalBase = lexicalBase(env, ty.classes.get(0).sym(), base);
+    Collection<ClassTy.SimpleClassTy> lexicalBase =
+        lexicalBase(source, env, ty.classes.get(0).sym(), base);
     ClassTy canon =
         !lexicalBase.isEmpty()
             ? new ClassTy(lexicalBase)
@@ -99,7 +105,7 @@ public class Canonicalize {
 
     // canonicalize each additional simple name that appeared in source
     while (it.hasNext()) {
-      canon = canonOne(env, canon, it.next());
+      canon = canonOne(source, env, canon, it.next());
     }
     return canon;
   }
@@ -122,7 +128,10 @@ public class Canonicalize {
 
   /** Given a base symbol to canonicalize, find any implicit enclosing instances. */
   private static Collection<ClassTy.SimpleClassTy> lexicalBase(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol first, ClassSymbol owner) {
+      SourceFile source,
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol first,
+      ClassSymbol owner) {
     if ((env.get(first).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
       return Collections.emptyList();
     }
@@ -137,7 +146,11 @@ public class Canonicalize {
       if ((env.get(owner).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
         break;
       }
-      canonOwner = env.get(canonOwner).owner();
+      TypeBoundClass info = env.get(canonOwner);
+      if (info == null) {
+        throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, canonOwner);
+      }
+      canonOwner = info.owner();
     }
     return result;
   }
@@ -167,7 +180,7 @@ public class Canonicalize {
    * result.
    */
   private static ClassTy canonOne(
-      Env<ClassSymbol, TypeBoundClass> env, ClassTy base, ClassTy.SimpleClassTy ty) {
+      SourceFile source, Env<ClassSymbol, TypeBoundClass> env, ClassTy base, SimpleClassTy ty) {
     // if the class is static, it has a trivial canonical qualifier with no type arguments
     if ((env.get(ty.sym()).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
       return new ClassTy(Collections.singletonList(ty));
@@ -196,7 +209,7 @@ public class Canonicalize {
         break;
       }
       TypeBoundClass info = env.get(curr.sym());
-      curr = canon(env, info.owner(), info.superClassType());
+      curr = canon(source, env, info.owner(), info.superClassType());
     }
     simples.add(ty);
     return new ClassTy(simples.build());
@@ -315,36 +328,41 @@ public class Canonicalize {
   }
 
   public static ClassTy canonicalizeClassTy(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
+      SourceFile source, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, ClassTy ty) {
     // canonicalize type arguments first
     ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
     for (ClassTy.SimpleClassTy s : ty.classes) {
-      args.add(new ClassTy.SimpleClassTy(s.sym(), canonicalize(s.targs(), base, env), s.annos()));
+      args.add(
+          new ClassTy.SimpleClassTy(
+              s.sym(), canonicalize(source, s.targs(), base, env), s.annos()));
     }
     ty = new ClassTy(args.build());
-    return canon(env, base, ty);
+    return canon(source, env, base, ty);
   }
 
   private static ImmutableList<Type> canonicalize(
-      ImmutableList<Type> targs, ClassSymbol base, Env<ClassSymbol, TypeBoundClass> env) {
+      SourceFile source,
+      ImmutableList<Type> targs,
+      ClassSymbol base,
+      Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableList.Builder<Type> result = ImmutableList.builder();
     for (Type a : targs) {
-      result.add(canonicalize(env, base, a));
+      result.add(canonicalize(source, env, base, a));
     }
     return result.build();
   }
 
   private static Type canonicalizeWildTy(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, WildTy type) {
+      SourceFile source, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol base, WildTy type) {
     switch (type.boundKind()) {
       case NONE:
         return type;
       case LOWER:
         return new Type.WildLowerBoundedTy(
-            canonicalize(env, base, type.bound()), type.annotations());
+            canonicalize(source, env, base, type.bound()), type.annotations());
       case UPPER:
         return new Type.WildUpperBoundedTy(
-            canonicalize(env, base, type.bound()), type.annotations());
+            canonicalize(source, env, base, type.bound()), type.annotations());
       default:
         throw new AssertionError(type.boundKind());
     }
