@@ -18,7 +18,7 @@ package com.google.turbine.bytecode.sig;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.model.TurbineConstantTypeKind;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** JVMS 4.7.9.1 signatures. */
 public class Sig {

@@ -18,7 +18,7 @@ package com.google.turbine.binder.lookup;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link Scope} that chains other scopes together. */
 public class CompoundScope implements Scope {

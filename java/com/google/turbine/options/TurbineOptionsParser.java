@@ -28,7 +28,7 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A command line options parser for {@link TurbineOptions}. */
 public class TurbineOptionsParser {

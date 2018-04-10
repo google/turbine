@@ -19,7 +19,7 @@ package com.google.turbine.binder.lookup;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableList;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link TopLevelIndex} that aggregates multiple indices into one. */
 // Note: this implementation doesn't detect if the indices contain incompatible information,

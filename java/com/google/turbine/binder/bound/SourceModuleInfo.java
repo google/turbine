@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder.bound;
 
-import android.support.annotation.Nullable;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
@@ -25,6 +24,7 @@ import com.google.turbine.binder.bound.ModuleInfo.RequireInfo;
 import com.google.turbine.binder.bound.ModuleInfo.UseInfo;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.type.AnnoInfo;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link ModuleInfo} that corresponds to a source file being compiled. */
 public class SourceModuleInfo extends ModuleInfo {
