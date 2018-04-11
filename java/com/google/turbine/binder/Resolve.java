@@ -107,12 +107,21 @@ public class Resolve {
     public ClassSymbol resolve(SourceFile source, int position, LookupResult result) {
       ClassSymbol sym = (ClassSymbol) result.sym();
       for (String bit : result.remaining()) {
-        sym = resolveOne(sym, bit);
-        if (sym == null) {
-          throw TurbineError.format(source, position, ErrorKind.SYMBOL_NOT_FOUND, bit);
-        }
+        sym = resolveNext(source, position, sym, bit);
       }
       return sym;
+    }
+
+    private ClassSymbol resolveNext(SourceFile source, int position, ClassSymbol sym, String bit) {
+      ClassSymbol next = resolveOne(sym, bit);
+      if (next == null) {
+        throw TurbineError.format(
+            source,
+            position,
+            ErrorKind.SYMBOL_NOT_FOUND,
+            new ClassSymbol(sym.binaryName() + '$' + bit));
+      }
+      return next;
     }
 
     @Override

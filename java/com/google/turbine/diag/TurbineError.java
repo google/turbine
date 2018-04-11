@@ -17,9 +17,13 @@
 package com.google.turbine.diag;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.getOnlyElement;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.turbine.binder.sym.ClassSymbol;
 
 /** A compilation error. */
 public class TurbineError extends Error {
@@ -37,7 +41,7 @@ public class TurbineError extends Error {
     TYPE_PARAMETER_QUALIFIER("type parameter used as type qualifier"),
     UNEXPECTED_TOKEN("unexpected token: %s"),
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
-    CANNOT_RESOLVE("cannot resolve %s"),
+    CANNOT_RESOLVE("could not resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),
@@ -67,7 +71,7 @@ public class TurbineError extends Error {
     String path = firstNonNull(source.path(), "<>");
     String message = kind.format(args);
     String diagnostic = path + ": error: " + message.trim() + System.lineSeparator();
-    return new TurbineError(kind, diagnostic);
+    return new TurbineError(kind, diagnostic, ImmutableList.copyOf(args));
   }
 
   /**
@@ -92,18 +96,37 @@ public class TurbineError extends Error {
         .append(System.lineSeparator());
     sb.append(Strings.repeat(" ", column)).append('^');
     String diagnostic = sb.toString();
-    return new TurbineError(kind, diagnostic);
+    return new TurbineError(kind, diagnostic, ImmutableList.copyOf(args));
   }
 
-  final ErrorKind kind;
+  private final ErrorKind kind;
+  private final ImmutableList<Object> args;
 
-  private TurbineError(ErrorKind kind, String diagnostic) {
+  private TurbineError(ErrorKind kind, String diagnostic, ImmutableList<Object> args) {
     super(diagnostic);
+    switch (kind) {
+      case SYMBOL_NOT_FOUND:
+        {
+          checkArgument(
+              args.size() == 1 && getOnlyElement(args) instanceof ClassSymbol,
+              "diagnostic (%s) has invalid argument args %s",
+              diagnostic,
+              args);
+          break;
+        }
+      default: // fall out
+    }
     this.kind = kind;
+    this.args = args;
   }
 
   /** The diagnostic kind. */
   public ErrorKind kind() {
     return kind;
+  }
+
+  /** The diagnostic arguments. */
+  public ImmutableList<Object> args() {
+    return args;
   }
 }

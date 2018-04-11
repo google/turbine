@@ -206,13 +206,15 @@ public class ModuleBinder {
     LookupKey key = new LookupKey(simpleNames);
     LookupResult result = scope.lookup(key);
     if (result == null) {
-      throw error(ErrorKind.SYMBOL_NOT_FOUND, pos, Joiner.on('.').join(simpleNames));
+      throw error(
+          ErrorKind.SYMBOL_NOT_FOUND, pos, new ClassSymbol(Joiner.on('/').join(simpleNames)));
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String name : result.remaining()) {
       sym = Resolve.resolve(env, /* origin= */ null, sym, name);
       if (sym == null) {
-        throw error(ErrorKind.SYMBOL_NOT_FOUND, pos, name);
+        throw error(
+            ErrorKind.SYMBOL_NOT_FOUND, pos, new ClassSymbol(sym.binaryName() + '$' + name));
       }
     }
     return sym;

@@ -47,7 +47,7 @@ public class ClassSymbol implements Symbol {
 
   @Override
   public String toString() {
-    return className;
+    return className.replace('/', '.');
   }
 
   @Override

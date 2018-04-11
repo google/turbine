@@ -31,6 +31,7 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.ClassTy;
 import java.util.ArrayDeque;
 
 /** Type hierarchy binding. */
@@ -116,22 +117,29 @@ public class HierarchyBinder {
     // Resolve the base symbol in the qualified name.
     LookupResult result = lookup(ty, new LookupKey(flat));
     if (result == null) {
-      throw TurbineError.format(base.source(), ty.position(), ErrorKind.SYMBOL_NOT_FOUND, ty);
+      throw TurbineError.format(base.source(), ty.position(), ErrorKind.CANNOT_RESOLVE, ty);
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      try {
-        sym = Resolve.resolve(env, origin, sym, bit);
-      } catch (LazyBindingError e) {
-        throw error(ty.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
-      }
-      if (sym == null) {
-        throw error(ty.position(), ErrorKind.SYMBOL_NOT_FOUND, bit);
-      }
+      sym = resolveNext(ty, sym, bit);
     }
     return sym;
+  }
+
+  private ClassSymbol resolveNext(ClassTy ty, ClassSymbol sym, String bit) {
+    ClassSymbol next;
+    try {
+      next = Resolve.resolve(env, origin, sym, bit);
+    } catch (LazyBindingError e) {
+      throw error(ty.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+    }
+    if (next == null) {
+      throw error(
+          ty.position(), ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
+    }
+    return next;
   }
 
   /** Resolve a qualified type name to a symbol. */

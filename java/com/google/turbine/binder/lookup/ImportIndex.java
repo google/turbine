@@ -103,7 +103,10 @@ public class ImportIndex implements ImportScope {
     LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
       throw TurbineError.format(
-          source, i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(i.type()));
+          source,
+          i.position(),
+          ErrorKind.SYMBOL_NOT_FOUND,
+          new ClassSymbol(Joiner.on('/').join(i.type())));
     }
     ClassSymbol sym = resolve.resolve(source, i.position(), result);
     return new ImportScope() {

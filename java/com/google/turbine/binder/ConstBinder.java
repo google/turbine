@@ -182,7 +182,7 @@ public class ConstBinder {
       return null;
     }
     EnumConstantValue enumValue = (EnumConstantValue) value;
-    if (!enumValue.sym().owner().toString().equals("java/lang/annotation/RetentionPolicy")) {
+    if (!enumValue.sym().owner().binaryName().equals("java/lang/annotation/RetentionPolicy")) {
       return null;
     }
     return RetentionPolicy.valueOf(enumValue.sym().name());

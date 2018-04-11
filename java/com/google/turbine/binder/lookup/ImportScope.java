@@ -40,10 +40,15 @@ public interface ImportScope {
     default ClassSymbol resolve(SourceFile source, int position, LookupResult result) {
       ClassSymbol sym = (ClassSymbol) result.sym();
       for (String bit : result.remaining()) {
-        sym = resolveOne(sym, bit);
-        if (sym == null) {
-          throw TurbineError.format(source, position, ErrorKind.SYMBOL_NOT_FOUND, bit);
+        ClassSymbol next = resolveOne(sym, bit);
+        if (next == null) {
+          throw TurbineError.format(
+              source,
+              position,
+              ErrorKind.SYMBOL_NOT_FOUND,
+              new ClassSymbol(sym.binaryName() + '$' + bit));
         }
+        sym = next;
       }
       return sym;
     }

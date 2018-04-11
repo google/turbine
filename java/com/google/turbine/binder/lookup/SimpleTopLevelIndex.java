@@ -85,7 +85,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
 
     /** Inserts a {@link ClassSymbol} into the index, creating any needed packages. */
     public boolean insert(ClassSymbol sym) {
-      Iterator<String> it = Splitter.on('/').split(sym.toString()).iterator();
+      Iterator<String> it = Splitter.on('/').split(sym.binaryName()).iterator();
       Node curr = root;
       while (it.hasNext()) {
         String simpleName = it.next();

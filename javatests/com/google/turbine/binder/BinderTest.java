@@ -195,7 +195,7 @@ public class BinderTest {
           /* moduleVersion=*/ Optional.absent());
       fail();
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("cycle in class hierarchy: a/A -> b/B -> a/A");
+      assertThat(e.getMessage()).contains("cycle in class hierarchy: a.A -> b.B -> a.A");
     }
   }
 

@@ -106,9 +106,9 @@ public interface Type {
       for (SimpleClassTy c : classes) {
         if (!first) {
           sb.append('.');
-          sb.append(c.sym.toString().substring(c.sym.toString().lastIndexOf('$') + 1));
+          sb.append(c.sym.binaryName().substring(c.sym.binaryName().lastIndexOf('$') + 1));
         } else {
-          sb.append(c.sym);
+          sb.append(c.sym.binaryName());
         }
         if (!c.targs.isEmpty()) {
           sb.append('<');

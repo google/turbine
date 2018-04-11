@@ -560,14 +560,11 @@ public class TypeBinder {
     for (Tree.Anno tree : trees) {
       LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
       if (lookupResult == null) {
-        throw error(tree.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on('.').join(tree.name()));
+        throw error(tree.position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(tree.name()));
       }
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
       for (String name : lookupResult.remaining()) {
-        sym = Resolve.resolve(env, owner, sym, name);
-        if (sym == null) {
-          throw error(tree.position(), ErrorKind.SYMBOL_NOT_FOUND, name);
-        }
+        sym = resolveNext(tree.position(), sym, name);
       }
       if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
         throw error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
@@ -575,6 +572,15 @@ public class TypeBinder {
       result.add(new AnnoInfo(base.source(), sym, tree, null));
     }
     return result.build();
+  }
+
+  private ClassSymbol resolveNext(int position, ClassSymbol sym, String bit) {
+    ClassSymbol next = Resolve.resolve(env, owner, sym, bit);
+    if (next == null) {
+      throw error(
+          position, ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
+    }
+    return next;
   }
 
   private ImmutableList<Type> bindTyArgs(CompoundScope scope, ImmutableList<Tree.Type> targs) {
@@ -627,7 +633,7 @@ public class TypeBinder {
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
-      throw error(t.position(), ErrorKind.SYMBOL_NOT_FOUND, t);
+      throw error(t.position(), ErrorKind.CANNOT_RESOLVE, t);
     }
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
@@ -660,10 +666,8 @@ public class TypeBinder {
             sym, bindTyArgs(scope, flat.get(idx++).tyargs()), annotations));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
-      sym = Resolve.resolve(env, owner, sym, curr.name());
-      if (sym == null) {
-        throw error(curr.position(), ErrorKind.CANNOT_RESOLVE, curr.name());
-      }
+      sym = resolveNext(curr.position(), sym, curr.name());
+
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(
           new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs()), annotations));

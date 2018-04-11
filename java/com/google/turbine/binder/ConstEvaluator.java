@@ -199,13 +199,16 @@ public strictfp class ConstEvaluator {
     }
     LookupResult result = scope.lookup(new LookupKey(flat));
     if (result == null) {
-      throw error(classTy.position(), ErrorKind.SYMBOL_NOT_FOUND, flat.peekFirst());
+      throw error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.peekFirst());
     }
     ClassSymbol classSym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
       classSym = Resolve.resolve(env, origin, classSym, bit);
       if (classSym == null) {
-        throw error(classTy.position(), ErrorKind.SYMBOL_NOT_FOUND, bit);
+        throw error(
+            classTy.position(),
+            ErrorKind.SYMBOL_NOT_FOUND,
+            new ClassSymbol(classSym.binaryName() + '$' + bit));
       }
     }
     return classSym;
