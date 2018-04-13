@@ -1,0 +1,18 @@
+=== A.java ===
+package a;
+public class A {
+  //                   this is not a field
+  //                    |  this is a field
+  //                    |     |
+  //                    v     v
+  public static final Object Object = new Object() {};
+}
+=== B.java ===
+package b;
+import static a.A.Object; // <-- this is a field
+class B {
+  public static final Object x = null;
+  //                    ^
+  //                    |
+  //                   this is not a field
+}

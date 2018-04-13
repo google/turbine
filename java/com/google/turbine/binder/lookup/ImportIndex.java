@@ -90,7 +90,7 @@ public class ImportIndex implements ImportScope {
               new Supplier<ImportScope>() {
                 @Override
                 public ImportScope get() {
-                  return staticNamedImport(source, cpi, i);
+                  return staticNamedImport(cpi, i);
                 }
               }));
     }
@@ -108,13 +108,34 @@ public class ImportIndex implements ImportScope {
           ErrorKind.SYMBOL_NOT_FOUND,
           new ClassSymbol(Joiner.on('/').join(i.type())));
     }
-    ClassSymbol sym = resolve.resolve(source, i.position(), result);
+    ClassSymbol sym = (ClassSymbol) result.sym();
+    for (String bit : result.remaining()) {
+      sym = resolveNext(source, i.position(), resolve, sym, bit);
+    }
+    ClassSymbol resolved = sym;
     return new ImportScope() {
       @Override
       public LookupResult lookup(LookupKey lookupKey, ResolveFunction unused) {
-        return new LookupResult(sym, lookupKey);
+        return new LookupResult(resolved, lookupKey);
       }
     };
+  }
+
+  private static ClassSymbol resolveNext(
+      SourceFile source,
+      int position,
+      CanonicalSymbolResolver resolve,
+      ClassSymbol sym,
+      String bit) {
+    ClassSymbol next = resolve.resolveOne(sym, bit);
+    if (next == null) {
+      throw TurbineError.format(
+          source,
+          position,
+          ErrorKind.SYMBOL_NOT_FOUND,
+          new ClassSymbol(sym.binaryName() + '$' + bit));
+    }
+    return next;
   }
 
   /**
@@ -124,7 +145,7 @@ public class ImportIndex implements ImportScope {
    * hierarchy analysis is complete, so for now we resolve the base {@code java.util.HashMap} and
    * defer the rest.
    */
-  private static ImportScope staticNamedImport(SourceFile source, TopLevelIndex cpi, ImportDecl i) {
+  private static ImportScope staticNamedImport(TopLevelIndex cpi, ImportDecl i) {
     LookupResult base = cpi.scope().lookup(new LookupKey(i.type()));
     if (base == null) {
       return null;
@@ -132,8 +153,16 @@ public class ImportIndex implements ImportScope {
     return new ImportScope() {
       @Override
       public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
-        ClassSymbol result = resolve.resolve(source, i.position(), base);
-        return new LookupResult(result, lookupKey);
+        ClassSymbol sym = (ClassSymbol) base.sym();
+        for (String bit : base.remaining()) {
+          sym = resolve.resolveOne(sym, bit);
+          if (sym == null) {
+            // Assume that static imports that don't resolve to types are non-type member imports,
+            // even if the simple name matched what we're looking for.
+            return null;
+          }
+        }
+        return new LookupResult(sym, lookupKey);
       }
     };
   }

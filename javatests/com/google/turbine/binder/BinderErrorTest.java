@@ -186,9 +186,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:2: error: symbol not found java.util.List$NoSuch", //
-          "import static java.util.List.NoSuch;",
-          "              ^"
+          "<>:3: error: could not resolve NoSuch", //
+          "public class Test extends NoSuch {",
+          "                          ^"
         },
       },
       {

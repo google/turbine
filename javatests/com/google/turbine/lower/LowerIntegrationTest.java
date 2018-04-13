@@ -302,6 +302,7 @@ public class LowerIntegrationTest {
       "B70953542.test",
       // TODO(cushon): support for source level 9 in integration tests
       // "B74332665.test",
+      "memberimport.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
