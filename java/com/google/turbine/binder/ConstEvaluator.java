@@ -203,15 +203,18 @@ public strictfp class ConstEvaluator {
     }
     ClassSymbol classSym = (ClassSymbol) result.sym();
     for (String bit : result.remaining()) {
-      classSym = Resolve.resolve(env, origin, classSym, bit);
-      if (classSym == null) {
-        throw error(
-            classTy.position(),
-            ErrorKind.SYMBOL_NOT_FOUND,
-            new ClassSymbol(classSym.binaryName() + '$' + bit));
-      }
+      classSym = resolveNext(classTy.position(), classSym, bit);
     }
     return classSym;
+  }
+
+  private ClassSymbol resolveNext(int position, ClassSymbol sym, String bit) {
+    ClassSymbol next = Resolve.resolve(env, origin, sym, bit);
+    if (next == null) {
+      throw error(
+          position, ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
+    }
+    return next;
   }
 
   /** Evaluates a reference to another constant variable. */

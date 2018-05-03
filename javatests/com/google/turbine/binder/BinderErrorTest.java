@@ -360,6 +360,19 @@ public class BinderErrorTest {
           "               ^",
         },
       },
+      {
+        {
+          "import java.util.List;", //
+          "@interface Anno { Class<?> value() default Object.class; }",
+          "@Anno(List.NoSuch.class)",
+          "public class Test {}",
+        },
+        {
+          "<>:3: error: symbol not found java.util.List$NoSuch", //
+          "@Anno(List.NoSuch.class)",
+          "      ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

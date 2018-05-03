@@ -220,7 +220,8 @@ public class ConstExpressionParser {
         case NOT:
         case TILDE:
         case IDENT:
-          return new Tree.TypeCast(position, asClassTy(cvar.name()), primary(false));
+          return new Tree.TypeCast(
+              position, asClassTy(cvar.position(), cvar.name()), primary(false));
         default:
           return expr;
       }
@@ -229,12 +230,11 @@ public class ConstExpressionParser {
     }
   }
 
-  private ClassTy asClassTy(ImmutableList<String> names) {
+  private static ClassTy asClassTy(int pos, ImmutableList<String> names) {
     ClassTy cty = null;
     for (String bit : names) {
       cty =
-          new ClassTy(
-              position, Optional.fromNullable(cty), bit, ImmutableList.of(), ImmutableList.of());
+          new ClassTy(pos, Optional.fromNullable(cty), bit, ImmutableList.of(), ImmutableList.of());
     }
     return cty;
   }
@@ -425,7 +425,7 @@ public class ConstExpressionParser {
     bits.add(lexer.stringValue());
     eat();
     if (token == Token.LBRACK) {
-      return finishClassLiteral(pos, asClassTy(bits.build()));
+      return finishClassLiteral(pos, asClassTy(pos, bits.build()));
     }
     while (token == Token.DOT) {
       eat();
@@ -436,7 +436,7 @@ public class ConstExpressionParser {
         case CLASS:
           // TODO(cushon): only allow in annotations?
           eat();
-          return new Tree.ClassLiteral(pos, asClassTy(bits.build()));
+          return new Tree.ClassLiteral(pos, asClassTy(pos, bits.build()));
         default:
           return null;
       }
