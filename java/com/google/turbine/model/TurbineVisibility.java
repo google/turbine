@@ -42,19 +42,27 @@ public enum TurbineVisibility {
   public static final int VISIBILITY_MASK =
       TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_PROTECTED;
 
+  /**
+   * Returns the {@link TurbineVisibility} corresponding to the given access bits.
+   *
+   * <p>If the input is ill-formed and corresponds to multiple visibilities, {@code PUBLIC}, {@code
+   * PROTECTED}, {@code PRIVATE}, and {@code PACKAGE}, are returned in that order. This means that
+   * turbine will occasionally produce valid output for invalid input. In general turbine performs
+   * the minimum possible error-checking, and the expectation is that it is run in parallel with
+   * javac or another non-header compiler as part of a build, and it defers well-formedness checking
+   * to the other tool.
+   */
   public static TurbineVisibility fromAccess(int access) {
-    switch (access & VISIBILITY_MASK) {
-      case TurbineFlag.ACC_PUBLIC:
-        return PUBLIC;
-      case TurbineFlag.ACC_PRIVATE:
-        return PRIVATE;
-      case TurbineFlag.ACC_PROTECTED:
-        return PROTECTED;
-      case 0:
-        return PACKAGE;
-      default:
-        throw new AssertionError(String.format("0x%x", access));
+    if ((access & TurbineFlag.ACC_PUBLIC) == TurbineFlag.ACC_PUBLIC) {
+      return PUBLIC;
     }
+    if ((access & TurbineFlag.ACC_PROTECTED) == TurbineFlag.ACC_PROTECTED) {
+      return PROTECTED;
+    }
+    if ((access & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
+      return PRIVATE;
+    }
+    return PACKAGE;
   }
 
   public int setAccess(int access) {

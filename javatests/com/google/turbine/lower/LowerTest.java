@@ -598,6 +598,35 @@ public class LowerTest {
     }
   }
 
+  // If an element incorrectly has multiple visibility modifiers, pick one, and rely on javac to
+  // report a diagnostic.
+  @Test
+  public void multipleVisibilities() throws Exception {
+    ImmutableMap<String, String> sources =
+        ImmutableMap.of("Test.java", "public protected class Test {}");
+
+    Map<String, byte[]> lowered =
+        IntegrationTestSupport.runTurbine(sources, /* classpath= */ ImmutableList.of());
+    int[] testAccess = {0};
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM6) {
+              @Override
+              public void visit(
+                  int version,
+                  int access,
+                  String name,
+                  String signature,
+                  String superName,
+                  String[] interfaces) {
+                testAccess[0] = access;
+              }
+            },
+            0);
+    assertThat((testAccess[0] & TurbineFlag.ACC_PUBLIC) == TurbineFlag.ACC_PUBLIC).isTrue();
+    assertThat((testAccess[0] & TurbineFlag.ACC_PROTECTED) == TurbineFlag.ACC_PROTECTED).isFalse();
+  }
+
   static String lines(String... lines) {
     return Joiner.on("\n").join(lines);
   }
