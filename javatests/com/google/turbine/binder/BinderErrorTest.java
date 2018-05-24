@@ -301,7 +301,7 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:5: error: could not evaluate constant expression", //
+          "<>:5: error: could not resolve field NO_SUCH", //
           "  @Anno(value=Test.NO_SUCH) int x;",
           "              ^",
         },
@@ -371,6 +371,36 @@ public class BinderErrorTest {
           "<>:3: error: symbol not found java.util.List$NoSuch", //
           "@Anno(List.NoSuch.class)",
           "      ^",
+        },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @interface Anno {",
+          "    Class<?>[] value() default Object.class;",
+          "  }",
+          "  @Anno(value={java.util.Map.Entry}) int x;",
+          "}",
+        },
+        {
+          "<>:5: error: could not resolve field Entry", //
+          "  @Anno(value={java.util.Map.Entry}) int x;",
+          "               ^",
+        },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @interface Anno {",
+          "    Class<?>[] value() default Object.class;",
+          "  }",
+          "  @Anno(value={java.lang.Object}) int x;",
+          "}",
+        },
+        {
+          "<>:5: error: could not resolve field Object", //
+          "  @Anno(value={java.lang.Object}) int x;",
+          "               ^",
         },
       },
     };

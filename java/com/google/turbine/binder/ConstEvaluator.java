@@ -262,7 +262,10 @@ public strictfp class ConstEvaluator {
       }
       return field;
     }
-    return null;
+    throw error(
+        t.position(),
+        ErrorKind.CANNOT_RESOLVE,
+        String.format("field %s", Iterables.getLast(t.name())));
   }
 
   private FieldInfo resolveQualifiedField(ConstVarName t) {
@@ -271,6 +274,10 @@ public strictfp class ConstEvaluator {
     }
     LookupResult result = scope.lookup(new LookupKey(t.name()));
     if (result == null) {
+      return null;
+    }
+    if (result.remaining().isEmpty()) {
+      // unexpectedly resolved qualified name to a type
       return null;
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
@@ -990,7 +997,12 @@ public strictfp class ConstEvaluator {
   }
 
   public Const.Value evalFieldInitializer(Expression expression, Type type) {
-    Const value = eval(expression);
+    Const value;
+    try {
+      value = eval(expression);
+    } catch (TurbineError error) {
+      return null;
+    }
     if (value == null || value.kind() != Const.Kind.PRIMITIVE) {
       return null;
     }
