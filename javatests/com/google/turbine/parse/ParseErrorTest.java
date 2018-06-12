@@ -122,6 +122,38 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void dropParens() {
+    String input = "enum E { ONE(";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unexpected end of input", //
+                  "enum E { ONE(",
+                  "            ^"));
+    }
+  }
+
+  @Test
+  public void dropBlocks() {
+    String input = "class T { Object f = new Object() {";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unexpected end of input", //
+                  "class T { Object f = new Object() {",
+                  "                                  ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

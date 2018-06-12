@@ -981,6 +981,8 @@ public class Parser {
         case LPAREN:
           depth++;
           break;
+        case EOF:
+          throw error(ErrorKind.UNEXPECTED_EOF);
         default:
           break;
       }
@@ -999,6 +1001,8 @@ public class Parser {
         case LBRACE:
           depth++;
           break;
+        case EOF:
+          throw error(ErrorKind.UNEXPECTED_EOF);
         default:
           break;
       }

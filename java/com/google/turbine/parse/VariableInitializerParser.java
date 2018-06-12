@@ -17,6 +17,9 @@
 package com.google.turbine.parse;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -232,6 +235,8 @@ public class VariableInitializerParser {
           next();
           depth--;
           break;
+        case EOF:
+          throw error(ErrorKind.UNEXPECTED_EOF);
         default:
           save();
           next();
@@ -254,6 +259,8 @@ public class VariableInitializerParser {
           next();
           depth--;
           break;
+        case EOF:
+          throw error(ErrorKind.UNEXPECTED_EOF);
         default:
           save();
           next();
@@ -329,5 +336,14 @@ public class VariableInitializerParser {
           break;
       }
     }
+  }
+
+  @CheckReturnValue
+  private TurbineError error(ErrorKind kind, Object... args) {
+    return TurbineError.format(
+        lexer.source(),
+        Math.min(lexer.position(), lexer.source().source().length() - 1),
+        kind,
+        args);
   }
 }
