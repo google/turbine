@@ -15,8 +15,7 @@
   </description>
 
   <properties>
-    <javac.version>9-dev-r3297-4</javac.version>
-    <asm.version>6.0</asm.version>
+    <asm.version>6.2</asm.version>
   </properties>
 
   <dependencies>
@@ -60,21 +59,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.errorprone</groupId>
-      <artifactId>javac</artifactId>
-      <version>${javac.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <!-- required for javap task -->
-    <dependency>
-      <groupId>com.sun</groupId>
-      <artifactId>tools</artifactId>
-      <scope>system</scope>
-      <optional>true</optional>
-      <version>1.8</version>
-      <systemPath>${java.home}/../lib/tools.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.12</version>
@@ -102,6 +86,7 @@
         <directory>javatests</directory>
         <includes>
           <include>**/testdata/**</include>
+          <include>**/moduletestdata/**</include>
         </includes>
       </testResource>
     </testResources>
@@ -148,8 +133,7 @@
         <version>2.19.1</version>
         <configuration>
           <!-- set heap size to work around http://github.com/travis-ci/travis-ci/issues/3396 -->
-          <!-- put javac.jar on bootclasspath when executing tests -->
-          <argLine>-Xmx1024m -Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</argLine>
+          <argLine>-Xmx2g</argLine>
         </configuration>
       </plugin>
     </plugins>

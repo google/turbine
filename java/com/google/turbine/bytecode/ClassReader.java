@@ -74,7 +74,7 @@ public class ClassReader {
     }
     int minorVersion = reader.u2();
     int majorVersion = reader.u2();
-    if (majorVersion < 45 || majorVersion > 53) {
+    if (majorVersion < 45) {
       throw error("bad version: %d.%d", majorVersion, minorVersion);
     }
     ConstantPoolReader constantPool = ConstantPoolReader.readConstantPool(reader);

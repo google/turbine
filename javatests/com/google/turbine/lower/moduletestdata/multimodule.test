@@ -1,0 +1,13 @@
+%%% module-info.java %%%
+module one {}
+
+=== two/module-info.java ===
+module two {
+  requires one;
+}
+
+=== three/module-info.java ===
+module three {
+  requires one;
+  requires two;
+}

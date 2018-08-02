@@ -1,0 +1,84 @@
+=== a/A.java ===
+package a;
+import static java.lang.annotation.ElementType.MODULE;
+import java.lang.annotation.Target;
+@Target(MODULE)
+public @interface A {
+  int[] value() default {};
+}
+
+=== a/B.java ===
+package a;
+import static java.lang.annotation.ElementType.MODULE;
+import java.lang.annotation.Target;
+@Target(MODULE)
+public @interface B {}
+
+=== com/google/Baz.java ===
+package com.google;
+public interface Baz {
+  public static int A = 42;
+  public static int B = 43;
+  public interface I {
+    public static final int C = 44;
+  }
+}
+
+=== com/google/Foo.java ===
+package com.google;
+public class Foo implements Baz.I {
+}
+
+=== com/google/Bar.java ===
+package com.google;
+public class Bar implements Baz.I {
+}
+
+=== com/google/p1/One.java ===
+package com.google.p1;
+public class One {}
+
+=== com/google/p2/Two.java ===
+package com.google.p2;
+public class Two {}
+
+=== com/google/p3/Three.java ===
+package com.google.p3;
+public class Three {}
+
+=== module-info.java ===
+
+import a.A;
+import a.B;
+import com.google.Foo;
+import com.google.Baz;
+import static com.google.Baz.A;
+
+@A({A, Baz.B, Baz.I.C})
+@B
+module com.google.m {
+  requires java.compiler;
+  requires transitive jdk.compiler;
+  requires static java.base;
+
+  exports com.google.p1;
+  exports com.google.p2 to
+      java.base;
+  exports com.google.p3 to
+      java.base,
+      java.compiler;
+
+  opens com.google.p1;
+  opens com.google.p2 to
+      java.base;
+  opens com.google.p3 to
+      java.base,
+      java.compiler;
+
+  uses Foo;
+  uses com.google.Bar;
+
+  provides com.google.Baz.I with
+      Foo,
+      com.google.Bar;
+}
