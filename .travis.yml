@@ -1,29 +1,27 @@
 language: java
 
+jdk:
+  - oraclejdk8
+  - oraclejdk9
+  - oraclejdk10
+  - oraclejdk-ea
+
 matrix:
   allow_failures:
-    - jdk: oraclejdk9
-  include:
-# JDK 8
-    - jdk: oraclejdk8
-      env: JDK_RELEASE='8'
-# JDK 9
-    - jdk: oraclejdk9
-      env: JDK_RELEASE='9'
+    - jdk: oraclejdk10
+    - jdk: oraclejdk-ea
+
+# see https://github.com/travis-ci/travis-ci/issues/8408
+before_install:
+- unset _JAVA_OPTIONS
 
 # use travis-ci docker based infrastructure
 sudo: false
-
-# https://github.com/travis-ci/travis-ci/issues/3259#issuecomment-130860338
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 cache:
   directories:
     - $HOME/.m2
 
-install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-
-script: mvn test -B
+script:
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- mvn test -B
