@@ -15,7 +15,7 @@
   </description>
 
   <properties>
-    <asm.version>6.2</asm.version>
+    <asm.version>6.2.1</asm.version>
   </properties>
 
   <dependencies>
