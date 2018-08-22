@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
@@ -52,6 +51,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import org.junit.Rule;
@@ -247,7 +247,7 @@ public class LowerTest {
                             "}"))),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.absent());
+            /* moduleVersion=*/ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
     List<String> attributes = new ArrayList<>();
@@ -325,7 +325,7 @@ public class LowerTest {
                             "}"))),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.absent());
+            /* moduleVersion=*/ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
     TypePath[] path = new TypePath[1];
@@ -403,7 +403,7 @@ public class LowerTest {
             ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.absent());
+            /* moduleVersion=*/ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
     int[] acc = {0};

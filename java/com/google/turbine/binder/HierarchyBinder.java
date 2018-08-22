@@ -111,7 +111,7 @@ public class HierarchyBinder {
     // flatten a left-recursive qualified type name to its component simple names
     // e.g. Foo<Bar>.Baz -> ["Foo", "Bar"]
     ArrayDeque<String> flat = new ArrayDeque<>();
-    for (Tree.ClassTy curr = ty; curr != null; curr = curr.base().orNull()) {
+    for (Tree.ClassTy curr = ty; curr != null; curr = curr.base().orElse(null)) {
       flat.addFirst(curr.name());
     }
     // Resolve the base symbol in the qualified name.

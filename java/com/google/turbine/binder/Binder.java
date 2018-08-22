@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder;
 
-
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -62,6 +60,7 @@ import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.type.Type;
 import java.util.List;
+import java.util.Optional;
 
 /** The entry point for analysis. */
 public class Binder {
@@ -262,7 +261,7 @@ public class Binder {
                   if (info != null) {
                     return new ModuleInfo(
                         info.module().moduleName(),
-                        moduleVersion.orNull(),
+                        moduleVersion.orElse(null),
                         /* flags= */ 0,
                         /* annos= */ ImmutableList.of(),
                         /* requires= */ ImmutableList.of(),

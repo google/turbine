@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.jimfs.Configuration;
@@ -60,6 +59,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
@@ -431,7 +431,7 @@ public class IntegrationTestSupport {
   static Map<String, byte[]> runTurbine(Map<String, String> input, ImmutableList<Path> classpath)
       throws IOException {
     return runTurbine(
-        input, classpath, TURBINE_BOOTCLASSPATH, /* moduleVersion= */ Optional.absent());
+        input, classpath, TURBINE_BOOTCLASSPATH, /* moduleVersion= */ Optional.empty());
   }
 
   static Map<String, byte[]> runTurbine(

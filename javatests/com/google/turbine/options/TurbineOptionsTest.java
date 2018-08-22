@@ -17,6 +17,7 @@
 package com.google.turbine.options;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
@@ -181,8 +182,8 @@ public class TurbineOptionsTest {
 
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(lines));
 
-    assertThat(options.targetLabel()).isAbsent();
-    assertThat(options.injectingRuleKind()).isAbsent();
+    assertThat(options.targetLabel()).isEmpty();
+    assertThat(options.injectingRuleKind()).isEmpty();
   }
 
   @Test

@@ -21,13 +21,13 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -422,7 +422,7 @@ public class BinderErrorTest {
               ImmutableList.of(parseLines(source)),
               ClassPathBinder.bindClasspath(Collections.emptyList()),
               TURBINE_BOOTCLASSPATH,
-              /* moduleVersion=*/ Optional.absent())
+              /* moduleVersion=*/ Optional.empty())
           .units();
       fail();
     } catch (TurbineError e) {

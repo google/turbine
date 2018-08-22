@@ -18,7 +18,6 @@ package com.google.turbine.parse;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.turbine.diag.TurbineError;
@@ -30,6 +29,7 @@ import com.google.turbine.tree.Tree.ClassLiteral;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.TurbineOperatorKind;
+import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A parser for compile-time constant expressions. */
@@ -233,8 +233,7 @@ public class ConstExpressionParser {
   private static ClassTy asClassTy(int pos, ImmutableList<String> names) {
     ClassTy cty = null;
     for (String bit : names) {
-      cty =
-          new ClassTy(pos, Optional.fromNullable(cty), bit, ImmutableList.of(), ImmutableList.of());
+      cty = new ClassTy(pos, Optional.ofNullable(cty), bit, ImmutableList.of(), ImmutableList.of());
     }
     return cty;
   }

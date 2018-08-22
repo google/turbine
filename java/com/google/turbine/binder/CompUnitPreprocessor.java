@@ -17,7 +17,6 @@
 package com.google.turbine.binder;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -38,6 +37,7 @@ import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.TurbineModifier;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -215,7 +215,7 @@ public class CompUnitPreprocessor {
         pkgDecl.annos(),
         "package-info",
         ImmutableList.of(),
-        Optional.absent(),
+        Optional.empty(),
         ImmutableList.of(),
         ImmutableList.of(),
         TurbineTyKind.INTERFACE);

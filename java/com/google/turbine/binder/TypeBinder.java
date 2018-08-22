@@ -620,7 +620,7 @@ public class TypeBinder {
     ArrayList<Tree.ClassTy> flat;
     {
       ArrayDeque<Tree.ClassTy> builder = new ArrayDeque<>();
-      for (Tree.ClassTy curr = t; curr != null; curr = curr.base().orNull()) {
+      for (Tree.ClassTy curr = t; curr != null; curr = curr.base().orElse(null)) {
         builder.addFirst(curr);
       }
       flat = new ArrayList<>(builder);

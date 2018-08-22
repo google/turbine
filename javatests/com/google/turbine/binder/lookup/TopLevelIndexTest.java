@@ -36,7 +36,7 @@ public class TopLevelIndexTest {
         ImmutableList.of(
             new ClassSymbol("java/util/Map"),
             new ClassSymbol("java/util/List"),
-            new ClassSymbol("com/google/common/base/Optional")));
+            new ClassSymbol("java.util.Optional")));
   }
 
   @Test

@@ -19,7 +19,6 @@ package com.google.turbine.deps;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -44,6 +43,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
@@ -106,7 +106,7 @@ public class DependenciesTest {
               units,
               ClassPathBinder.bindClasspath(classpath),
               TestClassPaths.TURBINE_BOOTCLASSPATH,
-              /* moduleVersion=*/ Optional.absent());
+              /* moduleVersion=*/ Optional.empty());
 
       Lowered lowered = Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv());
 

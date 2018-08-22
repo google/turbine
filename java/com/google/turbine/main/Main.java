@@ -18,7 +18,6 @@ package com.google.turbine.main;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 import com.google.turbine.binder.Binder;
@@ -50,6 +49,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -93,7 +93,7 @@ public class Main {
     ClassPath classpath = ClassPathBinder.bindClasspath(toPaths(reducedClasspath));
 
     BindingResult bound =
-        Binder.bind(units, classpath, bootclasspath, /* moduleVersion=*/ Optional.absent());
+        Binder.bind(units, classpath, bootclasspath, /* moduleVersion=*/ Optional.empty());
 
     // TODO(cushon): parallelize
     Lowered lowered = Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv());

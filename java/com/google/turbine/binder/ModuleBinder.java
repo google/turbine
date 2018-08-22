@@ -19,7 +19,6 @@ package com.google.turbine.binder;
 import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.ModuleInfo;
@@ -51,6 +50,7 @@ import com.google.turbine.tree.Tree.ModRequires;
 import com.google.turbine.tree.Tree.ModUses;
 import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.AnnoInfo;
+import java.util.Optional;
 
 /** Binding pass for modules. */
 public class ModuleBinder {
@@ -149,7 +149,7 @@ public class ModuleBinder {
 
     return new SourceModuleInfo(
         module.module().moduleName(),
-        moduleVersion.orNull(),
+        moduleVersion.orElse(null),
         flags,
         annos,
         requires.build(),

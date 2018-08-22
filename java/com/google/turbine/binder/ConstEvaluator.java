@@ -194,7 +194,7 @@ public strictfp class ConstEvaluator {
    */
   private ClassSymbol resolveClass(ClassTy classTy) {
     ArrayDeque<String> flat = new ArrayDeque<>();
-    for (ClassTy curr = classTy; curr != null; curr = curr.base().orNull()) {
+    for (ClassTy curr = classTy; curr != null; curr = curr.base().orElse(null)) {
       flat.addFirst(curr.name());
     }
     LookupResult result = scope.lookup(new LookupKey(flat));

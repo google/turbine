@@ -26,7 +26,6 @@ import static com.google.turbine.tree.TurbineModifier.PROTECTED;
 import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -63,6 +62,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
@@ -95,8 +95,8 @@ public class Parser {
     // TODO(cushon): consider enforcing package, import, and declaration order
     // and make it bug-compatible with javac:
     // http://mail.openjdk.java.net/pipermail/compiler-dev/2013-August/006968.html
-    Optional<PkgDecl> pkg = Optional.absent();
-    Optional<ModDecl> mod = Optional.absent();
+    Optional<PkgDecl> pkg = Optional.empty();
+    Optional<ModDecl> mod = Optional.empty();
     EnumSet<TurbineModifier> access = EnumSet.noneOf(TurbineModifier.class);
     ImmutableList.Builder<ImportDecl> imports = ImmutableList.builder();
     ImmutableList.Builder<TyDecl> decls = ImmutableList.builder();
@@ -238,7 +238,7 @@ public class Parser {
         annos,
         name,
         typarams,
-        Optional.<ClassTy>absent(),
+        Optional.<ClassTy>empty(),
         interfaces.build(),
         members,
         TurbineTyKind.INTERFACE);
@@ -257,7 +257,7 @@ public class Parser {
         annos,
         name,
         ImmutableList.<TyParam>of(),
-        Optional.<ClassTy>absent(),
+        Optional.<ClassTy>empty(),
         ImmutableList.<ClassTy>of(),
         members,
         TurbineTyKind.ANNOTATION);
@@ -284,7 +284,7 @@ public class Parser {
         annos,
         name,
         ImmutableList.<TyParam>of(),
-        Optional.<ClassTy>absent(),
+        Optional.<ClassTy>empty(),
         interfaces.build(),
         members,
         TurbineTyKind.ENUM);
@@ -444,12 +444,12 @@ public class Parser {
                     annos.build(),
                     new ClassTy(
                         position,
-                        Optional.<ClassTy>absent(),
+                        Optional.<ClassTy>empty(),
                         enumName,
                         ImmutableList.<Type>of(),
                         ImmutableList.of()),
                     name,
-                    Optional.<Expression>absent()));
+                    Optional.<Expression>empty()));
             annos = ImmutableList.builder();
             break;
           }
@@ -500,7 +500,7 @@ public class Parser {
         annos,
         name,
         tyParams,
-        Optional.fromNullable(xtnds),
+        Optional.ofNullable(xtnds),
         interfaces.build(),
         members,
         TurbineTyKind.CLASS);
@@ -672,7 +672,7 @@ public class Parser {
                 result =
                     new ClassTy(
                         position,
-                        Optional.<ClassTy>absent(),
+                        Optional.<ClassTy>empty(),
                         ident,
                         ImmutableList.<Type>of(),
                         ImmutableList.of());
@@ -686,7 +686,7 @@ public class Parser {
                 result =
                     new ClassTy(
                         position,
-                        Optional.<ClassTy>absent(),
+                        Optional.<ClassTy>empty(),
                         ident,
                         ImmutableList.<Type>of(),
                         ImmutableList.of());
@@ -697,7 +697,7 @@ public class Parser {
               {
                 result =
                     new ClassTy(
-                        position, Optional.<ClassTy>absent(), ident, tyargs(), ImmutableList.of());
+                        position, Optional.<ClassTy>empty(), ident, tyargs(), ImmutableList.of());
                 result = maybeDims(maybeAnnos(), result);
                 break;
               }
@@ -705,7 +705,7 @@ public class Parser {
               result =
                   new ClassTy(
                       position,
-                      Optional.<ClassTy>absent(),
+                      Optional.<ClassTy>empty(),
                       ident,
                       ImmutableList.<Type>of(),
                       ImmutableList.of());
@@ -810,7 +810,7 @@ public class Parser {
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
-      result.add(new VarDecl(pos, access, annos, ty, name, Optional.fromNullable(init)));
+      result.add(new VarDecl(pos, access, annos, ty, name, Optional.ofNullable(init)));
     }
     eat(Token.SEMI);
     return result.build();
@@ -870,11 +870,11 @@ public class Parser {
         access,
         annos,
         typaram,
-        Optional.<Tree>fromNullable(result),
+        Optional.<Tree>ofNullable(result),
         name,
         formals.build(),
         exceptions.build(),
-        Optional.fromNullable(defaultValue));
+        Optional.ofNullable(defaultValue));
   }
 
   /**
@@ -955,7 +955,7 @@ public class Parser {
       name = identOrThis();
     }
     ty = extraDims(ty);
-    return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>absent());
+    return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>empty());
   }
 
   private String identOrThis() {
@@ -1064,7 +1064,7 @@ public class Parser {
       if (token == Token.LT) {
         tyargs = tyargs();
       }
-      ty = new ClassTy(pos, Optional.fromNullable(ty), name, tyargs, typeAnnos);
+      ty = new ClassTy(pos, Optional.ofNullable(ty), name, tyargs, typeAnnos);
       typeAnnos = null;
     } while (maybe(Token.DOT));
     return ty;
@@ -1085,25 +1085,25 @@ public class Parser {
                 next();
                 Type upper = referenceType(maybeAnnos());
                 acc.add(
-                    new WildTy(position, typeAnnos, Optional.of(upper), Optional.<Type>absent()));
+                    new WildTy(position, typeAnnos, Optional.of(upper), Optional.<Type>empty()));
                 break;
               case SUPER:
                 next();
                 Type lower = referenceType(maybeAnnos());
                 acc.add(
-                    new WildTy(position, typeAnnos, Optional.<Type>absent(), Optional.of(lower)));
+                    new WildTy(position, typeAnnos, Optional.<Type>empty(), Optional.of(lower)));
                 break;
               case COMMA:
                 acc.add(
                     new WildTy(
-                        position, typeAnnos, Optional.<Type>absent(), Optional.<Type>absent()));
+                        position, typeAnnos, Optional.<Type>empty(), Optional.<Type>empty()));
                 continue OUTER;
               case GT:
               case GTGT:
               case GTGTGT:
                 acc.add(
                     new WildTy(
-                        position, typeAnnos, Optional.<Type>absent(), Optional.<Type>absent()));
+                        position, typeAnnos, Optional.<Type>empty(), Optional.<Type>empty()));
                 break OUTER;
               default:
                 throw error(token);

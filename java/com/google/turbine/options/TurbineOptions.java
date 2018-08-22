@@ -18,9 +18,9 @@ package com.google.turbine.options;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Header compilation options. */
@@ -65,16 +65,16 @@ public class TurbineOptions {
     this.output = checkNotNull(output, "output must not be null");
     this.classPath = checkNotNull(classPath, "classPath must not be null");
     this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
-    this.release = Optional.fromNullable(release);
-    this.system = Optional.fromNullable(system);
+    this.release = Optional.ofNullable(release);
+    this.system = Optional.ofNullable(system);
     this.sources = checkNotNull(sources, "sources must not be null");
     this.processorPath = checkNotNull(processorPath, "processorPath must not be null");
     this.processors = checkNotNull(processors, "processors must not be null");
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
-    this.outputDeps = Optional.fromNullable(outputDeps);
+    this.outputDeps = Optional.ofNullable(outputDeps);
     this.directJars = checkNotNull(directJars, "directJars must not be null");
-    this.targetLabel = Optional.fromNullable(targetLabel);
-    this.injectingRuleKind = Optional.fromNullable(injectingRuleKind);
+    this.targetLabel = Optional.ofNullable(targetLabel);
+    this.injectingRuleKind = Optional.ofNullable(injectingRuleKind);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
     this.javacFallback = javacFallback;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");

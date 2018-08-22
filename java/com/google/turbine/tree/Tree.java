@@ -16,13 +16,13 @@
 
 package com.google.turbine.tree;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
+import java.util.Optional;
 import java.util.Set;
 
 /** An AST node. */
