@@ -39,6 +39,7 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.ConstCastError;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
@@ -997,15 +998,14 @@ public strictfp class ConstEvaluator {
   }
 
   public Const.Value evalFieldInitializer(Expression expression, Type type) {
-    Const value;
     try {
-      value = eval(expression);
-    } catch (TurbineError error) {
+      Const value = eval(expression);
+      if (value == null || value.kind() != Const.Kind.PRIMITIVE) {
+        return null;
+      }
+      return (Const.Value) cast(type, value);
+    } catch (TurbineError | ConstCastError error) {
       return null;
     }
-    if (value == null || value.kind() != Const.Kind.PRIMITIVE) {
-      return null;
-    }
-    return (Const.Value) cast(type, value);
   }
 }

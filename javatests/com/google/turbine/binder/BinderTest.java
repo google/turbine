@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.fail;
@@ -24,6 +25,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
@@ -287,6 +289,34 @@ public class BinderTest {
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("C$A"));
     assertThat(a.annotationMetadata().target()).containsExactly(ElementType.TYPE_USE);
+  }
+
+  // Test that we don't crash on invalid constant field initializers.
+  // (Error reporting is deferred to javac.)
+  @Test
+  public void invalidConst() throws Exception {
+    List<Tree.CompUnit> units = new ArrayList<>();
+    units.add(
+        parseLines(
+            "package a;", //
+            "public class A {",
+            "  public static final boolean b = true == 42;",
+            "}"));
+
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(
+                units,
+                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion=*/ Optional.empty())
+            .units();
+
+    assertThat(bound.keySet()).containsExactly(new ClassSymbol("a/A"));
+
+    SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
+    FieldInfo f = getOnlyElement(a.fields());
+    assertThat(f.name()).isEqualTo("b");
+    assertThat(f.value()).isNull();
   }
 
   private Tree.CompUnit parseLines(String... lines) {

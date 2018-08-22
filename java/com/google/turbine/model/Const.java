@@ -36,6 +36,13 @@ public abstract class Const {
     ANNOTATION
   }
 
+  /** An invalid constant cast. */
+  public static class ConstCastError extends RuntimeException {
+    public ConstCastError(TurbineConstantTypeKind type, TurbineConstantTypeKind target) {
+      super(String.format("%s cannot be converted to %s", type, target));
+    }
+  }
+
   /** Subtypes of {@link Const} for primitive and String literals. */
   public abstract static class Value extends Const {
     public abstract TurbineConstantTypeKind constantTypeKind();
@@ -46,39 +53,39 @@ public abstract class Const {
     }
 
     public IntValue asInteger() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.INT);
     }
 
     public FloatValue asFloat() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.FLOAT);
     }
 
     public DoubleValue asDouble() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.DOUBLE);
     }
 
     public LongValue asLong() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.LONG);
     }
 
     public BooleanValue asBoolean() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.BOOLEAN);
     }
 
     public StringValue asString() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.STRING);
     }
 
     public CharValue asChar() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.CHAR);
     }
 
     public ShortValue asShort() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.SHORT);
     }
 
     public ByteValue asByte() {
-      throw new AssertionError(constantTypeKind());
+      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.BYTE);
     }
   }
 
