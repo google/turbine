@@ -403,6 +403,18 @@ public class BinderErrorTest {
           "               ^",
         },
       },
+      {
+        {
+          "class Cycle extends Cycle {", //
+          "  NoSuch f;",
+          "}",
+        },
+        {
+          "<>:2: error: could not resolve NoSuch", //
+          "  NoSuch f;",
+          "         ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

@@ -29,7 +29,9 @@ import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
 import com.google.turbine.binder.lookup.ImportScope.ResolveFunction;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineVisibility;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /** Qualified name resolution. */
 public class Resolve {
@@ -44,7 +46,20 @@ public class Resolve {
       ClassSymbol origin,
       ClassSymbol sym,
       String simpleName) {
+    return resolve(env, origin, sym, simpleName, new HashSet<>());
+  }
+
+  private static ClassSymbol resolve(
+      Env<ClassSymbol, ? extends HeaderBoundClass> env,
+      ClassSymbol origin,
+      ClassSymbol sym,
+      String simpleName,
+      Set<ClassSymbol> seen) {
     ClassSymbol result;
+    if (!seen.add(sym)) {
+      // Optimize multiple-interface-inheritance, and don't get stuck in cycles.
+      return null;
+    }
     HeaderBoundClass bound = env.get(sym);
     if (bound == null) {
       return null;
@@ -54,13 +69,13 @@ public class Resolve {
       return result;
     }
     if (bound.superclass() != null) {
-      result = resolve(env, origin, bound.superclass(), simpleName);
+      result = resolve(env, origin, bound.superclass(), simpleName, seen);
       if (result != null && visible(origin, result, env.get(result))) {
         return result;
       }
     }
     for (ClassSymbol i : bound.interfaces()) {
-      result = resolve(env, origin, i, simpleName);
+      result = resolve(env, origin, i, simpleName, seen);
       if (result != null && visible(origin, result, env.get(result))) {
         return result;
       }
@@ -139,6 +154,19 @@ public class Resolve {
    */
   public static FieldInfo resolveField(
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol origin, ClassSymbol sym, String name) {
+    return resolveField(env, origin, sym, name, new HashSet<>());
+  }
+
+  private static FieldInfo resolveField(
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol origin,
+      ClassSymbol sym,
+      String name,
+      Set<ClassSymbol> seen) {
+    if (!seen.add(sym)) {
+      // Optimize multiple-interface-inheritance, and don't get stuck in cycles.
+      return null;
+    }
     TypeBoundClass info = env.get(sym);
     if (info == null) {
       return null;
@@ -149,13 +177,13 @@ public class Resolve {
       }
     }
     if (info.superclass() != null) {
-      FieldInfo field = resolveField(env, origin, info.superclass(), name);
+      FieldInfo field = resolveField(env, origin, info.superclass(), name, seen);
       if (field != null && visible(origin, field)) {
         return field;
       }
     }
     for (ClassSymbol i : info.interfaces()) {
-      FieldInfo field = resolveField(env, origin, i, name);
+      FieldInfo field = resolveField(env, origin, i, name, seen);
       if (field != null && visible(origin, field)) {
         return field;
       }
