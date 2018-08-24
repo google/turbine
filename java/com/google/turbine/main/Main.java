@@ -70,7 +70,8 @@ public class Main {
   static final Attributes.Name INJECTING_RULE_KIND = new Attributes.Name("Injecting-Rule-Kind");
 
   public static void main(String[] args) throws IOException {
-    compile(args);
+    boolean ok = compile(args);
+    System.exit(ok ? 0 : 1);
   }
 
   public static boolean compile(String[] args) throws IOException {
