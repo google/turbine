@@ -37,6 +37,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.Kind;
 import com.google.turbine.model.Const.Value;
+import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
@@ -50,7 +51,6 @@ import com.google.turbine.type.Type.WildLowerBoundedTy;
 import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.type.Type.WildUnboundedTy;
 import com.google.turbine.type.Type.WildUpperBoundedTy;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 
@@ -156,7 +156,7 @@ public class ConstBinder {
       return null;
     }
     RetentionPolicy retention = null;
-    ImmutableSet<ElementType> target = null;
+    ImmutableSet<TurbineElementType> target = null;
     ClassSymbol repeatable = null;
     for (AnnoInfo annotation : annotations) {
       switch (annotation.sym().binaryName()) {
@@ -188,8 +188,8 @@ public class ConstBinder {
     return RetentionPolicy.valueOf(enumValue.sym().name());
   }
 
-  private static ImmutableSet<ElementType> bindTarget(AnnoInfo annotation) {
-    ImmutableSet.Builder<ElementType> result = ImmutableSet.builder();
+  private static ImmutableSet<TurbineElementType> bindTarget(AnnoInfo annotation) {
+    ImmutableSet.Builder<TurbineElementType> result = ImmutableSet.builder();
     Const val = annotation.values().get("value");
     switch (val.kind()) {
       case ARRAY:
@@ -221,9 +221,9 @@ public class ConstBinder {
   }
 
   private static void bindTargetElement(
-      ImmutableSet.Builder<ElementType> target, EnumConstantValue enumVal) {
+      ImmutableSet.Builder<TurbineElementType> target, EnumConstantValue enumVal) {
     if (enumVal.sym().owner().binaryName().equals("java/lang/annotation/ElementType")) {
-      target.add(ElementType.valueOf(enumVal.sym().name()));
+      target.add(TurbineElementType.valueOf(enumVal.sym().name()));
     }
   }
 

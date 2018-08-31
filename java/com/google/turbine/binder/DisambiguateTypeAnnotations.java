@@ -34,6 +34,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -41,7 +42,6 @@ import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
-import java.lang.annotation.ElementType;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -101,7 +101,9 @@ public class DisambiguateTypeAnnotations {
     Type returnType =
         disambiguate(
             env,
-            base.name().equals("<init>") ? ElementType.CONSTRUCTOR : ElementType.METHOD,
+            base.name().equals("<init>")
+                ? TurbineElementType.CONSTRUCTOR
+                : TurbineElementType.METHOD,
             base.returnType(),
             base.annotations(),
             declarationAnnotations);
@@ -131,7 +133,11 @@ public class DisambiguateTypeAnnotations {
     ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
     Type type =
         disambiguate(
-            env, ElementType.PARAMETER, base.type(), base.annotations(), declarationAnnotations);
+            env,
+            TurbineElementType.PARAMETER,
+            base.type(),
+            base.annotations(),
+            declarationAnnotations);
     return new ParamInfo(type, base.name(), declarationAnnotations.build(), base.access());
   }
 
@@ -141,7 +147,7 @@ public class DisambiguateTypeAnnotations {
    */
   private static Type disambiguate(
       Env<ClassSymbol, TypeBoundClass> env,
-      ElementType declarationTarget,
+      TurbineElementType declarationTarget,
       Type type,
       ImmutableList<AnnoInfo> annotations,
       Builder<AnnoInfo> declarationAnnotations) {
@@ -150,8 +156,8 @@ public class DisambiguateTypeAnnotations {
     annotations = groupRepeated(env, annotations);
     ImmutableList.Builder<AnnoInfo> typeAnnotations = ImmutableList.builder();
     for (AnnoInfo anno : annotations) {
-      Set<ElementType> target = env.get(anno.sym()).annotationMetadata().target();
-      if (target.contains(ElementType.TYPE_USE)) {
+      Set<TurbineElementType> target = env.get(anno.sym()).annotationMetadata().target();
+      if (target.contains(TurbineElementType.TYPE_USE)) {
         typeAnnotations.add(anno);
       }
       if (target.contains(declarationTarget)) {
@@ -174,7 +180,7 @@ public class DisambiguateTypeAnnotations {
     ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
     Type type =
         disambiguate(
-            env, ElementType.FIELD, base.type(), base.annotations(), declarationAnnotations);
+            env, TurbineElementType.FIELD, base.type(), base.annotations(), declarationAnnotations);
     return new FieldInfo(
         base.sym(), type, base.access(), declarationAnnotations.build(), base.decl(), base.value());
   }
@@ -230,8 +236,8 @@ public class DisambiguateTypeAnnotations {
    * <p>For example, convert {@code @Foo @Foo} to {@code @Foos({@Foo, @Foo})}.
    *
    * <p>This method is used by {@link DisambiguateTypeAnnotations} for declaration annotations, and
-   * by {@link Lower} for type annotations. We could group type annotations here, but it would
-   * require another rewrite pass.
+   * by {@link com.google.turbine.lower.Lower} for type annotations. We could group type annotations
+   * here, but it would require another rewrite pass.
    */
   public static ImmutableList<AnnoInfo> groupRepeated(
       Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {

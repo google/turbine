@@ -29,11 +29,11 @@ import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
+import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree;
 import java.io.OutputStream;
-import java.lang.annotation.ElementType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -288,7 +288,7 @@ public class BinderTest {
             .units();
 
     SourceTypeBoundClass a = bound.get(new ClassSymbol("C$A"));
-    assertThat(a.annotationMetadata().target()).containsExactly(ElementType.TYPE_USE);
+    assertThat(a.annotationMetadata().target()).containsExactly(TurbineElementType.TYPE_USE);
   }
 
   // Test that we don't crash on invalid constant field initializers.

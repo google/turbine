@@ -45,11 +45,11 @@ import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
 import com.google.turbine.bytecode.sig.SigParser;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 import java.util.function.Function;
@@ -415,7 +415,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
                 return null;
               }
               RetentionPolicy retention = null;
-              ImmutableSet<ElementType> target = null;
+              ImmutableSet<TurbineElementType> target = null;
               ClassSymbol repeatable = null;
               for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
                 switch (annotation.typeName()) {
@@ -448,8 +448,8 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return RetentionPolicy.valueOf(enumVal.constName());
   }
 
-  private static ImmutableSet<ElementType> bindTarget(AnnotationInfo annotation) {
-    ImmutableSet.Builder<ElementType> result = ImmutableSet.builder();
+  private static ImmutableSet<TurbineElementType> bindTarget(AnnotationInfo annotation) {
+    ImmutableSet.Builder<TurbineElementType> result = ImmutableSet.builder();
     ElementValue val = annotation.elementValuePairs().get("value");
     switch (val.kind()) {
       case ARRAY:
@@ -469,9 +469,9 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
   }
 
   private static void bindTargetElement(
-      ImmutableSet.Builder<ElementType> target, EnumConstValue enumVal) {
+      ImmutableSet.Builder<TurbineElementType> target, EnumConstValue enumVal) {
     if (enumVal.typeName().equals("Ljava/lang/annotation/ElementType;")) {
-      target.add(ElementType.valueOf(enumVal.constName()));
+      target.add(TurbineElementType.valueOf(enumVal.constName()));
     }
   }
 

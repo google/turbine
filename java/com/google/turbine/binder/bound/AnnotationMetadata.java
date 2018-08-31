@@ -20,7 +20,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.sym.ClassSymbol;
-import java.lang.annotation.ElementType;
+import com.google.turbine.model.TurbineElementType;
 import java.lang.annotation.RetentionPolicy;
 import java.util.EnumSet;
 
@@ -30,22 +30,22 @@ import java.util.EnumSet;
  */
 public class AnnotationMetadata {
 
-  private static final ImmutableSet<ElementType> DEFAULT_TARGETS = getDefaultElements();
+  private static final ImmutableSet<TurbineElementType> DEFAULT_TARGETS = getDefaultElements();
 
-  private static ImmutableSet<ElementType> getDefaultElements() {
-    EnumSet<ElementType> values = EnumSet.allOf(ElementType.class);
-    values.remove(ElementType.TYPE_PARAMETER);
-    values.remove(ElementType.TYPE_USE);
+  private static ImmutableSet<TurbineElementType> getDefaultElements() {
+    EnumSet<TurbineElementType> values = EnumSet.allOf(TurbineElementType.class);
+    values.remove(TurbineElementType.TYPE_PARAMETER);
+    values.remove(TurbineElementType.TYPE_USE);
     return ImmutableSet.copyOf(values);
   }
 
   private final RetentionPolicy retention;
-  private final ImmutableSet<ElementType> target;
+  private final ImmutableSet<TurbineElementType> target;
   private final ClassSymbol repeatable;
 
   public AnnotationMetadata(
       RetentionPolicy retention,
-      ImmutableSet<ElementType> annotationTarget,
+      ImmutableSet<TurbineElementType> annotationTarget,
       ClassSymbol repeatable) {
     this.retention = firstNonNull(retention, RetentionPolicy.CLASS);
     this.target = firstNonNull(annotationTarget, DEFAULT_TARGETS);
@@ -58,7 +58,7 @@ public class AnnotationMetadata {
   }
 
   /** Target element types specified by the {@code @Target} meta-annotation. */
-  public ImmutableSet<ElementType> target() {
+  public ImmutableSet<TurbineElementType> target() {
     return target;
   }
 
