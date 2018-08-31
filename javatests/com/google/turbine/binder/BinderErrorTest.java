@@ -415,6 +415,19 @@ public class BinderErrorTest {
           "         ^",
         },
       },
+      {
+        {
+          "import java.lang.annotation.ElementType;", //
+          "import java.lang.annotation.Target;",
+          "@Target(ElementType.PARAMETER, ElementType.METHOD)",
+          "@interface A {}",
+        },
+        {
+          "<>:3: error: invalid annotation argument", //
+          "@Target(ElementType.PARAMETER, ElementType.METHOD)",
+          "                               ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

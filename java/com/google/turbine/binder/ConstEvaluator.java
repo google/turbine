@@ -913,7 +913,7 @@ public strictfp class ConstEvaluator {
       template.put(method.name(), method.returnType());
     }
 
-    ImmutableMap.Builder<String, Const> values = ImmutableMap.builder();
+    Map<String, Const> values = new LinkedHashMap<>();
     for (Expression arg : info.args()) {
       Expression expr;
       String key;
@@ -934,9 +934,12 @@ public strictfp class ConstEvaluator {
       if (value == null) {
         throw error(expr.position(), ErrorKind.EXPRESSION_ERROR);
       }
-      values.put(key, value);
+      Const existing = values.put(key, value);
+      if (existing != null) {
+        throw error(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT);
+      }
     }
-    return info.withValues(values.build());
+    return info.withValues(ImmutableMap.copyOf(values));
   }
 
   private AnnotationValue evalAnno(Tree.Anno t) {
