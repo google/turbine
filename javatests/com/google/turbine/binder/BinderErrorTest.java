@@ -84,7 +84,7 @@ public class BinderErrorTest {
           "@Anno(foo=100, bar=200) class Test {}",
         },
         {
-          "<>:2: error: could not resolve foo", //
+          "<>:2: error: could not resolve element foo() in Anno", //
           "@Anno(foo=100, bar=200) class Test {}",
           "      ^",
         },
@@ -95,7 +95,7 @@ public class BinderErrorTest {
           "@Anno(foo=100, bar=200) class Test {}",
         },
         {
-          "<>:2: error: could not resolve bar", //
+          "<>:2: error: could not resolve element bar() in Anno", //
           "@Anno(foo=100, bar=200) class Test {}",
           "               ^",
         },
@@ -417,15 +417,16 @@ public class BinderErrorTest {
       },
       {
         {
-          "import java.lang.annotation.ElementType;", //
-          "import java.lang.annotation.Target;",
-          "@Target(ElementType.PARAMETER, ElementType.METHOD)",
-          "@interface A {}",
+          "@interface Anno { int foo() default 0; }", //
+          "@Anno(Foo.CONST)",
+          "class Foo {",
+          "  static final int CONST = 42;",
+          "}",
         },
         {
-          "<>:3: error: invalid annotation argument", //
-          "@Target(ElementType.PARAMETER, ElementType.METHOD)",
-          "                               ^",
+          "<>:2: error: could not resolve element value() in Anno", //
+          "@Anno(Foo.CONST)",
+          "      ^",
         },
       },
     };

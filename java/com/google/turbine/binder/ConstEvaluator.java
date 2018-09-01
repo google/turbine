@@ -928,7 +928,10 @@ public strictfp class ConstEvaluator {
       }
       Type ty = template.get(key);
       if (ty == null) {
-        throw error(arg.position(), ErrorKind.CANNOT_RESOLVE, key);
+        throw error(
+            arg.position(),
+            ErrorKind.CANNOT_RESOLVE,
+            String.format("element %s() in %s", key, info.sym()));
       }
       Const value = evalAnnotationValue(expr, ty);
       if (value == null) {
