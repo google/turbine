@@ -16,6 +16,8 @@
 
 package com.google.turbine.tree;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.diag.SourceFile;
@@ -444,8 +446,8 @@ public abstract class Tree {
 
     public Assign(int position, String name, Expression expr) {
       super(position);
-      this.name = name;
-      this.expr = expr;
+      this.name = requireNonNull(name);
+      this.expr = requireNonNull(expr);
     }
 
     @Override

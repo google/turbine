@@ -522,6 +522,9 @@ public class ConstExpressionParser {
     }
     String name = getOnlyElement(names);
     Tree.Expression rhs = expression(op.prec());
+    if (rhs == null) {
+      return null;
+    }
     return new Tree.Assign(term1.position(), name, rhs);
   }
 

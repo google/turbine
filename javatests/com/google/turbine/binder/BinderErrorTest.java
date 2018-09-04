@@ -429,6 +429,18 @@ public class BinderErrorTest {
           "      ^",
         },
       },
+      {
+        {
+          "@interface Anno { int foo() default 0; }", //
+          "@Anno(foo = Foo.)",
+          "class Foo {}",
+        },
+        {
+          "<>:2: error: invalid annotation argument", //
+          "@Anno(foo = Foo.)",
+          "                ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
