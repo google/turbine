@@ -16,6 +16,7 @@
 
   <properties>
     <asm.version>6.2.1</asm.version>
+    <javac.version>9+181-r4173-1</javac.version>
   </properties>
 
   <dependencies>
@@ -56,6 +57,12 @@
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-util</artifactId>
       <version>${asm.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>javac</artifactId>
+      <version>${javac.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -144,4 +151,24 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>java-8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!-- put javac.jar on bootclasspath when executing tests -->
+              <argLine>-Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</argLine>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
