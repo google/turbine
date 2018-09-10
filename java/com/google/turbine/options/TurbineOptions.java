@@ -26,7 +26,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /** Header compilation options. */
 public class TurbineOptions {
 
-  private final String output;
+  private final Optional<String> output;
   private final ImmutableList<String> classPath;
   private final ImmutableSet<String> bootClassPath;
   private final Optional<String> release;
@@ -41,15 +41,16 @@ public class TurbineOptions {
   private final Optional<String> injectingRuleKind;
   private final ImmutableList<String> depsArtifacts;
   private final boolean javacFallback;
+  private final boolean help;
   private final ImmutableList<String> javacOpts;
   private final boolean shouldReduceClassPath;
 
   private TurbineOptions(
-      String output,
+      @Nullable String output,
       ImmutableList<String> classPath,
       ImmutableSet<String> bootClassPath,
-      String release,
-      String system,
+      @Nullable String release,
+      @Nullable String system,
       ImmutableList<String> sources,
       ImmutableList<String> processorPath,
       ImmutableSet<String> processors,
@@ -60,9 +61,10 @@ public class TurbineOptions {
       @Nullable String injectingRuleKind,
       ImmutableList<String> depsArtifacts,
       boolean javacFallback,
+      boolean help,
       ImmutableList<String> javacOpts,
       boolean shouldReduceClassPath) {
-    this.output = checkNotNull(output, "output must not be null");
+    this.output = Optional.ofNullable(output);
     this.classPath = checkNotNull(classPath, "classPath must not be null");
     this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
     this.release = Optional.ofNullable(release);
@@ -77,6 +79,7 @@ public class TurbineOptions {
     this.injectingRuleKind = Optional.ofNullable(injectingRuleKind);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
     this.javacFallback = javacFallback;
+    this.help = help;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
     this.shouldReduceClassPath = shouldReduceClassPath;
   }
@@ -107,8 +110,20 @@ public class TurbineOptions {
   }
 
   /** The output jar. */
-  public String outputFile() {
+  @Nullable
+  public Optional<String> output() {
     return output;
+  }
+
+  /**
+   * The output jar.
+   *
+   * @deprecated use {@link #output} instead.
+   */
+  @Deprecated
+  @Nullable
+  public String outputFile() {
+    return output.orElse(null);
   }
 
   /** Paths to annotation processor artifacts. */
@@ -160,6 +175,11 @@ public class TurbineOptions {
     return javacFallback;
   }
 
+  /** Print usage information. */
+  public boolean help() {
+    return help;
+  }
+
   /** Additional Java compiler flags. */
   public ImmutableList<String> javacOpts() {
     return javacOpts;
@@ -192,6 +212,7 @@ public class TurbineOptions {
     @Nullable private String injectingRuleKind;
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
     private boolean javacFallback = true;
+    private boolean help = false;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
     private boolean shouldReduceClassPath = true;
 
@@ -212,6 +233,7 @@ public class TurbineOptions {
           injectingRuleKind,
           depsArtifacts.build(),
           javacFallback,
+          help,
           javacOpts.build(),
           shouldReduceClassPath);
     }
@@ -288,6 +310,11 @@ public class TurbineOptions {
 
     public Builder setJavacFallback(boolean javacFallback) {
       this.javacFallback = javacFallback;
+      return this;
+    }
+
+    public Builder setHelp(boolean help) {
+      this.help = help;
       return this;
     }
 

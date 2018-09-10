@@ -229,4 +229,17 @@ public class MainTest {
       assertThat(expected).hasMessageThat().contains("java.lang");
     }
   }
+
+  @Test
+  public void usage() throws IOException {
+    Path src = temporaryFolder.newFile("Test.java").toPath();
+    Files.write(src, "public class Test {}".getBytes(UTF_8));
+
+    try {
+      Main.compile(optionsWithBootclasspath().addSources(ImmutableList.of(src.toString())).build());
+      fail();
+    } catch (UsageException expected) {
+      assertThat(expected).hasMessageThat().contains("--output is required");
+    }
+  }
 }

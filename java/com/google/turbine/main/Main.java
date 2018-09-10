@@ -70,7 +70,13 @@ public class Main {
   static final Attributes.Name INJECTING_RULE_KIND = new Attributes.Name("Injecting-Rule-Kind");
 
   public static void main(String[] args) throws IOException {
-    boolean ok = compile(args);
+    boolean ok;
+    try {
+      ok = compile(args);
+    } catch (UsageException e) {
+      System.err.println(e.getMessage());
+      ok = false;
+    }
     System.exit(ok ? 0 : 1);
   }
 
@@ -80,9 +86,7 @@ public class Main {
   }
 
   public static boolean compile(TurbineOptions options) throws IOException {
-    if (!options.processors().isEmpty()) {
-      return false;
-    }
+    usage(options);
 
     ImmutableList<CompUnit> units = parseAll(options);
 
@@ -114,10 +118,25 @@ public class Main {
     return true;
   }
 
+  private static void usage(TurbineOptions options) {
+    if (!options.processors().isEmpty()) {
+      throw new UsageException("--processors is not supported");
+    }
+    if (options.sources().isEmpty() && options.sourceJars().isEmpty()) {
+      throw new UsageException("no sources were provided");
+    }
+    if (options.help()) {
+      throw new UsageException();
+    }
+    if (!options.output().isPresent()) {
+      throw new UsageException("--output is required");
+    }
+  }
+
   private static ClassPath bootclasspath(TurbineOptions options) throws IOException {
     // if both --release and --bootclasspath are specified, --release wins
     if (options.release().isPresent() && options.system().isPresent()) {
-      throw new IllegalArgumentException("expected at most one of --release and --system");
+      throw new UsageException("expected at most one of --release and --system");
     }
 
     if (options.release().isPresent()) {
@@ -129,7 +148,7 @@ public class Main {
       // ... otherwise, search ct.sym for a matching release
       ClassPath bootclasspath = CtSymClassBinder.bind(release);
       if (bootclasspath == null) {
-        throw new IllegalArgumentException("not a supported release: " + release);
+        throw new UsageException("not a supported release: " + release);
       }
       return bootclasspath;
     }
@@ -167,7 +186,7 @@ public class Main {
   private static void writeOutput(
       TurbineOptions options, Map<String, byte[]> lowered, Map<String, byte[]> transitive)
       throws IOException {
-    Path path = Paths.get(options.outputFile());
+    Path path = Paths.get(options.output().get());
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {

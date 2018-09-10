@@ -116,6 +116,9 @@ public class TurbineOptionsParser {
         case "--nojavac_fallback":
           builder.setJavacFallback(false);
           break;
+        case "--help":
+          builder.setHelp(true);
+          break;
         default:
           throw new IllegalArgumentException("unknown option: " + next);
       }
