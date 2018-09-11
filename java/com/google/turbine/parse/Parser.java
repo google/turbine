@@ -767,9 +767,10 @@ public class Parser {
       String name) {
     switch (token) {
       case ASSIGN:
-      case SEMI:
-      case LBRACK:
+      case AT:
       case COMMA:
+      case LBRACK:
+      case SEMI:
         {
           if (!typaram.isEmpty()) {
             throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);

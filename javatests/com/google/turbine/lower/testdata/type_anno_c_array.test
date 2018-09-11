@@ -1,0 +1,28 @@
+=== Test.java ===
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+@interface A {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+@interface B {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+@interface C {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+@interface D {}
+
+class Test {
+  static final int as @A [] = {};
+  static final int bs @A [] @B [] = {};
+  static final int @C [] cs @A [] @B [] = {};
+  static final int @C [] @D [] ds @A [] @B [] = {};
+}
