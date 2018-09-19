@@ -236,7 +236,8 @@ public class TypeBinder {
         base.memberImports(),
         /* annotation metadata */ null,
         annotations,
-        base.source());
+        base.source(),
+        base.decl());
   }
 
   /** Collect synthetic and implicit methods, including default constructors and enum methods. */

@@ -106,7 +106,8 @@ public class ConstBinder {
         base.memberImports(),
         bindAnnotationMetadata(base.kind(), annos),
         annos,
-        base.source());
+        base.source(),
+        base.decl());
   }
 
   private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> methods) {

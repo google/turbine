@@ -43,15 +43,19 @@ public class CanonicalTypeBinder {
     ClassTy superClassType = null;
     if (base.superClassType() != null) {
       superClassType =
-          Canonicalize.canonicalizeClassTy(base.source(), env, base.owner(), base.superClassType());
+          Canonicalize.canonicalizeClassTy(
+              base.source(), base.decl().position(), env, base.owner(), base.superClassType());
     }
     ImmutableList.Builder<ClassTy> interfaceTypes = ImmutableList.builder();
     for (ClassTy i : base.interfaceTypes()) {
-      interfaceTypes.add(Canonicalize.canonicalizeClassTy(base.source(), env, base.owner(), i));
+      interfaceTypes.add(
+          Canonicalize.canonicalizeClassTy(
+              base.source(), base.decl().position(), env, base.owner(), i));
     }
     ImmutableMap<TyVarSymbol, TyVarInfo> typParamTypes =
-        typeParameters(base.source(), env, sym, base.typeParameterTypes());
-    ImmutableList<MethodInfo> methods = methods(base.source(), env, sym, base.methods());
+        typeParameters(base.source(), base.decl().position(), env, sym, base.typeParameterTypes());
+    ImmutableList<MethodInfo> methods =
+        methods(base.source(), base.decl().position(), env, sym, base.methods());
     ImmutableList<FieldInfo> fields = fields(base.source(), env, sym, base.fields());
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
@@ -69,7 +73,8 @@ public class CanonicalTypeBinder {
         base.memberImports(),
         base.annotationMetadata(),
         base.annotations(),
-        base.source());
+        base.source(),
+        base.decl());
   }
 
   private static ImmutableList<FieldInfo> fields(
@@ -82,7 +87,7 @@ public class CanonicalTypeBinder {
       result.add(
           new FieldInfo(
               base.sym(),
-              Canonicalize.canonicalize(source, env, sym, base.type()),
+              Canonicalize.canonicalize(source, base.decl().position(), env, sym, base.type()),
               base.access(),
               base.annotations(),
               base.decl(),
@@ -93,18 +98,21 @@ public class CanonicalTypeBinder {
 
   private static ImmutableList<MethodInfo> methods(
       SourceFile source,
+      int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       ImmutableList<MethodInfo> methods) {
     ImmutableList.Builder<MethodInfo> result = ImmutableList.builder();
     for (MethodInfo base : methods) {
-      ImmutableMap<TyVarSymbol, TyVarInfo> tps = typeParameters(source, env, sym, base.tyParams());
-      Type ret = Canonicalize.canonicalize(source, env, sym, base.returnType());
+      int pos = base.decl() != null ? base.decl().position() : position;
+      ImmutableMap<TyVarSymbol, TyVarInfo> tps =
+          typeParameters(source, pos, env, sym, base.tyParams());
+      Type ret = Canonicalize.canonicalize(source, pos, env, sym, base.returnType());
       ImmutableList.Builder<ParamInfo> parameters = ImmutableList.builder();
       for (ParamInfo parameter : base.parameters()) {
-        parameters.add(param(source, env, sym, parameter));
+        parameters.add(param(source, pos, env, sym, parameter));
       }
-      ImmutableList<Type> exceptions = canonicalizeList(source, env, sym, base.exceptions());
+      ImmutableList<Type> exceptions = canonicalizeList(source, pos, env, sym, base.exceptions());
       result.add(
           new MethodInfo(
               base.sym(),
@@ -116,15 +124,21 @@ public class CanonicalTypeBinder {
               base.defaultValue(),
               base.decl(),
               base.annotations(),
-              base.receiver() != null ? param(source, env, sym, base.receiver()) : null));
+              base.receiver() != null
+                  ? param(source, base.decl().position(), env, sym, base.receiver())
+                  : null));
     }
     return result.build();
   }
 
   private static ParamInfo param(
-      SourceFile source, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, ParamInfo base) {
+      SourceFile source,
+      int position,
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol sym,
+      ParamInfo base) {
     return new ParamInfo(
-        Canonicalize.canonicalize(source, env, sym, base.type()),
+        Canonicalize.canonicalize(source, position, env, sym, base.type()),
         base.name(),
         base.annotations(),
         base.access());
@@ -132,6 +146,7 @@ public class CanonicalTypeBinder {
 
   private static ImmutableMap<TyVarSymbol, TyVarInfo> typeParameters(
       SourceFile source,
+      int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       Map<TyVarSymbol, TyVarInfo> tps) {
@@ -140,10 +155,11 @@ public class CanonicalTypeBinder {
       TyVarInfo info = e.getValue();
       Type superClassBound = null;
       if (info.superClassBound() != null) {
-        superClassBound = Canonicalize.canonicalize(source, env, sym, info.superClassBound());
+        superClassBound =
+            Canonicalize.canonicalize(source, position, env, sym, info.superClassBound());
       }
       ImmutableList<Type> interfaceBounds =
-          canonicalizeList(source, env, sym, info.interfaceBounds());
+          canonicalizeList(source, position, env, sym, info.interfaceBounds());
       result.put(e.getKey(), new TyVarInfo(superClassBound, interfaceBounds, info.annotations()));
     }
     return result.build();
@@ -151,12 +167,13 @@ public class CanonicalTypeBinder {
 
   private static ImmutableList<Type> canonicalizeList(
       SourceFile source,
+      int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       ImmutableList<Type> types) {
     ImmutableList.Builder<Type> result = ImmutableList.builder();
     for (Type type : types) {
-      result.add(Canonicalize.canonicalize(source, env, sym, type));
+      result.add(Canonicalize.canonicalize(source, position, env, sym, type));
     }
     return result.build();
   }

@@ -84,7 +84,8 @@ public class DisambiguateTypeAnnotations {
         base.memberImports(),
         base.annotationMetadata(),
         groupRepeated(env, base.annotations()),
-        base.source());
+        base.source(),
+        base.decl());
   }
 
   private static ImmutableList<MethodInfo> bindMethods(

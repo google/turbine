@@ -185,6 +185,7 @@ public class LowerTest {
             null,
             null,
             ImmutableList.of(),
+            null,
             null);
 
     SourceTypeBoundClass i =
@@ -204,6 +205,7 @@ public class LowerTest {
             null,
             null,
             ImmutableList.of(),
+            null,
             null);
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> b = SimpleEnv.builder();
@@ -594,7 +596,10 @@ public class LowerTest {
     } catch (TurbineError error) {
       assertThat(error)
           .hasMessageThat()
-          .contains("Test.java: error: could not locate class file for A");
+          .contains(
+              "Test.java:3: error: could not locate class file for A\n"
+                  + "     I i;\n"
+                  + "       ^");
     }
   }
 

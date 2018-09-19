@@ -26,6 +26,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.tree.Tree;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
@@ -51,6 +52,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final MemberImportIndex memberImports;
   private final AnnotationMetadata annotationMetadata;
   private final ImmutableList<AnnoInfo> annotations;
+  private final Tree.TyDecl decl;
   private final SourceFile source;
 
   public SourceTypeBoundClass(
@@ -69,7 +71,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       MemberImportIndex memberImports,
       AnnotationMetadata annotationMetadata,
       ImmutableList<AnnoInfo> annotations,
-      SourceFile source) {
+      SourceFile source,
+      Tree.TyDecl decl) {
     this.interfaceTypes = interfaceTypes;
     this.superClassType = superClassType;
     this.typeParameterTypes = typeParameterTypes;
@@ -86,6 +89,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.annotationMetadata = annotationMetadata;
     this.annotations = annotations;
     this.source = source;
+    this.decl = decl;
   }
 
   @Override
@@ -189,5 +193,9 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   /** The source file. */
   public SourceFile source() {
     return source;
+  }
+
+  public Tree.TyDecl decl() {
+    return decl;
   }
 }
