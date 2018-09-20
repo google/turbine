@@ -231,7 +231,7 @@ public class LowerIntegrationTest {
       "import_wild_order.test",
       "canon_recursive.test",
       // TODO(cushon): crashes ASM, see:
-      // http://forge.ow2.org/tracker/?func=detail&aid=317776&group_id=23&atid=100023
+      // https://gitlab.ow2.org/asm/asm/issues/317776
       // "canon_array.test",
       "java_lang_object.test",
       "visible_package.test",
