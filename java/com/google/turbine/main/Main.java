@@ -29,6 +29,7 @@ import com.google.turbine.binder.JimageClassBinder;
 import com.google.turbine.deps.Dependencies;
 import com.google.turbine.deps.Transitive;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.options.TurbineOptions;
@@ -73,8 +74,11 @@ public class Main {
     boolean ok;
     try {
       ok = compile(args);
-    } catch (UsageException e) {
+    } catch (TurbineError | UsageException e) {
       System.err.println(e.getMessage());
+      ok = false;
+    } catch (Throwable turbineCrash) {
+      turbineCrash.printStackTrace();
       ok = false;
     }
     System.exit(ok ? 0 : 1);
