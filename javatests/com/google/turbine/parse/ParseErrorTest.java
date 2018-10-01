@@ -154,6 +154,22 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void unterminatedString() {
+    String input = "class T { String s = \"hello\nworld\"; }";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unterminated string literal", //
+                  "class T { String s = \"hello",
+                  "                           ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

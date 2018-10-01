@@ -33,6 +33,7 @@ public class TurbineError extends Error {
     UNEXPECTED_INPUT("unexpected input: %c"),
     UNEXPECTED_IDENTIFIER("unexpected identifier '%s'"),
     UNEXPECTED_EOF("unexpected end of input"),
+    UNTERMINATED_STRING("unterminated string literal"),
     EXPECTED_TOKEN("expected token %s"),
     INVALID_LITERAL("invalid literal: %s"),
     UNEXPECTED_TYPE_PARAMETER("unexpected type parameter %s"),
