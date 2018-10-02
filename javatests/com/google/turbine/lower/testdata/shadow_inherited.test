@@ -1,0 +1,8 @@
+=== A.java ===
+class A {
+  class B {}
+}
+=== B.java ===
+class B extends A {
+  B b;
+}
