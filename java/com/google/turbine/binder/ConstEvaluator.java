@@ -444,7 +444,8 @@ public strictfp class ConstEvaluator {
           ClassTy classTy = (ClassTy) t.ty();
           // TODO(cushon): check package?
           if (!classTy.name().equals("String")) {
-            throw new AssertionError(classTy);
+            // Explicit boxing cases (e.g. `(Boolean) false`) are legal, but not const exprs.
+            return null;
           }
           return expr.asString();
         }

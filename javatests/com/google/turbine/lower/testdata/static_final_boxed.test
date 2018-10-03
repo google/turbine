@@ -1,0 +1,11 @@
+=== T.java ===
+class T {
+  public static final boolean  Z = (Boolean)            false;
+  public static final byte     B = (Byte)      (byte)   0;
+  public static final char     C = (Character) (char)   0;
+  public static final short    S = (Short)     (short)  0;
+  public static final int      I = (Integer)            0;
+  public static final long     L = (Long)               0L;
+  public static final double   D = (Double)             0d;
+  public static final float    F = (Float)              0f;
+}
