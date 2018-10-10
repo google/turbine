@@ -33,11 +33,11 @@ import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.tree.Tree.Ident;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -54,11 +54,11 @@ public class ClassPathBinderTest {
 
     Scope javaLang = TURBINE_BOOTCLASSPATH.index().lookupPackage(ImmutableList.of("java", "lang"));
 
-    LookupResult result = javaLang.lookup(new LookupKey(Arrays.asList("String")));
+    LookupResult result = javaLang.lookup(new LookupKey(ImmutableList.of(new Ident(-1, "String"))));
     assertThat(result.remaining()).isEmpty();
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/lang/String"));
 
-    result = javaLang.lookup(new LookupKey(Arrays.asList("Object")));
+    result = javaLang.lookup(new LookupKey(ImmutableList.of(new Ident(-1, "Object"))));
     assertThat(result.remaining()).isEmpty();
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/lang/Object"));
   }

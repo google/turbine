@@ -17,6 +17,7 @@
 package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.tree.Tree;
 
 /**
  * A scope for imports. Non-canonical imports depend on hierarchy analysis, so to break the cycle we
@@ -31,7 +32,7 @@ public interface ImportScope {
    */
   @FunctionalInterface
   interface ResolveFunction {
-    ClassSymbol resolveOne(ClassSymbol base, String name);
+    ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name);
   }
 
   /** See {@link Scope#lookup(LookupKey)}. */

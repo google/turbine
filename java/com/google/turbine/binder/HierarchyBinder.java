@@ -96,7 +96,7 @@ public class HierarchyBinder {
 
     ImmutableMap.Builder<String, TyVarSymbol> typeParameters = ImmutableMap.builder();
     for (Tree.TyParam p : decl.typarams()) {
-      typeParameters.put(p.name(), new TyVarSymbol(origin, p.name()));
+      typeParameters.put(p.name().value(), new TyVarSymbol(origin, p.name().value()));
     }
 
     return new SourceHeaderBoundClass(base, superclass, interfaces.build(), typeParameters.build());
@@ -110,25 +110,25 @@ public class HierarchyBinder {
   private ClassSymbol resolveClass(Tree.ClassTy ty) {
     // flatten a left-recursive qualified type name to its component simple names
     // e.g. Foo<Bar>.Baz -> ["Foo", "Bar"]
-    ArrayDeque<String> flat = new ArrayDeque<>();
+    ArrayDeque<Tree.Ident> flat = new ArrayDeque<>();
     for (Tree.ClassTy curr = ty; curr != null; curr = curr.base().orElse(null)) {
       flat.addFirst(curr.name());
     }
     // Resolve the base symbol in the qualified name.
-    LookupResult result = lookup(ty, new LookupKey(flat));
+    LookupResult result = lookup(ty, new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
       throw TurbineError.format(base.source(), ty.position(), ErrorKind.CANNOT_RESOLVE, ty);
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
-    for (String bit : result.remaining()) {
+    for (Tree.Ident bit : result.remaining()) {
       sym = resolveNext(ty, sym, bit);
     }
     return sym;
   }
 
-  private ClassSymbol resolveNext(ClassTy ty, ClassSymbol sym, String bit) {
+  private ClassSymbol resolveNext(ClassTy ty, ClassSymbol sym, Tree.Ident bit) {
     ClassSymbol next;
     try {
       next = Resolve.resolve(env, origin, sym, bit);

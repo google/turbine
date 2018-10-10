@@ -17,12 +17,13 @@
 package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.tree.Tree;
 
 /** Canonical type resolution. Breaks a circular dependency between binding and import handling. */
 public interface CanonicalSymbolResolver extends ImportScope.ResolveFunction {
   /** Resolves a single member type of the given symbol by canonical name. */
   @Override
-  ClassSymbol resolveOne(ClassSymbol sym, String bit);
+  ClassSymbol resolveOne(ClassSymbol sym, Tree.Ident bit);
 
   /** Returns true if the given symbol is visible from the current package. */
   boolean visible(ClassSymbol sym);

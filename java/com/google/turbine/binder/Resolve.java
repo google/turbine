@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -29,6 +27,7 @@ import com.google.turbine.binder.lookup.CanonicalSymbolResolver;
 import com.google.turbine.binder.lookup.ImportScope.ResolveFunction;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineVisibility;
+import com.google.turbine.tree.Tree;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -45,7 +44,7 @@ public class Resolve {
       Env<ClassSymbol, ? extends HeaderBoundClass> env,
       ClassSymbol origin,
       ClassSymbol sym,
-      String simpleName) {
+      Tree.Ident simpleName) {
     return resolve(env, origin, sym, simpleName, new HashSet<>());
   }
 
@@ -53,7 +52,7 @@ public class Resolve {
       Env<ClassSymbol, ? extends HeaderBoundClass> env,
       ClassSymbol origin,
       ClassSymbol sym,
-      String simpleName,
+      Tree.Ident simpleName,
       Set<ClassSymbol> seen) {
     ClassSymbol result;
     if (!seen.add(sym)) {
@@ -64,7 +63,7 @@ public class Resolve {
     if (bound == null) {
       return null;
     }
-    result = bound.children().get(simpleName);
+    result = bound.children().get(simpleName.value());
     if (result != null) {
       return result;
     }
@@ -91,7 +90,7 @@ public class Resolve {
       Env<ClassSymbol, ? extends HeaderBoundClass> env, ClassSymbol origin) {
     return new ResolveFunction() {
       @Override
-      public ClassSymbol resolveOne(ClassSymbol base, String name) {
+      public ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name) {
         try {
           return Resolve.resolve(env, origin, base, name);
         } catch (LazyBindingError e) {
@@ -108,19 +107,18 @@ public class Resolve {
     private final String packagename;
     private final CompoundEnv<ClassSymbol, BoundClass> env;
 
-    public CanonicalResolver(
-        ImmutableList<String> packagename, CompoundEnv<ClassSymbol, BoundClass> env) {
-      this.packagename = Joiner.on('/').join(packagename);
+    public CanonicalResolver(String packagename, CompoundEnv<ClassSymbol, BoundClass> env) {
+      this.packagename = packagename;
       this.env = env;
     }
 
     @Override
-    public ClassSymbol resolveOne(ClassSymbol sym, String bit) {
+    public ClassSymbol resolveOne(ClassSymbol sym, Tree.Ident bit) {
       BoundClass ci = env.get(sym);
       if (ci == null) {
         return null;
       }
-      sym = ci.children().get(bit);
+      sym = ci.children().get(bit.value());
       if (sym == null) {
         return null;
       }
@@ -153,7 +151,7 @@ public class Resolve {
    * superclasses or interfaces.
    */
   public static FieldInfo resolveField(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol origin, ClassSymbol sym, String name) {
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol origin, ClassSymbol sym, Tree.Ident name) {
     return resolveField(env, origin, sym, name, new HashSet<>());
   }
 
@@ -161,7 +159,7 @@ public class Resolve {
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol origin,
       ClassSymbol sym,
-      String name,
+      Tree.Ident name,
       Set<ClassSymbol> seen) {
     if (!seen.add(sym)) {
       // Optimize multiple-interface-inheritance, and don't get stuck in cycles.
@@ -172,7 +170,7 @@ public class Resolve {
       return null;
     }
     for (FieldInfo f : info.fields()) {
-      if (f.name().equals(name)) {
+      if (f.name().equals(name.value())) {
         return f;
       }
     }

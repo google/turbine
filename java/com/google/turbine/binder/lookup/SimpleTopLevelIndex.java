@@ -132,7 +132,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
         public LookupResult lookup(LookupKey lookupKey) {
           Node curr = root;
           while (true) {
-            curr = curr.lookup(lookupKey.first());
+            curr = curr.lookup(lookupKey.first().value());
             if (curr == null) {
               return null;
             }
@@ -175,7 +175,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
 
     @Override
     public LookupResult lookup(LookupKey lookupKey) {
-      Node result = node.lookup(lookupKey.first());
+      Node result = node.lookup(lookupKey.first().value());
       if (result != null && result.sym != null) {
         return new LookupResult(result.sym, lookupKey);
       }

@@ -35,6 +35,7 @@ import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
+import com.google.turbine.tree.Tree.Ident;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -197,10 +198,15 @@ public class JimageClassBinder {
             // Find the longest prefix of the key that corresponds to a package name.
             // TODO(cushon): SimpleTopLevelIndex uses a prefix map for this, does it matter?
             Scope scope = null;
-            ImmutableList<String> names = lookupKey.simpleNames();
+            ImmutableList<Ident> names = lookupKey.simpleNames();
+            ImmutableList.Builder<String> flatNamesBuilder = ImmutableList.builder();
+            for (Ident name : names) {
+              flatNamesBuilder.add(name.value());
+            }
+            ImmutableList<String> flatNames = flatNamesBuilder.build();
             int idx = -1;
             for (int i = 1; i < names.size(); i++) {
-              Scope cand = lookupPackage(names.subList(0, i));
+              Scope cand = lookupPackage(flatNames.subList(0, i));
               if (cand != null) {
                 scope = cand;
                 idx = i;
@@ -227,7 +233,7 @@ public class JimageClassBinder {
         @Nullable
         @Override
         public LookupResult lookup(LookupKey lookupKey) {
-          ClassSymbol sym = packageClassesBySimpleName.get(packageName, lookupKey.first());
+          ClassSymbol sym = packageClassesBySimpleName.get(packageName, lookupKey.first().value());
           return sym != null ? new LookupResult(sym, lookupKey) : null;
         }
       };

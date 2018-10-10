@@ -18,6 +18,7 @@ package com.google.turbine.binder.lookup;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.Immutable;
+import com.google.turbine.tree.Tree.Ident;
 import java.util.NoSuchElementException;
 
 /**
@@ -26,14 +27,14 @@ import java.util.NoSuchElementException;
  */
 @Immutable
 public class LookupKey {
-  private final ImmutableList<String> simpleNames;
+  private final ImmutableList<Ident> simpleNames;
 
-  public LookupKey(Iterable<String> simpleNames) {
-    this.simpleNames = ImmutableList.copyOf(simpleNames);
+  public LookupKey(ImmutableList<Ident> simpleNames) {
+    this.simpleNames = simpleNames;
   }
 
   /** The first simple name in the qualified type name. */
-  public String first() {
+  public Ident first() {
     return simpleNames.get(0);
   }
 
@@ -62,7 +63,7 @@ public class LookupKey {
   }
 
   /** The simple names of the type. */
-  public ImmutableList<String> simpleNames() {
+  public ImmutableList<Ident> simpleNames() {
     return simpleNames;
   }
 }

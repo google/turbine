@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -23,6 +24,7 @@ import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.tree.Tree.Ident;
 import java.io.IOException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +51,7 @@ public class JimageClassBinderTest {
         binder
             .index()
             .lookupPackage(ImmutableList.of("java", "lang"))
-            .lookup(new LookupKey(ImmutableList.of("Object")));
+            .lookup(new LookupKey(ImmutableList.of(new Ident(-1, "Object"))));
     assertThat(((ClassSymbol) objectSym.sym()).binaryName()).isEqualTo("java/lang/Object");
     assertThat(objectSym.remaining()).isEmpty();
 
@@ -57,16 +59,22 @@ public class JimageClassBinderTest {
         binder
             .index()
             .lookupPackage(ImmutableList.of("java", "util"))
-            .lookup(new LookupKey(ImmutableList.of("Map", "Entry")));
+            .lookup(new LookupKey(ImmutableList.of(new Ident(-1, "Map"), new Ident(-1, "Entry"))));
     assertThat(((ClassSymbol) entrySym.sym()).binaryName()).isEqualTo("java/util/Map");
-    assertThat(entrySym.remaining()).containsExactly("Entry");
+    assertThat(getOnlyElement(entrySym.remaining()).value()).isEqualTo("Entry");
 
     entrySym =
         binder
             .index()
             .scope()
-            .lookup(new LookupKey(ImmutableList.of("java", "util", "Map", "Entry")));
+            .lookup(
+                new LookupKey(
+                    ImmutableList.of(
+                        new Ident(-1, "java"),
+                        new Ident(-1, "util"),
+                        new Ident(-1, "Map"),
+                        new Ident(-1, "Entry"))));
     assertThat(((ClassSymbol) entrySym.sym()).binaryName()).isEqualTo("java/util/Map");
-    assertThat(entrySym.remaining()).containsExactly("Entry");
+    assertThat(getOnlyElement(entrySym.remaining()).value()).isEqualTo("Entry");
   }
 }

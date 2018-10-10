@@ -176,7 +176,8 @@ public class Binder {
       Scope packageScope = tli.lookupPackage(packagename);
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(
-              packagename, CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv));
+              unit.packageName(),
+              CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv));
       ImportScope importScope =
           ImportIndex.create(unit.source(), importResolver, tli, unit.imports());
       ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());

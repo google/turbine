@@ -30,6 +30,7 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.ImportDecl;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.tree.Tree.PkgDecl;
@@ -135,11 +136,11 @@ public class CompUnitPreprocessor {
       if (member.kind() == Tree.Kind.TY_DECL) {
         Tree.TyDecl decl = (Tree.TyDecl) member;
         ClassSymbol sym = new ClassSymbol(owner.binaryName() + '$' + decl.name());
-        if (!seen.add(decl.name())) {
+        if (!seen.add(decl.name().value())) {
           throw TurbineError.format(
               source, member.position(), ErrorKind.DUPLICATE_DECLARATION, sym);
         }
-        result.put(decl.name(), sym);
+        result.put(decl.name().value(), sym);
 
         int access = innerClassAccess(enclosing, decl);
 
@@ -213,7 +214,7 @@ public class CompUnitPreprocessor {
         pkgDecl.position(),
         ImmutableSet.of(TurbineModifier.ACC_SYNTHETIC),
         pkgDecl.annos(),
-        "package-info",
+        new Ident(pkgDecl.position(), "package-info"),
         ImmutableList.of(),
         Optional.empty(),
         ImmutableList.of(),

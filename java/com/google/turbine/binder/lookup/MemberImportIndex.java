@@ -25,6 +25,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -59,7 +60,7 @@ public class MemberImportIndex {
                       return null;
                     }
                     ClassSymbol sym = (ClassSymbol) result.sym();
-                    for (String bit : result.remaining()) {
+                    for (Tree.Ident bit : result.remaining()) {
                       sym = resolveNext(resolve, source, i.position(), sym, bit);
                     }
                     return sym;
@@ -67,7 +68,7 @@ public class MemberImportIndex {
                 }));
       } else {
         cache.put(
-            getLast(i.type()),
+            getLast(i.type()).value(),
             Suppliers.memoize(
                 new Supplier<ClassSymbol>() {
                   @Override
@@ -93,7 +94,7 @@ public class MemberImportIndex {
       SourceFile source,
       int position,
       ClassSymbol sym,
-      String bit) {
+      Tree.Ident bit) {
     ClassSymbol next = resolve.resolveOne(sym, bit);
     if (next == null) {
       throw TurbineError.format(

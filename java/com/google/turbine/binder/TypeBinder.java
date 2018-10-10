@@ -44,6 +44,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.Kind;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.PrimTy;
@@ -73,7 +74,7 @@ public class TypeBinder {
 
     @Override
     public LookupResult lookup(LookupKey lookup) {
-      if (name.equals(lookup.first())) {
+      if (name.equals(lookup.first().value())) {
         return new LookupResult(sym, lookup);
       }
       return null;
@@ -90,8 +91,8 @@ public class TypeBinder {
 
     @Override
     public LookupResult lookup(LookupKey lookupKey) {
-      return tps.containsKey(lookupKey.first())
-          ? new LookupResult(tps.get(lookupKey.first()), lookupKey)
+      return tps.containsKey(lookupKey.first().value())
+          ? new LookupResult(tps.get(lookupKey.first().value()), lookupKey)
           : null;
     }
   }
@@ -118,7 +119,7 @@ public class TypeBinder {
         if (result != null) {
           return new LookupResult(result, lookup);
         }
-        result = info.typeParameters().get(lookup.first());
+        result = info.typeParameters().get(lookup.first().value());
         if (result != null) {
           return new LookupResult(result, lookup);
         }
@@ -154,7 +155,7 @@ public class TypeBinder {
     CompoundScope enclosingScope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
-            .append(new SingletonScope(base.decl().name(), owner))
+            .append(new SingletonScope(base.decl().name().value(), owner))
             .append(new ClassMemberScope(base.owner(), env));
 
     ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
@@ -209,7 +210,7 @@ public class TypeBinder {
     CompoundScope scope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
-            .append(new SingletonScope(base.decl().name(), owner))
+            .append(new SingletonScope(base.decl().name().value(), owner))
             .append(new ClassMemberScope(owner, env));
 
     List<MethodInfo> methods =
@@ -363,7 +364,7 @@ public class TypeBinder {
       if (m.kind() != Kind.METH_DECL) {
         continue;
       }
-      if (((MethDecl) m).name().equals("<init>")) {
+      if (((MethDecl) m).name().value().equals("<init>")) {
         return true;
       }
     }
@@ -375,7 +376,7 @@ public class TypeBinder {
       ImmutableList<Tree.TyParam> trees, CompoundScope scope, Map<String, TyVarSymbol> symbols) {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Tree.TyParam tree : trees) {
-      TyVarSymbol sym = symbols.get(tree.name());
+      TyVarSymbol sym = symbols.get(tree.name().value());
       Type classBound = null;
       ImmutableList.Builder<Type> interfaceBounds = ImmutableList.builder();
       boolean first = true;
@@ -414,13 +415,13 @@ public class TypeBinder {
 
   private MethodInfo bindMethod(CompoundScope scope, Tree.MethDecl t) {
 
-    MethodSymbol sym = new MethodSymbol(owner, t.name());
+    MethodSymbol sym = new MethodSymbol(owner, t.name().value());
 
     ImmutableMap<String, TyVarSymbol> typeParameters;
     {
       ImmutableMap.Builder<String, TyVarSymbol> builder = ImmutableMap.builder();
       for (Tree.TyParam pt : t.typarams()) {
-        builder.put(pt.name(), new TyVarSymbol(owner, pt.name()));
+        builder.put(pt.name().value(), new TyVarSymbol(owner, pt.name().value()));
       }
       typeParameters = builder.build();
     }
@@ -438,7 +439,7 @@ public class TypeBinder {
     }
 
     ImmutableList.Builder<ParamInfo> parameters = ImmutableList.builder();
-    String name = t.name();
+    String name = t.name().value();
     if (name.equals("<init>")) {
       if (hasEnclosingInstance(base)) {
         parameters.add(enclosingInstanceParameter());
@@ -455,10 +456,10 @@ public class TypeBinder {
       ParamInfo param =
           new ParamInfo(
               bindTy(scope, p.ty()),
-              p.name(),
+              p.name().value(),
               bindAnnotations(scope, p.annos()), /*synthetic*/
               access);
-      if (p.name().equals("this")) {
+      if (p.name().value().equals("this")) {
         receiver = param;
         continue;
       }
@@ -537,7 +538,7 @@ public class TypeBinder {
   }
 
   private FieldInfo bindField(CompoundScope scope, Tree.VarDecl decl) {
-    FieldSymbol sym = new FieldSymbol(owner, decl.name());
+    FieldSymbol sym = new FieldSymbol(owner, decl.name().value());
     Type type = bindTy(scope, decl.ty());
     ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, decl.annos());
     int access = 0;
@@ -564,8 +565,8 @@ public class TypeBinder {
         throw error(tree.position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(tree.name()));
       }
       ClassSymbol sym = (ClassSymbol) lookupResult.sym();
-      for (String name : lookupResult.remaining()) {
-        sym = resolveNext(tree.position(), sym, name);
+      for (Ident name : lookupResult.remaining()) {
+        sym = resolveNext(sym, name);
       }
       if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
         throw error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
@@ -575,11 +576,13 @@ public class TypeBinder {
     return result.build();
   }
 
-  private ClassSymbol resolveNext(int position, ClassSymbol sym, String bit) {
+  private ClassSymbol resolveNext(ClassSymbol sym, Ident bit) {
     ClassSymbol next = Resolve.resolve(env, owner, sym, bit);
     if (next == null) {
       throw error(
-          position, ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
+          bit.position(),
+          ErrorKind.SYMBOL_NOT_FOUND,
+          new ClassSymbol(sym.binaryName() + '$' + bit));
     }
     return next;
   }
@@ -627,14 +630,15 @@ public class TypeBinder {
       flat = new ArrayList<>(builder);
     }
     // the simple names of all classes in the qualified name
-    ArrayList<String> names = new ArrayList<>();
+    ImmutableList.Builder<Tree.Ident> nameBuilder = ImmutableList.builder();
     for (Tree.ClassTy curr : flat) {
-      names.add(curr.name());
+      nameBuilder.add(curr.name());
     }
+    ImmutableList<Tree.Ident> names = nameBuilder.build();
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
-      throw error(t.position(), ErrorKind.CANNOT_RESOLVE, t);
+      throw error(names.get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
     }
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
@@ -656,7 +660,7 @@ public class TypeBinder {
   private Type bindClassTyRest(
       CompoundScope scope,
       ArrayList<ClassTy> flat,
-      ArrayList<String> bits,
+      ImmutableList<Tree.Ident> bits,
       LookupResult result,
       ClassSymbol sym,
       ImmutableList<AnnoInfo> annotations) {
@@ -667,7 +671,7 @@ public class TypeBinder {
             sym, bindTyArgs(scope, flat.get(idx++).tyargs()), annotations));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
-      sym = resolveNext(curr.position(), sym, curr.name());
+      sym = resolveNext(sym, curr.name());
 
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(

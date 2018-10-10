@@ -288,7 +288,7 @@ public class BinderErrorTest {
         {
           "<>:2: error: symbol not found java.lang.Deprecated$NoSuch", //
           "  @Deprecated.NoSuch int x;",
-          "   ^",
+          "              ^",
         },
       },
       {
@@ -412,7 +412,7 @@ public class BinderErrorTest {
         {
           "<>:2: error: could not resolve NoSuch", //
           "  NoSuch f;",
-          "         ^",
+          "  ^",
         },
       },
       {
@@ -439,6 +439,45 @@ public class BinderErrorTest {
           "<>:2: error: invalid annotation argument", //
           "@Anno(foo = Foo.)",
           "                ^",
+        },
+      },
+      {
+        {
+          "import java.util.Map;", //
+          "class Foo {",
+          "  Map.Entry.NoSuch<List> ys;",
+          "}",
+        },
+        {
+          "<>:3: error: symbol not found java.util.Map$Entry$NoSuch", //
+          "  Map.Entry.NoSuch<List> ys;",
+          "            ^",
+        },
+      },
+      {
+        {
+          "import java.util.List;", //
+          "class Foo {",
+          "  NoSuch<List> xs;",
+          "}",
+        },
+        {
+          "<>:3: error: could not resolve NoSuch", //
+          "  NoSuch<List> xs;",
+          "  ^",
+        },
+      },
+      {
+        {
+          "import java.util.List;", //
+          "class Foo {",
+          "  java.util.NoSuch<List> xs;",
+          "}",
+        },
+        {
+          "<>:3: error: could not resolve java.util.NoSuch", //
+          "  java.util.NoSuch<List> xs;",
+          "  ^",
         },
       },
     };

@@ -16,11 +16,13 @@
 
 package com.google.turbine.binder.lookup;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.tree.Tree.Ident;
 import java.util.NoSuchElementException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,8 +43,7 @@ public class TopLevelIndexTest {
 
   @Test
   public void simple() {
-    LookupResult result =
-        index.scope().lookup(new LookupKey(ImmutableList.of("java", "util", "Map")));
+    LookupResult result = index.scope().lookup(lookupKey(ImmutableList.of("java", "util", "Map")));
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
     assertThat(result.remaining()).isEmpty();
   }
@@ -50,14 +51,14 @@ public class TopLevelIndexTest {
   @Test
   public void nested() {
     LookupResult result =
-        index.scope().lookup(new LookupKey(ImmutableList.of("java", "util", "Map", "Entry")));
+        index.scope().lookup(lookupKey(ImmutableList.of("java", "util", "Map", "Entry")));
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
-    assertThat(result.remaining()).containsExactly("Entry");
+    assertThat(getOnlyElement(result.remaining()).value()).isEqualTo("Entry");
   }
 
   @Test
   public void empty() {
-    assertThat(index.scope().lookup(new LookupKey(ImmutableList.of("java", "NoSuch", "Entry"))))
+    assertThat(index.scope().lookup(lookupKey(ImmutableList.of("java", "NoSuch", "Entry"))))
         .isNull();
     assertThat(index.lookupPackage(ImmutableList.of("java", "math"))).isNull();
     assertThat(index.lookupPackage(ImmutableList.of("java", "util", "Map"))).isNull();
@@ -67,11 +68,11 @@ public class TopLevelIndexTest {
   public void packageScope() {
     Scope scope = index.lookupPackage(ImmutableList.of("java", "util"));
 
-    assertThat(scope.lookup(new LookupKey(ImmutableList.of("Map"))).sym())
+    assertThat(scope.lookup(lookupKey(ImmutableList.of("Map"))).sym())
         .isEqualTo(new ClassSymbol("java/util/Map"));
-    assertThat(scope.lookup(new LookupKey(ImmutableList.of("List"))).sym())
+    assertThat(scope.lookup(lookupKey(ImmutableList.of("List"))).sym())
         .isEqualTo(new ClassSymbol("java/util/List"));
-    assertThat(scope.lookup(new LookupKey(ImmutableList.of("NoSuch")))).isNull();
+    assertThat(scope.lookup(lookupKey(ImmutableList.of("NoSuch")))).isNull();
   }
 
   @Test
@@ -82,7 +83,7 @@ public class TopLevelIndexTest {
           SimpleTopLevelIndex.of(
               ImmutableList.of(new ClassSymbol("java/Foo"), new ClassSymbol("java/Foo/Bar")));
 
-      LookupResult result = index.scope().lookup(new LookupKey(ImmutableList.of("java", "Foo")));
+      LookupResult result = index.scope().lookup(lookupKey(ImmutableList.of("java", "Foo")));
       assertThat(result.sym()).isEqualTo(new ClassSymbol("java/Foo"));
       assertThat(result.remaining()).isEmpty();
     }
@@ -92,11 +93,11 @@ public class TopLevelIndexTest {
           SimpleTopLevelIndex.of(
               ImmutableList.of(new ClassSymbol("java/Foo/Bar"), new ClassSymbol("java/Foo")));
 
-      assertThat(index.scope().lookup(new LookupKey(ImmutableList.of("java", "Foo")))).isNull();
+      assertThat(index.scope().lookup(lookupKey(ImmutableList.of("java", "Foo")))).isNull();
       LookupResult packageResult =
           index
               .lookupPackage(ImmutableList.of("java", "Foo"))
-              .lookup(new LookupKey(ImmutableList.of("Bar")));
+              .lookup(lookupKey(ImmutableList.of("Bar")));
       assertThat(packageResult.sym()).isEqualTo(new ClassSymbol("java/Foo/Bar"));
       assertThat(packageResult.remaining()).isEmpty();
     }
@@ -104,7 +105,7 @@ public class TopLevelIndexTest {
 
   @Test
   public void emptyLookup() {
-    LookupKey key = new LookupKey(ImmutableList.of("java", "util", "List"));
+    LookupKey key = lookupKey(ImmutableList.of("java", "util", "List"));
     key = key.rest();
     key = key.rest();
     try {
@@ -113,5 +114,13 @@ public class TopLevelIndexTest {
     } catch (NoSuchElementException e) {
       // expected
     }
+  }
+
+  private LookupKey lookupKey(ImmutableList<String> names) {
+    ImmutableList.Builder<Ident> result = ImmutableList.builder();
+    for (String name : names) {
+      result.add(new Ident(-1, name));
+    }
+    return new LookupKey(result.build());
   }
 }

@@ -65,7 +65,7 @@ public class ImportIndex implements ImportScope {
         continue;
       }
       thunks.put(
-          getLast(i.type()),
+          getLast(i.type()).value(),
           Suppliers.memoize(
               new Supplier<ImportScope>() {
                 @Override
@@ -80,7 +80,7 @@ public class ImportIndex implements ImportScope {
       if (!i.stat() || i.wild()) {
         continue;
       }
-      String last = getLast(i.type());
+      String last = getLast(i.type()).value();
       if (thunks.containsKey(last)) {
         continue;
       }
@@ -109,7 +109,7 @@ public class ImportIndex implements ImportScope {
           new ClassSymbol(Joiner.on('/').join(i.type())));
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
-    for (String bit : result.remaining()) {
+    for (Tree.Ident bit : result.remaining()) {
       sym = resolveNext(source, i.position(), resolve, sym, bit);
     }
     ClassSymbol resolved = sym;
@@ -126,7 +126,7 @@ public class ImportIndex implements ImportScope {
       int position,
       CanonicalSymbolResolver resolve,
       ClassSymbol sym,
-      String bit) {
+      Tree.Ident bit) {
     ClassSymbol next = resolve.resolveOne(sym, bit);
     if (next == null) {
       throw TurbineError.format(
@@ -154,7 +154,7 @@ public class ImportIndex implements ImportScope {
       @Override
       public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
         ClassSymbol sym = (ClassSymbol) base.sym();
-        for (String bit : base.remaining()) {
+        for (Tree.Ident bit : base.remaining()) {
           sym = resolve.resolveOne(sym, bit);
           if (sym == null) {
             // Assume that static imports that don't resolve to types are non-type member imports,
@@ -169,7 +169,7 @@ public class ImportIndex implements ImportScope {
 
   @Override
   public LookupResult lookup(LookupKey lookup, ResolveFunction resolve) {
-    Supplier<ImportScope> thunk = thunks.get(lookup.first());
+    Supplier<ImportScope> thunk = thunks.get(lookup.first().value());
     if (thunk == null) {
       return null;
     }

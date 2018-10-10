@@ -42,6 +42,7 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.ModDirective;
 import com.google.turbine.tree.Tree.ModExports;
 import com.google.turbine.tree.Tree.ModOpens;
@@ -195,14 +196,14 @@ public class ModuleBinder {
   private ProvideInfo bindProvides(ModProvides directive) {
     ClassSymbol sym = resolve(directive.position(), directive.typeName());
     ImmutableList.Builder<ClassSymbol> impls = ImmutableList.builder();
-    for (ImmutableList<String> impl : directive.implNames()) {
+    for (ImmutableList<Ident> impl : directive.implNames()) {
       impls.add(resolve(directive.position(), impl));
     }
     return new ProvideInfo(sym, impls.build());
   }
 
   /* Resolves qualified class names. */
-  private ClassSymbol resolve(int pos, ImmutableList<String> simpleNames) {
+  private ClassSymbol resolve(int pos, ImmutableList<Tree.Ident> simpleNames) {
     LookupKey key = new LookupKey(simpleNames);
     LookupResult result = scope.lookup(key);
     if (result == null) {
@@ -210,7 +211,7 @@ public class ModuleBinder {
           ErrorKind.SYMBOL_NOT_FOUND, pos, new ClassSymbol(Joiner.on('/').join(simpleNames)));
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
-    for (String name : result.remaining()) {
+    for (Tree.Ident name : result.remaining()) {
       sym = Resolve.resolve(env, /* origin= */ null, sym, name);
       if (sym == null) {
         throw error(

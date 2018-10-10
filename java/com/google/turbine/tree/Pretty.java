@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassLiteral;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.tree.Tree.ModDirective;
 import com.google.turbine.tree.Tree.ModExports;
@@ -80,6 +81,12 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   }
 
   @Override
+  public Void visitIdent(Ident ident, Void input) {
+    sb.append(ident.value());
+    return null;
+  }
+
+  @Override
   public Void visitWildTy(Tree.WildTy wildTy, Void input) {
     printAnnos(wildTy.annos());
     append('?');
@@ -124,7 +131,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       append('.');
     }
     printAnnos(classTy.annos());
-    append(classTy.name());
+    append(classTy.name().value());
     if (!classTy.tyargs().isEmpty()) {
       append('<');
       boolean first = true;
@@ -203,7 +210,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
 
   @Override
   public Void visitAssign(Tree.Assign assign, Void input) {
-    append(assign.name()).append(" = ");
+    append(assign.name().value()).append(" = ");
     assign.expr().accept(this, null);
     return null;
   }
@@ -280,7 +287,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     printAnnos(varDecl.annos());
     printModifiers(varDecl.mods());
     varDecl.ty().accept(this, null);
-    append(' ').append(varDecl.name());
+    append(' ').append(varDecl.name().value());
     if (varDecl.init().isPresent()) {
       append(" = ");
       varDecl.init().get().accept(this, null);
@@ -318,7 +325,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       methDecl.ret().get().accept(this, null);
       append(' ');
     }
-    append(methDecl.name());
+    append(methDecl.name().value());
     append('(');
     boolean first = true;
     for (Tree.VarDecl param : methDecl.params()) {
@@ -393,7 +400,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
         append("@interface");
         break;
     }
-    append(' ').append(tyDecl.name());
+    append(' ').append(tyDecl.name().value());
     if (!tyDecl.typarams().isEmpty()) {
       append('<');
       boolean first = true;
@@ -431,7 +438,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
             if (t instanceof Tree.VarDecl) {
               Tree.VarDecl decl = (Tree.VarDecl) t;
               if (decl.mods().contains(TurbineModifier.ACC_ENUM)) {
-                append(decl.name()).append(',').append('\n');
+                append(decl.name().value()).append(',').append('\n');
                 continue;
               }
             }
@@ -503,7 +510,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
   @Override
   public Void visitTyParam(Tree.TyParam tyParam, Void input) {
     printAnnos(tyParam.annos());
-    append(tyParam.name());
+    append(tyParam.name().value());
     if (!tyParam.bounds().isEmpty()) {
       append(" extends ");
       boolean first = true;
@@ -619,7 +626,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
       append(" with").append('\n');
       indent += 2;
       boolean first = true;
-      for (ImmutableList<String> implName : modProvides.implNames()) {
+      for (ImmutableList<Ident> implName : modProvides.implNames()) {
         if (!first) {
           append(',').append('\n');
         }
