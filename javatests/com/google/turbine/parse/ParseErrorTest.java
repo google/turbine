@@ -170,6 +170,38 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void emptyChar() {
+    String input = "class T { char c = ''; }";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              lines(
+                  "<>:1: error: empty char literal", //
+                  "class T { char c = ''; }",
+                  "                    ^"));
+    }
+  }
+
+  @Test
+  public void unterminatedChar() {
+    String input = "class T { char c = '; }";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unterminated char literal", //
+                  "class T { char c = '; }",
+                  "                     ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
