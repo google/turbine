@@ -16,11 +16,9 @@
 
 package com.google.turbine.binder.lookup;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -57,9 +55,8 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
      * @return {@code null} if an existing symbol with the same name has already been inserted.
      */
     private Node insert(String name, ClassSymbol sym) {
-      Node child;
-      if (children.containsKey(name)) {
-        child = children.get(name);
+      Node child = children.get(name);
+      if (child != null) {
         if (child.sym != null) {
           return null;
         }
@@ -85,20 +82,26 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
 
     /** Inserts a {@link ClassSymbol} into the index, creating any needed packages. */
     public boolean insert(ClassSymbol sym) {
-      Iterator<String> it = Splitter.on('/').split(sym.binaryName()).iterator();
+      String binaryName = sym.binaryName();
+      int start = 0;
+      int end = binaryName.indexOf('/');
       Node curr = root;
-      while (it.hasNext()) {
-        String simpleName = it.next();
-        // if this is the last simple name in the qualified name of the top-level class being
-        // inserted, we are creating a node for the class symbol
-        ClassSymbol nodeSym = it.hasNext() ? null : sym;
-        curr = curr.insert(simpleName, nodeSym);
+      while (end != -1) {
+        String simpleName = binaryName.substring(start, end);
+        curr = curr.insert(simpleName, null);
         // If we've already inserted something with the current name (either a package or another
         // symbol), bail out. When inserting elements from the classpath, this results in the
         // expected first-match-wins semantics.
-        if (curr == null || !Objects.equals(curr.sym, nodeSym)) {
+        if (curr == null) {
           return false;
         }
+        start = end + 1;
+        end = binaryName.indexOf('/', start);
+      }
+      String simpleName = binaryName.substring(start);
+      curr = curr.insert(simpleName, sym);
+      if (curr == null || !Objects.equals(curr.sym, sym)) {
+        return false;
       }
       return true;
     }
