@@ -91,9 +91,8 @@ public class TypeBinder {
 
     @Override
     public LookupResult lookup(LookupKey lookupKey) {
-      return tps.containsKey(lookupKey.first().value())
-          ? new LookupResult(tps.get(lookupKey.first().value()), lookupKey)
-          : null;
+      Symbol sym = tps.get(lookupKey.first().value());
+      return sym != null ? new LookupResult(sym, lookupKey) : null;
     }
   }
 

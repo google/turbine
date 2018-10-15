@@ -257,20 +257,18 @@ public class Binder {
             new Env<ModuleSymbol, ModuleInfo>() {
               @Override
               public ModuleInfo get(ModuleSymbol sym) {
-                if (modules.asMap().containsKey(sym)) {
-                  PackageSourceBoundModule info = modules.get(sym);
-                  if (info != null) {
-                    return new ModuleInfo(
-                        info.module().moduleName(),
-                        moduleVersion.orElse(null),
-                        /* flags= */ 0,
-                        /* annos= */ ImmutableList.of(),
-                        /* requires= */ ImmutableList.of(),
-                        /* exports= */ ImmutableList.of(),
-                        /* opens= */ ImmutableList.of(),
-                        /* uses= */ ImmutableList.of(),
-                        /* provides= */ ImmutableList.of());
-                  }
+                PackageSourceBoundModule info = modules.get(sym);
+                if (info != null) {
+                  return new ModuleInfo(
+                      info.module().moduleName(),
+                      moduleVersion.orElse(null),
+                      /* flags= */ 0,
+                      /* annos= */ ImmutableList.of(),
+                      /* requires= */ ImmutableList.of(),
+                      /* exports= */ ImmutableList.of(),
+                      /* opens= */ ImmutableList.of(),
+                      /* uses= */ ImmutableList.of(),
+                      /* provides= */ ImmutableList.of());
                 }
                 return null;
               }

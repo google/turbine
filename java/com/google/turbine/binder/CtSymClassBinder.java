@@ -78,10 +78,8 @@ public class CtSymClassBinder {
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(idx + 1, name.length() - ".sig".length()));
-      if (!map.containsKey(sym)) {
-        map.put(
-            sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, ctSym + "!" + ze.name()));
-      }
+      map.putIfAbsent(
+          sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, ctSym + "!" + ze.name()));
     }
     if (map.isEmpty()) {
       // we didn't find any classes for the desired release

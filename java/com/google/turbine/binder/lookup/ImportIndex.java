@@ -81,10 +81,7 @@ public class ImportIndex implements ImportScope {
         continue;
       }
       String last = getLast(i.type()).value();
-      if (thunks.containsKey(last)) {
-        continue;
-      }
-      thunks.put(
+      thunks.putIfAbsent(
           last,
           Suppliers.memoize(
               new Supplier<ImportScope>() {

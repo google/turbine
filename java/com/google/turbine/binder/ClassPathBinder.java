@@ -69,9 +69,7 @@ public class ClassPathBinder {
     }
     for (Map.Entry<ClassSymbol, BytecodeBoundClass> entry : transitive.entrySet()) {
       ClassSymbol symbol = entry.getKey();
-      if (!map.containsKey(symbol)) {
-        map.put(symbol, entry.getValue());
-      }
+      map.putIfAbsent(symbol, entry.getValue());
     }
     SimpleEnv<ClassSymbol, BytecodeBoundClass> env = new SimpleEnv<>(ImmutableMap.copyOf(map));
     SimpleEnv<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.copyOf(modules));
@@ -128,9 +126,8 @@ public class ClassPathBinder {
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
-      if (!env.containsKey(sym)) {
-        env.put(sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString()));
-      }
+      env.putIfAbsent(
+          sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString()));
     }
   }
 
