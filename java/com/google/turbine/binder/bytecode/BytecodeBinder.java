@@ -29,7 +29,6 @@ import com.google.turbine.bytecode.sig.Sig.WildTySig;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.TyVar;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -99,7 +98,7 @@ public class BytecodeBinder {
    * version, and flags are populated, since the directives are not needed by turbine at compile
    * time.
    */
-  public static ModuleInfo bindModuleInfo(String path, Supplier<byte[]> bytes) throws IOException {
+  public static ModuleInfo bindModuleInfo(String path, Supplier<byte[]> bytes) {
     ClassFile classFile = ClassReader.read(path, bytes.get());
     ClassFile.ModuleInfo module = classFile.module();
     return new ModuleInfo(

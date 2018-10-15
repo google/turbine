@@ -113,12 +113,8 @@ public class JimageClassBinder {
       if (path == null) {
         return null;
       }
-      try {
-        path = path.resolve("module-info.class");
-        result = BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(path));
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
-      }
+      path = path.resolve("module-info.class");
+      result = BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(path));
       moduleMap.put(moduleName, result);
     }
     return result;
