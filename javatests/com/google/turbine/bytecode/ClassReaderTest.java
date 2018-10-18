@@ -133,7 +133,6 @@ public class ClassReaderTest {
     assertThat(classFile.annotations()).hasSize(1);
     ClassFile.AnnotationInfo annotation = Iterables.getOnlyElement(classFile.annotations());
     assertThat(annotation.typeName()).isEqualTo("Ljava/lang/annotation/Retention;");
-    assertThat(annotation.isRuntimeVisible()).isTrue();
     assertThat(annotation.elementValuePairs()).hasSize(1);
     assertThat(annotation.elementValuePairs()).containsKey("value");
     ElementValue value = annotation.elementValuePairs().get("value");

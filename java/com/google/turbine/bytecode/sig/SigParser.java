@@ -145,7 +145,8 @@ public class SigParser {
     return tyParams.build();
   }
 
-  private TySig parseType() {
+  /** Parses a type signature. */
+  public TySig parseType() {
     switch (peek()) {
       case 'Z':
         eat();

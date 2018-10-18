@@ -34,6 +34,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
   /** The super-class type. */
   Type.ClassTy superClassType();
 
+  /** Implemented interface types. */
+  ImmutableList<Type.ClassTy> interfaceTypes();
+
   ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes();
 
   /** Declared fields. */
@@ -47,6 +50,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
    * java.lang.annotation.Retention}, and {@link java.lang.annotation.Repeatable}.
    */
   AnnotationMetadata annotationMetadata();
+
+  /** Declaration annotations. */
+  ImmutableList<AnnoInfo> annotations();
 
   /** A type parameter declaration. */
   class TyVarInfo {

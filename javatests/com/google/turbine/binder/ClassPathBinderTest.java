@@ -16,6 +16,9 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -24,16 +27,20 @@ import static org.junit.Assert.fail;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import com.google.turbine.binder.bound.HeaderBoundClass;
+import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree.Ident;
+import com.google.turbine.type.AnnoInfo;
+import com.google.turbine.type.Type.ClassTy;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -67,7 +74,7 @@ public class ClassPathBinderTest {
   public void classPathClasses() throws IOException {
     Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
 
-    HeaderBoundClass c = env.get(new ClassSymbol("java/util/Map$Entry"));
+    TypeBoundClass c = env.get(new ClassSymbol("java/util/Map$Entry"));
     assertThat(c.owner()).isEqualTo(new ClassSymbol("java/util/Map"));
     assertThat(c.kind()).isEqualTo(TurbineTyKind.INTERFACE);
 
@@ -82,6 +89,38 @@ public class ClassPathBinderTest {
     assertThat(c.superclass()).isEqualTo(new ClassSymbol("java/util/AbstractList"));
     assertThat(c.interfaces()).contains(new ClassSymbol("java/util/List"));
     assertThat(c.owner()).isNull();
+  }
+
+  @Test
+  public void interfaces() {
+    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
+
+    TypeBoundClass c = env.get(new ClassSymbol("java/lang/annotation/Retention"));
+    assertThat(c.interfaceTypes()).hasSize(1);
+    assertThat(getOnlyElement(c.interfaceTypes()).sym())
+        .isEqualTo(new ClassSymbol("java/lang/annotation/Annotation"));
+
+    c = env.get(new ClassSymbol("java/util/ArrayList"));
+    ClassTy listInterface =
+        c.interfaceTypes().stream()
+            .filter(i -> i.sym().equals(new ClassSymbol("java/util/List")))
+            .collect(onlyElement());
+    assertThat(getLast(listInterface.classes).targs()).hasSize(1);
+  }
+
+  @Test
+  public void annotations() {
+    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
+    TypeBoundClass c = env.get(new ClassSymbol("java/lang/annotation/Retention"));
+
+    AnnoInfo anno =
+        c.annotations().stream()
+            .filter(a -> a.sym().equals(new ClassSymbol("java/lang/annotation/Retention")))
+            .collect(onlyElement());
+    assertThat(anno.values().keySet()).containsExactly("value");
+    assertThat(((EnumConstantValue) anno.values().get("value")).sym())
+        .isEqualTo(
+            new FieldSymbol(new ClassSymbol("java/lang/annotation/RetentionPolicy"), "RUNTIME"));
   }
 
   @Test

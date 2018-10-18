@@ -40,14 +40,18 @@ import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayVa
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.Kind;
+import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.ClassSig;
+import com.google.turbine.bytecode.sig.Sig.ClassTySig;
+import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.SigParser;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import java.lang.annotation.RetentionPolicy;
@@ -72,7 +76,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
 
   public BytecodeBoundClass(
       ClassSymbol sym,
-      final Supplier<byte[]> bytes,
+      Supplier<byte[]> bytes,
       Env<ClassSymbol, BytecodeBoundClass> env,
       String jarFile) {
     this.sym = sym;
@@ -94,7 +98,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
             });
   }
 
-  final Supplier<TurbineTyKind> kind =
+  private final Supplier<TurbineTyKind> kind =
       Suppliers.memoize(
           new Supplier<TurbineTyKind>() {
             @Override
@@ -118,7 +122,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return kind.get();
   }
 
-  final Supplier<ClassSymbol> owner =
+  private final Supplier<ClassSymbol> owner =
       Suppliers.memoize(
           new Supplier<ClassSymbol>() {
             @Override
@@ -138,7 +142,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return owner.get();
   }
 
-  final Supplier<ImmutableMap<String, ClassSymbol>> children =
+  private final Supplier<ImmutableMap<String, ClassSymbol>> children =
       Suppliers.memoize(
           new Supplier<ImmutableMap<String, ClassSymbol>>() {
             @Override
@@ -162,7 +166,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return children.get();
   }
 
-  final Supplier<Integer> access =
+  private final Supplier<Integer> access =
       Suppliers.memoize(
           new Supplier<Integer>() {
             @Override
@@ -217,7 +221,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return tyParams.get();
   }
 
-  final Supplier<ClassSymbol> superclass =
+  private final Supplier<ClassSymbol> superclass =
       Suppliers.memoize(
           new Supplier<ClassSymbol>() {
             @Override
@@ -235,7 +239,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return superclass.get();
   }
 
-  final Supplier<ImmutableList<ClassSymbol>> interfaces =
+  private final Supplier<ImmutableList<ClassSymbol>> interfaces =
       Suppliers.memoize(
           new Supplier<ImmutableList<ClassSymbol>>() {
             @Override
@@ -253,7 +257,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return interfaces.get();
   }
 
-  Supplier<ClassTy> superClassType =
+  private final Supplier<ClassTy> superClassType =
       Suppliers.memoize(
           new Supplier<ClassTy>() {
             @Override
@@ -274,7 +278,35 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return superClassType.get();
   }
 
-  Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>> typeParameterTypes =
+  private final Supplier<ImmutableList<ClassTy>> interfaceTypes =
+      Suppliers.memoize(
+          new Supplier<ImmutableList<ClassTy>>() {
+            @Override
+            public ImmutableList<ClassTy> get() {
+              if (interfaces().isEmpty()) {
+                return ImmutableList.of();
+              }
+              ImmutableList.Builder<ClassTy> result = ImmutableList.builder();
+              if (sig.get() == null || sig.get().interfaces() == null) {
+                for (ClassSymbol sym : interfaces()) {
+                  result.add(ClassTy.asNonParametricClassTy(sym));
+                }
+              } else {
+                Function<String, TyVarSymbol> scope = makeScope(env, sym, ImmutableMap.of());
+                for (ClassTySig classTySig : sig.get().interfaces()) {
+                  result.add(BytecodeBinder.bindClassTy(classTySig, scope));
+                }
+              }
+              return result.build();
+            }
+          });
+
+  @Override
+  public ImmutableList<ClassTy> interfaceTypes() {
+    return interfaceTypes.get();
+  }
+
+  private final Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>> typeParameterTypes =
       Suppliers.memoize(
           new Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>>() {
             @Override
@@ -316,29 +348,14 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
               ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
               for (ClassFile.FieldInfo cfi : classFile.get().fields()) {
                 FieldSymbol fieldSym = new FieldSymbol(sym, cfi.name());
-                // we don't need a type here, the const value has all necessary information
-                Type type = null;
+                Type type =
+                    BytecodeBinder.bindTy(
+                        new SigParser(cfi.descriptor()).parseType(),
+                        makeScope(env, sym, ImmutableMap.of()));
                 int access = cfi.access();
                 Const.Value value = cfi.value();
                 if (value != null) {
-                  // TODO(b/32626659): this is not bug-compatible with javac
-                  switch (cfi.descriptor()) {
-                    case "Z":
-                      // boolean constants are encoded as integers
-                      value = new Const.BooleanValue(value.asInteger().value() != 0);
-                      break;
-                    case "C":
-                      value = new Const.CharValue(value.asChar().value());
-                      break;
-                    case "S":
-                      value = new Const.ShortValue(value.asShort().value());
-                      break;
-                    case "B":
-                      value = new Const.ByteValue(value.asByte().value());
-                      break;
-                    default:
-                      break;
-                  }
+                  value = BytecodeBinder.bindConstValue(type, value);
                 }
                 fields.add(new FieldInfo(fieldSym, type, access, ImmutableList.of(), null, value));
               }
@@ -351,15 +368,11 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return fields.get();
   }
 
-  Supplier<ImmutableList<MethodInfo>> methods =
+  private final Supplier<ImmutableList<MethodInfo>> methods =
       Suppliers.memoize(
           new Supplier<ImmutableList<MethodInfo>>() {
             @Override
             public ImmutableList<MethodInfo> get() {
-              // we only need methods for annotation declarations
-              if (kind() != TurbineTyKind.ANNOTATION) {
-                return ImmutableList.of();
-              }
               ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
               for (ClassFile.MethodInfo m : classFile.get().methods()) {
                 methods.add(bindMethod(m));
@@ -372,9 +385,26 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     MethodSymbol methodSymbol = new MethodSymbol(sym, m.name());
     Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
 
-    verify(sig.tyParams().isEmpty());
+    ImmutableMap<String, TyVarSymbol> tyParams;
+    {
+      ImmutableMap.Builder<String, TyVarSymbol> result = ImmutableMap.builder();
+      for (Sig.TyParamSig p : sig.tyParams()) {
+        result.put(p.name(), new TyVarSymbol(methodSymbol, p.name()));
+      }
+      tyParams = result.build();
+    }
 
-    Function<String, TyVarSymbol> scope = makeScope(env, sym, ImmutableMap.of());
+    ImmutableMap<TyVarSymbol, TyVarInfo> tyParamTypes;
+    {
+      ImmutableMap.Builder<TyVarSymbol, TyVarInfo> tparams = ImmutableMap.builder();
+      Function<String, TyVarSymbol> scope = makeScope(env, sym, tyParams);
+      for (Sig.TyParamSig p : sig.tyParams()) {
+        tparams.put(tyParams.get(p.name()), bindTyParam(p, scope));
+      }
+      tyParamTypes = tparams.build();
+    }
+
+    Function<String, TyVarSymbol> scope = makeScope(env, sym, tyParams);
 
     Type ret = null;
     if (sig.returnType() != null) {
@@ -382,23 +412,44 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     }
 
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
+    int idx = 0;
     for (Sig.TySig tySig : sig.params()) {
-      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), null, ImmutableList.of(), 0));
+      String name = null;
+      int access = 0;
+      if (idx < m.parameters().size()) {
+        ParameterInfo paramInfo = m.parameters().get(idx);
+        name = paramInfo.name();
+        access = paramInfo.access();
+      }
+      ImmutableList<AnnoInfo> annotations =
+          (idx < m.parameterAnnotations().size())
+              ? BytecodeBinder.bindAnnotations(m.parameterAnnotations().get(idx))
+              : ImmutableList.of();
+      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), name, annotations, access));
+      idx++;
     }
 
-    verify(sig.exceptions().isEmpty());
+    ImmutableList.Builder<Type> exceptions = ImmutableList.builder();
+    for (TySig e : sig.exceptions()) {
+      exceptions.add(BytecodeBinder.bindTy(e, scope));
+    }
+
+    Const defaultValue =
+        m.defaultValue() != null ? BytecodeBinder.bindValue(ret, m.defaultValue()) : null;
+
+    ImmutableList<AnnoInfo> annotations = BytecodeBinder.bindAnnotations(m.annotations());
 
     return new MethodInfo(
         methodSymbol,
-        ImmutableMap.of(),
+        tyParamTypes,
         ret,
         formals.build(),
-        ImmutableList.of(),
+        exceptions.build(),
         m.access(),
-        null /*defaultValue*/,
-        null /*decl*/,
-        ImmutableList.of(),
-        null);
+        defaultValue,
+        /* decl= */ null,
+        annotations,
+        /* receiver= */ null);
   }
 
   @Override
@@ -406,7 +457,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return methods.get();
   }
 
-  final Supplier<AnnotationMetadata> annotationMetadata =
+  private final Supplier<AnnotationMetadata> annotationMetadata =
       Suppliers.memoize(
           new Supplier<AnnotationMetadata>() {
             @Override
@@ -490,6 +541,20 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
   @Override
   public AnnotationMetadata annotationMetadata() {
     return annotationMetadata.get();
+  }
+
+  private final Supplier<ImmutableList<AnnoInfo>> annotations =
+      Suppliers.memoize(
+          new Supplier<ImmutableList<AnnoInfo>>() {
+            @Override
+            public ImmutableList<AnnoInfo> get() {
+              return BytecodeBinder.bindAnnotations(classFile.get().annotations());
+            }
+          });
+
+  @Override
+  public ImmutableList<AnnoInfo> annotations() {
+    return annotations.get();
   }
 
   /**

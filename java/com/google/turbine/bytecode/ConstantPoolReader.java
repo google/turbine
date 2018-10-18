@@ -163,6 +163,8 @@ public class ConstantPoolReader {
         return new Const.IntValue(reader.readInt());
       case CONSTANT_STRING:
         return new Const.StringValue(utf8(reader.readUnsignedShort()));
+      case CONSTANT_UTF8:
+        return new Const.StringValue(reader.readUTF());
       default:
         throw new AssertionError(String.format("bad tag: %x", tag));
     }

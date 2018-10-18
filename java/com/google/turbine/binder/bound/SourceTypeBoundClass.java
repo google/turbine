@@ -136,7 +136,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return typeParameters;
   }
 
-  /** Implemented interface types. */
+  @Override
   public ImmutableList<Type.ClassTy> interfaceTypes() {
     return interfaceTypes;
   }
@@ -185,7 +185,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return memberImports;
   }
 
-  /** Declaration annotations. */
+  @Override
   public ImmutableList<AnnoInfo> annotations() {
     return annotations;
   }
