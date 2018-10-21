@@ -17,13 +17,14 @@
   <properties>
     <asm.version>6.2.1</asm.version>
     <javac.version>9+181-r4173-1</javac.version>
+    <guava.version>25.1-jre</guava.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>25.1-jre</version>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
@@ -87,6 +88,12 @@
       <groupId>com.google.jimfs</groupId>
       <artifactId>jimfs</artifactId>
       <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-testlib</artifactId>
+      <version>${guava.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

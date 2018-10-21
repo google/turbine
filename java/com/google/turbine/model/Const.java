@@ -16,6 +16,7 @@
 
 package com.google.turbine.model;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -23,6 +24,12 @@ import com.google.common.collect.ImmutableList;
  * literals, enum constants, and annotation literals.
  */
 public abstract class Const {
+
+  @Override
+  public abstract int hashCode();
+
+  @Override
+  public abstract boolean equals(Object obj);
 
   /** The constant kind. */
   public abstract Kind kind();
@@ -120,6 +127,16 @@ public abstract class Const {
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
     }
+
+    @Override
+    public int hashCode() {
+      return Boolean.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof BooleanValue && value == ((BooleanValue) obj).value();
+    }
   }
 
   /** An int literal value. */
@@ -184,6 +201,16 @@ public abstract class Const {
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
     }
+
+    @Override
+    public int hashCode() {
+      return Integer.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof IntValue && value == ((IntValue) obj).value;
+    }
   }
 
   /** A long literal value. */
@@ -246,6 +273,16 @@ public abstract class Const {
     @Override
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
+    }
+
+    @Override
+    public int hashCode() {
+      return Long.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof LongValue && value == ((LongValue) obj).value;
     }
   }
 
@@ -310,6 +347,16 @@ public abstract class Const {
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
     }
+
+    @Override
+    public int hashCode() {
+      return Character.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof CharValue && value == ((CharValue) obj).value;
+    }
   }
 
   /** A float literal value. */
@@ -372,6 +419,16 @@ public abstract class Const {
     @Override
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
+    }
+
+    @Override
+    public int hashCode() {
+      return Float.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof FloatValue && value == ((FloatValue) obj).value;
     }
   }
 
@@ -436,6 +493,16 @@ public abstract class Const {
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
     }
+
+    @Override
+    public int hashCode() {
+      return Double.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof DoubleValue && value == ((DoubleValue) obj).value;
+    }
   }
 
   /** A String literal value. */
@@ -463,6 +530,16 @@ public abstract class Const {
     @Override
     public StringValue asString() {
       return this;
+    }
+
+    @Override
+    public int hashCode() {
+      return value.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof StringValue && value.equals(((StringValue) obj).value);
     }
   }
 
@@ -527,6 +604,16 @@ public abstract class Const {
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
     }
+
+    @Override
+    public int hashCode() {
+      return Short.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof ShortValue && value == ((ShortValue) obj).value;
+    }
   }
 
   /** A byte literal value. */
@@ -586,6 +673,21 @@ public abstract class Const {
     public StringValue asString() {
       return new StringValue(String.valueOf(value));
     }
+
+    @Override
+    public int hashCode() {
+      return Byte.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof ByteValue && value == ((ByteValue) obj).value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
   }
 
   /** A constant array literal (e.g. in an annotation). */
@@ -604,6 +706,21 @@ public abstract class Const {
 
     public ImmutableList<Const> elements() {
       return elements;
+    }
+
+    @Override
+    public int hashCode() {
+      return elements.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof ArrayInitValue && elements.equals(((ArrayInitValue) obj).elements);
+    }
+
+    @Override
+    public String toString() {
+      return "{" + Joiner.on(", ").join(elements) + "}";
     }
   }
 }

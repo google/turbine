@@ -19,6 +19,7 @@ package com.google.turbine.binder.bound;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.Const;
+import java.util.Objects;
 
 /** An annotation literal constant. */
 public class AnnotationValue extends Const {
@@ -49,5 +50,19 @@ public class AnnotationValue extends Const {
   /** The annotation literal's element-value pairs. */
   public ImmutableMap<String, Const> values() {
     return values;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sym.hashCode(), values.hashCode());
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof AnnotationValue)) {
+      return false;
+    }
+    AnnotationValue that = (AnnotationValue) obj;
+    return sym().equals(that.sym()) && values().equals(that.values());
   }
 }

@@ -42,4 +42,16 @@ public class ClassValue extends Const {
   public Type type() {
     return type;
   }
+
+  @Override
+  public int hashCode() {
+    // TODO(cushon): implement a hasher for Types.
+    return System.identityHashCode(this);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    // TODO(cushon): implement equality for Types.
+    return this == obj;
+  }
 }
