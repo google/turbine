@@ -307,6 +307,7 @@ public class LowerIntegrationTest {
       // https://bugs.openjdk.java.net/browse/JDK-8054064 ?
       "shadow_inherited.test",
       "static_final_boxed.test",
+      "anno_void.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());

@@ -37,6 +37,7 @@ import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
 import com.google.turbine.bytecode.sig.Sig.WildTySig;
+import com.google.turbine.bytecode.sig.SigParser;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.type.AnnoInfo;
@@ -118,8 +119,11 @@ public class BytecodeBinder {
         return bindArrayValue(type, (ArrayValue) value);
       case CLASS:
         return new ClassValue(
-            Type.ClassTy.asNonParametricClassTy(
-                asClassSymbol(((ConstClassValue) value).className())));
+            bindTy(
+                new SigParser(((ConstClassValue) value).className()).parseType(),
+                x -> {
+                  throw new IllegalStateException(x);
+                }));
       case ANNOTATION:
         return bindAnnotationValue(type, ((ElementValue.AnnotationValue) value).annotation());
     }

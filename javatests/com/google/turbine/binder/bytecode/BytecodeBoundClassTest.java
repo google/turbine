@@ -24,12 +24,14 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
+import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,6 +92,23 @@ public class BytecodeBoundClassTest {
     assertThat(m.parameters().get(0).annotations()).hasSize(1);
     assertThat(m.parameters().get(0).name()).isEqualTo("bar");
     assertThat(m.exceptions()).hasSize(2);
+  }
+
+  @interface VoidAnno {
+    Class<?> a() default void.class;
+
+    Class<?> b() default int[].class;
+  }
+
+  @Test
+  public void voidAnno() {
+    BytecodeBoundClass c = getBytecodeBoundClass(VoidAnno.class);
+
+    assertThat(c.methods()).hasSize(2);
+    assertThat(((ClassValue) c.methods().get(0).defaultValue()).type().tyKind())
+        .isEqualTo(Type.TyKind.VOID_TY);
+    assertThat(((ClassValue) c.methods().get(1).defaultValue()).type().tyKind())
+        .isEqualTo(Type.TyKind.ARRAY_TY);
   }
 
   private static byte[] toByteArrayOrDie(InputStream is) {
