@@ -781,7 +781,7 @@ public class Lower {
     }
 
     private void lowerClassTypeTypeAnnotations(ClassTy type, TypePath path) {
-      for (SimpleClassTy simple : type.classes) {
+      for (SimpleClassTy simple : type.classes()) {
         lowerTypeAnnotations(simple.annos(), path);
         int idx = 0;
         for (Type a : simple.targs()) {

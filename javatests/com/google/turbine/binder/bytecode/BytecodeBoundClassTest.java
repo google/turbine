@@ -62,14 +62,14 @@ public class BytecodeBoundClassTest {
     assertThat(rawInterfaces.interfaceTypes()).hasSize(1);
     assertThat(rawInterfaces.interfaceTypes().get(0).sym())
         .isEqualTo(new ClassSymbol("java/io/Serializable"));
-    assertThat(getLast(rawInterfaces.interfaceTypes().get(0).classes).targs()).isEmpty();
+    assertThat(getLast(rawInterfaces.interfaceTypes().get(0).classes()).targs()).isEmpty();
 
     assertThat(genericInterfaces.interfaceTypes()).hasSize(1);
     assertThat(genericInterfaces.interfaceTypes().get(0).sym())
         .isEqualTo(new ClassSymbol("java/util/List"));
-    assertThat(getLast(genericInterfaces.interfaceTypes().get(0).classes).targs()).hasSize(1);
+    assertThat(getLast(genericInterfaces.interfaceTypes().get(0).classes()).targs()).hasSize(1);
     assertThat(
-            ((ClassTy) getLast(genericInterfaces.interfaceTypes().get(0).classes).targs().get(0))
+            ((ClassTy) getLast(genericInterfaces.interfaceTypes().get(0).classes()).targs().get(0))
                 .sym())
         .isEqualTo(new ClassSymbol("java/lang/String"));
   }

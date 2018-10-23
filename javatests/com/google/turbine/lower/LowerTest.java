@@ -43,6 +43,10 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.PrimTy;
+import com.google.turbine.type.Type.TyVar;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -77,12 +81,12 @@ public class LowerTest {
 
     ImmutableList<Type.ClassTy> interfaceTypes =
         ImmutableList.of(
-            new Type.ClassTy(
+            ClassTy.create(
                 ImmutableList.of(
-                    new Type.ClassTy.SimpleClassTy(
+                    SimpleClassTy.create(
                         new ClassSymbol("java/util/List"),
                         ImmutableList.of(
-                            new Type.TyVar(
+                            TyVar.create(
                                 new TyVarSymbol(new ClassSymbol("test/Test"), "V"),
                                 ImmutableList.of())),
                         ImmutableList.of()))));
@@ -91,9 +95,9 @@ public class LowerTest {
         ImmutableMap.of(
             new TyVarSymbol(new ClassSymbol("test/Test"), "V"),
             new SourceTypeBoundClass.TyVarInfo(
-                new Type.ClassTy(
+                ClassTy.create(
                     ImmutableList.of(
-                        new Type.ClassTy.SimpleClassTy(
+                        SimpleClassTy.create(
                             new ClassSymbol("test/Test$Inner"),
                             ImmutableList.of(),
                             ImmutableList.of()))),
@@ -105,7 +109,7 @@ public class LowerTest {
             new SourceTypeBoundClass.MethodInfo(
                 new MethodSymbol(new ClassSymbol("test/Test"), "f"),
                 ImmutableMap.of(),
-                new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
+                PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                 ImmutableList.of(),
                 ImmutableList.of(),
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PUBLIC,
@@ -120,18 +124,18 @@ public class LowerTest {
                     new SourceTypeBoundClass.TyVarInfo(
                         null,
                         ImmutableList.of(
-                            new Type.ClassTy(
+                            ClassTy.create(
                                 ImmutableList.of(
-                                    new Type.ClassTy.SimpleClassTy(
+                                    SimpleClassTy.create(
                                         new ClassSymbol("java/lang/Runnable"),
                                         ImmutableList.of(),
                                         ImmutableList.of())))),
                         ImmutableList.of()),
                     new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
-                        new Type.ClassTy(
+                        ClassTy.create(
                             ImmutableList.of(
-                                new Type.ClassTy.SimpleClassTy(
+                                SimpleClassTy.create(
                                     new ClassSymbol("java/lang/Error"),
                                     ImmutableList.of(),
                                     ImmutableList.of()))),
@@ -140,12 +144,12 @@ public class LowerTest {
                 Type.VOID,
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
-                        new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
+                        PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                         "foo",
                         ImmutableList.of(),
                         0)),
                 ImmutableList.of(
-                    new Type.TyVar(
+                    TyVar.create(
                         new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
                         ImmutableList.of())),
                 TurbineFlag.ACC_PUBLIC,

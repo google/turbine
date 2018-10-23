@@ -304,25 +304,26 @@ public class ConstBinder {
     switch (type.tyKind()) {
       case TY_VAR:
         TyVar tyVar = (TyVar) type;
-        return new TyVar(tyVar.sym(), constEvaluator.evaluateAnnotations(tyVar.annos()));
+        return TyVar.create(tyVar.sym(), constEvaluator.evaluateAnnotations(tyVar.annos()));
       case CLASS_TY:
         return bindClassType((ClassTy) type);
       case ARRAY_TY:
         ArrayTy arrayTy = (ArrayTy) type;
-        return new ArrayTy(
+        return ArrayTy.create(
             bindType(arrayTy.elementType()), constEvaluator.evaluateAnnotations(arrayTy.annos()));
       case WILD_TY:
         {
           WildTy wildTy = (WildTy) type;
           switch (wildTy.boundKind()) {
             case NONE:
-              return new WildUnboundedTy(constEvaluator.evaluateAnnotations(wildTy.annotations()));
+              return WildUnboundedTy.create(
+                  constEvaluator.evaluateAnnotations(wildTy.annotations()));
             case UPPER:
-              return new WildUpperBoundedTy(
+              return WildUpperBoundedTy.create(
                   bindType(wildTy.bound()),
                   constEvaluator.evaluateAnnotations(wildTy.annotations()));
             case LOWER:
-              return new WildLowerBoundedTy(
+              return WildLowerBoundedTy.create(
                   bindType(wildTy.bound()),
                   constEvaluator.evaluateAnnotations(wildTy.annotations()));
             default:
@@ -340,11 +341,11 @@ public class ConstBinder {
   private ClassTy bindClassType(ClassTy type) {
     ClassTy classTy = type;
     ImmutableList.Builder<SimpleClassTy> classes = ImmutableList.builder();
-    for (SimpleClassTy c : classTy.classes) {
+    for (SimpleClassTy c : classTy.classes()) {
       classes.add(
-          new SimpleClassTy(
+          SimpleClassTy.create(
               c.sym(), bindTypes(c.targs()), constEvaluator.evaluateAnnotations(c.annos())));
     }
-    return new ClassTy(classes.build());
+    return ClassTy.create(classes.build());
   }
 }

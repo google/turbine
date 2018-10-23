@@ -26,6 +26,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.Expression;
+import java.util.Objects;
 
 /** An annotation use. */
 public class AnnoInfo {
@@ -69,5 +70,19 @@ public class AnnoInfo {
 
   public AnnoInfo withValues(ImmutableMap<String, Const> values) {
     return new AnnoInfo(source, sym, tree, values);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sym, values);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof AnnoInfo)) {
+      return false;
+    }
+    AnnoInfo that = (AnnoInfo) obj;
+    return sym.equals(that.sym) && values.equals(that.values);
   }
 }

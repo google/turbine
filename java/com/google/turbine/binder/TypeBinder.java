@@ -171,9 +171,9 @@ public class TypeBinder {
     switch (base.kind()) {
       case ENUM:
         superClassType =
-            new Type.ClassTy(
+            Type.ClassTy.create(
                 ImmutableList.of(
-                    new Type.ClassTy.SimpleClassTy(
+                    Type.ClassTy.SimpleClassTy.create(
                         ClassSymbol.ENUM,
                         ImmutableList.of(Type.ClassTy.asNonParametricClassTy(owner)),
                         ImmutableList.of())));
@@ -316,7 +316,7 @@ public class TypeBinder {
               /*synthetic*/
               TurbineFlag.ACC_SYNTHETIC),
           new ParamInfo(
-              new Type.PrimTy(TurbineConstantTypeKind.INT, ImmutableList.of()),
+              Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
               "$enum$ordinal",
               ImmutableList.of(),
               /*synthetic*/
@@ -333,7 +333,7 @@ public class TypeBinder {
         new MethodInfo(
             new MethodSymbol(owner, "values"),
             ImmutableMap.of(),
-            new Type.ArrayTy(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
+            Type.ArrayTy.create(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
             ImmutableList.of(),
             ImmutableList.of(),
             access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
@@ -650,7 +650,7 @@ public class TypeBinder {
         if (!result.remaining().isEmpty()) {
           throw error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
         }
-        return new Type.TyVar((TyVarSymbol) sym, annos);
+        return Type.TyVar.create((TyVarSymbol) sym, annos);
       default:
         throw new AssertionError(sym.symKind());
     }
@@ -666,7 +666,7 @@ public class TypeBinder {
     int idx = bits.size() - result.remaining().size() - 1;
     ImmutableList.Builder<Type.ClassTy.SimpleClassTy> classes = ImmutableList.builder();
     classes.add(
-        new Type.ClassTy.SimpleClassTy(
+        Type.ClassTy.SimpleClassTy.create(
             sym, bindTyArgs(scope, flat.get(idx++).tyargs()), annotations));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
@@ -674,27 +674,27 @@ public class TypeBinder {
 
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(
-          new Type.ClassTy.SimpleClassTy(sym, bindTyArgs(scope, curr.tyargs()), annotations));
+          Type.ClassTy.SimpleClassTy.create(sym, bindTyArgs(scope, curr.tyargs()), annotations));
     }
-    return new Type.ClassTy(classes.build());
+    return Type.ClassTy.create(classes.build());
   }
 
   private Type.PrimTy bindPrimTy(CompoundScope scope, PrimTy t) {
-    return new Type.PrimTy(t.tykind(), bindAnnotations(scope, t.annos()));
+    return Type.PrimTy.create(t.tykind(), bindAnnotations(scope, t.annos()));
   }
 
   private Type bindArrTy(CompoundScope scope, Tree.ArrTy t) {
-    return new Type.ArrayTy(bindTy(scope, t.elem()), bindAnnotations(scope, t.annos()));
+    return Type.ArrayTy.create(bindTy(scope, t.elem()), bindAnnotations(scope, t.annos()));
   }
 
   private Type bindWildTy(CompoundScope scope, Tree.WildTy t) {
     ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, t.annos());
     if (t.lower().isPresent()) {
-      return new Type.WildLowerBoundedTy(bindTy(scope, t.lower().get()), annotations);
+      return Type.WildLowerBoundedTy.create(bindTy(scope, t.lower().get()), annotations);
     } else if (t.upper().isPresent()) {
-      return new Type.WildUpperBoundedTy(bindTy(scope, t.upper().get()), annotations);
+      return Type.WildUpperBoundedTy.create(bindTy(scope, t.upper().get()), annotations);
     } else {
-      return new Type.WildUnboundedTy(annotations);
+      return Type.WildUnboundedTy.create(annotations);
     }
   }
 

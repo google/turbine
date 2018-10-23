@@ -84,7 +84,7 @@ public class LowerSignature {
   private ClassTySig classTySig(ClassTy t) {
     classes.add(t.sym());
     ImmutableList.Builder<SimpleClassTySig> classes = ImmutableList.builder();
-    Iterator<SimpleClassTy> it = t.classes.iterator();
+    Iterator<SimpleClassTy> it = t.classes().iterator();
     SimpleClassTy curr = it.next();
     while (curr.targs().isEmpty() && it.hasNext()) {
       curr = it.next();
@@ -250,7 +250,7 @@ public class LowerSignature {
         return false;
       case CLASS_TY:
         {
-          for (SimpleClassTy s : ((ClassTy) ty).classes) {
+          for (SimpleClassTy s : ((ClassTy) ty).classes()) {
             if (!s.targs().isEmpty()) {
               return true;
             }

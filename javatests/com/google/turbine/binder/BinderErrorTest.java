@@ -501,7 +501,7 @@ public class BinderErrorTest {
               TURBINE_BOOTCLASSPATH,
               /* moduleVersion=*/ Optional.empty())
           .units();
-      fail();
+      fail(Joiner.on('\n').join(source));
     } catch (TurbineError e) {
       assertThat(e.getMessage()).isEqualTo(lines(expected));
     }

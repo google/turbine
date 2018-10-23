@@ -172,13 +172,13 @@ public strictfp class ConstEvaluator {
   private Type evalClassLiteralType(Tree.Type type) {
     switch (type.kind()) {
       case PRIM_TY:
-        return new Type.PrimTy(((PrimTy) type).tykind(), ImmutableList.of());
+        return Type.PrimTy.create(((PrimTy) type).tykind(), ImmutableList.of());
       case VOID_TY:
         return Type.VOID;
       case CLASS_TY:
         return Type.ClassTy.asNonParametricClassTy(resolveClass((ClassTy) type));
       case ARR_TY:
-        return new Type.ArrayTy(
+        return Type.ArrayTy.create(
             evalClassLiteralType(((Tree.ArrTy) type).elem()), ImmutableList.of());
       default:
         throw new AssertionError(type.kind());

@@ -18,10 +18,10 @@ package com.google.turbine.binder;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -200,23 +200,23 @@ public class DisambiguateTypeAnnotations {
     switch (type.tyKind()) {
       case PRIM_TY:
         PrimTy primTy = (PrimTy) type;
-        return new Type.PrimTy(primTy.primkind(), appendAnnotations(primTy.annos(), extra));
+        return Type.PrimTy.create(primTy.primkind(), appendAnnotations(primTy.annos(), extra));
       case CLASS_TY:
         ClassTy classTy = (ClassTy) type;
-        SimpleClassTy base = classTy.classes.get(0);
+        SimpleClassTy base = classTy.classes().get(0);
         SimpleClassTy simple =
-            new SimpleClassTy(base.sym(), base.targs(), appendAnnotations(base.annos(), extra));
-        return new Type.ClassTy(
+            SimpleClassTy.create(base.sym(), base.targs(), appendAnnotations(base.annos(), extra));
+        return Type.ClassTy.create(
             ImmutableList.<SimpleClassTy>builder()
                 .add(simple)
-                .addAll(classTy.classes.subList(1, classTy.classes.size()))
+                .addAll(classTy.classes().subList(1, classTy.classes().size()))
                 .build());
       case ARRAY_TY:
         ArrayTy arrayTy = (ArrayTy) type;
-        return new ArrayTy(addAnnotationsToType(arrayTy.elementType(), extra), arrayTy.annos());
+        return ArrayTy.create(addAnnotationsToType(arrayTy.elementType(), extra), arrayTy.annos());
       case TY_VAR:
         TyVar tyVar = (TyVar) type;
-        return new Type.TyVar(tyVar.sym(), appendAnnotations(tyVar.annos(), extra));
+        return Type.TyVar.create(tyVar.sym(), appendAnnotations(tyVar.annos(), extra));
       case VOID_TY:
         return type;
       case WILD_TY:
@@ -242,7 +242,7 @@ public class DisambiguateTypeAnnotations {
    */
   public static ImmutableList<AnnoInfo> groupRepeated(
       Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
-    Multimap<ClassSymbol, AnnoInfo> repeated = LinkedHashMultimap.create();
+    Multimap<ClassSymbol, AnnoInfo> repeated = ArrayListMultimap.create();
     for (AnnoInfo anno : annotations) {
       repeated.put(anno.sym(), anno);
     }

@@ -65,21 +65,21 @@ public class BytecodeBinder {
         tyArgs.add(bindTy(arg, scope));
       }
 
-      classes.add(new Type.ClassTy.SimpleClassTy(sym, tyArgs.build(), ImmutableList.of()));
+      classes.add(Type.ClassTy.SimpleClassTy.create(sym, tyArgs.build(), ImmutableList.of()));
       first = false;
     }
-    return new Type.ClassTy(classes);
+    return Type.ClassTy.create(classes);
   }
 
   private static Type wildTy(WildTySig sig, Function<String, TyVarSymbol> scope) {
     switch (sig.boundKind()) {
       case NONE:
-        return new Type.WildUnboundedTy(ImmutableList.of());
+        return Type.WildUnboundedTy.create(ImmutableList.of());
       case LOWER:
-        return new Type.WildLowerBoundedTy(
+        return Type.WildLowerBoundedTy.create(
             bindTy(((LowerBoundTySig) sig).bound(), scope), ImmutableList.of());
       case UPPER:
-        return new Type.WildUpperBoundedTy(
+        return Type.WildUpperBoundedTy.create(
             bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
       default:
         throw new AssertionError(sig.boundKind());
@@ -89,11 +89,11 @@ public class BytecodeBinder {
   static Type bindTy(Sig.TySig sig, Function<String, TyVarSymbol> scope) {
     switch (sig.kind()) {
       case BASE_TY_SIG:
-        return new Type.PrimTy(((Sig.BaseTySig) sig).type(), ImmutableList.of());
+        return Type.PrimTy.create(((Sig.BaseTySig) sig).type(), ImmutableList.of());
       case CLASS_TY_SIG:
         return bindClassTy((Sig.ClassTySig) sig, scope);
       case TY_VAR_SIG:
-        return new Type.TyVar(scope.apply(((Sig.TyVarSig) sig).name()), ImmutableList.of());
+        return Type.TyVar.create(scope.apply(((Sig.TyVarSig) sig).name()), ImmutableList.of());
       case ARRAY_TY_SIG:
         return bindArrayTy((Sig.ArrayTySig) sig, scope);
       case WILD_TY_SIG:
@@ -106,7 +106,7 @@ public class BytecodeBinder {
   }
 
   private static Type bindArrayTy(Sig.ArrayTySig arrayTySig, Function<String, TyVarSymbol> scope) {
-    return new Type.ArrayTy(bindTy(arrayTySig.elementType(), scope), ImmutableList.of());
+    return Type.ArrayTy.create(bindTy(arrayTySig.elementType(), scope), ImmutableList.of());
   }
 
   public static Const bindValue(Type type, ElementValue value) {

@@ -105,7 +105,7 @@ public class ClassPathBinderTest {
         c.interfaceTypes().stream()
             .filter(i -> i.sym().equals(new ClassSymbol("java/util/List")))
             .collect(onlyElement());
-    assertThat(getLast(listInterface.classes).targs()).hasSize(1);
+    assertThat(getLast(listInterface.classes()).targs()).hasSize(1);
   }
 
   @Test

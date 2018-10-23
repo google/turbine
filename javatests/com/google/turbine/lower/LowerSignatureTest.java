@@ -25,6 +25,13 @@ import com.google.turbine.bytecode.sig.SigWriter;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
+import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.PrimTy;
+import com.google.turbine.type.Type.TyVar;
+import com.google.turbine.type.Type.WildLowerBoundedTy;
+import com.google.turbine.type.Type.WildUnboundedTy;
+import com.google.turbine.type.Type.WildUpperBoundedTy;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,9 +41,9 @@ public class LowerSignatureTest {
   @Test
   public void simple() {
     Type.ClassTy type =
-        new Type.ClassTy(
+        ClassTy.create(
             ImmutableList.of(
-                new Type.ClassTy.SimpleClassTy(
+                SimpleClassTy.create(
                     new ClassSymbol("java/util/List"), ImmutableList.of(), ImmutableList.of())));
     assertThat(SigWriter.type(new LowerSignature().signature(type))).isEqualTo("Ljava/util/List;");
   }
@@ -47,13 +54,13 @@ public class LowerSignatureTest {
             SigWriter.type(
                 new LowerSignature()
                     .signature(
-                        new Type.ClassTy(
+                        ClassTy.create(
                             ImmutableList.of(
-                                new Type.ClassTy.SimpleClassTy(
+                                SimpleClassTy.create(
                                     new ClassSymbol("test/Outer"),
                                     ImmutableList.of(),
                                     ImmutableList.of()),
-                                new Type.ClassTy.SimpleClassTy(
+                                SimpleClassTy.create(
                                     new ClassSymbol("test/Outer$Inner"),
                                     ImmutableList.of(),
                                     ImmutableList.of()))))))
@@ -63,15 +70,15 @@ public class LowerSignatureTest {
   @Test
   public void genericEnclosing() {
     Type.ClassTy type =
-        new Type.ClassTy(
+        ClassTy.create(
             ImmutableList.of(
-                new Type.ClassTy.SimpleClassTy(
+                SimpleClassTy.create(
                     new ClassSymbol("test/Outer"),
-                    ImmutableList.of(Type.ClassTy.OBJECT),
+                    ImmutableList.of(ClassTy.OBJECT),
                     ImmutableList.of()),
-                new Type.ClassTy.SimpleClassTy(
+                SimpleClassTy.create(
                     new ClassSymbol("test/Outer$Inner"),
-                    ImmutableList.of(Type.ClassTy.OBJECT),
+                    ImmutableList.of(ClassTy.OBJECT),
                     ImmutableList.of())));
     assertThat(SigWriter.type(new LowerSignature().signature(type)))
         .isEqualTo("Ltest/Outer<Ljava/lang/Object;>.Inner<Ljava/lang/Object;>;");
@@ -85,13 +92,13 @@ public class LowerSignatureTest {
             SigWriter.type(
                 new LowerSignature()
                     .signature(
-                        new Type.ClassTy(
+                        ClassTy.create(
                             ImmutableList.of(
-                                new Type.ClassTy.SimpleClassTy(
+                                SimpleClassTy.create(
                                     new ClassSymbol("Outer"),
                                     ImmutableList.of(),
                                     ImmutableList.of()),
-                                new Type.ClassTy.SimpleClassTy(
+                                SimpleClassTy.create(
                                     new ClassSymbol("Outer$Inner"),
                                     ImmutableList.of(),
                                     ImmutableList.of()))))))
@@ -104,16 +111,16 @@ public class LowerSignatureTest {
             SigWriter.type(
                 new LowerSignature()
                     .signature(
-                        new Type.ClassTy(
+                        ClassTy.create(
                             ImmutableList.of(
-                                new Type.ClassTy.SimpleClassTy(
+                                SimpleClassTy.create(
                                     new ClassSymbol("test/Test"),
                                     ImmutableList.of(
-                                        new Type.WildUnboundedTy(ImmutableList.of()),
-                                        new Type.WildLowerBoundedTy(
-                                            Type.ClassTy.OBJECT, ImmutableList.of()),
-                                        new Type.WildUpperBoundedTy(
-                                            Type.ClassTy.OBJECT, ImmutableList.of())),
+                                        WildUnboundedTy.create(ImmutableList.of()),
+                                        WildLowerBoundedTy.create(
+                                            ClassTy.OBJECT, ImmutableList.of()),
+                                        WildUpperBoundedTy.create(
+                                            ClassTy.OBJECT, ImmutableList.of())),
                                     ImmutableList.of()))))))
         .isEqualTo("Ltest/Test<*-Ljava/lang/Object;+Ljava/lang/Object;>;");
   }
@@ -124,7 +131,7 @@ public class LowerSignatureTest {
             SigWriter.type(
                 new LowerSignature()
                     .signature(
-                        new Type.TyVar(
+                        TyVar.create(
                             new TyVarSymbol(ClassSymbol.OBJECT, "X"), ImmutableList.of()))))
         .isEqualTo("TX;");
   }
@@ -134,8 +141,7 @@ public class LowerSignatureTest {
     assertThat(
             SigWriter.type(
                 new LowerSignature()
-                    .signature(
-                        new Type.PrimTy(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()))))
+                    .signature(PrimTy.create(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()))))
         .isEqualTo("Z");
   }
 
@@ -150,10 +156,10 @@ public class LowerSignatureTest {
             SigWriter.type(
                 new LowerSignature()
                     .signature(
-                        new Type.ArrayTy(
-                            new ArrayTy(
-                                new ArrayTy(
-                                    new Type.PrimTy(
+                        ArrayTy.create(
+                            ArrayTy.create(
+                                ArrayTy.create(
+                                    PrimTy.create(
                                         TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
                                     ImmutableList.of()),
                                 ImmutableList.of()),
