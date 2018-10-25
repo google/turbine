@@ -366,9 +366,8 @@ public class Canonicalize {
         return Type.WildLowerBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
       case UPPER:
         return Type.WildUpperBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
-      default:
-        throw new AssertionError(type.boundKind());
     }
+    throw new AssertionError(type.boundKind());
   }
 
   private TypeBoundClass getInfo(ClassSymbol canonOwner) {
