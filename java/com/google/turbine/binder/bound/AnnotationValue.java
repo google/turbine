@@ -54,7 +54,7 @@ public class AnnotationValue extends Const {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sym.hashCode(), values.hashCode());
+    return Objects.hash(sym, values);
   }
 
   @Override
