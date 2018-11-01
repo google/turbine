@@ -259,7 +259,7 @@ public class LowerTest {
     List<String> attributes = new ArrayList<>();
     new ClassReader(lowered.get("Test$Inner$InnerMost"))
         .accept(
-            new ClassVisitor(Opcodes.ASM6) {
+            new ClassVisitor(Opcodes.ASM7) {
               @Override
               public void visitInnerClass(
                   String name, String outerName, String innerName, int access) {
@@ -337,11 +337,11 @@ public class LowerTest {
     TypePath[] path = new TypePath[1];
     new ClassReader(lowered.get("Test"))
         .accept(
-            new ClassVisitor(Opcodes.ASM6) {
+            new ClassVisitor(Opcodes.ASM7) {
               @Override
               public FieldVisitor visitField(
                   int access, String name, String desc, String signature, Object value) {
-                return new FieldVisitor(Opcodes.ASM6) {
+                return new FieldVisitor(Opcodes.ASM7) {
                   @Override
                   public AnnotationVisitor visitTypeAnnotation(
                       int typeRef, TypePath typePath, String desc, boolean visible) {
@@ -388,7 +388,7 @@ public class LowerTest {
     Map<String, Object> values = new LinkedHashMap<>();
     new ClassReader(actual.get("Test"))
         .accept(
-            new ClassVisitor(Opcodes.ASM6) {
+            new ClassVisitor(Opcodes.ASM7) {
               @Override
               public FieldVisitor visitField(
                   int access, String name, String desc, String signature, Object value) {
@@ -415,7 +415,7 @@ public class LowerTest {
     int[] acc = {0};
     new ClassReader(lowered.get("Test"))
         .accept(
-            new ClassVisitor(Opcodes.ASM6) {
+            new ClassVisitor(Opcodes.ASM7) {
               @Override
               public void visit(
                   int version,
@@ -619,7 +619,7 @@ public class LowerTest {
     int[] testAccess = {0};
     new ClassReader(lowered.get("Test"))
         .accept(
-            new ClassVisitor(Opcodes.ASM6) {
+            new ClassVisitor(Opcodes.ASM7) {
               @Override
               public void visit(
                   int version,

@@ -15,7 +15,7 @@
   </description>
 
   <properties>
-    <asm.version>6.2.1</asm.version>
+    <asm.version>7.0</asm.version>
     <javac.version>9+181-r4173-1</javac.version>
     <guava.version>25.1-jre</guava.version>
   </properties>
