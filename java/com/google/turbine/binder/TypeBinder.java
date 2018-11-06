@@ -51,6 +51,7 @@ import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.IntersectionTy;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -376,30 +377,18 @@ public class TypeBinder {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Tree.TyParam tree : trees) {
       TyVarSymbol sym = symbols.get(tree.name().value());
-      Type classBound = null;
-      ImmutableList.Builder<Type> interfaceBounds = ImmutableList.builder();
-      boolean first = true;
-      for (Tree bound : tree.bounds()) {
-        Type ty = bindTy(scope, bound);
-        if (first && !isInterface(ty)) {
-          classBound = ty;
-        } else {
-          interfaceBounds.add(ty);
+      ImmutableList.Builder<Type> bounds = ImmutableList.builder();
+      if (tree.bounds().isEmpty()) {
+        bounds.add(Type.ClassTy.OBJECT);
+      } else {
+        for (Tree bound : tree.bounds()) {
+          bounds.add(bindTy(scope, bound));
         }
-        first = false;
       }
       ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, tree.annos());
-      result.put(sym, new TyVarInfo(classBound, interfaceBounds.build(), annotations));
+      result.put(sym, new TyVarInfo(IntersectionTy.create(bounds.build()), annotations));
     }
     return result.build();
-  }
-
-  private boolean isInterface(Type ty) {
-    if (ty.tyKind() != Type.TyKind.CLASS_TY) {
-      return false;
-    }
-    HeaderBoundClass hi = env.get(((Type.ClassTy) ty).sym());
-    return hi.kind() == TurbineTyKind.INTERFACE;
   }
 
   private List<MethodInfo> bindMethods(CompoundScope scope, ImmutableList<Tree> members) {

@@ -45,6 +45,7 @@ import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import java.io.IOException;
@@ -95,13 +96,14 @@ public class LowerTest {
         ImmutableMap.of(
             new TyVarSymbol(new ClassSymbol("test/Test"), "V"),
             new SourceTypeBoundClass.TyVarInfo(
-                ClassTy.create(
+                IntersectionTy.create(
                     ImmutableList.of(
-                        SimpleClassTy.create(
-                            new ClassSymbol("test/Test$Inner"),
-                            ImmutableList.of(),
-                            ImmutableList.of()))),
-                ImmutableList.of(),
+                        ClassTy.create(
+                            ImmutableList.of(
+                                SimpleClassTy.create(
+                                    new ClassSymbol("test/Test$Inner"),
+                                    ImmutableList.of(),
+                                    ImmutableList.of()))))),
                 ImmutableList.of()));
     int access = TurbineFlag.ACC_SUPER | TurbineFlag.ACC_PUBLIC;
     ImmutableList<SourceTypeBoundClass.MethodInfo> methods =
@@ -122,24 +124,25 @@ public class LowerTest {
                 ImmutableMap.of(
                     new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "V"),
                     new SourceTypeBoundClass.TyVarInfo(
-                        null,
-                        ImmutableList.of(
-                            ClassTy.create(
-                                ImmutableList.of(
-                                    SimpleClassTy.create(
-                                        new ClassSymbol("java/lang/Runnable"),
-                                        ImmutableList.of(),
-                                        ImmutableList.of())))),
+                        IntersectionTy.create(
+                            ImmutableList.of(
+                                ClassTy.create(
+                                    ImmutableList.of(
+                                        SimpleClassTy.create(
+                                            new ClassSymbol("java/lang/Runnable"),
+                                            ImmutableList.of(),
+                                            ImmutableList.of()))))),
                         ImmutableList.of()),
                     new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
-                        ClassTy.create(
+                        IntersectionTy.create(
                             ImmutableList.of(
-                                SimpleClassTy.create(
-                                    new ClassSymbol("java/lang/Error"),
-                                    ImmutableList.of(),
-                                    ImmutableList.of()))),
-                        ImmutableList.of(),
+                                ClassTy.create(
+                                    ImmutableList.of(
+                                        SimpleClassTy.create(
+                                            new ClassSymbol("java/lang/Error"),
+                                            ImmutableList.of(),
+                                            ImmutableList.of()))))),
                         ImmutableList.of())),
                 Type.VOID,
                 ImmutableList.of(

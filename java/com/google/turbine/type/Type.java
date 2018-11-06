@@ -44,7 +44,9 @@ public interface Type {
     /** A type variable type. */
     TY_VAR,
     /** A wildcard type. */
-    WILD_TY
+    WILD_TY,
+    /** An intersection type. */
+    INTERSECTION_TY
   }
 
   /** The type kind. */
@@ -100,7 +102,7 @@ public interface Type {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
       StringBuilder sb = new StringBuilder();
       boolean first = true;
       for (SimpleClassTy c : classes()) {
@@ -177,7 +179,7 @@ public interface Type {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
       return sym().owner() + "#" + sym().name();
     }
 
@@ -279,6 +281,22 @@ public interface Type {
     @Override
     public Type bound() {
       throw new IllegalStateException();
+    }
+  }
+
+  /** An intersection type. */
+  @AutoValue
+  abstract class IntersectionTy implements Type {
+
+    public abstract ImmutableList<Type> bounds();
+
+    public static IntersectionTy create(ImmutableList<Type> bounds) {
+      return new AutoValue_Type_IntersectionTy(bounds);
+    }
+
+    @Override
+    public TyKind tyKind() {
+      return TyKind.INTERSECTION_TY;
     }
   }
 }

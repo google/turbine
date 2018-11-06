@@ -27,6 +27,7 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
+import com.google.turbine.type.Type.IntersectionTy;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
 public interface TypeBoundClass extends HeaderBoundClass {
@@ -56,27 +57,17 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
   /** A type parameter declaration. */
   class TyVarInfo {
-    private final Type superClassBound;
-    private final ImmutableList<Type> interfaceBounds;
+    private final IntersectionTy bound;
     private final ImmutableList<AnnoInfo> annotations;
 
-    public TyVarInfo(
-        Type superClassBound,
-        ImmutableList<Type> interfaceBounds,
-        ImmutableList<AnnoInfo> annotations) {
-      this.superClassBound = superClassBound;
-      this.interfaceBounds = interfaceBounds;
+    public TyVarInfo(IntersectionTy bound, ImmutableList<AnnoInfo> annotations) {
+      this.bound = bound;
       this.annotations = annotations;
     }
 
-    /** A class bound, or {@code null}. */
-    public Type superClassBound() {
-      return superClassBound;
-    }
-
-    /** Interface type bounds. */
-    public ImmutableList<Type> interfaceBounds() {
-      return interfaceBounds;
+    /** The bound. */
+    public IntersectionTy bound() {
+      return bound;
     }
 
     /** Type parameter declaration annotations. */

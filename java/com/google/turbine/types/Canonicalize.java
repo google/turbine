@@ -30,6 +30,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
@@ -109,6 +110,8 @@ public class Canonicalize {
         }
       case CLASS_TY:
         return canonicalizeClassTy(base, (ClassTy) type);
+      case INTERSECTION_TY:
+        return canonicalizeIntersectionTy(base, (IntersectionTy) type);
       default:
         throw new AssertionError(type.tyKind());
     }
@@ -368,6 +371,14 @@ public class Canonicalize {
         return Type.WildUpperBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
     }
     throw new AssertionError(type.boundKind());
+  }
+
+  private Type canonicalizeIntersectionTy(ClassSymbol base, IntersectionTy type) {
+    ImmutableList.Builder<Type> bounds = ImmutableList.builder();
+    for (Type bound : type.bounds()) {
+      bounds.add(canonicalize(base, bound));
+    }
+    return IntersectionTy.create(bounds.build());
   }
 
   private TypeBoundClass getInfo(ClassSymbol canonOwner) {

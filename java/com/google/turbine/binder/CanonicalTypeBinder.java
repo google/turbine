@@ -30,6 +30,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.types.Canonicalize;
 import java.util.Map;
 
@@ -153,14 +154,8 @@ public class CanonicalTypeBinder {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Map.Entry<TyVarSymbol, TyVarInfo> e : tps.entrySet()) {
       TyVarInfo info = e.getValue();
-      Type superClassBound = null;
-      if (info.superClassBound() != null) {
-        superClassBound =
-            Canonicalize.canonicalize(source, position, env, sym, info.superClassBound());
-      }
-      ImmutableList<Type> interfaceBounds =
-          canonicalizeList(source, position, env, sym, info.interfaceBounds());
-      result.put(e.getKey(), new TyVarInfo(superClassBound, interfaceBounds, info.annotations()));
+      Type bound = Canonicalize.canonicalize(source, position, env, sym, info.bound());
+      result.put(e.getKey(), new TyVarInfo((IntersectionTy) bound, info.annotations()));
     }
     return result.build();
   }

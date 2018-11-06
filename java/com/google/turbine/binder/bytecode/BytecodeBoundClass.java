@@ -54,6 +54,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 import java.util.function.Function;
@@ -324,15 +325,14 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
           });
 
   private static TyVarInfo bindTyParam(Sig.TyParamSig sig, Function<String, TyVarSymbol> scope) {
-    Type superClassBound = null;
+    ImmutableList.Builder<Type> bounds = ImmutableList.builder();
     if (sig.classBound() != null) {
-      superClassBound = BytecodeBinder.bindTy(sig.classBound(), scope);
+      bounds.add(BytecodeBinder.bindTy(sig.classBound(), scope));
     }
-    ImmutableList.Builder<Type> interfaceBounds = ImmutableList.builder();
     for (Sig.TySig t : sig.interfaceBounds()) {
-      interfaceBounds.add(BytecodeBinder.bindTy(t, scope));
+      bounds.add(BytecodeBinder.bindTy(t, scope));
     }
-    return new TyVarInfo(superClassBound, interfaceBounds.build(), ImmutableList.of());
+    return new TyVarInfo(IntersectionTy.create(bounds.build()), ImmutableList.of());
   }
 
   @Override

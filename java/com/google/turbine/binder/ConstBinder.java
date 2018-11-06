@@ -45,6 +45,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildLowerBoundedTy;
@@ -293,8 +294,7 @@ public class ConstBinder {
       result.put(
           entry.getKey(),
           new TyVarInfo(
-              info.superClassBound() != null ? bindType(info.superClassBound()) : null,
-              bindTypes(info.interfaceBounds()),
+              (IntersectionTy) bindType(info.bound()),
               constEvaluator.evaluateAnnotations(info.annotations())));
     }
     return result.build();
@@ -333,6 +333,8 @@ public class ConstBinder {
       case PRIM_TY:
       case VOID_TY:
         return type;
+      case INTERSECTION_TY:
+        return IntersectionTy.create(bindTypes(((IntersectionTy) type).bounds()));
       default:
         throw new AssertionError(type.tyKind());
     }

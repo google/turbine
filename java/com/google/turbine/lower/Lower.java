@@ -65,12 +65,14 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.types.Erasure;
@@ -236,7 +238,7 @@ public class Lower {
   private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
-    String signature = sig.classSignature(info);
+    String signature = sig.classSignature(info, env);
     String superName = info.superclass() != null ? sig.descriptor(info.superclass()) : null;
     List<String> interfaces = new ArrayList<>();
     for (ClassSymbol i : info.interfaces()) {
@@ -672,15 +674,12 @@ public class Lower {
                 TypePath.root(),
                 info));
       }
-      if (p.superClassBound() != null) {
-        lowerTypeAnnotations(
-            result,
-            p.superClassBound(),
-            boundTargetType,
-            new TypeAnnotationInfo.TypeParameterBoundTarget(typeParameterIndex, 0));
-      }
-      int boundIndex = 1; // super class bound index is always 0; interface bounds start at 1
-      for (Type i : p.interfaceBounds()) {
+      int boundIndex = 0;
+      for (Type i : p.bound().bounds()) {
+        if (boundIndex == 0 && isInterface(i, env)) {
+          // super class bound index is always 0; interface bounds start at 1
+          boundIndex++;
+        }
         lowerTypeAnnotations(
             result,
             i,
@@ -689,6 +688,11 @@ public class Lower {
       }
       typeParameterIndex++;
     }
+  }
+
+  private boolean isInterface(Type type, Env<ClassSymbol, TypeBoundClass> env) {
+    return type.tyKind() == TyKind.CLASS_TY
+        && env.get(((ClassTy) type).sym()).kind() == TurbineTyKind.INTERFACE;
   }
 
   private void lowerTypeAnnotations(

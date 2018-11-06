@@ -19,6 +19,7 @@ package com.google.turbine.lower;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -32,11 +33,13 @@ import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.Sig.UpperBoundTySig;
 import com.google.turbine.bytecode.sig.SigWriter;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.PrimTy;
+import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 import java.util.Iterator;
@@ -141,7 +144,7 @@ public class LowerSignature {
     if (!needsMethodSig(sym, env, method)) {
       return null;
     }
-    ImmutableList<Sig.TyParamSig> typarams = tyParamSig(method.tyParams());
+    ImmutableList<Sig.TyParamSig> typarams = tyParamSig(method.tyParams(), env);
     ImmutableList.Builder<Sig.TySig> fparams = ImmutableList.builder();
     for (SourceTypeBoundClass.ParamInfo t : method.parameters()) {
       if (t.synthetic()) {
@@ -203,11 +206,11 @@ public class LowerSignature {
    * Produces a class signature attribute for a generic class, or {@code null} if the signature is
    * unnecessary.
    */
-  public String classSignature(SourceTypeBoundClass info) {
+  public String classSignature(SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env) {
     if (!classNeedsSig(info)) {
       return null;
     }
-    ImmutableList<Sig.TyParamSig> typarams = tyParamSig(info.typeParameterTypes());
+    ImmutableList<Sig.TyParamSig> typarams = tyParamSig(info.typeParameterTypes(), env);
 
     ClassTySig xtnd = null;
     if (info.superClassType() != null) {
@@ -267,29 +270,44 @@ public class LowerSignature {
   }
 
   private ImmutableList<Sig.TyParamSig> tyParamSig(
-      Map<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> px) {
+      Map<TyVarSymbol, TyVarInfo> px, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableList.Builder<Sig.TyParamSig> result = ImmutableList.builder();
     for (Map.Entry<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> entry : px.entrySet()) {
-      result.add(tyParamSig(entry.getKey(), entry.getValue()));
+      result.add(tyParamSig(entry.getKey(), entry.getValue(), env));
     }
     return result.build();
   }
 
-  private Sig.TyParamSig tyParamSig(TyVarSymbol sym, SourceTypeBoundClass.TyVarInfo info) {
+  private Sig.TyParamSig tyParamSig(
+      TyVarSymbol sym, SourceTypeBoundClass.TyVarInfo info, Env<ClassSymbol, TypeBoundClass> env) {
+
     String identifier = sym.name();
     Sig.TySig cbound = null;
-    if (info.superClassBound() != null) {
-      cbound = signature(info.superClassBound());
-    } else if (info.interfaceBounds().isEmpty()) {
+    ImmutableList.Builder<Sig.TySig> ibounds = ImmutableList.builder();
+    if (info.bound().bounds().isEmpty()) {
       cbound =
           new ClassTySig(
               "java/lang", ImmutableList.of(new SimpleClassTySig("Object", ImmutableList.of())));
-    }
-    ImmutableList.Builder<Sig.TySig> ibounds = ImmutableList.builder();
-    for (Type i : info.interfaceBounds()) {
-      ibounds.add(signature(i));
+    } else {
+      boolean first = true;
+      for (Type bound : info.bound().bounds()) {
+        TySig sig = signature(bound);
+        if (first) {
+          if (!isInterface(bound, env)) {
+            cbound = sig;
+            continue;
+          }
+        }
+        ibounds.add(sig);
+        first = false;
+      }
     }
     return new Sig.TyParamSig(identifier, cbound, ibounds.build());
+  }
+
+  private boolean isInterface(Type type, Env<ClassSymbol, TypeBoundClass> env) {
+    return type.tyKind() == TyKind.CLASS_TY
+        && env.get(((ClassTy) type).sym()).kind() == TurbineTyKind.INTERFACE;
   }
 
   public String descriptor(ClassSymbol sym) {

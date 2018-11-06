@@ -19,11 +19,13 @@ package com.google.turbine.types;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.TyVar;
 
 /** Generic type erasure. */
@@ -39,21 +41,22 @@ public class Erasure {
         return eraseArrayTy((Type.ArrayTy) ty, tenv);
       case TY_VAR:
         return eraseTyVar((TyVar) ty, tenv);
+      case INTERSECTION_TY:
+        return eraseIntersectionTy((Type.IntersectionTy) ty, tenv);
       default:
         throw new AssertionError(ty.tyKind());
     }
   }
 
+  private static Type eraseIntersectionTy(
+      IntersectionTy ty, Function<TyVarSymbol, TyVarInfo> tenv) {
+    return erase(ty.bounds().get(0), tenv);
+  }
+
   private static Type eraseTyVar(
       TyVar ty, Function<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> tenv) {
     SourceTypeBoundClass.TyVarInfo info = tenv.apply(ty.sym());
-    if (info.superClassBound() != null) {
-      return erase(info.superClassBound(), tenv);
-    }
-    if (!info.interfaceBounds().isEmpty()) {
-      return erase(info.interfaceBounds().get(0), tenv);
-    }
-    return Type.ClassTy.OBJECT;
+    return erase(info.bound(), tenv);
   }
 
   private static Type.ArrayTy eraseArrayTy(
