@@ -227,7 +227,7 @@ public class Canonicalize {
         break;
       }
       TypeBoundClass info = getInfo(curr.sym());
-      curr = canon(info.owner(), info.superClassType());
+      curr = canon(info.owner(), (ClassTy) info.superClassType());
     }
     simples.add(ty);
     return ClassTy.create(simples.build());

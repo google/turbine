@@ -46,7 +46,9 @@ public interface Type {
     /** A wildcard type. */
     WILD_TY,
     /** An intersection type. */
-    INTERSECTION_TY
+    INTERSECTION_TY,
+
+    ERROR_TY
   }
 
   /** The type kind. */
@@ -297,6 +299,19 @@ public interface Type {
     @Override
     public TyKind tyKind() {
       return TyKind.INTERSECTION_TY;
+    }
+  }
+
+  /** An error type. */
+  @AutoValue
+  abstract class ErrorTy implements Type {
+    public static ErrorTy create() {
+      return new AutoValue_Type_ErrorTy();
+    }
+
+    @Override
+    public TyKind tyKind() {
+      return TyKind.ERROR_TY;
     }
   }
 }

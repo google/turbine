@@ -97,14 +97,15 @@ public class ClassPathBinderTest {
 
     TypeBoundClass c = env.get(new ClassSymbol("java/lang/annotation/Retention"));
     assertThat(c.interfaceTypes()).hasSize(1);
-    assertThat(getOnlyElement(c.interfaceTypes()).sym())
+    assertThat(((ClassTy) getOnlyElement(c.interfaceTypes())).sym())
         .isEqualTo(new ClassSymbol("java/lang/annotation/Annotation"));
 
     c = env.get(new ClassSymbol("java/util/ArrayList"));
     ClassTy listInterface =
-        c.interfaceTypes().stream()
-            .filter(i -> i.sym().equals(new ClassSymbol("java/util/List")))
-            .collect(onlyElement());
+        (ClassTy)
+            c.interfaceTypes().stream()
+                .filter(i -> ((ClassTy) i).sym().equals(new ClassSymbol("java/util/List")))
+                .collect(onlyElement());
     assertThat(getLast(listInterface.classes()).targs()).hasSize(1);
   }
 

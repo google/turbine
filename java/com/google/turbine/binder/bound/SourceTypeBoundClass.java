@@ -16,10 +16,8 @@
 
 package com.google.turbine.binder.bound;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.turbine.binder.lookup.CompoundScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -30,6 +28,7 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.TyKind;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A HeaderBoundClass for classes compiled from source. */
@@ -43,8 +42,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
   private final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes;
-  private final Type.ClassTy superClassType;
-  private final ImmutableList<Type.ClassTy> interfaceTypes;
+  private final Type superClassType;
+  private final ImmutableList<Type> interfaceTypes;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
   private final CompoundScope enclosingScope;
@@ -56,8 +55,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final SourceFile source;
 
   public SourceTypeBoundClass(
-      ImmutableList<ClassTy> interfaceTypes,
-      ClassTy superClassType,
+      ImmutableList<Type> interfaceTypes,
+      Type superClassType,
       ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes,
       int access,
       ImmutableList<MethodInfo> methods,
@@ -94,20 +93,24 @@ public class SourceTypeBoundClass implements TypeBoundClass {
 
   @Override
   public ClassSymbol superclass() {
-    return superClassType() != null ? superClassType().sym() : null;
+    if (superClassType == null) {
+      return null;
+    }
+    if (superClassType.tyKind() != TyKind.CLASS_TY) {
+      return null;
+    }
+    return ((ClassTy) superClassType).sym();
   }
 
   @Override
   public ImmutableList<ClassSymbol> interfaces() {
-    return ImmutableList.copyOf(
-        Iterables.transform(
-            interfaceTypes,
-            new Function<ClassTy, ClassSymbol>() {
-              @Override
-              public ClassSymbol apply(ClassTy classTy) {
-                return classTy.sym();
-              }
-            }));
+    ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
+    for (Type type : interfaceTypes) {
+      if (type.tyKind() == TyKind.CLASS_TY) {
+        result.add(((ClassTy) type).sym());
+      }
+    }
+    return result.build();
   }
 
   @Override
@@ -137,13 +140,13 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public ImmutableList<Type.ClassTy> interfaceTypes() {
+  public ImmutableList<Type> interfaceTypes() {
     return interfaceTypes;
   }
 
   /** The super-class type. */
   @Override
-  public Type.ClassTy superClassType() {
+  public Type superClassType() {
     return superClassType;
   }
 

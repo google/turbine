@@ -31,6 +31,7 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.types.Canonicalize;
 import java.util.Map;
 
@@ -42,16 +43,23 @@ public class CanonicalTypeBinder {
   static SourceTypeBoundClass bind(
       ClassSymbol sym, SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
     ClassTy superClassType = null;
-    if (base.superClassType() != null) {
+    if (base.superClassType() != null && base.superClassType().tyKind() == TyKind.CLASS_TY) {
       superClassType =
           Canonicalize.canonicalizeClassTy(
-              base.source(), base.decl().position(), env, base.owner(), base.superClassType());
+              base.source(),
+              base.decl().position(),
+              env,
+              base.owner(),
+              (ClassTy) base.superClassType());
     }
-    ImmutableList.Builder<ClassTy> interfaceTypes = ImmutableList.builder();
-    for (ClassTy i : base.interfaceTypes()) {
-      interfaceTypes.add(
-          Canonicalize.canonicalizeClassTy(
-              base.source(), base.decl().position(), env, base.owner(), i));
+    ImmutableList.Builder<Type> interfaceTypes = ImmutableList.builder();
+    for (Type i : base.interfaceTypes()) {
+      if (i.tyKind() == TyKind.CLASS_TY) {
+        i =
+            Canonicalize.canonicalizeClassTy(
+                base.source(), base.decl().position(), env, base.owner(), (ClassTy) i);
+      }
+      interfaceTypes.add(i);
     }
     ImmutableMap<TyVarSymbol, TyVarInfo> typParamTypes =
         typeParameters(base.source(), base.decl().position(), env, sym, base.typeParameterTypes());

@@ -24,10 +24,10 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,13 +49,13 @@ public class ImportIndex implements ImportScope {
    */
   private final Map<String, Supplier<ImportScope>> thunks;
 
-  public ImportIndex(ImmutableMap<String, Supplier<ImportScope>> thunks) {
+  public ImportIndex(TurbineLogWithSource log, ImmutableMap<String, Supplier<ImportScope>> thunks) {
     this.thunks = thunks;
   }
 
   /** Creates an import index for the given top-level environment. */
   public static ImportIndex create(
-      SourceFile source,
+      TurbineLogWithSource log,
       CanonicalSymbolResolver resolve,
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
@@ -70,7 +70,7 @@ public class ImportIndex implements ImportScope {
               new Supplier<ImportScope>() {
                 @Override
                 public ImportScope get() {
-                  return namedImport(source, cpi, i, resolve);
+                  return namedImport(log, cpi, i, resolve);
                 }
               }));
     }
@@ -87,27 +87,25 @@ public class ImportIndex implements ImportScope {
               new Supplier<ImportScope>() {
                 @Override
                 public ImportScope get() {
-                  return staticNamedImport(cpi, i);
+                  return staticNamedImport(log, cpi, i);
                 }
               }));
     }
-    return new ImportIndex(ImmutableMap.copyOf(thunks));
+    return new ImportIndex(log, ImmutableMap.copyOf(thunks));
   }
 
   /** Fully resolve the canonical name of a non-static named import. */
   private static ImportScope namedImport(
-      SourceFile source, TopLevelIndex cpi, ImportDecl i, CanonicalSymbolResolver resolve) {
+      TurbineLogWithSource log, TopLevelIndex cpi, ImportDecl i, CanonicalSymbolResolver resolve) {
     LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
-      throw TurbineError.format(
-          source,
-          i.position(),
-          ErrorKind.SYMBOL_NOT_FOUND,
-          new ClassSymbol(Joiner.on('/').join(i.type())));
+      log.error(
+          i.position(), ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(Joiner.on('/').join(i.type())));
+      return null;
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (Tree.Ident bit : result.remaining()) {
-      sym = resolveNext(source, i.position(), resolve, sym, bit);
+      sym = resolveNext(log, i.position(), resolve, sym, bit);
     }
     ClassSymbol resolved = sym;
     return new ImportScope() {
@@ -119,18 +117,15 @@ public class ImportIndex implements ImportScope {
   }
 
   private static ClassSymbol resolveNext(
-      SourceFile source,
+      TurbineLogWithSource log,
       int position,
       CanonicalSymbolResolver resolve,
       ClassSymbol sym,
-      Tree.Ident bit) {
+      Ident bit) {
     ClassSymbol next = resolve.resolveOne(sym, bit);
     if (next == null) {
-      throw TurbineError.format(
-          source,
-          position,
-          ErrorKind.SYMBOL_NOT_FOUND,
-          new ClassSymbol(sym.binaryName() + '$' + bit));
+      log.error(
+          position, ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
     }
     return next;
   }
@@ -142,9 +137,11 @@ public class ImportIndex implements ImportScope {
    * hierarchy analysis is complete, so for now we resolve the base {@code java.util.HashMap} and
    * defer the rest.
    */
-  private static ImportScope staticNamedImport(TopLevelIndex cpi, ImportDecl i) {
+  private static ImportScope staticNamedImport(
+      TurbineLogWithSource log, TopLevelIndex cpi, ImportDecl i) {
     LookupResult base = cpi.scope().lookup(new LookupKey(i.type()));
     if (base == null) {
+      log.error(i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on(".").join(i.type()));
       return null;
     }
     return new ImportScope() {

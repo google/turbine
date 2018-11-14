@@ -59,11 +59,10 @@ public class BinderErrorTest {
           "class B extends A.NoSuch {",
           "}",
         },
-        // TODO(cushon): we'd prefer the caret at NoSuch instead of A
         {
           "<>:4: error: symbol not found a.A$NoSuch", //
           "class B extends A.NoSuch {",
-          "                ^",
+          "                  ^",
         }
       },
       {
@@ -149,7 +148,10 @@ public class BinderErrorTest {
           "<>:4: error: cycle in class hierarchy: p.OuterExtendsInner$Inner"
               + " -> p.OuterExtendsInner$Inner",
           "  public static class Inner extends Foo {}",
-          "                                    ^"
+          "                                    ^",
+          "<>:4: error: could not resolve Foo",
+          "  public static class Inner extends Foo {}",
+          "                                    ^",
         },
       },
       {
@@ -162,7 +164,10 @@ public class BinderErrorTest {
         {
           "<>:2: error: symbol not found java.lang.NoSuch", //
           "import java.lang.NoSuch;",
-          "       ^"
+          "       ^",
+          "<>:3: error: could not resolve NoSuch",
+          "public class Test extends NoSuch {",
+          "                          ^"
         },
       },
       {
@@ -175,7 +180,10 @@ public class BinderErrorTest {
         {
           "<>:2: error: symbol not found java.util.List$NoSuch", //
           "import java.util.List.NoSuch;",
-          "       ^"
+          "       ^",
+          "<>:3: error: could not resolve NoSuch",
+          "public class Test extends NoSuch {",
+          "                          ^",
         },
       },
       {

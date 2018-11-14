@@ -36,13 +36,14 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.Kind;
@@ -131,16 +132,24 @@ public class TypeBinder {
 
   /** Creates {@link SourceTypeBoundClass} nodes for a compilation. */
   public static SourceTypeBoundClass bind(
-      Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol sym, SourceHeaderBoundClass base) {
-    return new TypeBinder(env, sym, base).bind();
+      TurbineLogWithSource log,
+      Env<ClassSymbol, HeaderBoundClass> env,
+      ClassSymbol sym,
+      SourceHeaderBoundClass base) {
+    return new TypeBinder(log, env, sym, base).bind();
   }
 
+  private final TurbineLogWithSource log;
   private final Env<ClassSymbol, HeaderBoundClass> env;
   private final ClassSymbol owner;
   private final SourceHeaderBoundClass base;
 
   private TypeBinder(
-      Env<ClassSymbol, HeaderBoundClass> env, ClassSymbol owner, SourceHeaderBoundClass base) {
+      TurbineLogWithSource log,
+      Env<ClassSymbol, HeaderBoundClass> env,
+      ClassSymbol owner,
+      SourceHeaderBoundClass base) {
+    this.log = log;
     this.env = env;
     this.owner = owner;
     this.base = base;
@@ -167,8 +176,8 @@ public class TypeBinder {
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
         bindTyParams(base.decl().typarams(), bindingScope, base.typeParameters());
 
-    ImmutableList.Builder<Type.ClassTy> interfaceTypes = ImmutableList.builder();
-    Type.ClassTy superClassType;
+    ImmutableList.Builder<Type> interfaceTypes = ImmutableList.builder();
+    Type superClassType;
     switch (base.kind()) {
       case ENUM:
         superClassType =
@@ -185,7 +194,7 @@ public class TypeBinder {
         break;
       case CLASS:
         if (base.decl().xtnds().isPresent()) {
-          superClassType = (Type.ClassTy) bindClassTy(bindingScope, base.decl().xtnds().get());
+          superClassType = bindClassTy(bindingScope, base.decl().xtnds().get());
         } else if (owner.equals(ClassSymbol.OBJECT)) {
           // java.lang.Object doesn't have a superclass
           superClassType = null;
@@ -204,7 +213,7 @@ public class TypeBinder {
     }
 
     for (Tree.ClassTy i : base.decl().impls()) {
-      interfaceTypes.add((Type.ClassTy) bindClassTy(bindingScope, i));
+      interfaceTypes.add(bindClassTy(bindingScope, i));
     }
 
     CompoundScope scope =
@@ -517,7 +526,8 @@ public class TypeBinder {
       if (member.kind() == Tree.Kind.VAR_DECL) {
         FieldInfo field = bindField(scope, (Tree.VarDecl) member);
         if (!seen.add(field.sym())) {
-          throw error(member.position(), ErrorKind.DUPLICATE_DECLARATION, "field: " + field.name());
+          log.error(member.position(), ErrorKind.DUPLICATE_DECLARATION, "field: " + field.name());
+          continue;
         }
         fields.add(field);
       }
@@ -548,26 +558,37 @@ public class TypeBinder {
       CompoundScope scope, ImmutableList<Tree.Anno> trees) {
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (Tree.Anno tree : trees) {
-      LookupResult lookupResult = scope.lookup(new LookupKey(tree.name()));
-      if (lookupResult == null) {
-        throw error(tree.position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(tree.name()));
-      }
-      ClassSymbol sym = (ClassSymbol) lookupResult.sym();
-      for (Ident name : lookupResult.remaining()) {
-        sym = resolveNext(sym, name);
-      }
-      if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
-        throw error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
-      }
+      ImmutableList<Ident> name = tree.name();
+      LookupResult lookupResult = scope.lookup(new LookupKey(name));
+      ClassSymbol sym = resolveAnnoSymbol(tree, name, lookupResult);
       result.add(new AnnoInfo(base.source(), sym, tree, null));
     }
     return result.build();
   }
 
+  private ClassSymbol resolveAnnoSymbol(
+      Anno tree, ImmutableList<Ident> name, LookupResult lookupResult) {
+    if (lookupResult == null) {
+      log.error(tree.position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(name));
+      return null;
+    }
+    ClassSymbol sym = (ClassSymbol) lookupResult.sym();
+    for (Ident ident : lookupResult.remaining()) {
+      sym = resolveNext(sym, ident);
+      if (sym == null) {
+        return null;
+      }
+    }
+    if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
+      log.error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
+    }
+    return sym;
+  }
+
   private ClassSymbol resolveNext(ClassSymbol sym, Ident bit) {
     ClassSymbol next = Resolve.resolve(env, owner, sym, bit);
     if (next == null) {
-      throw error(
+      log.error(
           bit.position(),
           ErrorKind.SYMBOL_NOT_FOUND,
           new ClassSymbol(sym.binaryName() + '$' + bit));
@@ -626,7 +647,8 @@ public class TypeBinder {
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
-      throw error(names.get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
+      log.error(names.get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
+      return Type.ErrorTy.create();
     }
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
@@ -637,7 +659,8 @@ public class TypeBinder {
         return bindClassTyRest(scope, flat, names, result, (ClassSymbol) sym, annos);
       case TY_PARAM:
         if (!result.remaining().isEmpty()) {
-          throw error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
+          log.error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
+          return Type.ErrorTy.create();
         }
         return Type.TyVar.create((TyVarSymbol) sym, annos);
       default:
@@ -660,6 +683,9 @@ public class TypeBinder {
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
       sym = resolveNext(sym, curr.name());
+      if (sym == null) {
+        return Type.ErrorTy.create();
+      }
 
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(
@@ -685,9 +711,5 @@ public class TypeBinder {
     } else {
       return Type.WildUnboundedTy.create(annotations);
     }
-  }
-
-  private TurbineError error(int position, ErrorKind kind, Object... args) {
-    return TurbineError.format(base.source(), position, kind, args);
   }
 }

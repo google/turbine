@@ -279,15 +279,15 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     return superClassType.get();
   }
 
-  private final Supplier<ImmutableList<ClassTy>> interfaceTypes =
+  private final Supplier<ImmutableList<Type>> interfaceTypes =
       Suppliers.memoize(
-          new Supplier<ImmutableList<ClassTy>>() {
+          new Supplier<ImmutableList<Type>>() {
             @Override
-            public ImmutableList<ClassTy> get() {
+            public ImmutableList<Type> get() {
               if (interfaces().isEmpty()) {
                 return ImmutableList.of();
               }
-              ImmutableList.Builder<ClassTy> result = ImmutableList.builder();
+              ImmutableList.Builder<Type> result = ImmutableList.builder();
               if (sig.get() == null || sig.get().interfaces() == null) {
                 for (ClassSymbol sym : interfaces()) {
                   result.add(ClassTy.asNonParametricClassTy(sym));
@@ -303,7 +303,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
           });
 
   @Override
-  public ImmutableList<ClassTy> interfaceTypes() {
+  public ImmutableList<Type> interfaceTypes() {
     return interfaceTypes.get();
   }
 

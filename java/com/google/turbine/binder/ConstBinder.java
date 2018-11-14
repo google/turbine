@@ -92,8 +92,8 @@ public class ConstBinder {
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());
     return new SourceTypeBoundClass(
-        bindClassTypes(base.interfaceTypes()),
-        base.superClassType() != null ? bindClassType(base.superClassType()) : null,
+        bindTypes(base.interfaceTypes()),
+        base.superClassType() != null ? bindType(base.superClassType()) : null,
         bindTypeParameters(base.typeParameterTypes()),
         base.access(),
         methods,
@@ -268,14 +268,6 @@ public class ConstBinder {
       value = (Value) ConstEvaluator.cast(base.type(), value);
     }
     return value;
-  }
-
-  private ImmutableList<ClassTy> bindClassTypes(ImmutableList<ClassTy> types) {
-    ImmutableList.Builder<ClassTy> result = ImmutableList.builder();
-    for (ClassTy t : types) {
-      result.add(bindClassType(t));
-    }
-    return result.build();
   }
 
   private ImmutableList<Type> bindTypes(ImmutableList<Type> types) {

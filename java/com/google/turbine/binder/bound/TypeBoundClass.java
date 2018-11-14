@@ -33,10 +33,10 @@ import com.google.turbine.type.Type.IntersectionTy;
 public interface TypeBoundClass extends HeaderBoundClass {
 
   /** The super-class type. */
-  Type.ClassTy superClassType();
+  Type superClassType();
 
   /** Implemented interface types. */
-  ImmutableList<Type.ClassTy> interfaceTypes();
+  ImmutableList<Type> interfaceTypes();
 
   ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes();
 

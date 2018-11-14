@@ -27,8 +27,8 @@ import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
@@ -39,20 +39,24 @@ public class HierarchyBinder {
 
   /** Binds the type hierarchy (superclasses and interfaces) for a single class. */
   public static SourceHeaderBoundClass bind(
+      TurbineLogWithSource log,
       ClassSymbol origin,
       PackageSourceBoundClass base,
       Env<ClassSymbol, ? extends HeaderBoundClass> env) {
-    return new HierarchyBinder(origin, base, env).bind();
+    return new HierarchyBinder(log, origin, base, env).bind();
   }
 
+  private final TurbineLogWithSource log;
   private final ClassSymbol origin;
   private final PackageSourceBoundClass base;
   private final Env<ClassSymbol, ? extends HeaderBoundClass> env;
 
   private HierarchyBinder(
+      TurbineLogWithSource log,
       ClassSymbol origin,
       PackageSourceBoundClass base,
       Env<ClassSymbol, ? extends HeaderBoundClass> env) {
+    this.log = log;
     this.origin = origin;
     this.base = base;
     this.env = env;
@@ -84,7 +88,7 @@ public class HierarchyBinder {
       for (Tree.ClassTy i : decl.impls()) {
         ClassSymbol result = resolveClass(i);
         if (result == null) {
-          throw new AssertionError(i);
+          continue;
         }
         interfaces.add(result);
       }
@@ -102,7 +106,6 @@ public class HierarchyBinder {
     return new SourceHeaderBoundClass(base, superclass, interfaces.build(), typeParameters.build());
   }
 
-
   /**
    * Resolves the {@link ClassSymbol} for the given {@link Tree.ClassTy}, with handling for
    * non-canonical qualified type names.
@@ -117,13 +120,17 @@ public class HierarchyBinder {
     // Resolve the base symbol in the qualified name.
     LookupResult result = lookup(ty, new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
-      throw TurbineError.format(base.source(), ty.position(), ErrorKind.CANNOT_RESOLVE, ty);
+      log.error(ty.position(), ErrorKind.CANNOT_RESOLVE, ty);
+      return null;
     }
     // Resolve pieces in the qualified name referring to member types.
     // This needs to consider member type declarations inherited from supertypes and interfaces.
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (Tree.Ident bit : result.remaining()) {
       sym = resolveNext(ty, sym, bit);
+      if (sym == null) {
+        break;
+      }
     }
     return sym;
   }
@@ -133,11 +140,14 @@ public class HierarchyBinder {
     try {
       next = Resolve.resolve(env, origin, sym, bit);
     } catch (LazyBindingError e) {
-      throw error(ty.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+      log.error(ty.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+      return null;
     }
     if (next == null) {
-      throw error(
-          ty.position(), ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
+      log.error(
+          bit.position(),
+          ErrorKind.SYMBOL_NOT_FOUND,
+          new ClassSymbol(sym.binaryName() + '$' + bit));
     }
     return next;
   }
@@ -152,7 +162,8 @@ public class HierarchyBinder {
       try {
         result = Resolve.resolve(env, origin, curr, lookup.first());
       } catch (LazyBindingError e) {
-        throw error(tree.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+        log.error(tree.position(), ErrorKind.CYCLIC_HIERARCHY, e.getMessage());
+        result = null;
       }
       if (result != null) {
         return new LookupResult(result, lookup);
@@ -161,9 +172,5 @@ public class HierarchyBinder {
     // Fall back to the top-level scopes for the compilation unit (imports, same package, then
     // qualified name resolution).
     return base.scope().lookup(lookup, Resolve.resolveFunction(env, origin));
-  }
-
-  private TurbineError error(int position, ErrorKind kind, Object... args) {
-    return TurbineError.format(base.source(), position, kind, args);
   }
 }

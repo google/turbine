@@ -80,7 +80,7 @@ public class LowerTest {
   @Test
   public void hello() throws Exception {
 
-    ImmutableList<Type.ClassTy> interfaceTypes =
+    ImmutableList<Type> interfaceTypes =
         ImmutableList.of(
             ClassTy.create(
                 ImmutableList.of(

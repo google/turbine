@@ -214,11 +214,11 @@ public class LowerSignature {
 
     ClassTySig xtnd = null;
     if (info.superClassType() != null) {
-      xtnd = classTySig(info.superClassType());
+      xtnd = classTySig((ClassTy) info.superClassType());
     }
     ImmutableList.Builder<ClassTySig> impl = ImmutableList.builder();
-    for (ClassTy i : info.interfaceTypes()) {
-      impl.add(classTySig(i));
+    for (Type i : info.interfaceTypes()) {
+      impl.add(classTySig((ClassTy) i));
     }
     ClassSig sig = new ClassSig(typarams, xtnd, impl.build());
     return SigWriter.classSig(sig);
@@ -238,7 +238,7 @@ public class LowerSignature {
     if (ci.superClassType() != null && needsSig(ci.superClassType())) {
       return true;
     }
-    for (ClassTy i : ci.interfaceTypes()) {
+    for (Type i : ci.interfaceTypes()) {
       if (needsSig(i)) {
         return true;
       }

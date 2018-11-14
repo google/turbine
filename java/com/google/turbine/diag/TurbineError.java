@@ -16,14 +16,9 @@
 
 package com.google.turbine.diag;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.getOnlyElement;
+import static java.util.stream.Collectors.joining;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.turbine.binder.sym.ClassSymbol;
 
 /** A compilation error. */
 public class TurbineError extends Error {
@@ -71,10 +66,7 @@ public class TurbineError extends Error {
    * @param args format args
    */
   public static TurbineError format(SourceFile source, ErrorKind kind, Object... args) {
-    String path = firstNonNull(source.path(), "<>");
-    String message = kind.format(args);
-    String diagnostic = path + ": error: " + message.trim() + System.lineSeparator();
-    return new TurbineError(kind, diagnostic, ImmutableList.copyOf(args));
+    return new TurbineError(ImmutableList.of(TurbineDiagnostic.format(source, kind, args)));
   }
 
   /**
@@ -86,50 +78,18 @@ public class TurbineError extends Error {
    */
   public static TurbineError format(
       SourceFile source, int position, ErrorKind kind, Object... args) {
-    String path = firstNonNull(source.path(), "<>");
-    LineMap lineMap = LineMap.create(source.source());
-    int lineNumber = lineMap.lineNumber(position);
-    int column = lineMap.column(position);
-    String message = kind.format(args);
-
-    StringBuilder sb = new StringBuilder(path).append(":");
-    sb.append(lineNumber).append(": error: ");
-    sb.append(message.trim()).append(System.lineSeparator());
-    sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(lineMap.line(position)))
-        .append(System.lineSeparator());
-    sb.append(Strings.repeat(" ", column)).append('^');
-    String diagnostic = sb.toString();
-    return new TurbineError(kind, diagnostic, ImmutableList.copyOf(args));
+    return new TurbineError(
+        ImmutableList.of(TurbineDiagnostic.format(source, position, kind, args)));
   }
 
-  private final ErrorKind kind;
-  private final ImmutableList<Object> args;
+  private final ImmutableList<TurbineDiagnostic> diagnostics;
 
-  private TurbineError(ErrorKind kind, String diagnostic, ImmutableList<Object> args) {
-    super(diagnostic);
-    switch (kind) {
-      case SYMBOL_NOT_FOUND:
-        {
-          checkArgument(
-              args.size() == 1 && getOnlyElement(args) instanceof ClassSymbol,
-              "diagnostic (%s) has invalid argument args %s",
-              diagnostic,
-              args);
-          break;
-        }
-      default: // fall out
-    }
-    this.kind = kind;
-    this.args = args;
+  public TurbineError(ImmutableList<TurbineDiagnostic> diagnostics) {
+    super(diagnostics.stream().map(d -> d.diagnostic()).collect(joining("\n")));
+    this.diagnostics = diagnostics;
   }
 
-  /** The diagnostic kind. */
-  public ErrorKind kind() {
-    return kind;
-  }
-
-  /** The diagnostic arguments. */
-  public ImmutableList<Object> args() {
-    return args;
+  public ImmutableList<TurbineDiagnostic> diagnostics() {
+    return diagnostics;
   }
 }
