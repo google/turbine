@@ -116,6 +116,12 @@ public class TurbineOptionsParser {
         case "--nojavac_fallback":
           builder.setJavacFallback(false);
           break;
+        case "--reduce_classpath":
+          builder.setShouldReduceClassPath(true);
+          break;
+        case "--noreduce_classpath":
+          builder.setShouldReduceClassPath(false);
+          break;
         case "--help":
           builder.setHelp(true);
           break;

@@ -95,6 +95,7 @@ public class TurbineOptionsTest {
     assertThat(options.outputDeps()).hasValue("out.jdeps");
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
     assertThat(options.injectingRuleKind()).hasValue("foo_library");
+    assertThat(options.shouldReduceClassPath()).isTrue();
   }
 
   @Test
@@ -311,5 +312,22 @@ public class TurbineOptionsTest {
     assertThat(options.javacOpts())
         .containsExactly("--release", "8", "--release", "7", "--release")
         .inOrder();
+  }
+
+  @Test
+  public void shouldReduceClasspath() throws Exception {
+    {
+      TurbineOptions options =
+          TurbineOptionsParser.parse(
+              Iterables.concat(BASE_ARGS, ImmutableList.of("--reduce_classpath")));
+      assertThat(options.shouldReduceClassPath()).isTrue();
+    }
+
+    {
+      TurbineOptions options =
+          TurbineOptionsParser.parse(
+              Iterables.concat(BASE_ARGS, ImmutableList.of("--noreduce_classpath")));
+      assertThat(options.shouldReduceClassPath()).isFalse();
+    }
   }
 }
