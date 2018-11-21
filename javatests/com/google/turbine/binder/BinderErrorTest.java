@@ -180,7 +180,7 @@ public class BinderErrorTest {
         {
           "<>:2: error: symbol not found java.util.List$NoSuch", //
           "import java.util.List.NoSuch;",
-          "       ^",
+          "                      ^",
           "<>:3: error: could not resolve NoSuch",
           "public class Test extends NoSuch {",
           "                          ^",
@@ -486,6 +486,23 @@ public class BinderErrorTest {
           "<>:3: error: could not resolve java.util.NoSuch", //
           "  java.util.NoSuch<List> xs;",
           "  ^",
+        },
+      },
+      {
+        {
+          "package p;", //
+          "import java.util.List.NoSuchAnno;",
+          "@NoSuchAnno",
+          "public class Test {",
+          "}",
+        },
+        {
+          "<>:2: error: symbol not found java.util.List$NoSuchAnno",
+          "import java.util.List.NoSuchAnno;",
+          "                      ^",
+          "<>:3: error: could not resolve NoSuchAnno",
+          "@NoSuchAnno",
+          " ^",
         },
       },
     };

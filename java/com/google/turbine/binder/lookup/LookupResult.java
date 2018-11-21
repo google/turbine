@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder.lookup;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.Immutable;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -45,7 +47,7 @@ public class LookupResult {
   private final ImmutableList<Tree.Ident> remaining;
 
   public LookupResult(Symbol sym, LookupKey remaining) {
-    this.sym = sym;
+    this.sym = requireNonNull(sym);
     this.remaining = remaining.hasNext() ? remaining.rest().simpleNames() : ImmutableList.of();
   }
 }

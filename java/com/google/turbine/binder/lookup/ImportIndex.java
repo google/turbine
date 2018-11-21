@@ -105,7 +105,10 @@ public class ImportIndex implements ImportScope {
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (Tree.Ident bit : result.remaining()) {
-      sym = resolveNext(log, i.position(), resolve, sym, bit);
+      sym = resolveNext(log, resolve, sym, bit);
+      if (sym == null) {
+        return null;
+      }
     }
     ClassSymbol resolved = sym;
     return new ImportScope() {
@@ -118,14 +121,15 @@ public class ImportIndex implements ImportScope {
 
   private static ClassSymbol resolveNext(
       TurbineLogWithSource log,
-      int position,
       CanonicalSymbolResolver resolve,
       ClassSymbol sym,
       Ident bit) {
     ClassSymbol next = resolve.resolveOne(sym, bit);
     if (next == null) {
       log.error(
-          position, ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(sym.binaryName() + '$' + bit));
+          bit.position(),
+          ErrorKind.SYMBOL_NOT_FOUND,
+          new ClassSymbol(sym.binaryName() + '$' + bit));
     }
     return next;
   }
