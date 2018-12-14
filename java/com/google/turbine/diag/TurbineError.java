@@ -30,6 +30,7 @@ public class TurbineError extends Error {
     UNEXPECTED_EOF("unexpected end of input"),
     UNTERMINATED_STRING("unterminated string literal"),
     UNTERMINATED_CHARACTER_LITERAL("unterminated char literal"),
+    UNTERMINATED_EXPRESSION("unterminated expression, expected ';' not found"),
     EMPTY_CHARACTER_LITERAL("empty char literal"),
     EXPECTED_TOKEN("expected token %s"),
     INVALID_LITERAL("invalid literal: %s"),

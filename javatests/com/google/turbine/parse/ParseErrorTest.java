@@ -202,6 +202,23 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void unterminatedExpr() {
+    String input = "class T { String s = hello + world }";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unterminated expression, expected ';' not found", //
+                  "class T { String s = hello + world }",
+                  "                     ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

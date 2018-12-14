@@ -20,6 +20,7 @@ import static com.google.turbine.parse.Token.COMMA;
 import static com.google.turbine.parse.Token.INTERFACE;
 import static com.google.turbine.parse.Token.LPAREN;
 import static com.google.turbine.parse.Token.RPAREN;
+import static com.google.turbine.parse.Token.SEMI;
 import static com.google.turbine.tree.TurbineModifier.PROTECTED;
 import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 
@@ -812,6 +813,7 @@ public class Parser {
     token = initializerParser.token;
 
     boolean first = true;
+    int expressionStart = pos;
     for (List<SavedToken> bit : bits) {
       IteratorLexer lexer = new IteratorLexer(this.lexer.source(), bit.iterator());
       Parser parser = new Parser(lexer);
@@ -823,11 +825,16 @@ public class Parser {
       Type ty = baseTy;
       ty = parser.extraDims(ty);
       // TODO(cushon): skip more fields that are definitely non-const
-      Expression init = new ConstExpressionParser(lexer, lexer.next()).expression();
+      ConstExpressionParser constExpressionParser = new ConstExpressionParser(lexer, lexer.next());
+      expressionStart = lexer.position();
+      Expression init = constExpressionParser.expression();
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
       result.add(new VarDecl(pos, access, annos, ty, name, Optional.ofNullable(init)));
+    }
+    if (token != SEMI) {
+      throw TurbineError.format(lexer.source(), expressionStart, ErrorKind.UNTERMINATED_EXPRESSION);
     }
     eat(Token.SEMI);
     return result.build();
