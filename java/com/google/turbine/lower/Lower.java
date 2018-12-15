@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.AnnotationValue;
-import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
@@ -34,6 +33,7 @@ import com.google.turbine.binder.bound.ModuleInfo.RequireInfo;
 import com.google.turbine.binder.bound.ModuleInfo.UseInfo;
 import com.google.turbine.binder.bound.SourceModuleInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -79,7 +79,6 @@ import com.google.turbine.types.Erasure;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -373,7 +372,7 @@ public class Lower {
 
   private ClassFile.FieldInfo lowerField(FieldInfo f) {
     final String name = f.name();
-    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(Collections.emptyMap());
+    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(ImmutableMap.of());
     String desc = SigWriter.type(sig.signature(Erasure.erase(f.type(), tenv)));
     String signature = sig.fieldSignature(f.type());
 
@@ -543,8 +542,9 @@ public class Lower {
     switch (value.kind()) {
       case CLASS_LITERAL:
         {
-          ClassValue classValue = (ClassValue) value;
-          return new ElementValue.ConstClassValue(SigWriter.type(sig.signature(classValue.type())));
+          TurbineClassValue classValue = (TurbineClassValue) value;
+          return new ElementValue.ConstTurbineClassValue(
+              SigWriter.type(sig.signature(classValue.type())));
         }
       case ENUM_CONSTANT:
         {

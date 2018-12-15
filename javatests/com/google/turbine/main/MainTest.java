@@ -16,6 +16,7 @@
 
 package com.google.turbine.main;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -23,6 +24,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.MoreFiles;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.options.TurbineOptions;
 import java.io.IOException;
@@ -71,14 +73,14 @@ public class MainTest {
               .build());
       fail();
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("error: duplicate declaration of Test");
+      assertThat(e).hasMessageThat().contains("error: duplicate declaration of Test");
     }
   }
 
   @Test
   public void packageInfo() throws IOException {
     Path src = temporaryFolder.newFile("package-info.jar").toPath();
-    Files.write(src, "@Deprecated package test;".getBytes(UTF_8));
+    MoreFiles.asCharSink(src, UTF_8).write("@Deprecated package test;");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
@@ -130,7 +132,7 @@ public class MainTest {
 
   @Test
   public void moduleInfos() throws IOException {
-    if (Double.parseDouble(System.getProperty("java.class.version")) < 53) {
+    if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
       // only run on JDK 9 and later
       return;
     }
@@ -144,7 +146,7 @@ public class MainTest {
     }
 
     Path src = temporaryFolder.newFile("module-info.java").toPath();
-    Files.write(src, "module baz {}".getBytes(UTF_8));
+    MoreFiles.asCharSink(src, UTF_8).write("module baz {}");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
@@ -166,7 +168,7 @@ public class MainTest {
   @Test
   public void testManifest() throws IOException {
     Path src = temporaryFolder.newFile("Foo.java").toPath();
-    Files.write(src, "class Foo {}".getBytes(UTF_8));
+    MoreFiles.asCharSink(src, UTF_8).write("class Foo {}");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
@@ -195,7 +197,7 @@ public class MainTest {
   public void emptyBootClassPath() throws IOException {
     Path src = temporaryFolder.newFolder().toPath().resolve("java/lang/Object.java");
     Files.createDirectories(src.getParent());
-    Files.write(src, "package java.lang; public class Object {}".getBytes(UTF_8));
+    MoreFiles.asCharSink(src, UTF_8).write("package java.lang; public class Object {}");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
@@ -214,7 +216,7 @@ public class MainTest {
   @Test
   public void emptyBootClassPath_noJavaLang() throws IOException {
     Path src = temporaryFolder.newFile("Test.java").toPath();
-    Files.write(src, "public class Test {}".getBytes(UTF_8));
+    MoreFiles.asCharSink(src, UTF_8).write("public class Test {}");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
@@ -233,7 +235,7 @@ public class MainTest {
   @Test
   public void usage() throws IOException {
     Path src = temporaryFolder.newFile("Test.java").toPath();
-    Files.write(src, "public class Test {}".getBytes(UTF_8));
+    MoreFiles.asCharSink(src, UTF_8).write("public class Test {}");
 
     try {
       Main.compile(optionsWithBootclasspath().addSources(ImmutableList.of(src.toString())).build());

@@ -431,7 +431,7 @@ public class LowerTest {
               }
             },
             0);
-    assertThat((acc[0] & Opcodes.ACC_DEPRECATED) == Opcodes.ACC_DEPRECATED).isTrue();
+    assertThat((acc[0] & Opcodes.ACC_DEPRECATED)).isEqualTo(Opcodes.ACC_DEPRECATED);
   }
 
   @Test
@@ -635,8 +635,8 @@ public class LowerTest {
               }
             },
             0);
-    assertThat((testAccess[0] & TurbineFlag.ACC_PUBLIC) == TurbineFlag.ACC_PUBLIC).isTrue();
-    assertThat((testAccess[0] & TurbineFlag.ACC_PROTECTED) == TurbineFlag.ACC_PROTECTED).isFalse();
+    assertThat((testAccess[0] & TurbineFlag.ACC_PUBLIC)).isEqualTo(TurbineFlag.ACC_PUBLIC);
+    assertThat((testAccess[0] & TurbineFlag.ACC_PROTECTED)).isNotEqualTo(TurbineFlag.ACC_PROTECTED);
   }
 
   static String lines(String... lines) {

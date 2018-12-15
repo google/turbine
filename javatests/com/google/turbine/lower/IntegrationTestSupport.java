@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toList;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.MoreFiles;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.google.turbine.binder.Binder;
@@ -344,14 +345,14 @@ public class IntegrationTestSupport {
     if (annos == null) {
       return;
     }
-    annos.stream().forEach(a -> collectTypesFromAnnotation(types, a));
+    annos.forEach(a -> collectTypesFromAnnotation(types, a));
   }
 
   private static void addTypesInAnnotations(Set<String> types, List<AnnotationNode> annos) {
     if (annos == null) {
       return;
     }
-    annos.stream().forEach(a -> collectTypesFromAnnotation(types, a));
+    annos.forEach(a -> collectTypesFromAnnotation(types, a));
   }
 
   private static void collectTypesFromAnnotation(Set<String> types, AnnotationNode a) {
@@ -476,7 +477,7 @@ public class IntegrationTestSupport {
       if (path.getParent() != null) {
         Files.createDirectories(path.getParent());
       }
-      Files.write(path, entry.getValue().getBytes(UTF_8));
+      MoreFiles.asCharSink(path, UTF_8).write(entry.getValue());
       inputs.add(path);
     }
 

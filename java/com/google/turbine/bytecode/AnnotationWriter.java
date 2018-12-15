@@ -22,7 +22,7 @@ import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.AnnotationValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
-import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
@@ -65,7 +65,7 @@ public class AnnotationWriter {
         writeEnumElementValue((EnumConstValue) value);
         break;
       case CLASS:
-        writeClassElementValue((ConstClassValue) value);
+        writeClassElementValue((ConstTurbineClassValue) value);
         break;
       case ARRAY:
         writeArrayElementValue((ArrayValue) value);
@@ -123,7 +123,7 @@ public class AnnotationWriter {
     output.writeShort(pool.utf8(value.constName()));
   }
 
-  private void writeClassElementValue(ConstClassValue value) {
+  private void writeClassElementValue(ConstTurbineClassValue value) {
     output.writeByte('c');
     output.writeShort(pool.utf8(value.className()));
   }

@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
@@ -34,7 +35,7 @@ import org.junit.runners.JUnit4;
 public class JimageClassBinderTest {
   @Test
   public void testDefaultJimage() throws IOException {
-    if (Double.parseDouble(System.getProperty("java.class.version")) < 53) {
+    if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
       // only run on JDK 9 and later
       return;
     }

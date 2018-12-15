@@ -22,8 +22,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.AnnotationValue;
-import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -166,7 +166,7 @@ public strictfp class ConstEvaluator {
 
   /** Evaluates a class literal. */
   Const evalClassLiteral(ClassLiteral t) {
-    return new ClassValue(evalClassLiteralType(t.type()));
+    return new TurbineClassValue(evalClassLiteralType(t.type()));
   }
 
   private Type evalClassLiteralType(Tree.Type type) {

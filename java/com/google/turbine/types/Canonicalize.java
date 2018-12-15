@@ -157,7 +157,7 @@ public class Canonicalize {
   private Collection<ClassTy.SimpleClassTy> lexicalBase(ClassSymbol first, ClassSymbol owner) {
 
     if ((getInfo(first).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
-      return Collections.emptyList();
+      return ImmutableList.of();
     }
     ClassSymbol canonOwner = getInfo(first).owner();
     Deque<ClassTy.SimpleClassTy> result = new ArrayDeque<>();

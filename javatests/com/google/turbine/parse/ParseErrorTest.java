@@ -40,7 +40,7 @@ public class ParseErrorTest {
       parser.expression();
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("invalid literal");
+      assertThat(e).hasMessageThat().contains("invalid literal");
     }
   }
 
@@ -54,7 +54,7 @@ public class ParseErrorTest {
       parser.expression();
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("invalid literal");
+      assertThat(e).hasMessageThat().contains("invalid literal");
     }
   }
 
@@ -65,7 +65,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: unexpected token: void",
@@ -81,7 +82,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: unexpected identifier 'clas'", //
@@ -97,7 +99,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:2: error: unexpected end of input", //
@@ -113,7 +116,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: invalid annotation argument", //
@@ -129,7 +133,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: unexpected end of input", //
@@ -145,7 +150,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: unexpected end of input", //
@@ -161,7 +167,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: unterminated string literal", //
@@ -177,7 +184,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: empty char literal", //
@@ -193,7 +201,8 @@ public class ParseErrorTest {
       Parser.parse(input);
       fail("expected parsing to fail");
     } catch (TurbineError e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .isEqualTo(
               lines(
                   "<>:1: error: unterminated char literal", //

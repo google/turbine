@@ -26,7 +26,6 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -522,13 +521,13 @@ public class BinderErrorTest {
     try {
       Binder.bind(
               ImmutableList.of(parseLines(source)),
-              ClassPathBinder.bindClasspath(Collections.emptyList()),
+              ClassPathBinder.bindClasspath(ImmutableList.of()),
               TURBINE_BOOTCLASSPATH,
               /* moduleVersion=*/ Optional.empty())
           .units();
       fail(Joiner.on('\n').join(source));
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).isEqualTo(lines(expected));
+      assertThat(e).hasMessageThat().isEqualTo(lines(expected));
     }
   }
 

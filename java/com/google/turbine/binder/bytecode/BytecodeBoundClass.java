@@ -37,7 +37,7 @@ import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
-import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.Kind;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
@@ -530,7 +530,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     ElementValue val = annotation.elementValuePairs().get("value");
     switch (val.kind()) {
       case CLASS:
-        String className = ((ConstClassValue) val).className();
+        String className = ((ConstTurbineClassValue) val).className();
         return new ClassSymbol(className.substring(1, className.length() - 1));
       default:
         break;

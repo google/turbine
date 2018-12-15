@@ -22,7 +22,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.AnnotationValue;
-import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
@@ -34,7 +34,6 @@ import com.google.turbine.bytecode.ClassFile.ModuleInfo.RequireInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.UseInfo;
 import com.google.turbine.model.Const;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -101,7 +100,7 @@ public class ClassReader {
     List<ClassFile.MethodInfo> methodinfos = readMethods(constantPool);
 
     String signature = null;
-    List<ClassFile.InnerClass> innerclasses = Collections.emptyList();
+    List<ClassFile.InnerClass> innerclasses = ImmutableList.of();
     ImmutableList.Builder<ClassFile.AnnotationInfo> annotations = ImmutableList.builder();
     ClassFile.ModuleInfo module = null;
     int attributesCount = reader.u2();
@@ -346,7 +345,7 @@ public class ClassReader {
         {
           int classInfoIndex = reader.u2();
           String className = constantPool.utf8(classInfoIndex);
-          return new ConstClassValue(className);
+          return new ConstTurbineClassValue(className);
         }
       case '@':
         return new AnnotationValue(readAnnotation(constantPool));

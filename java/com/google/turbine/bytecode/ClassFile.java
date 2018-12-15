@@ -448,11 +448,11 @@ public class ClassFile {
       }
 
       /** A constant class literal value. */
-      class ConstClassValue implements ElementValue {
+      class ConstTurbineClassValue implements ElementValue {
 
         private final String className;
 
-        public ConstClassValue(String className) {
+        public ConstTurbineClassValue(String className) {
           this.className = className;
         }
 

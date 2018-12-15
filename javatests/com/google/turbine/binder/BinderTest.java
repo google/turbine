@@ -37,7 +37,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,7 +75,7 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
                 units,
-                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion=*/ Optional.empty())
             .units();
@@ -122,7 +121,7 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
                 units,
-                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion=*/ Optional.empty())
             .units();
@@ -162,7 +161,7 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
                 units,
-                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion=*/ Optional.empty())
             .units();
@@ -192,12 +191,12 @@ public class BinderTest {
     try {
       Binder.bind(
           units,
-          ClassPathBinder.bindClasspath(Collections.emptyList()),
+          ClassPathBinder.bindClasspath(ImmutableList.of()),
           TURBINE_BOOTCLASSPATH,
           /* moduleVersion=*/ Optional.empty());
       fail();
     } catch (TurbineError e) {
-      assertThat(e.getMessage()).contains("cycle in class hierarchy: a.A -> b.B -> a.A");
+      assertThat(e).hasMessageThat().contains("cycle in class hierarchy: a.A -> b.B -> a.A");
     }
   }
 
@@ -213,7 +212,7 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
                 units,
-                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion=*/ Optional.empty())
             .units();
@@ -242,7 +241,7 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
                 units,
-                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion=*/ Optional.empty())
             .units();
@@ -306,7 +305,7 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
                 units,
-                ClassPathBinder.bindClasspath(Collections.emptyList()),
+                ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion=*/ Optional.empty())
             .units();

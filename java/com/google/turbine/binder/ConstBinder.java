@@ -20,9 +20,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.AnnotationMetadata;
-import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -215,7 +215,7 @@ public class ConstBinder {
     if (value.kind() != Kind.CLASS_LITERAL) {
       return null;
     }
-    Type type = ((ClassValue) value).type();
+    Type type = ((TurbineClassValue) value).type();
     if (type.tyKind() != TyKind.CLASS_TY) {
       return null;
     }

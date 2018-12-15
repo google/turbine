@@ -21,11 +21,11 @@ import com.google.turbine.type.Type;
 import java.util.Objects;
 
 /** A class literal constant. */
-public class ClassValue extends Const {
+public class TurbineClassValue extends Const {
 
   private final Type type;
 
-  public ClassValue(Type type) {
+  public TurbineClassValue(Type type) {
     this.type = type;
   }
 
@@ -46,11 +46,11 @@ public class ClassValue extends Const {
 
   @Override
   public int hashCode() {
-    return Objects.hash(type);
+    return Objects.hashCode(type);
   }
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof ClassValue && type().equals(((ClassValue) obj).type());
+    return obj instanceof TurbineClassValue && type().equals(((TurbineClassValue) obj).type());
   }
 }

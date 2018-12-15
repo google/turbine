@@ -16,6 +16,7 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -61,7 +62,7 @@ public class ModuleIntegrationTest {
 
   @Test
   public void test() throws Exception {
-    if (Double.parseDouble(System.getProperty("java.class.version")) < 53) {
+    if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
       // only run on JDK 9 and later
       return;
     }
@@ -97,7 +98,7 @@ public class ModuleIntegrationTest {
         IntegrationTestSupport.runTurbine(
             input.sources,
             classpathJar,
-            Double.parseDouble(System.getProperty("java.class.version")) < 54
+            Double.parseDouble(JAVA_CLASS_VERSION.value()) < 54
                 ? JimageClassBinder.bindDefault()
                 : CtSymClassBinder.bind("9"),
             Optional.of("42"));

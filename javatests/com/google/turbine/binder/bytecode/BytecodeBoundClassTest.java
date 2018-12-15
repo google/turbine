@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.google.turbine.binder.bound.ClassValue;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -110,9 +110,9 @@ public class BytecodeBoundClassTest {
     BytecodeBoundClass c = getBytecodeBoundClass(VoidAnno.class);
 
     assertThat(c.methods()).hasSize(2);
-    assertThat(((ClassValue) c.methods().get(0).defaultValue()).type().tyKind())
+    assertThat(((TurbineClassValue) c.methods().get(0).defaultValue()).type().tyKind())
         .isEqualTo(Type.TyKind.VOID_TY);
-    assertThat(((ClassValue) c.methods().get(1).defaultValue()).type().tyKind())
+    assertThat(((TurbineClassValue) c.methods().get(1).defaultValue()).type().tyKind())
         .isEqualTo(Type.TyKind.ARRAY_TY);
   }
 

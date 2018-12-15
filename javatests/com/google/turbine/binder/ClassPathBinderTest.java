@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.MoreFiles;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -43,7 +44,6 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type.ClassTy;
 import java.io.IOError;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.Rule;
 import org.junit.Test;
@@ -85,7 +85,7 @@ public class ClassPathBinderTest {
         .isEqualTo(TurbineTyKind.ANNOTATION);
 
     c = env.get(new ClassSymbol("java/util/ArrayList"));
-    assertThat((c.access() & TurbineFlag.ACC_PUBLIC) == TurbineFlag.ACC_PUBLIC).isTrue();
+    assertThat((c.access() & TurbineFlag.ACC_PUBLIC)).isEqualTo(TurbineFlag.ACC_PUBLIC);
     assertThat(c.superclass()).isEqualTo(new ClassSymbol("java/util/AbstractList"));
     assertThat(c.interfaces()).contains(new ClassSymbol("java/util/List"));
     assertThat(c.owner()).isNull();
@@ -143,7 +143,8 @@ public class ClassPathBinderTest {
       c.owner();
       fail();
     } catch (VerifyException e) {
-      assertThat(e.getMessage())
+      assertThat(e)
+          .hasMessageThat()
           .contains("expected class data for java/util/List, saw java/util/ArrayList instead");
     }
   }
@@ -151,13 +152,13 @@ public class ClassPathBinderTest {
   @Test
   public void nonJarFile() throws Exception {
     Path lib = temporaryFolder.newFile("NOT_A_JAR").toPath();
-    Files.write(lib, "hello".getBytes(UTF_8));
+    MoreFiles.asCharSink(lib, UTF_8).write("hello");
 
     try {
       ClassPathBinder.bindClasspath(ImmutableList.of(lib));
       fail();
     } catch (IOException e) {
-      assertThat(e.getMessage()).contains("NOT_A_JAR");
+      assertThat(e).hasMessageThat().contains("NOT_A_JAR");
     }
   }
 }

@@ -19,9 +19,9 @@ package com.google.turbine.binder.bytecode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.AnnotationValue;
-import com.google.turbine.binder.bound.ClassValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -29,7 +29,7 @@ import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
-import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstClassValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassReader;
@@ -118,9 +118,9 @@ public class BytecodeBinder {
       case ARRAY:
         return bindArrayValue(type, (ArrayValue) value);
       case CLASS:
-        return new ClassValue(
+        return new TurbineClassValue(
             bindTy(
-                new SigParser(((ConstClassValue) value).className()).parseType(),
+                new SigParser(((ConstTurbineClassValue) value).className()).parseType(),
                 x -> {
                   throw new IllegalStateException(x);
                 }));

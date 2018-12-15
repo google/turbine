@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -42,7 +44,7 @@ public class CtSymClassBinder {
 
   @Nullable
   public static ClassPath bind(String version) throws IOException {
-    Path javaHome = Paths.get(System.getProperty("java.home"));
+    Path javaHome = Paths.get(JAVA_HOME.value());
     Path ctSym = javaHome.resolve("lib/ct.sym");
     if (!Files.exists(ctSym)) {
       throw new IllegalStateException("lib/ct.sym does not exist in " + javaHome);

@@ -16,10 +16,12 @@
 
 package com.google.turbine.main;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
+import com.google.common.io.MoreFiles;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
@@ -145,7 +147,7 @@ public class Main {
 
     if (options.release().isPresent()) {
       String release = options.release().get();
-      if (release.equals(System.getProperty("java.specification.version"))) {
+      if (release.equals(JAVA_SPECIFICATION_VERSION.value())) {
         // if --release matches the host JDK, use its jimage instead of ct.sym
         return JimageClassBinder.bindDefault();
       }
@@ -172,7 +174,7 @@ public class Main {
     ImmutableList.Builder<CompUnit> units = ImmutableList.builder();
     for (String source : options.sources()) {
       Path path = Paths.get(source);
-      units.add(Parser.parse(new SourceFile(source, new String(Files.readAllBytes(path), UTF_8))));
+      units.add(Parser.parse(new SourceFile(source, MoreFiles.asCharSource(path, UTF_8).read())));
     }
     for (String sourceJar : options.sourceJars()) {
       for (Zip.Entry ze : new Zip.ZipIterable(Paths.get(sourceJar))) {

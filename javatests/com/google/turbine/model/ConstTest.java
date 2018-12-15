@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.bound.AnnotationValue;
-import com.google.turbine.binder.bound.ClassValue;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.PrimTy;
@@ -72,14 +72,14 @@ public class ConstTest {
             new AnnotationValue(
                 new ClassSymbol("test/Anno"), ImmutableMap.of("value", new Const.IntValue(4))))
         .addEqualityGroup(
-            new ClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Clazz"))),
-            new ClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Clazz"))))
+            new TurbineClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Clazz"))),
+            new TurbineClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Clazz"))))
         .addEqualityGroup(
-            new ClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Other"))),
-            new ClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Other"))))
+            new TurbineClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Other"))),
+            new TurbineClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Other"))))
         .addEqualityGroup(
-            new ClassValue(PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of())),
-            new ClassValue(PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of())))
+            new TurbineClassValue(PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of())),
+            new TurbineClassValue(PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of())))
         .testEquals();
   }
 }

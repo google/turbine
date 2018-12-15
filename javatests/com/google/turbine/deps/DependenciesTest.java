@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -47,7 +48,6 @@ import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -116,7 +116,7 @@ public class DependenciesTest {
   }
 
   private Map<Path, DepsProto.Dependency.Kind> depsMap(DepsProto.Dependencies deps) {
-    return StreamSupport.stream(deps.getDependencyList().spliterator(), false)
+    return Streams.stream(deps.getDependencyList())
         .collect(Collectors.toMap(d -> Paths.get(d.getPath()), DepsProto.Dependency::getKind));
   }
 
@@ -130,7 +130,7 @@ public class DependenciesTest {
             .addSourceLines("Test.java", "class Test extends A {}")
             .run();
 
-    assertThat(depsMap(deps)).isEqualTo(ImmutableMap.of(liba, DepsProto.Dependency.Kind.EXPLICIT));
+    assertThat(depsMap(deps)).containsExactly(liba, DepsProto.Dependency.Kind.EXPLICIT);
   }
 
   @Test
@@ -156,7 +156,7 @@ public class DependenciesTest {
             .addSourceLines("Test.java", "class Test extends B {}")
             .run();
 
-    assertThat(depsMap(deps)).isEqualTo(ImmutableMap.of(libb, DepsProto.Dependency.Kind.EXPLICIT));
+    assertThat(depsMap(deps)).containsExactly(libb, DepsProto.Dependency.Kind.EXPLICIT);
   }
 
   @Test
@@ -184,10 +184,8 @@ public class DependenciesTest {
                 "}")
             .run();
     assertThat(depsMap(deps))
-        .isEqualTo(
-            ImmutableMap.of(
-                libb, DepsProto.Dependency.Kind.EXPLICIT,
-                liba, DepsProto.Dependency.Kind.EXPLICIT));
+        .containsExactly(
+            libb, DepsProto.Dependency.Kind.EXPLICIT, liba, DepsProto.Dependency.Kind.EXPLICIT);
   }
 
   @Test
@@ -227,11 +225,13 @@ public class DependenciesTest {
                   "class Test extends B {}")
               .run();
       assertThat(depsMap(deps))
-          .isEqualTo(
-              ImmutableMap.of(
-                  libi, DepsProto.Dependency.Kind.EXPLICIT,
-                  libb, DepsProto.Dependency.Kind.EXPLICIT,
-                  liba, DepsProto.Dependency.Kind.EXPLICIT));
+          .containsExactly(
+              libi,
+              DepsProto.Dependency.Kind.EXPLICIT,
+              libb,
+              DepsProto.Dependency.Kind.EXPLICIT,
+              liba,
+              DepsProto.Dependency.Kind.EXPLICIT);
     }
     {
       // partial classpath
@@ -244,10 +244,8 @@ public class DependenciesTest {
                   "class Test extends B {}")
               .run();
       assertThat(depsMap(deps))
-          .isEqualTo(
-              ImmutableMap.of(
-                  libb, DepsProto.Dependency.Kind.EXPLICIT,
-                  liba, DepsProto.Dependency.Kind.EXPLICIT));
+          .containsExactly(
+              libb, DepsProto.Dependency.Kind.EXPLICIT, liba, DepsProto.Dependency.Kind.EXPLICIT);
     }
   }
 
@@ -260,7 +258,7 @@ public class DependenciesTest {
     ImmutableSet<String> directJars = ImmutableSet.of();
     ImmutableList<String> depsArtifacts = ImmutableList.of();
     assertThat(Dependencies.reduceClasspath(classpath, directJars, depsArtifacts))
-        .isEqualTo(classpath);
+        .containsExactlyElementsIn(classpath);
   }
 
   @Test

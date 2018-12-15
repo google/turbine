@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -79,7 +81,7 @@ public class JimageClassBinder {
 
   /** Returns a platform classpath for the given JDK's jimage file. */
   public static ClassPath bind(String javaHome) throws IOException {
-    if (javaHome.equals(System.getProperty("java.home"))) {
+    if (javaHome.equals(JAVA_HOME.value())) {
       return bindDefault();
     }
     FileSystem fileSystem =

@@ -19,6 +19,7 @@ package com.google.turbine.type;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
@@ -100,7 +101,7 @@ public interface Type {
 
     /** The class symbol. */
     public ClassSymbol sym() {
-      return classes().get(classes().size() - 1).sym();
+      return Iterables.getLast(classes()).sym();
     }
 
     @Override
