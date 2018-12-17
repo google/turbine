@@ -108,8 +108,7 @@ public class ModuleIntegrationTest {
 
   private String dump(Map<String, byte[]> map) throws Exception {
     return IntegrationTestSupport.dump(
-        map.entrySet()
-            .stream()
+        map.entrySet().stream()
             .filter(e -> e.getKey().endsWith("module-info"))
             .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
   }

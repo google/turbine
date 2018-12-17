@@ -120,10 +120,7 @@ public class ImportIndex implements ImportScope {
   }
 
   private static ClassSymbol resolveNext(
-      TurbineLogWithSource log,
-      CanonicalSymbolResolver resolve,
-      ClassSymbol sym,
-      Ident bit) {
+      TurbineLogWithSource log, CanonicalSymbolResolver resolve, ClassSymbol sym, Ident bit) {
     ClassSymbol next = resolve.resolveOne(sym, bit);
     if (next == null) {
       log.error(

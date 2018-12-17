@@ -145,17 +145,16 @@ public abstract class AbstractTransitiveTest {
     Path libc = temporaryFolder.newFolder().toPath().resolve("out.jar");
     List<String> sources =
         new SourceBuilder()
-            .addSourceLines(
-                "c/C.java",
-                "package c;",
-                "public class C extends b.B {",
-                "  @Anno(x = 2) static final Inner i; // a.A$Inner ",
-                "  static final int X = CONST; // a.A#CONST",
-                "}")
-            .build()
-            .stream()
-            .map(Path::toString)
-            .collect(toImmutableList());
+                .addSourceLines(
+                    "c/C.java",
+                    "package c;",
+                    "public class C extends b.B {",
+                    "  @Anno(x = 2) static final Inner i; // a.A$Inner ",
+                    "  static final int X = CONST; // a.A#CONST",
+                    "}")
+                .build().stream()
+                .map(Path::toString)
+                .collect(toImmutableList());
     boolean ok =
         Main.compile(
             optionsWithBootclasspath()

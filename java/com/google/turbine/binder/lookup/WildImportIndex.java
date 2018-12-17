@@ -67,9 +67,7 @@ public class WildImportIndex implements ImportScope {
 
   /** Full resolve the type for a non-static on-demand import. */
   private static ImportScope onDemandImport(
-      TopLevelIndex cpi,
-      ImportDecl i,
-      final CanonicalSymbolResolver importResolver) {
+      TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
     ImmutableList.Builder<String> flatNames = ImmutableList.builder();
     for (Tree.Ident ident : i.type()) {
       flatNames.add(ident.value());
@@ -106,9 +104,7 @@ public class WildImportIndex implements ImportScope {
    * deferred).
    */
   private static ImportScope staticOnDemandImport(
-      TopLevelIndex cpi,
-      ImportDecl i,
-      final CanonicalSymbolResolver importResolver) {
+      TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
     LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
       return null;
@@ -141,9 +137,7 @@ public class WildImportIndex implements ImportScope {
   }
 
   static ClassSymbol resolveImportBase(
-      LookupResult result,
-      ResolveFunction resolve,
-      CanonicalSymbolResolver importResolver) {
+      LookupResult result, ResolveFunction resolve, CanonicalSymbolResolver importResolver) {
     ClassSymbol member = (ClassSymbol) result.sym();
     for (Tree.Ident bit : result.remaining()) {
       member = resolve.resolveOne(member, bit);
