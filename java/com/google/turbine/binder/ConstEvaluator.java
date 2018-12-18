@@ -953,6 +953,9 @@ public strictfp class ConstEvaluator {
     for (Ident name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);
     }
+    if (sym == null) {
+      return null;
+    }
     AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, null));
     return new AnnotationValue(annoInfo.sym(), annoInfo.values());
   }

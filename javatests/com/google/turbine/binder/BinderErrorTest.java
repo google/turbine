@@ -504,6 +504,21 @@ public class BinderErrorTest {
           " ^",
         },
       },
+      {
+        {
+          "package p;", //
+          "import java.lang.annotation.Retention;",
+          "import java.lang.annotation.RetentionPolicy;",
+          "@Retention(@RetentionPolicy.RUNTIME)",
+          "public @interface A {",
+          "}",
+        },
+        {
+          "<>:4: error: could not evaluate constant expression",
+          "@Retention(@RetentionPolicy.RUNTIME)",
+          "                                   ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
