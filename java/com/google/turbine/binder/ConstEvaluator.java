@@ -35,6 +35,7 @@ import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -202,6 +203,9 @@ public strictfp class ConstEvaluator {
     LookupResult result = scope.lookup(new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
       throw error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.peekFirst());
+    }
+    if (result.sym().symKind() != Symbol.Kind.CLASS) {
+      throw error(classTy.position(), ErrorKind.UNEXPECTED_TYPE_PARAMETER, flat.peekFirst());
     }
     ClassSymbol classSym = (ClassSymbol) result.sym();
     for (Ident bit : result.remaining()) {

@@ -519,6 +519,22 @@ public class BinderErrorTest {
           "                                   ^",
         },
       },
+      {
+        {
+          "@interface Param {",
+          "  Class<?> type();",
+          "}",
+          "class Foo<T> {",
+          "  @Param(type = T.class)",
+          "  public void bar() {}",
+          "}",
+        },
+        {
+          "<>:5: error: unexpected type parameter T",
+          "  @Param(type = T.class)",
+          "                ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
