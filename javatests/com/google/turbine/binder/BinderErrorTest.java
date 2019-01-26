@@ -514,9 +514,9 @@ public class BinderErrorTest {
           "}",
         },
         {
-          "<>:4: error: could not evaluate constant expression",
+          "<>:4: error: could not resolve RUNTIME",
           "@Retention(@RetentionPolicy.RUNTIME)",
-          "                                   ^",
+          "                            ^",
         },
       },
       {
@@ -535,6 +535,40 @@ public class BinderErrorTest {
           "                ^",
         },
       },
+      {
+        {
+          "class One {",
+          "  @interface A {", //
+          "    B[] b();",
+          "  }",
+          "  @interface B {}",
+          "}",
+          "@One.A(b = {@B})",
+          "class T {}",
+        },
+        {
+          "<>:7: error: could not resolve B", //
+          "@One.A(b = {@B})",
+          "             ^",
+        },
+      },
+      {
+        {
+          "class One {",
+          "  @interface A {", //
+          "    B[] b();",
+          "  }",
+          "  @interface B {}",
+          "}",
+          "@One.A(b = {@One.NoSuch})",
+          "class T {}",
+        },
+        {
+          "<>:7: error: could not resolve NoSuch", //
+          "@One.A(b = {@One.NoSuch})",
+          "                 ^",
+        },
+      }
     };
     return Arrays.asList((Object[][]) testCases);
   }

@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -953,9 +954,16 @@ public strictfp class ConstEvaluator {
 
   private AnnotationValue evalAnno(Tree.Anno t) {
     LookupResult result = scope.lookup(new LookupKey(t.name()));
+    if (result == null) {
+      throw error(
+          t.name().get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on(".").join(t.name()));
+    }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (Ident name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);
+      if (sym == null) {
+        throw error(name.position(), ErrorKind.CANNOT_RESOLVE, name.value());
+      }
     }
     if (sym == null) {
       return null;
