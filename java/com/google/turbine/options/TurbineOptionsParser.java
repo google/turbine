@@ -16,6 +16,7 @@
 
 package com.google.turbine.options;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
@@ -143,6 +144,13 @@ public class TurbineOptionsParser {
     for (String arg : args) {
       if (arg.isEmpty()) {
         continue;
+      }
+      if (arg.charAt(0) == '\'') {
+        // perform best-effort unescaping as a concession to ninja, see:
+        // https://android.googlesource.com/platform/external/ninja/+/6f903faaf5488dc052ffc4e3e0b12757b426e088/src/util.cc#274
+        checkArgument(arg.charAt(arg.length() - 1) == '\'', arg);
+        arg = arg.substring(1, arg.length() - 1);
+        checkArgument(!arg.contains("'"), arg);
       }
       if (arg.startsWith("@@")) {
         argumentDeque.addLast(arg.substring(1));

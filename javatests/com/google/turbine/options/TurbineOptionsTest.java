@@ -330,4 +330,24 @@ public class TurbineOptionsTest {
       assertThat(options.shouldReduceClassPath()).isFalse();
     }
   }
+
+  @Test
+  public void unescape() throws Exception {
+    String[] lines = {
+      "--sources", "Test.java", "'Foo$Bar.java'",
+    };
+    TurbineOptions options =
+        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
+    assertThat(options.sources()).containsExactly("Test.java", "Foo$Bar.java").inOrder();
+  }
+
+  @Test
+  public void invalidUnescape() throws Exception {
+    String[] lines = {"--sources", "'Foo$Bar.java"};
+    try {
+      TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
+      fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
 }
