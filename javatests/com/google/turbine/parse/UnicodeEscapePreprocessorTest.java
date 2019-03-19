@@ -58,14 +58,14 @@ public class UnicodeEscapePreprocessorTest {
       readAll("\\u00");
       fail();
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("unexpected end of input");
+      assertThat(e).hasMessageThat().isEqualTo("unexpected end of input");
     }
 
     try {
       readAll("\\u");
       fail();
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("unexpected end of input");
+      assertThat(e).hasMessageThat().isEqualTo("unexpected end of input");
     }
   }
 

@@ -165,7 +165,7 @@ public class ZipTest {
       actual(path);
       fail();
     } catch (ZipException e) {
-      assertThat(e).hasMessage("zip file comment length was 33, expected 17");
+      assertThat(e).hasMessageThat().isEqualTo("zip file comment length was 33, expected 17");
     }
   }
 }
