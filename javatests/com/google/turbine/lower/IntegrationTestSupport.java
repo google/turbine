@@ -16,7 +16,7 @@
 
 package com.google.turbine.lower;
 
-import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toCollection;
@@ -496,7 +496,7 @@ public class IntegrationTestSupport {
             ImmutableList.of(),
             fileManager.getJavaFileObjectsFromPaths(inputs));
 
-    assertThat(task.call()).named(collector.getDiagnostics().toString()).isTrue();
+    assertWithMessage(collector.getDiagnostics().toString()).that(task.call()).isTrue();
 
     List<Path> classes = new ArrayList<>();
     Files.walkFileTree(

@@ -17,6 +17,7 @@
 package com.google.turbine.bytecode;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -84,7 +85,7 @@ public class ClassWriterTest {
                 /* classes= */ null,
                 fileManager.getJavaFileObjects(path));
 
-    assertThat(task.call()).named(collector.getDiagnostics().toString()).isTrue();
+    assertWithMessage(collector.getDiagnostics().toString()).that(task.call()).isTrue();
 
     byte[] original = Files.readAllBytes(out.resolve("test/Test.class"));
     byte[] actual = ClassWriter.writeClass(ClassReader.read(null, original));
