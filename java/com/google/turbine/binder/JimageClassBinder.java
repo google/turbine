@@ -150,7 +150,7 @@ public class JimageClassBinder {
             String binaryName = modulePath.relativize(path).toString();
             binaryName = binaryName.substring(0, binaryName.length() - ".class".length());
             ClassSymbol sym = new ClassSymbol(binaryName);
-            packageClassesBySimpleName.put(packageName, simpleName(sym), sym);
+            packageClassesBySimpleName.put(packageName, sym.simpleName(), sym);
             JimageClassBinder.this.env.put(
                 sym, new BytecodeBoundClass(sym, toByteArrayOrDie(path), env, path.toString()));
           }
@@ -174,16 +174,6 @@ public class JimageClassBinder {
             }
           }
         });
-  }
-
-  private static String simpleName(ClassSymbol sym) {
-    int idx = sym.binaryName().lastIndexOf('/');
-    return idx != -1 ? sym.binaryName().substring(idx + 1) : sym.binaryName();
-  }
-
-  private static String packageName(ClassSymbol sym) {
-    int idx = sym.binaryName().lastIndexOf('/');
-    return idx != -1 ? sym.binaryName().substring(0, idx) : "";
   }
 
   private class JimageTopLevelIndex implements TopLevelIndex {
@@ -247,7 +237,7 @@ public class JimageClassBinder {
       return new Env<ClassSymbol, BytecodeBoundClass>() {
         @Override
         public BytecodeBoundClass get(ClassSymbol sym) {
-          return initPackage(packageName(sym)) ? env.get(sym) : null;
+          return initPackage(sym.packageName()) ? env.get(sym) : null;
         }
       };
     }

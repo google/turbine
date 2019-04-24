@@ -217,13 +217,6 @@ public class Resolve {
   }
 
   private static String packageName(ClassSymbol sym) {
-    if (sym == null) {
-      return null;
-    }
-    int idx = sym.binaryName().lastIndexOf('/');
-    if (idx == -1) {
-      return null;
-    }
-    return sym.binaryName().substring(0, idx);
+    return sym == null ? null : sym.packageName();
   }
 }

@@ -64,4 +64,13 @@ public class ClassSymbol implements Symbol {
   public Kind symKind() {
     return Kind.CLASS;
   }
+
+  public String simpleName() {
+    return binaryName().substring(binaryName().lastIndexOf('/') + 1);
+  }
+
+  public String packageName() {
+    int idx = binaryName().lastIndexOf('/');
+    return idx != -1 ? binaryName().substring(0, idx) : "";
+  }
 }

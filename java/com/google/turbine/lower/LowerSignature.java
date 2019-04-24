@@ -92,17 +92,8 @@ public class LowerSignature {
     while (curr.targs().isEmpty() && it.hasNext()) {
       curr = it.next();
     }
-    String pkg;
-    String name;
-    int idx = curr.sym().binaryName().lastIndexOf('/');
-    if (idx == -1) {
-      pkg = "";
-      name = curr.sym().binaryName();
-    } else {
-      pkg = curr.sym().binaryName().substring(0, idx);
-      name = curr.sym().binaryName().substring(idx + 1);
-    }
-    classes.add(new Sig.SimpleClassTySig(name, tyArgSigs(curr)));
+    String pkg = curr.sym().packageName();
+    classes.add(new Sig.SimpleClassTySig(curr.sym().simpleName(), tyArgSigs(curr)));
     while (it.hasNext()) {
       SimpleClassTy outer = curr;
       curr = it.next();

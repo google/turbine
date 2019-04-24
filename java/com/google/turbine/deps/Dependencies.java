@@ -109,11 +109,11 @@ public class Dependencies {
   private static void addPackageInfos(Set<ClassSymbol> closure, BindingResult bound) {
     Set<ClassSymbol> packages = new LinkedHashSet<>();
     for (ClassSymbol sym : closure) {
-      int idx = sym.binaryName().lastIndexOf('/');
-      if (idx == -1) {
+      String packageName = sym.packageName();
+      if (packageName.isEmpty()) {
         continue;
       }
-      packages.add(new ClassSymbol(sym.binaryName().substring(0, idx) + "/package-info"));
+      packages.add(new ClassSymbol(packageName + "/package-info"));
     }
     for (ClassSymbol pkg : packages) {
       if (bound.classPathEnv().get(pkg) != null) {
