@@ -104,6 +104,7 @@ public class LowerTest {
                                     new ClassSymbol("test/Test$Inner"),
                                     ImmutableList.of(),
                                     ImmutableList.of()))))),
+                /* lowerBound= */ null,
                 ImmutableList.of()));
     int access = TurbineFlag.ACC_SUPER | TurbineFlag.ACC_PUBLIC;
     ImmutableList<SourceTypeBoundClass.MethodInfo> methods =
@@ -132,6 +133,7 @@ public class LowerTest {
                                             new ClassSymbol("java/lang/Runnable"),
                                             ImmutableList.of(),
                                             ImmutableList.of()))))),
+                        /* lowerBound= */ null,
                         ImmutableList.of()),
                     new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
@@ -143,6 +145,7 @@ public class LowerTest {
                                             new ClassSymbol("java/lang/Error"),
                                             ImmutableList.of(),
                                             ImmutableList.of()))))),
+                        /* lowerBound= */ null,
                         ImmutableList.of())),
                 Type.VOID,
                 ImmutableList.of(

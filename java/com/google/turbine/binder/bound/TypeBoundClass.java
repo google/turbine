@@ -28,6 +28,7 @@ import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
 public interface TypeBoundClass extends HeaderBoundClass {
@@ -57,17 +58,29 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
   /** A type parameter declaration. */
   class TyVarInfo {
-    private final IntersectionTy bound;
+    private final IntersectionTy upperBound;
+    @Nullable private final Type lowerBound;
     private final ImmutableList<AnnoInfo> annotations;
 
-    public TyVarInfo(IntersectionTy bound, ImmutableList<AnnoInfo> annotations) {
-      this.bound = bound;
+    public TyVarInfo(
+        IntersectionTy upperBound, @Nullable Type lowerBound, ImmutableList<AnnoInfo> annotations) {
+      this.upperBound = upperBound;
+      if (lowerBound != null) {
+        throw new IllegalArgumentException("TODO(cushon): support lower bounds");
+      }
+      this.lowerBound = lowerBound;
       this.annotations = annotations;
     }
 
-    /** The bound. */
-    public IntersectionTy bound() {
-      return bound;
+    /** The upper bound. */
+    public IntersectionTy upperBound() {
+      return upperBound;
+    }
+
+    /** The lower bound. */
+    @Nullable
+    public Type lowerBound() {
+      return lowerBound;
     }
 
     /** Type parameter declaration annotations. */

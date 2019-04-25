@@ -332,7 +332,8 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     for (Sig.TySig t : sig.interfaceBounds()) {
       bounds.add(BytecodeBinder.bindTy(t, scope));
     }
-    return new TyVarInfo(IntersectionTy.create(bounds.build()), ImmutableList.of());
+    return new TyVarInfo(
+        IntersectionTy.create(bounds.build()), /* lowerBound= */ null, ImmutableList.of());
   }
 
   @Override

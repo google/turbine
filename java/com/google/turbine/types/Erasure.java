@@ -56,7 +56,7 @@ public class Erasure {
   private static Type eraseTyVar(
       TyVar ty, Function<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> tenv) {
     SourceTypeBoundClass.TyVarInfo info = tenv.apply(ty.sym());
-    return erase(info.bound(), tenv);
+    return erase(info.upperBound(), tenv);
   }
 
   private static Type.ArrayTy eraseArrayTy(

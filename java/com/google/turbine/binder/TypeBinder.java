@@ -395,7 +395,10 @@ public class TypeBinder {
         }
       }
       ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, tree.annos());
-      result.put(sym, new TyVarInfo(IntersectionTy.create(bounds.build()), annotations));
+      result.put(
+          sym,
+          new TyVarInfo(
+              IntersectionTy.create(bounds.build()), /* lowerBound= */ null, annotations));
     }
     return result.build();
   }

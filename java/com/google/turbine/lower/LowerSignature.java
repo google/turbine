@@ -275,13 +275,13 @@ public class LowerSignature {
     String identifier = sym.name();
     Sig.TySig cbound = null;
     ImmutableList.Builder<Sig.TySig> ibounds = ImmutableList.builder();
-    if (info.bound().bounds().isEmpty()) {
+    if (info.upperBound().bounds().isEmpty()) {
       cbound =
           new ClassTySig(
               "java/lang", ImmutableList.of(new SimpleClassTySig("Object", ImmutableList.of())));
     } else {
       boolean first = true;
-      for (Type bound : info.bound().bounds()) {
+      for (Type bound : info.upperBound().bounds()) {
         TySig sig = signature(bound);
         if (first) {
           if (!isInterface(bound, env)) {

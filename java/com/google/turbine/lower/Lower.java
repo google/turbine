@@ -675,7 +675,7 @@ public class Lower {
                 info));
       }
       int boundIndex = 0;
-      for (Type i : p.bound().bounds()) {
+      for (Type i : p.upperBound().bounds()) {
         if (boundIndex == 0 && isInterface(i, env)) {
           // super class bound index is always 0; interface bounds start at 1
           boundIndex++;

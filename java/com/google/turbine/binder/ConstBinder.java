@@ -286,7 +286,8 @@ public class ConstBinder {
       result.put(
           entry.getKey(),
           new TyVarInfo(
-              (IntersectionTy) bindType(info.bound()),
+              (IntersectionTy) bindType(info.upperBound()),
+              /* lowerBound= */ null,
               constEvaluator.evaluateAnnotations(info.annotations())));
     }
     return result.build();
