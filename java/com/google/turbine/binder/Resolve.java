@@ -136,7 +136,7 @@ public class Resolve {
           return true;
         case PROTECTED:
         case PACKAGE:
-          return Objects.equals(packageName(sym), packagename);
+          return Objects.equals(sym.packageName(), packagename);
         case PRIVATE:
           return false;
         default:
@@ -206,7 +206,7 @@ public class Resolve {
       case PROTECTED:
         return true;
       case PACKAGE:
-        return Objects.equals(packageName(owner), packageName(origin));
+        return Objects.equals(owner.packageName(), origin.packageName());
       case PRIVATE:
         // Private members of lexically enclosing declarations are not handled,
         // since this visibility check is only used for inherited members.
@@ -214,9 +214,5 @@ public class Resolve {
       default:
         throw new AssertionError(visibility);
     }
-  }
-
-  private static String packageName(ClassSymbol sym) {
-    return sym == null ? null : sym.packageName();
   }
 }
