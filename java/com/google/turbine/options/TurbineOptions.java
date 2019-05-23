@@ -44,6 +44,8 @@ public class TurbineOptions {
   private final boolean help;
   private final ImmutableList<String> javacOpts;
   private final boolean shouldReduceClassPath;
+  private final Optional<String> profile;
+  private final Optional<String> gensrcOutput;
 
   private TurbineOptions(
       @Nullable String output,
@@ -63,7 +65,9 @@ public class TurbineOptions {
       boolean javacFallback,
       boolean help,
       ImmutableList<String> javacOpts,
-      boolean shouldReduceClassPath) {
+      boolean shouldReduceClassPath,
+      @Nullable String profile,
+      @Nullable String gensrcOutput) {
     this.output = Optional.ofNullable(output);
     this.classPath = checkNotNull(classPath, "classPath must not be null");
     this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
@@ -82,6 +86,8 @@ public class TurbineOptions {
     this.help = help;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
     this.shouldReduceClassPath = shouldReduceClassPath;
+    this.profile = Optional.ofNullable(profile);
+    this.gensrcOutput = Optional.ofNullable(gensrcOutput);
   }
 
   /** Paths to the Java source files to compile. */
@@ -190,6 +196,16 @@ public class TurbineOptions {
     return shouldReduceClassPath;
   }
 
+  /** An optional path for profiling output. */
+  public Optional<String> profile() {
+    return profile;
+  }
+
+  /** An optional path for generated source output. */
+  public Optional<String> gensrcOutput() {
+    return gensrcOutput;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -215,6 +231,8 @@ public class TurbineOptions {
     private boolean help = false;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
     private boolean shouldReduceClassPath = true;
+    private @Nullable String profile;
+    private @Nullable String gensrcOutput;
 
     public TurbineOptions build() {
       return new TurbineOptions(
@@ -235,7 +253,9 @@ public class TurbineOptions {
           javacFallback,
           help,
           javacOpts.build(),
-          shouldReduceClassPath);
+          shouldReduceClassPath,
+          profile,
+          gensrcOutput);
     }
 
     public Builder setOutput(String output) {
@@ -330,6 +350,16 @@ public class TurbineOptions {
 
     public Builder addDirectJars(ImmutableList<String> jars) {
       this.directJars.addAll(jars);
+      return this;
+    }
+
+    public Builder setProfile(String profile) {
+      this.profile = profile;
+      return this;
+    }
+
+    public Builder setGensrcOutput(String gensrcOutput) {
+      this.gensrcOutput = gensrcOutput;
       return this;
     }
   }

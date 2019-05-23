@@ -123,6 +123,12 @@ public class TurbineOptionsParser {
         case "--noreduce_classpath":
           builder.setShouldReduceClassPath(false);
           break;
+        case "--profile":
+          builder.setProfile(readOne(argumentDeque));
+          break;
+        case "--gensrc_output":
+          builder.setGensrcOutput(readOne(argumentDeque));
+          break;
         case "--help":
           builder.setHelp(true);
           break;

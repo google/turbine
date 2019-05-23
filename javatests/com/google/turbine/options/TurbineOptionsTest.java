@@ -315,6 +315,17 @@ public class TurbineOptionsTest {
   }
 
   @Test
+  public void miscOutputs() throws Exception {
+    TurbineOptions options =
+        TurbineOptionsParser.parse(
+            Iterables.concat(
+                BASE_ARGS,
+                ImmutableList.of("--gensrc_output", "gensrc.jar", "--profile", "turbine.prof")));
+    assertThat(options.gensrcOutput()).hasValue("gensrc.jar");
+    assertThat(options.profile()).hasValue("turbine.prof");
+  }
+
+  @Test
   public void shouldReduceClasspath() throws Exception {
     {
       TurbineOptions options =
