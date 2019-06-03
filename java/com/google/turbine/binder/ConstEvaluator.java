@@ -162,7 +162,7 @@ public strictfp class ConstEvaluator {
       case ANNO_EXPR:
         return evalAnno(((Tree.AnnoExpr) t).value());
       default:
-        throw new AssertionError(t.kind());
+        throw error(t.position(), ErrorKind.EXPRESSION_ERROR);
     }
   }
 
