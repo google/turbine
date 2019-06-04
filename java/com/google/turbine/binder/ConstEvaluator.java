@@ -22,8 +22,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -952,7 +952,7 @@ public strictfp class ConstEvaluator {
     return info.withValues(ImmutableMap.copyOf(values));
   }
 
-  private AnnotationValue evalAnno(Tree.Anno t) {
+  private TurbineAnnotationValue evalAnno(Tree.Anno t) {
     LookupResult result = scope.lookup(new LookupKey(t.name()));
     if (result == null) {
       throw error(
@@ -969,7 +969,7 @@ public strictfp class ConstEvaluator {
       return null;
     }
     AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, null));
-    return new AnnotationValue(annoInfo.sym(), annoInfo.values());
+    return new TurbineAnnotationValue(annoInfo.sym(), annoInfo.values());
   }
 
   private Const.ArrayInitValue evalArrayInit(ArrayInit t) {

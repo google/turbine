@@ -468,11 +468,11 @@ public class ClassFile {
       }
 
       /** A nested annotation value. */
-      class AnnotationValue implements ElementValue {
+      class ConstTurbineAnnotationValue implements ElementValue {
 
         private final AnnotationInfo annotation;
 
-        public AnnotationValue(AnnotationInfo annotation) {
+        public ConstTurbineAnnotationValue(AnnotationInfo annotation) {
           this.annotation = annotation;
         }
 

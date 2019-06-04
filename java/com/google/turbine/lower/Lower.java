@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
@@ -33,6 +32,7 @@ import com.google.turbine.binder.bound.ModuleInfo.RequireInfo;
 import com.google.turbine.binder.bound.ModuleInfo.UseInfo;
 import com.google.turbine.binder.bound.SourceModuleInfo;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -563,12 +563,12 @@ public class Lower {
         }
       case ANNOTATION:
         {
-          AnnotationValue annotationValue = (AnnotationValue) value;
+          TurbineAnnotationValue annotationValue = (TurbineAnnotationValue) value;
           Boolean visible = isVisible(annotationValue.sym());
           if (visible == null) {
             visible = true;
           }
-          return new ElementValue.AnnotationValue(
+          return new ElementValue.ConstTurbineAnnotationValue(
               new AnnotationInfo(
                   sig.objectType(annotationValue.sym()),
                   visible,

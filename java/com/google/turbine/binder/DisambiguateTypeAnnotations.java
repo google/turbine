@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
-import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -253,7 +253,7 @@ public class DisambiguateTypeAnnotations {
       if (infos.size() > 1) {
         Builder<Const> elements = ImmutableList.builder();
         for (AnnoInfo element : infos) {
-          elements.add(new AnnotationValue(element.sym(), element.values()));
+          elements.add(new TurbineAnnotationValue(element.sym(), element.values()));
         }
         ClassSymbol container = env.get(symbol).annotationMetadata().repeatable();
         if (container == null) {

@@ -18,9 +18,9 @@ package com.google.turbine.binder.bytecode;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.bound.AnnotationValue;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
@@ -125,24 +125,25 @@ public class BytecodeBinder {
                   throw new IllegalStateException(x);
                 }));
       case ANNOTATION:
-        return bindAnnotationValue(type, ((ElementValue.AnnotationValue) value).annotation());
+        return bindAnnotationValue(
+            type, ((ElementValue.ConstTurbineAnnotationValue) value).annotation());
     }
     throw new AssertionError(value.kind());
   }
 
-  static AnnotationValue bindAnnotationValue(Type type, AnnotationInfo value) {
+  static TurbineAnnotationValue bindAnnotationValue(Type type, AnnotationInfo value) {
     ClassSymbol sym = asClassSymbol(value.typeName());
     ImmutableMap.Builder<String, Const> values = ImmutableMap.builder();
     for (Map.Entry<String, ElementValue> e : value.elementValuePairs().entrySet()) {
       values.put(e.getKey(), bindValue(type, e.getValue()));
     }
-    return new AnnotationValue(sym, values.build());
+    return new TurbineAnnotationValue(sym, values.build());
   }
 
   static ImmutableList<AnnoInfo> bindAnnotations(List<AnnotationInfo> input) {
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (AnnotationInfo annotation : input) {
-      AnnotationValue anno = bindAnnotationValue(Type.VOID, annotation);
+      TurbineAnnotationValue anno = bindAnnotationValue(Type.VOID, annotation);
       result.add(new AnnoInfo(null, anno.sym(), null, anno.values()));
     }
     return result.build();

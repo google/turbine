@@ -22,12 +22,12 @@ import com.google.turbine.model.Const;
 import java.util.Objects;
 
 /** An annotation literal constant. */
-public class AnnotationValue extends Const {
+public class TurbineAnnotationValue extends Const {
 
   private final ClassSymbol sym;
   private final ImmutableMap<String, Const> values;
 
-  public AnnotationValue(ClassSymbol sym, ImmutableMap<String, Const> values) {
+  public TurbineAnnotationValue(ClassSymbol sym, ImmutableMap<String, Const> values) {
     this.sym = sym;
     this.values = values;
   }
@@ -59,10 +59,10 @@ public class AnnotationValue extends Const {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof AnnotationValue)) {
+    if (!(obj instanceof TurbineAnnotationValue)) {
       return false;
     }
-    AnnotationValue that = (AnnotationValue) obj;
+    TurbineAnnotationValue that = (TurbineAnnotationValue) obj;
     return sym().equals(that.sym()) && values().equals(that.values());
   }
 }

@@ -19,7 +19,7 @@ package com.google.turbine.model;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.EqualsTester;
-import com.google.turbine.binder.bound.AnnotationValue;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.type.Type.ClassTy;
@@ -62,14 +62,14 @@ public class ConstTest {
             new Const.ArrayInitValue(
                 ImmutableList.of(new Const.IntValue(3), new Const.IntValue(4))))
         .addEqualityGroup(
-            new AnnotationValue(
+            new TurbineAnnotationValue(
                 new ClassSymbol("test/Anno"), ImmutableMap.of("value", new Const.IntValue(3))),
-            new AnnotationValue(
+            new TurbineAnnotationValue(
                 new ClassSymbol("test/Anno"), ImmutableMap.of("value", new Const.IntValue(3))))
         .addEqualityGroup(
-            new AnnotationValue(
+            new TurbineAnnotationValue(
                 new ClassSymbol("test/Anno"), ImmutableMap.of("value", new Const.IntValue(4))),
-            new AnnotationValue(
+            new TurbineAnnotationValue(
                 new ClassSymbol("test/Anno"), ImmutableMap.of("value", new Const.IntValue(4))))
         .addEqualityGroup(
             new TurbineClassValue(ClassTy.asNonParametricClassTy(new ClassSymbol("test/Clazz"))),

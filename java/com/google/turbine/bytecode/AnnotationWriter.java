@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
-import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.AnnotationValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineAnnotationValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
@@ -71,7 +71,7 @@ public class AnnotationWriter {
         writeArrayElementValue((ArrayValue) value);
         break;
       case ANNOTATION:
-        writeAnnotationElementValue((AnnotationValue) value);
+        writeAnnotationElementValue((ConstTurbineAnnotationValue) value);
         break;
       default:
         throw new AssertionError(value.kind());
@@ -136,7 +136,7 @@ public class AnnotationWriter {
     }
   }
 
-  private void writeAnnotationElementValue(AnnotationValue value) {
+  private void writeAnnotationElementValue(ConstTurbineAnnotationValue value) {
     output.writeByte('@');
     writeAnnotation(value.annotation());
   }

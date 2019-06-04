@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
-import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.AnnotationValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineAnnotationValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
@@ -348,7 +348,7 @@ public class ClassReader {
           return new ConstTurbineClassValue(className);
         }
       case '@':
-        return new AnnotationValue(readAnnotation(constantPool));
+        return new ConstTurbineAnnotationValue(readAnnotation(constantPool));
       case '[':
         {
           int numValues = reader.u2();
