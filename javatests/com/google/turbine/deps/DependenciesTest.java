@@ -22,7 +22,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -116,7 +115,7 @@ public class DependenciesTest {
   }
 
   private Map<Path, DepsProto.Dependency.Kind> depsMap(DepsProto.Dependencies deps) {
-    return Streams.stream(deps.getDependencyList())
+    return deps.getDependencyList().stream()
         .collect(Collectors.toMap(d -> Paths.get(d.getPath()), DepsProto.Dependency::getKind));
   }
 
