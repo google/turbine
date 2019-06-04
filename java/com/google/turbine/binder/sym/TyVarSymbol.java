@@ -62,6 +62,6 @@ public class TyVarSymbol implements Symbol {
 
   @Override
   public String toString() {
-    return owner + "#" + name;
+    return name;
   }
 }
