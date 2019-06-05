@@ -415,12 +415,14 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
     int idx = 0;
     for (Sig.TySig tySig : sig.params()) {
-      String name = null;
+      String name;
       int access = 0;
       if (idx < m.parameters().size()) {
         ParameterInfo paramInfo = m.parameters().get(idx);
         name = paramInfo.name();
         access = paramInfo.access();
+      } else {
+        name = "arg" + idx;
       }
       ImmutableList<AnnoInfo> annotations =
           (idx < m.parameterAnnotations().size())

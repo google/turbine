@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder.bound;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.FieldSymbol;
@@ -251,7 +253,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
     public ParamInfo(Type type, String name, ImmutableList<AnnoInfo> annotations, int access) {
       this.type = type;
-      this.name = name;
+      this.name = requireNonNull(name);
       this.access = access;
       this.annotations = annotations;
     }
