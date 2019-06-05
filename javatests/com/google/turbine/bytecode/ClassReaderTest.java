@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.ModuleVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -152,7 +153,8 @@ public class ClassReaderTest {
         "<X:Ljava/lang/Object;>Ljava/lang/Object;",
         "java/lang/Object",
         null);
-    cw.visitField(Opcodes.ACC_PUBLIC, "x", "I", null, null);
+    FieldVisitor fv = cw.visitField(Opcodes.ACC_PUBLIC, "x", "I", null, null);
+    fv.visitAnnotation("Ljava/lang/Deprecated;", true);
     cw.visitField(
         Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC,
         "y",
@@ -173,7 +175,9 @@ public class ClassReaderTest {
     assertThat(x.descriptor()).isEqualTo("I");
     assertThat(x.signature()).isNull();
     assertThat(x.value()).isNull();
-    assertThat(x.annotations()).isEmpty();
+    assertThat(x.annotations()).hasSize(1);
+    ClassFile.AnnotationInfo annotation = Iterables.getOnlyElement(x.annotations());
+    assertThat(annotation.typeName()).isEqualTo("Ljava/lang/Deprecated;");
 
     ClassFile.FieldInfo y = classFile.fields().get(1);
     assertThat(y.access())
@@ -182,12 +186,13 @@ public class ClassReaderTest {
     assertThat(y.descriptor()).isEqualTo("I");
     assertThat(y.value().constantTypeKind()).isEqualTo(TurbineConstantTypeKind.INT);
     assertThat(((Const.IntValue) y.value()).value()).isEqualTo(42);
+    assertThat(y.annotations()).isEmpty();
 
     ClassFile.FieldInfo z = classFile.fields().get(2);
     assertThat(z.name()).isEqualTo("z");
     assertThat(z.descriptor()).isEqualTo("Ljava/util/List;");
-    // don't bother reading signatures for fields; we only care about constants
-    assertThat(z.signature()).isNull();
+    assertThat(z.signature()).isEqualTo("Ljava/util/List<TX;>;");
+    assertThat(z.annotations()).isEmpty();
   }
 
   @Test

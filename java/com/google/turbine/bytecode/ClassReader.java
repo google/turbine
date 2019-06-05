@@ -454,12 +454,21 @@ public class ClassReader {
       String desc = constantPool.utf8(descriptorIndex);
       int attributesCount = reader.u2();
       Const.Value value = null;
+      ImmutableList.Builder<ClassFile.AnnotationInfo> annotations = ImmutableList.builder();
+      String signature = null;
       for (int j = 0; j < attributesCount; j++) {
         String attributeName = constantPool.utf8(reader.u2());
         switch (attributeName) {
           case "ConstantValue":
             reader.u4(); // length
             value = constantPool.constant(reader.u2());
+            break;
+          case "RuntimeInvisibleAnnotations":
+          case "RuntimeVisibleAnnotations":
+            readAnnotations(annotations, constantPool);
+            break;
+          case "Signature":
+            signature = readSignature(constantPool);
             break;
           default:
             reader.skip(reader.u4());
@@ -471,10 +480,10 @@ public class ClassReader {
               accessFlags,
               name,
               desc,
-              /*signature*/ null,
+              signature,
               value,
-              ImmutableList.of(),
-              ImmutableList.of()));
+              annotations.build(),
+              /* typeAnnotations= */ ImmutableList.of()));
     }
     return fields;
   }
