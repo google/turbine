@@ -16,6 +16,8 @@
 
 package com.google.turbine.type;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -24,6 +26,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.Expression;
+import java.util.Map;
 import java.util.Objects;
 
 /** An annotation use. */
@@ -82,5 +85,28 @@ public class AnnoInfo {
     }
     AnnoInfo that = (AnnoInfo) obj;
     return sym.equals(that.sym) && values.equals(that.values);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append('@').append(sym.binaryName().replace('/', '.').replace('$', '.'));
+    boolean first = true;
+    if (values != null && !values.isEmpty()) {
+      sb.append('(');
+      if (values.size() == 1 && values.containsKey("value")) {
+        sb.append(getOnlyElement(values.values()));
+      } else {
+        for (Map.Entry<String, Const> e : values.entrySet()) {
+          if (!first) {
+            sb.append(", ");
+          }
+          sb.append(e.getKey()).append('=').append(e.getValue());
+          first = false;
+        }
+      }
+      sb.append(')');
+    }
+    return sb.toString();
   }
 }

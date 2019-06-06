@@ -253,7 +253,7 @@ public class DisambiguateTypeAnnotations {
       if (infos.size() > 1) {
         Builder<Const> elements = ImmutableList.builder();
         for (AnnoInfo element : infos) {
-          elements.add(new TurbineAnnotationValue(element.sym(), element.values()));
+          elements.add(new TurbineAnnotationValue(element));
         }
         ClassSymbol container = env.get(symbol).annotationMetadata().repeatable();
         if (container == null) {

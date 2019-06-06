@@ -969,7 +969,7 @@ public strictfp class ConstEvaluator {
       return null;
     }
     AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, null));
-    return new TurbineAnnotationValue(annoInfo.sym(), annoInfo.values());
+    return new TurbineAnnotationValue(annoInfo);
   }
 
   private Const.ArrayInitValue evalArrayInit(ArrayInit t) {

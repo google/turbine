@@ -46,4 +46,9 @@ public class EnumConstantValue extends Const {
   public boolean equals(Object obj) {
     return obj instanceof EnumConstantValue && sym().equals(((EnumConstantValue) obj).sym());
   }
+
+  @Override
+  public String toString() {
+    return sym.toString();
+  }
 }

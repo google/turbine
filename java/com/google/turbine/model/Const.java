@@ -31,6 +31,9 @@ public abstract class Const {
   @Override
   public abstract boolean equals(Object obj);
 
+  @Override
+  public abstract String toString();
+
   /** The constant kind. */
   public abstract Kind kind();
 
@@ -296,7 +299,30 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return "'" + value + "'";
+      return '\'' + escape(value) + '\'';
+    }
+
+    private static String escape(char value) {
+      switch (value) {
+        case '\b':
+          return "\\b";
+        case '\f':
+          return "\\f";
+        case '\n':
+          return "\\n";
+        case '\r':
+          return "\\r";
+        case '\t':
+          return "\\t";
+        case '"':
+          return "\\\"";
+        case '\\':
+          return "\\b";
+        case '\'':
+          return "\\'";
+        default:
+          return String.valueOf(value);
+      }
     }
 
     @Override
