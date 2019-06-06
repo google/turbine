@@ -149,8 +149,6 @@ public class VariableInitializerParser {
             case START:
             case TYPE:
               break OUTER;
-            default:
-              break;
           }
           save();
           next();
@@ -162,8 +160,6 @@ public class VariableInitializerParser {
             case START:
             case TYPE:
               commas.add(tokens.size());
-              break;
-            default:
               break;
           }
           break;

@@ -66,9 +66,8 @@ public class ConstantPool {
         // "In retrospect, making 8-byte constants take two constant pool entries
         // was a poor choice." -- JVMS 4.4.5
         return 2;
-      default:
-        throw new AssertionError(kind);
     }
+    throw new AssertionError(kind);
   }
 
   /** A constant pool entry. */

@@ -102,5 +102,6 @@ public class SigRegressionTest {
 
     input = "LA<[-[Z>.I;";
     sig = new SigParser(input).parseClassSig();
+    assertThat(SigWriter.classSig(sig)).isEqualTo(input);
   }
 }

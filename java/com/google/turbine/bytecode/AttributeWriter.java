@@ -87,8 +87,6 @@ public class AttributeWriter {
       case MODULE:
         writeModule((Attribute.Module) attribute);
         break;
-      default:
-        throw new AssertionError(attribute.kind());
     }
   }
 

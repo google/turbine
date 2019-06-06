@@ -317,7 +317,7 @@ public abstract class Const {
         case '"':
           return "\\\"";
         case '\\':
-          return "\\b";
+          return "\\\\";
         case '\'':
           return "\\'";
         default:

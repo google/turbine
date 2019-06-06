@@ -73,8 +73,6 @@ public class AnnotationWriter {
       case ANNOTATION:
         writeAnnotationElementValue((ConstTurbineAnnotationValue) value);
         break;
-      default:
-        throw new AssertionError(value.kind());
     }
   }
 
@@ -178,8 +176,6 @@ public class AnnotationWriter {
         output.writeByte(typeParameterBoundTarget.typeParameterIndex());
         output.writeByte(typeParameterBoundTarget.boundIndex());
         break;
-      default:
-        throw new AssertionError(target.kind());
     }
   }
 }

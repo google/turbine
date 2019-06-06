@@ -17,7 +17,6 @@
 package com.google.turbine.deps;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
@@ -65,7 +64,7 @@ public class Transitive {
    */
   public static ClassFile trimClass(ClassFile cf) {
     // drop non-constant fields
-    Builder<FieldInfo> fields = ImmutableList.builder();
+    ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : cf.fields()) {
       if (f.value() != null) {
         fields.add(f);
@@ -75,7 +74,7 @@ public class Transitive {
     // To do this for javac, we would have to scan all remaining signatures and preserve attributes
     // for reachable inner classes, but turbine only needs the attributes for the immediate
     // children or parent of the current class.
-    Builder<InnerClass> innerClasses = ImmutableList.builder();
+    ImmutableList.Builder<InnerClass> innerClasses = ImmutableList.builder();
     for (InnerClass i : cf.innerClasses()) {
       if (i.innerClass().equals(cf.name()) || i.outerClass().equals(cf.name())) {
         innerClasses.add(i);

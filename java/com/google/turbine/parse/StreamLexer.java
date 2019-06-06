@@ -111,6 +111,7 @@ public class StreamLexer implements Lexer {
                       }
                       eat();
                       break;
+                    default: // fall out
                   }
                 }
               case '*':
@@ -512,6 +513,7 @@ public class StreamLexer implements Lexer {
         eat();
         signedInteger();
         break;
+      default: // fall out
     }
     return floatTypeSuffix();
   }
@@ -526,6 +528,7 @@ public class StreamLexer implements Lexer {
         eat();
         signedInteger();
         break;
+      default: // fall out
     }
     return floatTypeSuffix();
   }

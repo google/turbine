@@ -368,7 +368,7 @@ public class ClassFile {
     public interface ElementValue {
 
       /** The value kind. */
-      Kind kind();
+      ElementValue.Kind kind();
 
       /** Element value kinds. */
       enum Kind {
@@ -391,8 +391,8 @@ public class ClassFile {
         }
 
         @Override
-        public Kind kind() {
-          return Kind.ENUM;
+        public ElementValue.Kind kind() {
+          return ElementValue.Kind.ENUM;
         }
 
         /** The type of the enum. */
@@ -417,8 +417,8 @@ public class ClassFile {
         }
 
         @Override
-        public Kind kind() {
-          return Kind.CONST;
+        public ElementValue.Kind kind() {
+          return ElementValue.Kind.CONST;
         }
 
         /** The constant value. */
@@ -437,8 +437,8 @@ public class ClassFile {
         }
 
         @Override
-        public Kind kind() {
-          return Kind.ARRAY;
+        public ElementValue.Kind kind() {
+          return ElementValue.Kind.ARRAY;
         }
 
         /** The elements of the array. */
@@ -457,8 +457,8 @@ public class ClassFile {
         }
 
         @Override
-        public Kind kind() {
-          return Kind.CLASS;
+        public ElementValue.Kind kind() {
+          return ElementValue.Kind.CLASS;
         }
 
         /** The class name. */
@@ -477,8 +477,8 @@ public class ClassFile {
         }
 
         @Override
-        public Kind kind() {
-          return Kind.ANNOTATION;
+        public ElementValue.Kind kind() {
+          return ElementValue.Kind.ANNOTATION;
         }
 
         /** The annotation. */
@@ -566,7 +566,7 @@ public class ClassFile {
       }
 
       /** Returns the target info kind. */
-      public abstract Kind kind();
+      public abstract Target.Kind kind();
     }
 
     /** A JVMS 4.7.20.1 type_parameter_target. */
@@ -582,8 +582,8 @@ public class ClassFile {
       }
 
       @Override
-      public Kind kind() {
-        return Kind.TYPE_PARAMETER;
+      public Target.Kind kind() {
+        return Target.Kind.TYPE_PARAMETER;
       }
     }
 
@@ -596,8 +596,8 @@ public class ClassFile {
       }
 
       @Override
-      public Kind kind() {
-        return Kind.SUPERTYPE;
+      public Target.Kind kind() {
+        return Target.Kind.SUPERTYPE;
       }
 
       public int index() {
@@ -616,8 +616,8 @@ public class ClassFile {
       }
 
       @Override
-      public Kind kind() {
-        return Kind.TYPE_PARAMETER_BOUND;
+      public Target.Kind kind() {
+        return Target.Kind.TYPE_PARAMETER_BOUND;
       }
 
       public int typeParameterIndex() {
@@ -633,8 +633,8 @@ public class ClassFile {
     public static final Target EMPTY_TARGET =
         new Target() {
           @Override
-          public Kind kind() {
-            return Kind.EMPTY;
+          public Target.Kind kind() {
+            return Target.Kind.EMPTY;
           }
         };
 
@@ -647,8 +647,8 @@ public class ClassFile {
       }
 
       @Override
-      public Kind kind() {
-        return Kind.FORMAL_PARAMETER;
+      public Target.Kind kind() {
+        return Target.Kind.FORMAL_PARAMETER;
       }
 
       public int index() {
@@ -665,8 +665,8 @@ public class ClassFile {
       }
 
       @Override
-      public Kind kind() {
-        return Kind.THROWS;
+      public Target.Kind kind() {
+        return Target.Kind.THROWS;
       }
 
       public int index() {
@@ -689,22 +689,22 @@ public class ClassFile {
 
       /** Adds an array type_path_kind entry. */
       public TypePath array() {
-        return new TypePath(Kind.ARRAY, this);
+        return new TypePath(TypePath.Kind.ARRAY, this);
       }
 
       /** Adds a nested type type_path_kind entry. */
       public TypePath nested() {
-        return new TypePath(Kind.NESTED, this);
+        return new TypePath(TypePath.Kind.NESTED, this);
       }
 
       /** Adds a wildcard bound type_path_kind entry. */
       public TypePath wild() {
-        return new TypePath(Kind.WILDCARD_BOUND, this);
+        return new TypePath(TypePath.Kind.WILDCARD_BOUND, this);
       }
 
       /** Adds a type argument type_path_kind entry. */
       public TypePath typeArgument(int idx) {
-        return new TypePath(idx, Kind.TYPE_ARGUMENT, this);
+        return new TypePath(idx, TypePath.Kind.TYPE_ARGUMENT, this);
       }
 
       /** A type_path_kind. */
@@ -722,15 +722,15 @@ public class ClassFile {
       }
 
       private final TypePath parent;
-      private final Kind kind;
+      private final TypePath.Kind kind;
       private final int index;
 
-      private TypePath(Kind kind, TypePath parent) {
+      private TypePath(TypePath.Kind kind, TypePath parent) {
         // JVMS 4.7.20.2: type_argument_index is 0 if the bound kind is not TYPE_ARGUMENT
         this(0, kind, parent);
       }
 
-      private TypePath(int index, Kind kind, TypePath parent) {
+      private TypePath(int index, TypePath.Kind kind, TypePath parent) {
         this.index = index;
         this.kind = kind;
         this.parent = parent;

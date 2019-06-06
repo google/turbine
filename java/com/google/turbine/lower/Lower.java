@@ -21,7 +21,6 @@ import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeate
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.EnumConstantValue;
@@ -525,9 +524,8 @@ public class Lower {
         return true;
       case SOURCE:
         return null;
-      default:
-        throw new AssertionError(retention);
     }
+    throw new AssertionError(retention);
   }
 
   private ImmutableMap<String, ElementValue> annotationValues(ImmutableMap<String, Const> values) {
@@ -576,9 +574,8 @@ public class Lower {
         }
       case PRIMITIVE:
         return new ElementValue.ConstValue((Const.Value) value);
-      default:
-        throw new AssertionError(value.kind());
     }
+    throw new AssertionError(value.kind());
   }
 
   /** Lower type annotations in a class declaration's signature. */
@@ -656,7 +653,7 @@ public class Lower {
    * or on bounds.
    */
   private void typeParameterAnnotations(
-      Builder<TypeAnnotationInfo> result,
+      ImmutableList.Builder<TypeAnnotationInfo> result,
       Iterable<TyVarInfo> typeParameters,
       TargetType targetType,
       TargetType boundTargetType) {
@@ -696,7 +693,10 @@ public class Lower {
   }
 
   private void lowerTypeAnnotations(
-      Builder<TypeAnnotationInfo> result, Type type, TargetType targetType, Target target) {
+      ImmutableList.Builder<TypeAnnotationInfo> result,
+      Type type,
+      TargetType targetType,
+      Target target) {
     new LowerTypeAnnotations(result, targetType, target)
         .lowerTypeAnnotations(type, TypePath.root());
   }
@@ -707,7 +707,7 @@ public class Lower {
     private final Target target;
 
     public LowerTypeAnnotations(
-        Builder<TypeAnnotationInfo> result, TargetType targetType, Target target) {
+        ImmutableList.Builder<TypeAnnotationInfo> result, TargetType targetType, Target target) {
       this.result = result;
       this.targetType = targetType;
       this.target = target;
@@ -764,8 +764,6 @@ public class Lower {
           lowerTypeAnnotations(type.annotations(), path);
           lowerTypeAnnotations(type.bound(), path.wild());
           break;
-        default:
-          throw new AssertionError(type.boundKind());
       }
     }
 

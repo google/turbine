@@ -20,7 +20,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -151,7 +150,7 @@ public class DisambiguateTypeAnnotations {
       TurbineElementType declarationTarget,
       Type type,
       ImmutableList<AnnoInfo> annotations,
-      Builder<AnnoInfo> declarationAnnotations) {
+      ImmutableList.Builder<AnnoInfo> declarationAnnotations) {
     // desugar @Repeatable annotations before disambiguating: annotation containers may target
     // a subset of the types targeted by their element annotation
     annotations = groupRepeated(env, annotations);
@@ -246,12 +245,12 @@ public class DisambiguateTypeAnnotations {
     for (AnnoInfo anno : annotations) {
       repeated.put(anno.sym(), anno);
     }
-    Builder<AnnoInfo> result = ImmutableList.builder();
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (Map.Entry<ClassSymbol, Collection<AnnoInfo>> entry : repeated.asMap().entrySet()) {
       ClassSymbol symbol = entry.getKey();
       Collection<AnnoInfo> infos = entry.getValue();
       if (infos.size() > 1) {
-        Builder<Const> elements = ImmutableList.builder();
+        ImmutableList.Builder<Const> elements = ImmutableList.builder();
         for (AnnoInfo element : infos) {
           elements.add(new TurbineAnnotationValue(element));
         }

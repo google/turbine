@@ -81,9 +81,8 @@ public class BytecodeBinder {
       case UPPER:
         return Type.WildUpperBoundedTy.create(
             bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
-      default:
-        throw new AssertionError(sig.boundKind());
     }
+    throw new AssertionError(sig.boundKind());
   }
 
   static Type bindTy(Sig.TySig sig, Function<String, TyVarSymbol> scope) {
@@ -100,9 +99,8 @@ public class BytecodeBinder {
         return wildTy((WildTySig) sig, scope);
       case VOID_TY_SIG:
         return Type.VOID;
-      default:
-        throw new AssertionError(sig.kind());
     }
+    throw new AssertionError(sig.kind());
   }
 
   private static Type bindArrayTy(Sig.ArrayTySig arrayTySig, Function<String, TyVarSymbol> scope) {

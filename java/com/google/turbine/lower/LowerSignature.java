@@ -119,9 +119,8 @@ public class LowerSignature {
         return new UpperBoundTySig(signature(((Type.WildUpperBoundedTy) ty).bound()));
       case LOWER:
         return new LowerBoundTySig(signature(((Type.WildLowerBoundedTy) ty).bound()));
-      default:
-        throw new AssertionError(ty.boundKind());
     }
+    throw new AssertionError(ty.boundKind());
   }
 
   /**

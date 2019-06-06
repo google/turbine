@@ -153,8 +153,6 @@ public class Dependencies {
           case INCOMPLETE:
           case UNUSED:
             break;
-          default:
-            throw new AssertionError(dep.getKind());
         }
       }
     }

@@ -314,9 +314,8 @@ public class Canonicalize {
       case LOWER:
         return Type.WildLowerBoundedTy.create(
             instantiate(mapping, type.bound()), type.annotations());
-      default:
-        throw new AssertionError(type.boundKind());
     }
+    throw new AssertionError(type.boundKind());
   }
 
   private Type instantiateClassTy(Map<TyVarSymbol, Type> mapping, ClassTy type) {

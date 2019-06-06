@@ -139,9 +139,8 @@ public strictfp class ConstEvaluator {
             case SHORT:
             case BYTE:
             case NULL:
-            default:
-              throw new AssertionError(a.constantTypeKind());
           }
+          throw new AssertionError(a.constantTypeKind());
         }
       case VOID_TY:
         throw new AssertionError(t.kind());

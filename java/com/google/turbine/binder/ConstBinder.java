@@ -319,9 +319,8 @@ public class ConstBinder {
               return WildLowerBoundedTy.create(
                   bindType(wildTy.bound()),
                   constEvaluator.evaluateAnnotations(wildTy.annotations()));
-            default:
-              throw new AssertionError(wildTy.boundKind());
           }
+          throw new AssertionError(wildTy.boundKind());
         }
       case PRIM_TY:
       case VOID_TY:

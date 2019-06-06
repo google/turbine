@@ -110,8 +110,6 @@ public class ClassWriter {
         case UTF8:
           output.writeUTF(((StringValue) value).value());
           break;
-        default:
-          throw new AssertionError(e.kind());
       }
     }
   }

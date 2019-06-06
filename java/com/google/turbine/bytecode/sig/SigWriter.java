@@ -113,8 +113,6 @@ public class SigWriter {
         sb.append('+');
         writeTySig(((UpperBoundTySig) sig).bound());
         break;
-      default:
-        throw new AssertionError(sig.kind());
     }
   }
 
@@ -198,8 +196,6 @@ public class SigWriter {
       case WILD_TY_SIG:
         wildTyArgSig((WildTySig) p);
         break;
-      default:
-        throw new AssertionError(p.kind());
     }
   }
 

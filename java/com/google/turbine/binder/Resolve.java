@@ -139,9 +139,8 @@ public class Resolve {
           return Objects.equals(sym.packageName(), packagename);
         case PRIVATE:
           return false;
-        default:
-          throw new AssertionError(visibility);
       }
+      throw new AssertionError(visibility);
     }
   }
 
@@ -211,8 +210,7 @@ public class Resolve {
         // Private members of lexically enclosing declarations are not handled,
         // since this visibility check is only used for inherited members.
         return owner.equals(origin);
-      default:
-        throw new AssertionError(visibility);
     }
+    throw new AssertionError(visibility);
   }
 }

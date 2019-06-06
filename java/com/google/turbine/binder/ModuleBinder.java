@@ -130,8 +130,6 @@ public class ModuleBinder {
         case PROVIDES:
           provides.add(bindProvides((ModProvides) directive));
           break;
-        default:
-          throw new AssertionError(directive.kind());
       }
     }
     if (!requiresJavaBase) {
