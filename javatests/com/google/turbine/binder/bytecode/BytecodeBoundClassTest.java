@@ -23,9 +23,11 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -114,6 +116,21 @@ public class BytecodeBoundClassTest {
         .isEqualTo(Type.TyKind.VOID_TY);
     assertThat(((TurbineClassValue) c.methods().get(1).defaultValue()).type().tyKind())
         .isEqualTo(Type.TyKind.ARRAY_TY);
+  }
+
+  static class HasField {
+    @Deprecated List<String> foo;
+  }
+
+  @Test
+  public void fieldTypes() {
+    FieldInfo f =
+        getBytecodeBoundClass(HasField.class).fields().stream()
+            .filter(x -> x.name().equals("foo"))
+            .collect(onlyElement());
+
+    assertThat(Iterables.getLast(((ClassTy) f.type()).classes()).targs()).hasSize(1);
+    assertThat(f.annotations()).hasSize(1);
   }
 
   private static byte[] toByteArrayOrDie(InputStream is) {

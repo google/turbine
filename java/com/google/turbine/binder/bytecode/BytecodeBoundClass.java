@@ -351,14 +351,17 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
                 FieldSymbol fieldSym = new FieldSymbol(sym, cfi.name());
                 Type type =
                     BytecodeBinder.bindTy(
-                        new SigParser(cfi.descriptor()).parseType(),
+                        new SigParser(firstNonNull(cfi.signature(), cfi.descriptor())).parseType(),
                         makeScope(env, sym, ImmutableMap.of()));
                 int access = cfi.access();
                 Const.Value value = cfi.value();
                 if (value != null) {
                   value = BytecodeBinder.bindConstValue(type, value);
                 }
-                fields.add(new FieldInfo(fieldSym, type, access, ImmutableList.of(), null, value));
+                ImmutableList<AnnoInfo> annotations =
+                    BytecodeBinder.bindAnnotations(cfi.annotations());
+                fields.add(
+                    new FieldInfo(fieldSym, type, access, annotations, /* decl= */ null, value));
               }
               return fields.build();
             }
