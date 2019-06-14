@@ -1,0 +1,12 @@
+=== T.java ===
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+
+import java.lang.annotation.Target;
+
+abstract class T {
+  @Target({PARAMETER, TYPE_USE})
+  @interface A {}
+
+  void f(boolean a, @A String b, Object @A... xs) {}
+}

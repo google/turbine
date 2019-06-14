@@ -23,7 +23,9 @@ import static com.google.turbine.parse.Token.RPAREN;
 import static com.google.turbine.parse.Token.SEMI;
 import static com.google.turbine.tree.TurbineModifier.PROTECTED;
 import static com.google.turbine.tree.TurbineModifier.PUBLIC;
+import static com.google.turbine.tree.TurbineModifier.VARARGS;
 
+import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -962,14 +964,28 @@ public class Parser {
   private VarDecl formalParam() {
     ImmutableList.Builder<Anno> annos = ImmutableList.builder();
     EnumSet<TurbineModifier> access = modifiersAndAnnotations(annos);
-    Type ty = referenceType(ImmutableList.of());
+    Type ty = referenceTypeWithoutDims(ImmutableList.of());
     ImmutableList<Anno> typeAnnos = maybeAnnos();
-    if (maybe(Token.ELLIPSIS)) {
-      access.add(TurbineModifier.VARARGS);
-      ty = new ArrTy(position, typeAnnos, ty);
-    } else {
-      ty = maybeDims(typeAnnos, ty);
+    OUTER:
+    while (true) {
+      switch (token) {
+        case LBRACK:
+          next();
+          eat(Token.RBRACK);
+          ty = new ArrTy(position, typeAnnos, ty);
+          typeAnnos = maybeAnnos();
+          break;
+        case ELLIPSIS:
+          next();
+          access.add(VARARGS);
+          ty = new ArrTy(position, typeAnnos, ty);
+          typeAnnos = ImmutableList.of();
+          break OUTER;
+        default:
+          break OUTER;
+      }
     }
+    Verify.verify(typeAnnos.isEmpty());
     // the parameter name is `this` for receiver parameters, and a qualified this expression
     // for inner classes
     Ident name = identOrThis();
@@ -1166,49 +1182,42 @@ public class Parser {
     return acc.build();
   }
 
-  private Type referenceType(ImmutableList<Anno> typeAnnos) {
-    Type ty;
+  private Type referenceTypeWithoutDims(ImmutableList<Anno> typeAnnos) {
     switch (token) {
       case IDENT:
-        ty = classty(null, typeAnnos);
-        break;
+        return classty(null, typeAnnos);
       case BOOLEAN:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.BOOLEAN);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.BOOLEAN);
       case BYTE:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.BYTE);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.BYTE);
       case SHORT:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.SHORT);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.SHORT);
       case INT:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.INT);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.INT);
       case LONG:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.LONG);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.LONG);
       case CHAR:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.CHAR);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.CHAR);
       case DOUBLE:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.DOUBLE);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.DOUBLE);
       case FLOAT:
         next();
-        ty = new PrimTy(position, typeAnnos, TurbineConstantTypeKind.FLOAT);
-        break;
+        return new PrimTy(position, typeAnnos, TurbineConstantTypeKind.FLOAT);
       default:
         throw error(token);
     }
-    ty = maybeDims(maybeAnnos(), ty);
-    return ty;
+  }
+
+  private Type referenceType(ImmutableList<Anno> typeAnnos) {
+    Type ty = referenceTypeWithoutDims(typeAnnos);
+    return maybeDims(maybeAnnos(), ty);
   }
 
   private Type maybeDims(ImmutableList<Anno> typeAnnos, Type ty) {
