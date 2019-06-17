@@ -1,0 +1,16 @@
+%%% A.java %%%
+import static java.lang.annotation.ElementType.TYPE_PARAMETER;
+
+import java.lang.annotation.Target;
+
+@interface A {
+
+  @Target(TYPE_PARAMETER)
+  @interface I {
+  }
+}
+
+=== T.java ===
+abstract class T<@A.I X> {
+
+}

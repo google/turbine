@@ -309,6 +309,7 @@ public class LowerIntegrationTest {
       "static_final_boxed.test",
       "anno_void.test",
       "tyanno_varargs.test",
+      "tyanno_inner.test",
     };
     List<Object[]> tests =
         ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
