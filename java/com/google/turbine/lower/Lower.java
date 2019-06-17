@@ -263,9 +263,9 @@ public class Lower {
 
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(info.annotations());
 
-    ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(info.source(), sym, info);
-
     ImmutableList<TypeAnnotationInfo> typeAnnotations = classTypeAnnotations(info);
+
+    ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(info.source(), sym, info);
 
     ClassFile classfile =
         new ClassFile(
