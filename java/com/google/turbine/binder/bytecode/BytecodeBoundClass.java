@@ -441,7 +441,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     }
 
     Const defaultValue =
-        m.defaultValue() != null ? BytecodeBinder.bindValue(ret, m.defaultValue()) : null;
+        m.defaultValue() != null ? BytecodeBinder.bindValue(m.defaultValue()) : null;
 
     ImmutableList<AnnoInfo> annotations = BytecodeBinder.bindAnnotations(m.annotations());
 
