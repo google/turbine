@@ -19,6 +19,7 @@ package com.google.turbine.bytecode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.FormatMethod;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineAnnotationValue;
@@ -59,6 +60,7 @@ public class ClassReader {
     this.reader = new ByteReader(bytes, 0);
   }
 
+  @FormatMethod
   @CheckReturnValue
   Error error(String format, Object... args) {
     StringBuilder sb = new StringBuilder();
@@ -72,7 +74,7 @@ public class ClassReader {
   private ClassFile read() {
     int magic = reader.u4();
     if (magic != 0xcafebabe) {
-      throw error("bad magic: 0x%x", path, magic);
+      throw error("bad magic: 0x%x", magic);
     }
     int minorVersion = reader.u2();
     int majorVersion = reader.u2();
@@ -321,17 +323,22 @@ public class ClassReader {
     int tag = reader.u1();
     switch (tag) {
       case 'B':
+        return new ConstValue(readConst(constantPool).asByte());
       case 'C':
+        return new ConstValue(readConst(constantPool).asChar());
+      case 'S':
+        return new ConstValue(readConst(constantPool).asShort());
       case 'D':
       case 'F':
       case 'I':
       case 'J':
-      case 'S':
-      case 'Z':
       case 's':
+        return new ConstValue(readConst(constantPool));
+      case 'Z':
         {
-          int constValueIndex = reader.u2();
-          return new ConstValue(constantPool.constant(constValueIndex));
+          Const.Value value = readConst(constantPool);
+          // boolean constants are encoded as integers
+          return new ConstValue(new Const.BooleanValue(value.asInteger().value() != 0));
         }
       case 'e':
         {
@@ -361,6 +368,11 @@ public class ClassReader {
       default: // fall out
     }
     throw new AssertionError(String.format("bad tag value %c", tag));
+  }
+
+  private Const.Value readConst(ConstantPoolReader constantPool) {
+    int constValueIndex = reader.u2();
+    return constantPool.constant(constValueIndex);
   }
 
   /** Reads JVMS 4.6 method_infos. */
