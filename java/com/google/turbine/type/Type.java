@@ -16,7 +16,10 @@
 
 package com.google.turbine.type;
 
+import static com.google.common.collect.Iterables.getLast;
+
 import com.google.auto.value.AutoValue;
+import com.google.auto.value.extension.memoized.Memoized;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -62,6 +65,11 @@ public interface Type {
         public TyKind tyKind() {
           return TyKind.VOID_TY;
         }
+
+        @Override
+        public final String toString() {
+          return "void";
+        }
       };
 
   /** A class type. */
@@ -101,7 +109,7 @@ public interface Type {
 
     /** The class symbol. */
     public ClassSymbol sym() {
-      return Iterables.getLast(classes()).sym();
+      return getLast(classes()).sym();
     }
 
     @Override
@@ -109,11 +117,15 @@ public interface Type {
       StringBuilder sb = new StringBuilder();
       boolean first = true;
       for (SimpleClassTy c : classes()) {
+        for (AnnoInfo anno : c.annos()) {
+          sb.append(anno);
+          sb.append(' ');
+        }
         if (!first) {
           sb.append('.');
           sb.append(c.sym().binaryName().substring(c.sym().binaryName().lastIndexOf('$') + 1));
         } else {
-          sb.append(c.sym().binaryName());
+          sb.append(c.sym().binaryName().replace('/', '.').replace('$', '.'));
         }
         if (!c.targs().isEmpty()) {
           sb.append('<');
@@ -142,6 +154,46 @@ public interface Type {
 
       /** The type annotations. */
       public abstract ImmutableList<AnnoInfo> annos();
+
+      @Memoized
+      @Override
+      public abstract int hashCode();
+    }
+
+    @Memoized
+    @Override
+    public int hashCode() {
+      return Iterables.getLast(classes()).hashCode();
+    }
+
+    @Override
+    public final boolean equals(Object obj) {
+      if (!(obj instanceof ClassTy)) {
+        return false;
+      }
+      ClassTy that = (ClassTy) obj;
+      int i = this.classes().size() - 1;
+      int j = that.classes().size() - 1;
+      for (; i >= 0 && j >= 0; i--, j--) {
+        if (!this.classes().get(i).equals(that.classes().get(j))) {
+          return false;
+        }
+      }
+      // don't rely on canonical form for simple class names
+      if (hasTargs(this.classes(), i) || hasTargs(that.classes(), j)) {
+        return false;
+      }
+      return true;
+    }
+
+    private static boolean hasTargs(ImmutableList<SimpleClassTy> classes, int idx) {
+      for (; idx >= 0; idx--) {
+        SimpleClassTy simple = classes.get(idx);
+        if (!simple.targs().isEmpty() || !simple.annos().isEmpty()) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 
@@ -163,6 +215,22 @@ public interface Type {
 
     /** The type annotations. */
     public abstract ImmutableList<AnnoInfo> annos();
+
+    @Override
+    public final String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (AnnoInfo anno : annos()) {
+        sb.append(anno);
+        sb.append(' ');
+      }
+      sb.append(elementType());
+      sb.append("[]");
+      return sb.toString();
+    }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** A type variable. */
@@ -183,11 +251,21 @@ public interface Type {
 
     @Override
     public final String toString() {
-      return sym().owner() + "#" + sym().name();
+      StringBuilder sb = new StringBuilder();
+      for (AnnoInfo anno : annos()) {
+        sb.append(anno);
+        sb.append(' ');
+      }
+      sb.append(sym().name());
+      return sb.toString();
     }
 
     /** The type annotations. */
     public abstract ImmutableList<AnnoInfo> annos();
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** A primitive type. */
@@ -208,6 +286,21 @@ public interface Type {
 
     /** The type annotations. */
     public abstract ImmutableList<AnnoInfo> annos();
+
+    @Override
+    public final String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (AnnoInfo anno : annos()) {
+        sb.append(anno);
+        sb.append(' ');
+      }
+      sb.append(primkind());
+      return sb.toString();
+    }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** A wildcard type, valid only inside (possibly nested) type arguments. */
@@ -248,6 +341,22 @@ public interface Type {
     public BoundKind boundKind() {
       return BoundKind.UPPER;
     }
+
+    @Override
+    public final String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (AnnoInfo anno : annotations()) {
+        sb.append(anno);
+        sb.append(' ');
+      }
+      sb.append("? extends ");
+      sb.append(bound());
+      return sb.toString();
+    }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** An lower-bounded wildcard type. */
@@ -266,6 +375,22 @@ public interface Type {
     public BoundKind boundKind() {
       return BoundKind.LOWER;
     }
+
+    @Override
+    public final String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (AnnoInfo anno : annotations()) {
+        sb.append(anno);
+        sb.append(' ');
+      }
+      sb.append("? super ");
+      sb.append(bound());
+      return sb.toString();
+    }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** An unbounded wildcard type. */
@@ -285,6 +410,21 @@ public interface Type {
     public Type bound() {
       throw new IllegalStateException();
     }
+
+    @Override
+    public final String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (AnnoInfo anno : annotations()) {
+        sb.append(anno);
+        sb.append(' ');
+      }
+      sb.append('?');
+      return sb.toString();
+    }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** An intersection type. */
@@ -301,6 +441,10 @@ public interface Type {
     public TyKind tyKind() {
       return TyKind.INTERSECTION_TY;
     }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** An error type. */

@@ -83,7 +83,7 @@ public class LowerSignatureTest {
     assertThat(SigWriter.type(new LowerSignature().signature(type)))
         .isEqualTo("Ltest/Outer<Ljava/lang/Object;>.Inner<Ljava/lang/Object;>;");
     // Type#toString is only for debugging
-    assertThat(type.toString()).isEqualTo("test/Outer<java/lang/Object>.Inner<java/lang/Object>");
+    assertThat(type.toString()).isEqualTo("test.Outer<java.lang.Object>.Inner<java.lang.Object>");
   }
 
   @Test
