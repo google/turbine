@@ -147,8 +147,8 @@ public class CanonicalTypeBinder {
       ClassSymbol sym,
       ParamInfo base) {
     return new ParamInfo(
+        base.sym(),
         Canonicalize.canonicalize(source, position, env, sym, base.type()),
-        base.name(),
         base.annotations(),
         base.access());
   }
