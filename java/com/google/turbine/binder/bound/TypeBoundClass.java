@@ -16,12 +16,12 @@
 
 package com.google.turbine.binder.bound;
 
-import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
@@ -246,16 +246,21 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
   /** A formal parameter declaration. */
   class ParamInfo {
+    private final ParamSymbol sym;
     private final Type type;
-    private final String name;
     private final int access;
     private final ImmutableList<AnnoInfo> annotations;
 
-    public ParamInfo(Type type, String name, ImmutableList<AnnoInfo> annotations, int access) {
+    public ParamInfo(ParamSymbol sym, Type type, ImmutableList<AnnoInfo> annotations, int access) {
+      this.sym = sym;
       this.type = type;
-      this.name = requireNonNull(name);
       this.access = access;
       this.annotations = annotations;
+    }
+
+    /** The parameter's symbol. */
+    public ParamSymbol sym() {
+      return sym;
     }
 
     /** The parameter type. */
@@ -278,7 +283,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
     /** The parameter's name. */
     public String name() {
-      return name;
+      return sym.name();
     }
 
     /** The parameter's modifiers. */

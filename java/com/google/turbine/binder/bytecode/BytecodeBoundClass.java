@@ -32,6 +32,7 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
@@ -378,15 +379,16 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
             @Override
             public ImmutableList<MethodInfo> get() {
               ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
+              int idx = 0;
               for (ClassFile.MethodInfo m : classFile.get().methods()) {
-                methods.add(bindMethod(m));
+                methods.add(bindMethod(idx++, m));
               }
               return methods.build();
             }
           });
 
-  private MethodInfo bindMethod(ClassFile.MethodInfo m) {
-    MethodSymbol methodSymbol = new MethodSymbol(sym, m.name());
+  private MethodInfo bindMethod(int methodIdx, ClassFile.MethodInfo m) {
+    MethodSymbol methodSymbol = new MethodSymbol(methodIdx, sym, m.name());
     Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
 
     ImmutableMap<String, TyVarSymbol> tyParams;
@@ -431,7 +433,12 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
           (idx < m.parameterAnnotations().size())
               ? BytecodeBinder.bindAnnotations(m.parameterAnnotations().get(idx))
               : ImmutableList.of();
-      formals.add(new ParamInfo(BytecodeBinder.bindTy(tySig, scope), name, annotations, access));
+      formals.add(
+          new ParamInfo(
+              new ParamSymbol(methodSymbol, name),
+              BytecodeBinder.bindTy(tySig, scope),
+              annotations,
+              access));
       idx++;
     }
 

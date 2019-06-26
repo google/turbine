@@ -19,32 +19,30 @@ package com.google.turbine.binder.sym;
 import com.google.errorprone.annotations.Immutable;
 import java.util.Objects;
 
-/** A method symbol. */
+/** A parameter symbol. */
 @Immutable
-public class MethodSymbol implements Symbol {
-  /**
-   * The index of the method in its enclosing element. Used to implement equals and hashCode, since
-   * methods aren't uniquely identified by their name and owner.
-   */
-  private final int idx;
-
-  private final ClassSymbol owner;
+public class ParamSymbol implements Symbol {
+  private final MethodSymbol owner;
   private final String name;
 
-  public MethodSymbol(int idx, ClassSymbol owner, String name) {
-    this.idx = idx;
+  public ParamSymbol(MethodSymbol owner, String name) {
     this.owner = owner;
     this.name = name;
   }
 
   /** The enclosing class. */
-  public ClassSymbol owner() {
+  public MethodSymbol owner() {
     return owner;
   }
 
-  /** The method name. */
+  /** The parameter name. */
   public String name() {
     return name;
+  }
+
+  @Override
+  public Kind symKind() {
+    return Kind.PARAMETER;
   }
 
   @Override
@@ -53,21 +51,16 @@ public class MethodSymbol implements Symbol {
   }
 
   @Override
-  public Kind symKind() {
-    return Kind.METHOD;
-  }
-
-  @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof MethodSymbol)) {
+    if (!(obj instanceof ParamSymbol)) {
       return false;
     }
-    MethodSymbol other = (MethodSymbol) obj;
-    return name().equals(other.name()) && owner().equals(other.owner()) && idx == other.idx;
+    ParamSymbol other = (ParamSymbol) obj;
+    return name().equals(other.name()) && owner().equals(other.owner());
   }
 
   @Override
   public String toString() {
-    return owner + "#" + name;
+    return name;
   }
 }

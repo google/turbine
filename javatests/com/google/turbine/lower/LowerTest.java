@@ -33,6 +33,7 @@ import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ByteReader;
 import com.google.turbine.bytecode.ConstantPoolReader;
@@ -110,7 +111,7 @@ public class LowerTest {
     ImmutableList<SourceTypeBoundClass.MethodInfo> methods =
         ImmutableList.of(
             new SourceTypeBoundClass.MethodInfo(
-                new MethodSymbol(new ClassSymbol("test/Test"), "f"),
+                new MethodSymbol(-1, new ClassSymbol("test/Test"), "f"),
                 ImmutableMap.of(),
                 PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                 ImmutableList.of(),
@@ -121,9 +122,9 @@ public class LowerTest {
                 ImmutableList.of(),
                 null),
             new SourceTypeBoundClass.MethodInfo(
-                new MethodSymbol(new ClassSymbol("test/Test"), "g"),
+                new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"),
                 ImmutableMap.of(
-                    new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "V"),
+                    new TyVarSymbol(new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "V"),
                     new SourceTypeBoundClass.TyVarInfo(
                         IntersectionTy.create(
                             ImmutableList.of(
@@ -135,7 +136,7 @@ public class LowerTest {
                                             ImmutableList.of()))))),
                         /* lowerBound= */ null,
                         ImmutableList.of()),
-                    new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
+                    new TyVarSymbol(new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
                         IntersectionTy.create(
                             ImmutableList.of(
@@ -150,13 +151,15 @@ public class LowerTest {
                 Type.VOID,
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
+                        new ParamSymbol(
+                            new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "foo"),
                         PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
-                        "foo",
                         ImmutableList.of(),
                         0)),
                 ImmutableList.of(
                     TyVar.create(
-                        new TyVarSymbol(new MethodSymbol(new ClassSymbol("test/Test"), "g"), "E"),
+                        new TyVarSymbol(
+                            new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "E"),
                         ImmutableList.of())),
                 TurbineFlag.ACC_PUBLIC,
                 null,

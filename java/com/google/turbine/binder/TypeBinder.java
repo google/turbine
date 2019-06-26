@@ -34,6 +34,7 @@ import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -266,22 +267,23 @@ public class TypeBinder {
     if (hasConstructor()) {
       return ImmutableList.of();
     }
+    MethodSymbol symbol = new MethodSymbol(-1, owner, "<init>");
     ImmutableList<ParamInfo> formals;
     if (hasEnclosingInstance(base)) {
-      formals = ImmutableList.of(enclosingInstanceParameter());
+      formals = ImmutableList.of(enclosingInstanceParameter(symbol));
     } else {
       formals = ImmutableList.of();
     }
     return ImmutableList.of(
-        syntheticConstructor(formals, TurbineVisibility.fromAccess(base.access())));
+        syntheticConstructor(symbol, formals, TurbineVisibility.fromAccess(base.access())));
   }
 
   private MethodInfo syntheticConstructor(
-      ImmutableList<ParamInfo> formals, TurbineVisibility visibility) {
+      MethodSymbol symbol, ImmutableList<ParamInfo> formals, TurbineVisibility visibility) {
     int access = visibility.flag();
     access |= (base.access() & TurbineFlag.ACC_STRICT);
     return new MethodInfo(
-        new MethodSymbol(owner, "<init>"),
+        symbol,
         ImmutableMap.of(),
         Type.VOID,
         formals,
@@ -293,7 +295,7 @@ public class TypeBinder {
         null);
   }
 
-  private ParamInfo enclosingInstanceParameter() {
+  private ParamInfo enclosingInstanceParameter(MethodSymbol owner) {
     int access = TurbineFlag.ACC_FINAL;
     if ((base.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
       access |= TurbineFlag.ACC_SYNTHETIC;
@@ -311,37 +313,40 @@ public class TypeBinder {
       sym = info.owner();
     }
     return new ParamInfo(
+        new ParamSymbol(owner, "this$" + enclosingInstances),
         Type.ClassTy.asNonParametricClassTy(base.owner()),
-        "this$" + enclosingInstances,
         ImmutableList.of(),
         access);
   }
 
-  private static final ImmutableList<ParamInfo> ENUM_CTOR_PARAMS =
-      ImmutableList.of(
-          new ParamInfo(
-              Type.ClassTy.STRING,
-              "$enum$name",
-              ImmutableList.of(),
-              /*synthetic*/
-              TurbineFlag.ACC_SYNTHETIC),
-          new ParamInfo(
-              Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
-              "$enum$ordinal",
-              ImmutableList.of(),
-              /*synthetic*/
-              TurbineFlag.ACC_SYNTHETIC));
+  private static ImmutableList<ParamInfo> enumCtorParams(MethodSymbol owner) {
+    return ImmutableList.of(
+        new ParamInfo(
+            new ParamSymbol(owner, "$enum$name"),
+            Type.ClassTy.STRING,
+            ImmutableList.of(),
+            /*synthetic*/
+            TurbineFlag.ACC_SYNTHETIC),
+        new ParamInfo(
+            new ParamSymbol(owner, "$enum$ordinal"),
+            Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
+            ImmutableList.of(),
+            /*synthetic*/
+            TurbineFlag.ACC_SYNTHETIC));
+  }
 
   private ImmutableList<MethodInfo> syntheticEnumMethods() {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
     int access = 0;
     access |= (base.access() & TurbineFlag.ACC_STRICT);
     if (!hasConstructor()) {
-      methods.add(syntheticConstructor(ENUM_CTOR_PARAMS, TurbineVisibility.PRIVATE));
+      MethodSymbol symbol = new MethodSymbol(-1, owner, "<init>");
+      methods.add(syntheticConstructor(symbol, enumCtorParams(symbol), TurbineVisibility.PRIVATE));
     }
+    MethodSymbol valuesMethod = new MethodSymbol(-2, owner, "values");
     methods.add(
         new MethodInfo(
-            new MethodSymbol(owner, "values"),
+            valuesMethod,
             ImmutableMap.of(),
             Type.ArrayTy.create(Type.ClassTy.asNonParametricClassTy(owner), ImmutableList.of()),
             ImmutableList.of(),
@@ -351,14 +356,18 @@ public class TypeBinder {
             null,
             ImmutableList.of(),
             null));
+    MethodSymbol valueOfMethod = new MethodSymbol(-3, owner, "valueOf");
     methods.add(
         new MethodInfo(
-            new MethodSymbol(owner, "valueOf"),
+            valueOfMethod,
             ImmutableMap.of(),
             Type.ClassTy.asNonParametricClassTy(owner),
             ImmutableList.of(
                 new ParamInfo(
-                    Type.ClassTy.STRING, "name", ImmutableList.of(), TurbineFlag.ACC_MANDATED)),
+                    new ParamSymbol(valueOfMethod, "name"),
+                    Type.ClassTy.STRING,
+                    ImmutableList.of(),
+                    TurbineFlag.ACC_MANDATED)),
             ImmutableList.of(),
             access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
@@ -405,23 +414,24 @@ public class TypeBinder {
 
   private List<MethodInfo> bindMethods(CompoundScope scope, ImmutableList<Tree> members) {
     List<MethodInfo> methods = new ArrayList<>();
+    int idx = 0;
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.METH_DECL) {
-        methods.add(bindMethod(scope, (Tree.MethDecl) member));
+        methods.add(bindMethod(idx++, scope, (Tree.MethDecl) member));
       }
     }
     return methods;
   }
 
-  private MethodInfo bindMethod(CompoundScope scope, Tree.MethDecl t) {
+  private MethodInfo bindMethod(int idx, CompoundScope scope, Tree.MethDecl t) {
 
-    MethodSymbol sym = new MethodSymbol(owner, t.name().value());
+    MethodSymbol sym = new MethodSymbol(idx, owner, t.name().value());
 
     ImmutableMap<String, TyVarSymbol> typeParameters;
     {
       ImmutableMap.Builder<String, TyVarSymbol> builder = ImmutableMap.builder();
       for (Tree.TyParam pt : t.typarams()) {
-        builder.put(pt.name().value(), new TyVarSymbol(owner, pt.name().value()));
+        builder.put(pt.name().value(), new TyVarSymbol(sym, pt.name().value()));
       }
       typeParameters = builder.build();
     }
@@ -442,9 +452,9 @@ public class TypeBinder {
     String name = t.name().value();
     if (name.equals("<init>")) {
       if (hasEnclosingInstance(base)) {
-        parameters.add(enclosingInstanceParameter());
+        parameters.add(enclosingInstanceParameter(sym));
       } else if (base.kind() == TurbineTyKind.ENUM && name.equals("<init>")) {
-        parameters.addAll(ENUM_CTOR_PARAMS);
+        parameters.addAll(enumCtorParams(sym));
       }
     }
     ParamInfo receiver = null;
@@ -455,8 +465,8 @@ public class TypeBinder {
       }
       ParamInfo param =
           new ParamInfo(
+              new ParamSymbol(sym, p.name().value()),
               bindTy(scope, p.ty()),
-              p.name().value(),
               bindAnnotations(scope, p.annos()), /*synthetic*/
               access);
       if (p.name().value().equals("this")) {

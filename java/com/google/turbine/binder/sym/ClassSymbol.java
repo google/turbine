@@ -73,4 +73,8 @@ public class ClassSymbol implements Symbol {
     int idx = binaryName().lastIndexOf('/');
     return idx != -1 ? binaryName().substring(0, idx) : "";
   }
+
+  public PackageSymbol owner() {
+    return new PackageSymbol(packageName());
+  }
 }

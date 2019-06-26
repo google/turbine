@@ -138,7 +138,7 @@ public class DisambiguateTypeAnnotations {
             base.type(),
             base.annotations(),
             declarationAnnotations);
-    return new ParamInfo(type, base.name(), declarationAnnotations.build(), base.access());
+    return new ParamInfo(base.sym(), type, declarationAnnotations.build(), base.access());
   }
 
   /**

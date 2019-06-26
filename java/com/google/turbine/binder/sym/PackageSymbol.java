@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,37 @@ package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
 
-/** The top interface for all symbols. */
+/** A package symbol. */
 @Immutable
-public interface Symbol {
-  /** The symbol kind. */
-  enum Kind {
-    CLASS,
-    TY_PARAM,
-    METHOD,
-    FIELD,
-    PARAMETER,
-    MODULE,
-    PACKAGE
+public class PackageSymbol implements Symbol {
+
+  final String binaryName;
+
+  public PackageSymbol(String binaryName) {
+    this.binaryName = binaryName;
   }
 
-  /** The symbol kind. */
-  Kind symKind();
+  @Override
+  public int hashCode() {
+    return binaryName.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof PackageSymbol && binaryName.equals(((PackageSymbol) obj).binaryName);
+  }
+
+  @Override
+  public String toString() {
+    return binaryName.replace('/', '.');
+  }
+
+  @Override
+  public Kind symKind() {
+    return Kind.PACKAGE;
+  }
+
+  public String binaryName() {
+    return binaryName;
+  }
 }
