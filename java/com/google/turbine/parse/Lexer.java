@@ -31,4 +31,7 @@ public interface Lexer {
 
   /** Returns the source file for diagnostics. */
   SourceFile source();
+
+  /** Returns a saved javadoc comment. */
+  String javadoc();
 }

@@ -16,9 +16,9 @@
 
 package com.google.turbine.parse;
 
+import static com.google.common.base.Verify.verify;
 import static com.google.turbine.parse.UnicodeEscapePreprocessor.ASCII_SUB;
 
-import com.google.common.base.Verify;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -40,6 +40,9 @@ public class StreamLexer implements Lexer {
   /** The value of the current string or character literal token. */
   private String value = null;
 
+  /** A saved javadoc comment. */
+  private String javadoc = null;
+
   public StreamLexer(UnicodeEscapePreprocessor reader) {
     this.reader = reader;
     eat();
@@ -59,6 +62,17 @@ public class StreamLexer implements Lexer {
   /** Consumes an input character. */
   private void eat() {
     ch = reader.next();
+  }
+
+  @Override
+  public String javadoc() {
+    String result = javadoc;
+    javadoc = null;
+    if (result == null) {
+      return null;
+    }
+    verify(result.endsWith("*/"), result);
+    return result.substring(0, result.length() - "*/".length());
   }
 
   @Override
@@ -115,16 +129,33 @@ public class StreamLexer implements Lexer {
                   }
                 }
               case '*':
+                eat();
                 boolean sawStar = false;
-                while (true) {
+                boolean isJavadoc = false;
+                if (ch == '*') {
                   eat();
+                  // handle empty non-javadoc comments: `/**/`
+                  if (ch == '/') {
+                    eat();
+                    continue OUTER;
+                  }
+                  isJavadoc = true;
+                  readFrom();
+                }
+                while (true) {
                   switch (ch) {
                     case '*':
+                      eat();
                       sawStar = true;
                       break;
                     case '/':
+                      eat();
                       if (sawStar) {
-                        eat();
+                        if (isJavadoc) {
+                          // Save the comment, excluding the leading `/**` and including
+                          // the trailing `/*`. The comment is trimmed and normalized later.
+                          javadoc = stringValue();
+                        }
                         continue OUTER;
                       }
                       sawStar = false;
@@ -136,6 +167,7 @@ public class StreamLexer implements Lexer {
                       eat();
                       break;
                     default:
+                      eat();
                       sawStar = false;
                       break;
                   }
@@ -206,7 +238,7 @@ public class StreamLexer implements Lexer {
           return identifier();
 
         case ASCII_SUB:
-          Verify.verify(reader.done());
+          verify(reader.done());
           return Token.EOF;
 
         case '-':
