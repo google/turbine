@@ -215,6 +215,7 @@ public class Parser {
   }
 
   private TyDecl interfaceDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
+    String javadoc = lexer.javadoc();
     eat(Token.INTERFACE);
     int pos = position;
     Ident name = eatIdent();
@@ -243,10 +244,12 @@ public class Parser {
         Optional.<ClassTy>empty(),
         interfaces.build(),
         members,
-        TurbineTyKind.INTERFACE);
+        TurbineTyKind.INTERFACE,
+        javadoc);
   }
 
   private TyDecl annotationDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
+    String javadoc = lexer.javadoc();
     eat(Token.INTERFACE);
     int pos = position;
     Ident name = eatIdent();
@@ -262,10 +265,12 @@ public class Parser {
         Optional.<ClassTy>empty(),
         ImmutableList.<ClassTy>of(),
         members,
-        TurbineTyKind.ANNOTATION);
+        TurbineTyKind.ANNOTATION,
+        javadoc);
   }
 
   private TyDecl enumDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
+    String javadoc = lexer.javadoc();
     eat(Token.ENUM);
     int pos = position;
     Ident name = eatIdent();
@@ -289,7 +294,8 @@ public class Parser {
         Optional.<ClassTy>empty(),
         interfaces.build(),
         members,
-        TurbineTyKind.ENUM);
+        TurbineTyKind.ENUM,
+        javadoc);
   }
 
   private String moduleName() {
@@ -468,7 +474,8 @@ public class Parser {
                         ImmutableList.<Type>of(),
                         ImmutableList.of()),
                     name,
-                    Optional.<Expression>empty()));
+                    Optional.<Expression>empty(),
+                    null));
             annos = ImmutableList.builder();
             break;
           }
@@ -491,6 +498,7 @@ public class Parser {
   }
 
   private TyDecl classDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
+    String javadoc = lexer.javadoc();
     eat(Token.CLASS);
     int pos = position;
     Ident name = eatIdent();
@@ -522,7 +530,8 @@ public class Parser {
         Optional.ofNullable(xtnds),
         interfaces.build(),
         members,
-        TurbineTyKind.CLASS);
+        TurbineTyKind.CLASS,
+        javadoc);
   }
 
   private ImmutableList<Tree> classMembers() {
@@ -809,6 +818,7 @@ public class Parser {
       ImmutableList<Anno> annos,
       Type baseTy,
       Ident name) {
+    String javadoc = lexer.javadoc();
     ImmutableList.Builder<Tree> result = ImmutableList.builder();
     VariableInitializerParser initializerParser = new VariableInitializerParser(token, lexer);
     List<List<SavedToken>> bits = initializerParser.parseInitializers();
@@ -833,7 +843,7 @@ public class Parser {
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
         init = null;
       }
-      result.add(new VarDecl(pos, access, annos, ty, name, Optional.ofNullable(init)));
+      result.add(new VarDecl(pos, access, annos, ty, name, Optional.ofNullable(init), javadoc));
     }
     if (token != SEMI) {
       throw TurbineError.format(lexer.source(), expressionStart, ErrorKind.UNTERMINATED_EXPRESSION);
@@ -849,6 +859,7 @@ public class Parser {
       ImmutableList<TyParam> typaram,
       Type result,
       Ident name) {
+    String javadoc = lexer.javadoc();
     eat(Token.LPAREN);
     ImmutableList.Builder<VarDecl> formals = ImmutableList.builder();
     formalParams(formals, access);
@@ -900,7 +911,8 @@ public class Parser {
         name,
         formals.build(),
         exceptions.build(),
-        Optional.ofNullable(defaultValue));
+        Optional.ofNullable(defaultValue),
+        javadoc);
   }
 
   /**
@@ -995,7 +1007,8 @@ public class Parser {
       name = identOrThis();
     }
     ty = extraDims(ty);
-    return new VarDecl(position, access, annos.build(), ty, name, Optional.<Expression>empty());
+    return new VarDecl(
+        position, access, annos.build(), ty, name, Optional.<Expression>empty(), null);
   }
 
   private Ident identOrThis() {

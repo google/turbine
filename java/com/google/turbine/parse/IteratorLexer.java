@@ -59,4 +59,9 @@ public class IteratorLexer implements Lexer {
     // TODO(cushon): test expression position EOF handling
     return curr != null ? curr.position : -1;
   }
+
+  @Override
+  public String javadoc() {
+    return null;
+  }
 }
