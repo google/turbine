@@ -445,6 +445,11 @@ public interface Type {
     @Memoized
     @Override
     public abstract int hashCode();
+
+    @Override
+    public final String toString() {
+      return Joiner.on(" $ ").join(bounds());
+    }
   }
 
   /** An error type. */
