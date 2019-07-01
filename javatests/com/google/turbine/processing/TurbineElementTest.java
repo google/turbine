@@ -199,13 +199,9 @@ public class TurbineElementTest {
 
   @Test
   public void typeKind() {
-    assertThat(
-            ((TypeElement) factory.typeElement(new ClassSymbol("java/lang/annotation/Target")))
-                .getKind())
+    assertThat(factory.typeElement(new ClassSymbol("java/lang/annotation/Target")).getKind())
         .isEqualTo(ElementKind.ANNOTATION_TYPE);
-    assertThat(
-            ((TypeElement) factory.typeElement(new ClassSymbol("java/lang/annotation/ElementType")))
-                .getKind())
+    assertThat(factory.typeElement(new ClassSymbol("java/lang/annotation/ElementType")).getKind())
         .isEqualTo(ElementKind.ENUM);
   }
 
@@ -213,10 +209,9 @@ public class TurbineElementTest {
   public void parameter() {
     ExecutableElement equals =
         (ExecutableElement)
-            ((TypeElement) factory.typeElement(new ClassSymbol("java/lang/Object")))
-                .getEnclosedElements().stream()
-                    .filter(e -> e.getSimpleName().contentEquals("equals"))
-                    .collect(MoreCollectors.onlyElement());
+            factory.typeElement(new ClassSymbol("java/lang/Object")).getEnclosedElements().stream()
+                .filter(e -> e.getSimpleName().contentEquals("equals"))
+                .collect(MoreCollectors.onlyElement());
     VariableElement parameter = getOnlyElement(equals.getParameters());
     assertThat(parameter.getKind()).isEqualTo(ElementKind.PARAMETER);
     assertThat(parameter.asType().toString()).isEqualTo("java.lang.Object");
