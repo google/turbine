@@ -52,7 +52,8 @@ public interface Type {
     /** An intersection type. */
     INTERSECTION_TY,
 
-    ERROR_TY
+    ERROR_TY,
+    NONE_TY,
   }
 
   /** The type kind. */
@@ -72,7 +73,27 @@ public interface Type {
         }
       };
 
-  /** A class type. */
+  /** The void type. */
+  Type NONE =
+      new Type() {
+        @Override
+        public TyKind tyKind() {
+          return TyKind.NONE_TY;
+        }
+
+        @Override
+        public final String toString() {
+          return "none";
+        }
+      };
+
+  /**
+   * A class type.
+   *
+   * <p>Qualified types (e.g. {@code OuterClass<Foo>.InnerClass<Bar>}) are repesented as a list
+   * {@link SimpleClassTy}s (enclosing types first), each of which contains a {@link ClassSymbol}
+   * and an optional list of type arguments.
+   */
   @AutoValue
   abstract class ClassTy implements Type {
 
@@ -87,17 +108,12 @@ public interface Type {
 
     /** Returns a {@link ClassTy} with no type arguments for the given {@link ClassSymbol}. */
     public static ClassTy asNonParametricClassTy(ClassSymbol i) {
-      return create(Arrays.asList(SimpleClassTy.create(i, ImmutableList.of(), ImmutableList.of())));
+      return ClassTy.create(
+          Arrays.asList(SimpleClassTy.create(i, ImmutableList.of(), ImmutableList.of())));
     }
 
     public abstract ImmutableList<SimpleClassTy> classes();
 
-    /**
-     * A class type. Qualified types are repesented as a list tuples, each of which contains a
-     * {@link ClassSymbol} and an optional list of type arguments.
-     *
-     * @param classes components of a qualified class type, possibly with type arguments.
-     */
     public static ClassTy create(Iterable<SimpleClassTy> classes) {
       return new AutoValue_Type_ClassTy(ImmutableList.copyOf(classes));
     }
@@ -448,7 +464,7 @@ public interface Type {
 
     @Override
     public final String toString() {
-      return Joiner.on(" $ ").join(bounds());
+      return Joiner.on('&').join(bounds());
     }
   }
 

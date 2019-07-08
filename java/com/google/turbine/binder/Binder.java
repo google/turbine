@@ -131,7 +131,7 @@ public class Binder {
     for (ClassSymbol sym : syms) {
       result.put(sym, tenv.get(sym));
     }
-    return new BindingResult(result.build(), boundModules, classPathEnv);
+    return new BindingResult(result.build(), boundModules, classPathEnv, tli);
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
@@ -392,14 +392,17 @@ public class Binder {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
     private final ImmutableList<SourceModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
+    private final CompoundTopLevelIndex tli;
 
-    public BindingResult(
+    private BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
         ImmutableList<SourceModuleInfo> modules,
-        CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
+        CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
+        CompoundTopLevelIndex tli) {
       this.units = units;
       this.modules = modules;
       this.classPathEnv = classPathEnv;
+      this.tli = tli;
     }
 
     /** Bound nodes for sources in the compilation. */
@@ -414,6 +417,10 @@ public class Binder {
     /** The classpath. */
     public CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv() {
       return classPathEnv;
+    }
+
+    public TopLevelIndex tli() {
+      return tli;
     }
   }
 }

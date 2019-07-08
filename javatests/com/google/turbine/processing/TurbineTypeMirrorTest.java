@@ -196,6 +196,7 @@ public class TurbineTypeMirrorTest {
         .containsExactlyElementsIn(
             factory.asTypeMirrors(
                 ImmutableList.of(
+                    Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/lang/Object")),
                     Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/io/Serializable")),
                     Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/lang/Cloneable")))));
   }
@@ -254,7 +255,7 @@ public class TurbineTypeMirrorTest {
             factory.asTypeMirror(
                 Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/util/Map$Entry")));
 
-    assertThat(a.getEnclosingType().toString()).isEqualTo("java.util.Map");
-    assertThat(b.getEnclosingType().toString()).isEqualTo("java.util.Map");
+    assertThat(a.getEnclosingType().getKind()).isEqualTo(TypeKind.NONE);
+    assertThat(b.getEnclosingType().getKind()).isEqualTo(TypeKind.NONE);
   }
 }

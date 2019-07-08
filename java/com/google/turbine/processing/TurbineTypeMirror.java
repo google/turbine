@@ -20,12 +20,15 @@ import static com.google.common.collect.Iterables.getLast;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Ascii;
+import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
@@ -184,15 +187,15 @@ public abstract class TurbineTypeMirror implements TypeMirror {
             new Supplier<TypeMirror>() {
               @Override
               public TypeMirror get() {
-                if (type.classes().size() > 1) {
-                  return factory.asTypeMirror(
-                      ClassTy.create(type.classes().subList(0, type.classes().size() - 1)));
-                }
-                // Instead of validating that all ClassTy implementations have entries corresponding
-                // to enclosing types, we allow non-canonical instances and then explicit check
-                // for enclosing instances.
                 TypeBoundClass info = factory.getSymbol(type.sym());
-                if (info != null && info.owner() != null) {
+                if (info != null
+                    && info.owner() != null
+                    && ((info.access() & TurbineFlag.ACC_STATIC) == 0)
+                    && info.kind() == TurbineTyKind.CLASS) {
+                  if (type.classes().size() > 1) {
+                    return factory.asTypeMirror(
+                        ClassTy.create(type.classes().subList(0, type.classes().size() - 1)));
+                  }
                   return factory.asTypeMirror(ClassTy.asNonParametricClassTy(info.owner()));
                 }
                 return factory.noType();
@@ -226,6 +229,10 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
       return v.visitDeclared(this, p);
+    }
+
+    public ClassTy type() {
+      return type;
     }
   }
 
@@ -307,7 +314,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public Type asTurbineType() {
-      throw new UnsupportedOperationException();
+      return Type.NONE;
     }
 
     TurbineNoType(ModelFactory factory) {
@@ -326,7 +333,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public String toString() {
-      return "<notype>";
+      return "none";
     }
 
     @Override
@@ -521,13 +528,25 @@ public abstract class TurbineTypeMirror implements TypeMirror {
             new Supplier<ImmutableList<TypeMirror>>() {
               @Override
               public ImmutableList<TypeMirror> get() {
-                return factory.asTypeMirrors(type.bounds());
+                ImmutableList.Builder<TypeMirror> result = ImmutableList.builder();
+                ImmutableList<Type> bounds = type.bounds();
+                if (factory.getSymbol(((ClassTy) bounds.get(0)).sym()).kind()
+                    == TurbineTyKind.INTERFACE) {
+                  result.add(factory.asTypeMirror(ClassTy.OBJECT));
+                }
+                result.addAll(factory.asTypeMirrors(bounds));
+                return result.build();
               }
             });
 
     @Override
     public List<? extends TypeMirror> getBounds() {
       return bounds.get();
+    }
+
+    @Override
+    public String toString() {
+      return Joiner.on('&').join(getBounds());
     }
   }
 }

@@ -437,6 +437,10 @@ public abstract class TurbineElement implements Element {
     public <R, P> R accept(ElementVisitor<R, P> v, P p) {
       return v.visitTypeParameter(this, p);
     }
+
+    public TyVarSymbol sym() {
+      return symbol;
+    }
   }
 
   /** An {@link ExecutableElement} implementation backed by a {@link MethodSymbol}. */
@@ -453,7 +457,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
-    private MethodInfo info() {
+    MethodInfo info() {
       return info.get();
     }
 
@@ -512,7 +516,7 @@ public abstract class TurbineElement implements Element {
       if (!info.tyParams().isEmpty()) {
         sb.append('<');
         Joiner.on(',').appendTo(sb, info.tyParams().keySet());
-        sb.append('.');
+        sb.append('>');
       }
       if (getKind() == ElementKind.CONSTRUCTOR) {
         sb.append(info.sym().owner().simpleName());
@@ -534,9 +538,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror getReceiverType() {
-      return info().receiver() != null
-          ? factory.asTypeMirror(info().receiver().type())
-          : factory.noType();
+      // TODO(cushon): javac returns null, the spec says NONE
+      return info().receiver() != null ? factory.asTypeMirror(info().receiver().type()) : null;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.google.turbine.processing;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Supplier;
@@ -71,10 +72,11 @@ import javax.lang.model.type.TypeMirror;
  * A factoy for turbine's implementations of {@link Element} and {@link TypeMirror}.
  *
  * <p>The model provided by those interfaces contains cycles between types and elements, e.g. {@link
- * Element#asType} and {@link DeclaredType#asElement}. Turbine's internal model uses an immutable
- * representation of classes and types which cannot represent cycles directly. Instead, the
- * implementations in {@link TurbineElement} and {@link TurbineTypeMirror} maintain a reference to
- * this class, and use it to lazily construct edges in the type and element graph.
+ * Element#asType} and {@link javax.lang.model.type.DeclaredType#asElement}. Turbine's internal
+ * model uses an immutable representation of classes and types which cannot represent cycles
+ * directly. Instead, the implementations in {@link TurbineElement} and {@link TurbineTypeMirror}
+ * maintain a reference to this class, and use it to lazily construct edges in the type and element
+ * graph.
  */
 class ModelFactory {
 
@@ -89,8 +91,11 @@ class ModelFactory {
   private final Map<TyVarSymbol, TurbineTypeParameterElement> tyParamCache = new HashMap<>();
   private final Map<PackageSymbol, TurbinePackageElement> packageCache = new HashMap<>();
 
+  private final ClassHierarchy cha;
+
   ModelFactory(Env<ClassSymbol, ? extends TypeBoundClass> env) {
-    this.env = env;
+    this.env = requireNonNull(env);
+    this.cha = new ClassHierarchy(env);
   }
 
   TypeMirror asTypeMirror(Type type) {
@@ -128,7 +133,13 @@ class ModelFactory {
       case TY_VAR:
         return new TurbineTypeVariable(this, (TyVar) type);
       case INTERSECTION_TY:
-        return new TurbineIntersectionType(this, (IntersectionTy) type);
+        IntersectionTy intersectionTy = (IntersectionTy) type;
+        if (intersectionTy.bounds().size() == 1) {
+          return createTypeMirror(getOnlyElement(intersectionTy.bounds()));
+        }
+        return new TurbineIntersectionType(this, intersectionTy);
+      case NONE_TY:
+        return new TurbineNoType(this);
       case ERROR_TY:
     }
     throw new AssertionError(type.tyKind());
@@ -144,7 +155,7 @@ class ModelFactory {
   }
 
   NoType noType() {
-    return new TurbineNoType(this);
+    return (NoType) asTypeMirror(Type.NONE);
   }
 
   NoType packageType(PackageSymbol symbol) {
@@ -259,5 +270,9 @@ class ModelFactory {
         throw new AssertionError(owner.symKind());
     }
     return tyParams.get(tyVar);
+  }
+
+  ClassHierarchy cha() {
+    return cha;
   }
 }
