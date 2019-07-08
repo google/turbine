@@ -22,11 +22,13 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import java.util.Arrays;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** JLS 4 types. */
 public interface Type {
@@ -51,6 +53,8 @@ public interface Type {
     WILD_TY,
     /** An intersection type. */
     INTERSECTION_TY,
+    /** A method type. */
+    METHOD_TY,
 
     ERROR_TY,
     NONE_TY,
@@ -466,6 +470,60 @@ public interface Type {
     public final String toString() {
       return Joiner.on('&').join(bounds());
     }
+  }
+
+  /** A method type. */
+  @AutoValue
+  abstract class MethodTy implements Type {
+
+    public abstract String name();
+
+    public abstract ImmutableSet<TyVarSymbol> tyParams();
+
+    public abstract Type returnType();
+
+    /** The type of the receiver parameter (see JLS 8.4.1). */
+    @Nullable
+    public abstract Type receiverType();
+
+    public abstract ImmutableList<Type> parameters();
+
+    public abstract ImmutableList<Type> thrown();
+
+    public static MethodTy create(
+        String name,
+        ImmutableSet<TyVarSymbol> tyParams,
+        Type returnType,
+        Type receiverType,
+        ImmutableList<Type> parameters,
+        ImmutableList<Type> thrown) {
+      return new AutoValue_Type_MethodTy(
+          name, tyParams, returnType, receiverType, parameters, thrown);
+    }
+
+    @Override
+    public TyKind tyKind() {
+      return TyKind.METHOD_TY;
+    }
+
+    @Override
+    public final String toString() {
+      StringBuilder sb = new StringBuilder();
+      if (!tyParams().isEmpty()) {
+        sb.append('<');
+        Joiner.on(',').appendTo(sb, tyParams());
+        sb.append('>');
+      }
+      sb.append('(');
+      Joiner.on(',').appendTo(sb, parameters());
+      sb.append(')');
+      sb.append(returnType());
+      return sb.toString();
+    }
+
+    @Memoized
+    @Override
+    public abstract int hashCode();
   }
 
   /** An error type. */

@@ -564,7 +564,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror asType() {
-      throw new UnsupportedOperationException();
+      return factory.asTypeMirror(info().asType());
     }
 
     @Override

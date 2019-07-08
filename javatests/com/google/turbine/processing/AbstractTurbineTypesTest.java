@@ -253,6 +253,7 @@ class AbstractTurbineTypesTest {
       String content = sb.toString();
       files.add(content);
     }
+    // type hierarchies
     files.add(
         Joiner.on('\n')
             .join(
@@ -292,6 +293,37 @@ class AbstractTurbineTypesTest {
                 "  F<Object> f3;",
                 "  G<Integer> g1;",
                 "  G<Number> g2;",
+                "}"));
+    // methods
+    files.add(
+        Joiner.on('\n')
+            .join(
+                "import java.io.*;",
+                "class Methods {",
+                " void f() {}",
+                " void g() {}",
+                " void f(int x) {}",
+                " void f(int x, int y) {}",
+                "  abstract static class I {",
+                "    abstract int f();",
+                "    abstract void g() throws IOException;",
+                "    abstract <T> void h();",
+                "    abstract <T extends String> T i(T s);",
+                "  }",
+                "  abstract static class J {",
+                "    abstract long f();",
+                "    abstract void g();",
+                "    abstract <T> void h();",
+                "    abstract <T extends Number> T i(T s);",
+                "  }",
+                "  class K {",
+                "    void f(K this, int x) {}",
+                "    void g(K this) {}",
+                "  }",
+                "  class L {",
+                "    void f(int x) {}",
+                "    void g() {}",
+                "  }",
                 "}"));
 
     Context context = new Context();
@@ -457,6 +489,7 @@ class AbstractTurbineTypesTest {
           public Void visitExecutable(ExecutableElement e, Void unused) {
             scan(e.getTypeParameters(), null);
             scan(e.getParameters(), null);
+            addType(e, e.asType());
             addType(e, e.getReturnType());
             addType(e, e.getReceiverType());
             addType(e, e.getThrownTypes());

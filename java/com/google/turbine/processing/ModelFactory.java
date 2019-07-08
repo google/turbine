@@ -47,6 +47,7 @@ import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineArrayType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
+import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineIntersectionType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineNoType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbinePackageType;
@@ -58,6 +59,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
@@ -140,6 +142,8 @@ class ModelFactory {
         return new TurbineIntersectionType(this, intersectionTy);
       case NONE_TY:
         return new TurbineNoType(this);
+      case METHOD_TY:
+        return new TurbineExecutableType(this, (MethodTy) type);
       case ERROR_TY:
     }
     throw new AssertionError(type.tyKind());

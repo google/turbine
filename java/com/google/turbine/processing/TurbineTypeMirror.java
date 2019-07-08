@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.sym.PackageSymbol;
+import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -33,6 +34,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
@@ -43,6 +45,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
@@ -547,6 +550,79 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public String toString() {
       return Joiner.on('&').join(getBounds());
+    }
+  }
+
+  /** An {@link ExecutableType} implementation backed by a {@link MethodTy}. */
+  public static class TurbineExecutableType extends TurbineTypeMirror implements ExecutableType {
+
+    @Override
+    public String toString() {
+      return type.toString();
+    }
+
+    @Override
+    public MethodTy asTurbineType() {
+      return type;
+    }
+
+    public final MethodTy type;
+
+    TurbineExecutableType(ModelFactory factory, MethodTy type) {
+      super(factory);
+      this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof TurbineExecutableType
+          && type.equals(((TurbineExecutableType) obj).type);
+    }
+
+    @Override
+    public int hashCode() {
+      return type.hashCode();
+    }
+
+    @Override
+    public List<? extends TypeVariable> getTypeVariables() {
+      ImmutableList.Builder<TypeVariable> result = ImmutableList.builder();
+      for (TyVarSymbol tyVar : type.tyParams()) {
+        result.add((TypeVariable) factory.asTypeMirror(TyVar.create(tyVar, ImmutableList.of())));
+      }
+      return result.build();
+    }
+
+    @Override
+    public TypeMirror getReturnType() {
+      return factory.asTypeMirror(type.returnType());
+    }
+
+    @Override
+    public List<? extends TypeMirror> getParameterTypes() {
+      return factory.asTypeMirrors(type.parameters());
+    }
+
+    @Override
+    public TypeMirror getReceiverType() {
+      return type.receiverType() != null
+          ? factory.asTypeMirror(type.receiverType())
+          : factory.noType();
+    }
+
+    @Override
+    public List<? extends TypeMirror> getThrownTypes() {
+      return factory.asTypeMirrors(type.thrown());
+    }
+
+    @Override
+    public TypeKind getKind() {
+      return TypeKind.EXECUTABLE;
+    }
+
+    @Override
+    public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+      return v.visitExecutable(this, p);
     }
   }
 }
