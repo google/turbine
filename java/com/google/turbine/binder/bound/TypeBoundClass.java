@@ -30,6 +30,8 @@ import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.type.Type.MethodTy;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
@@ -163,7 +165,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final Const defaultValue;
     private final MethDecl decl;
     private final ImmutableList<AnnoInfo> annotations;
-    private final ParamInfo receiver;
+    private final @NullableType ParamInfo receiver;
 
     public MethodInfo(
         MethodSymbol sym,
@@ -175,7 +177,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
         Const defaultValue,
         MethDecl decl,
         ImmutableList<AnnoInfo> annotations,
-        ParamInfo receiver) {
+        @NullableType ParamInfo receiver) {
       this.sym = sym;
       this.tyParams = tyParams;
       this.returnType = returnType;
@@ -238,9 +240,29 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return annotations;
     }
 
-    /** Receiver parameter. */
-    public ParamInfo receiver() {
+    /** Receiver parameter (see JLS 8.4.1), or {@code null}. */
+    public @NullableType ParamInfo receiver() {
       return receiver;
+    }
+
+    public MethodTy asType() {
+      return MethodTy.create(
+          name(),
+          tyParams.keySet(),
+          returnType,
+          receiver != null ? receiver.type() : null,
+          asTypes(parameters),
+          exceptions);
+    }
+
+    private static ImmutableList<Type> asTypes(ImmutableList<ParamInfo> parameters) {
+      ImmutableList.Builder<Type> result = ImmutableList.builder();
+      for (ParamInfo param : parameters) {
+        if (!param.synthetic()) {
+          result.add(param.type());
+        }
+      }
+      return result.build();
     }
   }
 

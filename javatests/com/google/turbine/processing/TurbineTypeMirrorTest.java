@@ -16,6 +16,7 @@
 
 package com.google.turbine.processing;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -29,8 +30,10 @@ import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.PrimTy;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -257,5 +260,18 @@ public class TurbineTypeMirrorTest {
 
     assertThat(a.getEnclosingType().getKind()).isEqualTo(TypeKind.NONE);
     assertThat(b.getEnclosingType().getKind()).isEqualTo(TypeKind.NONE);
+  }
+
+  @Test
+  public void method() {
+    ExecutableType type =
+        (ExecutableType)
+            ((TypeElement) factory.typeElement(new ClassSymbol("java/util/Collections")))
+                .getEnclosedElements().stream()
+                    .filter(e -> e.getSimpleName().contentEquals("replaceAll"))
+                    .collect(onlyElement())
+                    .asType();
+    assertThat(type.getTypeVariables()).hasSize(1);
+    assertThat(type.toString()).isEqualTo("<T>(java.util.List<T>,T,T)boolean");
   }
 }

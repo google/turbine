@@ -31,6 +31,7 @@ import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
@@ -88,7 +89,7 @@ public class TurbineTypes implements Types {
     return isSameType(t1, t2);
   }
 
-  private static boolean isSameType(Type a, Type b) {
+  private boolean isSameType(Type a, Type b) {
     switch (a.tyKind()) {
       case PRIM_TY:
         return b.tyKind() == TyKind.PRIM_TY && ((PrimTy) a).primkind() == ((PrimTy) b).primkind();
@@ -108,13 +109,50 @@ public class TurbineTypes implements Types {
       case INTERSECTION_TY:
         return b.tyKind() == TyKind.INTERSECTION_TY
             && isSameIntersectionType((IntersectionTy) a, (IntersectionTy) b);
+      case METHOD_TY:
+        return b.tyKind() == TyKind.METHOD_TY && isSameMethodType((MethodTy) a, (MethodTy) b);
       case ERROR_TY:
         return false;
     }
     throw new AssertionError(a.tyKind());
   }
 
-  private static boolean isSameTypes(ImmutableList<Type> a, ImmutableList<Type> b) {
+  /**
+   * Returns true if the given method types are equivalent.
+   *
+   * <p>Receiver parameters are ignored, regardless of whether they were explicitly specified in
+   * source. Thrown exception types are also ignored.
+   */
+  private boolean isSameMethodType(MethodTy a, MethodTy b) {
+    if (!sameTypeParameterBounds(a, b)) {
+      return false;
+    }
+    if (!isSameType(a.returnType(), b.returnType())) {
+      return false;
+    }
+    if (!isSameTypes(a.parameters(), b.parameters())) {
+      return false;
+    }
+    return true;
+  }
+
+  private boolean sameTypeParameterBounds(MethodTy a, MethodTy b) {
+    if (a.tyParams().size() != b.tyParams().size()) {
+      return false;
+    }
+    Iterator<TyVarSymbol> ax = a.tyParams().iterator();
+    Iterator<TyVarSymbol> bx = b.tyParams().iterator();
+    while (ax.hasNext()) {
+      TyVarSymbol x = ax.next();
+      TyVarSymbol y = bx.next();
+      if (!isSameType(factory.getTyVarInfo(x).upperBound(), factory.getTyVarInfo(y).upperBound())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean isSameTypes(ImmutableList<Type> a, ImmutableList<Type> b) {
     if (a.size() != b.size()) {
       return false;
     }
@@ -128,11 +166,11 @@ public class TurbineTypes implements Types {
     return true;
   }
 
-  private static boolean isSameIntersectionType(IntersectionTy a, IntersectionTy b) {
+  private boolean isSameIntersectionType(IntersectionTy a, IntersectionTy b) {
     return isSameTypes(a.bounds(), b.bounds());
   }
 
-  private static boolean isSameWildType(WildTy a, Type other) {
+  private boolean isSameWildType(WildTy a, Type other) {
     switch (other.tyKind()) {
       case WILD_TY:
         break;
@@ -175,7 +213,7 @@ public class TurbineTypes implements Types {
     throw new AssertionError(a.boundKind());
   }
 
-  private static boolean isSameClassType(ClassTy a, Type other) {
+  private boolean isSameClassType(ClassTy a, Type other) {
     switch (other.tyKind()) {
       case CLASS_TY:
         break;
@@ -218,7 +256,7 @@ public class TurbineTypes implements Types {
     return false;
   }
 
-  private static boolean isSameSimpleClassType(SimpleClassTy a, SimpleClassTy b) {
+  private boolean isSameSimpleClassType(SimpleClassTy a, SimpleClassTy b) {
     return a.sym().equals(b.sym()) && isSameTypes(a.targs(), b.targs());
   }
 
@@ -268,6 +306,8 @@ public class TurbineTypes implements Types {
       case ERROR_TY:
         // for compatibility with javac, treat error as bottom
         return true;
+      case METHOD_TY:
+        return false;
     }
     throw new AssertionError(a.tyKind());
   }
@@ -460,13 +500,15 @@ public class TurbineTypes implements Types {
         return substArrayTy((ArrayTy) type, mapping);
       case TY_VAR:
         return substTyVar((TyVar) type, mapping);
-      case WILD_TY:
-      case INTERSECTION_TY:
       case PRIM_TY:
       case VOID_TY:
       case NONE_TY:
       case ERROR_TY:
         return type;
+      case WILD_TY:
+      case INTERSECTION_TY:
+      case METHOD_TY:
+        throw new UnsupportedOperationException();
     }
     throw new AssertionError(type.tyKind());
   }

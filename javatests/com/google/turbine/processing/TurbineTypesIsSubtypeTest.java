@@ -48,6 +48,10 @@ public class TurbineTypesIsSubtypeTest extends AbstractTurbineTypesBiPredicateTe
     assume().that(javacInput.lhs.getKind()).isNotEqualTo(TypeKind.NONE);
     assume().that(javacInput.rhs.getKind()).isNotEqualTo(TypeKind.NONE);
 
+    // crashes javac
+    assume().that(javacInput.lhs.getKind()).isNotEqualTo(TypeKind.EXECUTABLE);
+    assume().that(javacInput.rhs.getKind()).isNotEqualTo(TypeKind.EXECUTABLE);
+
     test("<:", Types::isSubtype);
   }
 }

@@ -18,6 +18,7 @@ package com.google.turbine.types;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.sym.TyVarSymbol;
@@ -26,6 +27,7 @@ import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 
@@ -43,6 +45,8 @@ public class Erasure {
         return eraseIntersectionTy((Type.IntersectionTy) ty, tenv);
       case WILD_TY:
         return eraseWildTy((Type.WildTy) ty, tenv);
+      case METHOD_TY:
+        return erasureMethodTy((Type.MethodTy) ty, tenv);
       case PRIM_TY:
       case VOID_TY:
       case ERROR_TY:
@@ -50,6 +54,15 @@ public class Erasure {
         return ty;
     }
     throw new AssertionError(ty.tyKind());
+  }
+
+  private static ImmutableList<Type> erase(
+      ImmutableList<Type> types, Function<TyVarSymbol, TyVarInfo> tenv) {
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    for (Type type : types) {
+      result.add(erase(type, tenv));
+    }
+    return result.build();
   }
 
   private static Type eraseIntersectionTy(
@@ -89,5 +102,15 @@ public class Erasure {
         return erase(ty.bound(), tenv);
     }
     throw new AssertionError(ty.boundKind());
+  }
+
+  private static Type erasureMethodTy(MethodTy ty, Function<TyVarSymbol, TyVarInfo> tenv) {
+    return MethodTy.create(
+        ty.name(),
+        /* tyParams= */ ImmutableSet.of(),
+        erase(ty.returnType(), tenv),
+        ty.receiverType() != null ? erase(ty.receiverType(), tenv) : null,
+        erase(ty.parameters(), tenv),
+        erase(ty.thrown(), tenv));
   }
 }
