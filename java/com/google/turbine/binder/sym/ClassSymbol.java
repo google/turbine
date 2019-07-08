@@ -33,6 +33,16 @@ public class ClassSymbol implements Symbol {
   public static final ClassSymbol STRING = new ClassSymbol("java/lang/String");
   public static final ClassSymbol ENUM = new ClassSymbol("java/lang/Enum");
   public static final ClassSymbol ANNOTATION = new ClassSymbol("java/lang/annotation/Annotation");
+  public static final ClassSymbol ERROR = new ClassSymbol("<error>");
+
+  public static final ClassSymbol CHARACTER = new ClassSymbol("java/lang/Character");
+  public static final ClassSymbol SHORT = new ClassSymbol("java/lang/Short");
+  public static final ClassSymbol INTEGER = new ClassSymbol("java/lang/Integer");
+  public static final ClassSymbol LONG = new ClassSymbol("java/lang/Long");
+  public static final ClassSymbol FLOAT = new ClassSymbol("java/lang/Float");
+  public static final ClassSymbol DOUBLE = new ClassSymbol("java/lang/Double");
+  public static final ClassSymbol BOOLEAN = new ClassSymbol("java/lang/Boolean");
+  public static final ClassSymbol BYTE = new ClassSymbol("java/lang/Byte");
 
   private final String className;
 
