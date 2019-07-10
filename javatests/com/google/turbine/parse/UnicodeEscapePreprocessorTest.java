@@ -16,10 +16,13 @@
 
 package com.google.turbine.parse;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -57,21 +60,31 @@ public class UnicodeEscapePreprocessorTest {
     try {
       readAll("\\u00");
       fail();
-    } catch (AssertionError e) {
-      assertThat(e).hasMessageThat().isEqualTo("unexpected end of input");
+    } catch (TurbineError e) {
+      assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.UNEXPECTED_EOF);
     }
 
     try {
       readAll("\\u");
       fail();
-    } catch (AssertionError e) {
-      assertThat(e).hasMessageThat().isEqualTo("unexpected end of input");
+    } catch (TurbineError e) {
+      assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.UNEXPECTED_EOF);
     }
   }
 
   @Test
   public void escapeEscape() {
     assertThat(readAll("\\u005C\\\\u005C")).containsExactly('\\', '\\', '\\');
+  }
+
+  @Test
+  public void invalidEscape() {
+    try {
+      readAll("\\uUUUU");
+      fail();
+    } catch (TurbineError e) {
+      assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.INVALID_UNICODE);
+    }
   }
 
   private List<Character> readAll(String input) {
