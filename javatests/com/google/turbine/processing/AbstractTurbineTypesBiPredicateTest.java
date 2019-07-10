@@ -40,7 +40,7 @@ abstract class AbstractTurbineTypesBiPredicateTest extends AbstractTurbineTypesT
 
   protected void test(String symbol, TypeBiPredicate predicate) {
     assertWithMessage("%s = %s", javacInput.format(symbol), turbineInput.format(symbol))
-        .that(javacInput.apply(predicate))
-        .isEqualTo(turbineInput.apply(predicate));
+        .that(turbineInput.apply(predicate))
+        .isEqualTo(javacInput.apply(predicate));
   }
 }

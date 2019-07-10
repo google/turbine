@@ -155,7 +155,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public Type asTurbineType() {
+    public ClassTy asTurbineType() {
       return type;
     }
 

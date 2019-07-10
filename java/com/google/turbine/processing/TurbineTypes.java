@@ -24,8 +24,16 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
+import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
+import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
+import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
@@ -55,7 +63,7 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Types;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-/** An implementation of {@link Types} backed by turbine's implementation of {@link TypeMirror}. */
+/** An implementation of {@link Types} backed by turbine's of {@link TypeMirror}. */
 public class TurbineTypes implements Types {
 
   private final ModelFactory factory;
@@ -505,12 +513,32 @@ public class TurbineTypes implements Types {
       case NONE_TY:
       case ERROR_TY:
         return type;
+      case METHOD_TY:
+        return substMethod((MethodTy) type, mapping);
       case WILD_TY:
       case INTERSECTION_TY:
-      case METHOD_TY:
         throw new UnsupportedOperationException();
     }
     throw new AssertionError(type.tyKind());
+  }
+
+  static MethodTy substMethod(MethodTy method, Map<TyVarSymbol, Type> mapping) {
+    return MethodTy.create(
+        method.name(),
+        method.tyParams(),
+        subst(method.returnType(), mapping),
+        method.receiverType() != null ? subst(method.receiverType(), mapping) : null,
+        substAll(method.parameters(), mapping),
+        substAll(method.thrown(), mapping));
+  }
+
+  static ImmutableList<Type> substAll(
+      ImmutableList<? extends Type> types, Map<TyVarSymbol, Type> mapping) {
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    for (Type type : types) {
+      result.add(subst(type, mapping));
+    }
+    return result.build();
   }
 
   private static Type substTyVar(TyVar type, Map<TyVarSymbol, Type> mapping) {
@@ -687,7 +715,47 @@ public class TurbineTypes implements Types {
 
   @Override
   public boolean isSubsignature(ExecutableType m1, ExecutableType m2) {
-    throw new UnsupportedOperationException();
+    return isSubsignature((MethodTy) asTurbineType(m1), (MethodTy) asTurbineType(m2));
+  }
+
+  private boolean isSubsignature(MethodTy a, MethodTy b) {
+    return isSameSignature(a, b) || isSameSignature(a, (MethodTy) erasure(b));
+  }
+
+  private boolean isSameSignature(MethodTy a, MethodTy b) {
+    // JLS 8.4.2 says "two methods have the same signature if they have the same name...", but
+    // javac's implementation of isSubsignature ignores names, so we do too for bug compatibility.
+    if (a.parameters().size() != b.parameters().size()) {
+      return false;
+    }
+    if (a.tyParams().size() != b.tyParams().size()) {
+      return false;
+    }
+    Iterator<TyVarSymbol> at = a.tyParams().iterator();
+    Iterator<TyVarSymbol> bt = b.tyParams().iterator();
+    ImmutableMap.Builder<TyVarSymbol, Type> mapping = ImmutableMap.builder();
+    while (at.hasNext()) {
+      TyVarSymbol s = at.next();
+      TyVarSymbol t = bt.next();
+      // JLS 8.4.4 - type parameters are the same if their bounds are equal
+      if (!isSameType(factory.getTyVarInfo(s).upperBound(), factory.getTyVarInfo(t).upperBound())) {
+        return false;
+      }
+      mapping.put(s, TyVar.create(t, ImmutableList.of()));
+    }
+    Iterator<Type> ax = a.parameters().iterator();
+    // adapt the formal parameter types of 'b' to the type parameters of 'a'
+    Iterator<Type> bx = substAll(b.parameters(), mapping.build()).iterator();
+    while (ax.hasNext()) {
+      if (!eqOrErasedEq(ax.next(), bx.next())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  boolean eqOrErasedEq(Type a, Type b) {
+    return isSameType(a, b) || isSameType(erasure(a), erasure(b));
   }
 
   @Override
@@ -818,8 +886,59 @@ public class TurbineTypes implements Types {
     throw new UnsupportedOperationException();
   }
 
+  private static ClassSymbol enclosingClass(Symbol symbol) {
+    switch (symbol.symKind()) {
+      case CLASS:
+        return (ClassSymbol) symbol;
+      case TY_PARAM:
+        return enclosingClass(((TyVarSymbol) symbol).owner());
+      case METHOD:
+        return ((MethodSymbol) symbol).owner();
+      case FIELD:
+        return ((FieldSymbol) symbol).owner();
+      case PARAMETER:
+        return ((ParamSymbol) symbol).owner().owner();
+      case MODULE:
+      case PACKAGE:
+        throw new IllegalArgumentException(symbol.symKind().toString());
+    }
+    throw new AssertionError(symbol.symKind());
+  }
+
+  private static Type type(Element element) {
+    switch (element.getKind()) {
+      case TYPE_PARAMETER:
+        return TyVar.create(((TurbineTypeParameterElement) element).sym(), ImmutableList.of());
+      case FIELD:
+        return ((TurbineFieldElement) element).info().type();
+      case METHOD:
+      case CONSTRUCTOR:
+        return ((TurbineExecutableElement) element).info().asType();
+      default:
+        throw new UnsupportedOperationException(element.toString());
+    }
+  }
+
+  /**
+   * Returns the {@link TypeMirror} of the given {@code element} as a member of {@code containing},
+   * or else {@code null} if it is not a member.
+   *
+   * <p>e.g. given a class {@code MyStringList} that implements {@code List<String>}, the type of
+   * {@code List.add} would be {@code add(String)}.
+   */
   @Override
   public TypeMirror asMemberOf(DeclaredType containing, Element element) {
-    throw new UnsupportedOperationException();
+    ClassTy c = ((TurbineDeclaredType) containing).asTurbineType();
+    ClassSymbol symbol = enclosingClass(((TurbineElement) element).sym());
+    ImmutableList<ClassTy> path = factory.cha().search(c, enclosingClass(symbol));
+    if (path.isEmpty()) {
+      return null;
+    }
+    Type type = type(element);
+    for (ClassTy ty : path) {
+      type = subst(type, getMapping(ty));
+    }
+    return factory.asTypeMirror(type);
   }
+
 }
