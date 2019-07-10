@@ -500,7 +500,7 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
             }
           });
 
-  private RetentionPolicy bindRetention(AnnotationInfo annotation) {
+  private static RetentionPolicy bindRetention(AnnotationInfo annotation) {
     ElementValue val = annotation.elementValuePairs().get("value");
     if (val.kind() != Kind.ENUM) {
       return null;

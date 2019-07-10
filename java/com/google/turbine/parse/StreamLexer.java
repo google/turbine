@@ -1024,7 +1024,7 @@ public class StreamLexer implements Lexer {
     return makeIdent(stringValue());
   }
 
-  private Token makeIdent(String s) {
+  private static Token makeIdent(String s) {
     switch (s) {
       case "abstract":
         return Token.ABSTRACT;

@@ -383,7 +383,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value unaryNegate(Value expr) {
+  private static Value unaryNegate(Value expr) {
     switch (expr.constantTypeKind()) {
       case BOOLEAN:
         return new Const.BooleanValue(!expr.asBoolean().value());
@@ -392,7 +392,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value bitwiseComp(Value expr) {
+  private static Value bitwiseComp(Value expr) {
     expr = promoteUnary(expr);
     switch (expr.constantTypeKind()) {
       case INT:
@@ -404,7 +404,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value unaryPlus(Value expr) {
+  private static Value unaryPlus(Value expr) {
     expr = promoteUnary(expr);
     switch (expr.constantTypeKind()) {
       case INT:
@@ -420,7 +420,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value unaryMinus(Value expr) {
+  private static Value unaryMinus(Value expr) {
     expr = promoteUnary(expr);
     switch (expr.constantTypeKind()) {
       case INT:

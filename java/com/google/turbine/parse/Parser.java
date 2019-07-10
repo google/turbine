@@ -348,7 +348,7 @@ public class Parser {
     return new ModDecl(pos, annos, open, moduleName, directives.build());
   }
 
-  private String flatname(char join, ImmutableList<Ident> idents) {
+  private static String flatname(char join, ImmutableList<Ident> idents) {
     StringBuilder sb = new StringBuilder();
     boolean first = true;
     for (Ident ident : idents) {
@@ -938,7 +938,7 @@ public class Parser {
     return ty;
   }
 
-  private Type extraDims(Type type, Deque<ImmutableList<Anno>> extra) {
+  private static Type extraDims(Type type, Deque<ImmutableList<Anno>> extra) {
     if (extra.isEmpty()) {
       return type;
     }
