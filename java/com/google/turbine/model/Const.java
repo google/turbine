@@ -18,6 +18,7 @@ package com.google.turbine.model;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.escape.SourceCodeEscapers;
 
 /**
  * Compile-time constant expressions, including literals of primitive or String type, class
@@ -299,30 +300,7 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return '\'' + escape(value) + '\'';
-    }
-
-    private static String escape(char value) {
-      switch (value) {
-        case '\b':
-          return "\\b";
-        case '\f':
-          return "\\f";
-        case '\n':
-          return "\\n";
-        case '\r':
-          return "\\r";
-        case '\t':
-          return "\\t";
-        case '"':
-          return "\\\"";
-        case '\\':
-          return "\\\\";
-        case '\'':
-          return "\\'";
-        default:
-          return String.valueOf(value);
-      }
+      return "'" + SourceCodeEscapers.javaCharEscaper().escape(String.valueOf(value)) + "'";
     }
 
     @Override
@@ -541,7 +519,7 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return String.format("\"%s\"", value);
+      return '"' + SourceCodeEscapers.javaCharEscaper().escape(value) + '"';
     }
 
     @Override
@@ -579,7 +557,7 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return String.valueOf(value);
+      return String.format("(short)%d", value);
     }
 
     @Override
@@ -712,7 +690,7 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return String.valueOf(value);
+      return String.format("(byte)0x%02x", value);
     }
   }
 
