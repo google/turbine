@@ -63,6 +63,8 @@ import javax.lang.model.type.TypeMirror;
 /** An {@link Element} implementation backed by a {@link Symbol}. */
 public abstract class TurbineElement implements Element {
 
+  public abstract Symbol sym();
+
   @Override
   public abstract int hashCode();
 
@@ -99,23 +101,23 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public int hashCode() {
-      return symbol.hashCode();
+      return sym.hashCode();
     }
 
-    private final ClassSymbol symbol;
+    private final ClassSymbol sym;
     private final Supplier<TypeBoundClass> info;
 
-    TurbineTypeElement(ModelFactory factory, ClassSymbol symbol) {
+    TurbineTypeElement(ModelFactory factory, ClassSymbol sym) {
       super(factory);
       requireNonNull(factory);
-      requireNonNull(symbol);
-      this.symbol = symbol;
+      requireNonNull(sym);
+      this.sym = sym;
       this.info =
           memoize(
               new Supplier<TypeBoundClass>() {
                 @Override
                 public TypeBoundClass get() {
-                  return factory.getSymbol(symbol);
+                  return factory.getSymbol(sym);
                 }
               });
     }
@@ -137,7 +139,7 @@ public abstract class TurbineElement implements Element {
               public TurbineName get() {
                 TypeBoundClass info = info();
                 if (info == null || info.owner() == null) {
-                  return new TurbineName(symbol.toString());
+                  return new TurbineName(sym.toString());
                 }
                 ClassSymbol sym = sym();
                 Deque<String> flat = new ArrayDeque<>();
@@ -224,7 +226,7 @@ public abstract class TurbineElement implements Element {
             new Supplier<TypeMirror>() {
               @Override
               public TypeMirror get() {
-                return factory.asTypeMirror(asGenericType(symbol));
+                return factory.asTypeMirror(asGenericType(sym));
               }
 
               ClassTy asGenericType(ClassSymbol symbol) {
@@ -284,10 +286,10 @@ public abstract class TurbineElement implements Element {
               public TurbineName get() {
                 TypeBoundClass info = info();
                 if (info == null || info.owner() == null) {
-                  return new TurbineName(symbol.simpleName());
+                  return new TurbineName(sym.simpleName());
                 }
                 return new TurbineName(
-                    symbol.binaryName().substring(info.owner().binaryName().length() + 1));
+                    sym.binaryName().substring(info.owner().binaryName().length() + 1));
               }
             });
 
@@ -305,7 +307,7 @@ public abstract class TurbineElement implements Element {
                 if (info != null && info.owner() != null) {
                   return factory.typeElement(info.owner());
                 }
-                return factory.packageElement(symbol.owner());
+                return factory.packageElement(sym.owner());
               }
             });
 
@@ -344,13 +346,14 @@ public abstract class TurbineElement implements Element {
       return v.visitType(this, p);
     }
 
+    @Override
     public ClassSymbol sym() {
-      return symbol;
+      return sym;
     }
 
     @Override
     public boolean equals(Object obj) {
-      return obj instanceof TurbineTypeElement && symbol.equals(((TurbineTypeElement) obj).symbol);
+      return obj instanceof TurbineTypeElement && sym.equals(((TurbineTypeElement) obj).sym);
     }
   }
 
@@ -359,20 +362,20 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public int hashCode() {
-      return symbol.hashCode();
+      return sym.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
       return obj instanceof TurbineTypeParameterElement
-          && symbol.equals(((TurbineTypeParameterElement) obj).symbol);
+          && sym.equals(((TurbineTypeParameterElement) obj).sym);
     }
 
-    private final TyVarSymbol symbol;
+    private final TyVarSymbol sym;
 
-    public TurbineTypeParameterElement(ModelFactory factory, TyVarSymbol symbol) {
+    public TurbineTypeParameterElement(ModelFactory factory, TyVarSymbol sym) {
       super(factory);
-      this.symbol = symbol;
+      this.sym = sym;
     }
 
     private final Supplier<TyVarInfo> info =
@@ -380,7 +383,7 @@ public abstract class TurbineElement implements Element {
             new Supplier<TyVarInfo>() {
               @Override
               public TyVarInfo get() {
-                return factory.getTyVarInfo(symbol);
+                return factory.getTyVarInfo(sym);
               }
             });
 
@@ -390,12 +393,12 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public String toString() {
-      return symbol.name();
+      return sym.name();
     }
 
     @Override
     public Element getGenericElement() {
-      return factory.element(symbol.owner());
+      return factory.element(sym.owner());
     }
 
     @Override
@@ -405,7 +408,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror asType() {
-      return factory.asTypeMirror(Type.TyVar.create(symbol, info().annotations()));
+      return factory.asTypeMirror(Type.TyVar.create(sym, info().annotations()));
     }
 
     @Override
@@ -420,7 +423,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Name getSimpleName() {
-      return new TurbineName(symbol.name());
+      return new TurbineName(sym.name());
     }
 
     @Override
@@ -438,8 +441,9 @@ public abstract class TurbineElement implements Element {
       return v.visitTypeParameter(this, p);
     }
 
+    @Override
     public TyVarSymbol sym() {
-      return symbol;
+      return sym;
     }
   }
 
@@ -464,6 +468,11 @@ public abstract class TurbineElement implements Element {
     TurbineExecutableElement(ModelFactory factory, MethodSymbol sym) {
       super(factory);
       this.sym = sym;
+    }
+
+    @Override
+    public MethodSymbol sym() {
+      return sym;
     }
 
     @Override
@@ -624,6 +633,11 @@ public abstract class TurbineElement implements Element {
 
     private final FieldSymbol sym;
 
+    @Override
+    public FieldSymbol sym() {
+      return sym;
+    }
+
     private final Supplier<FieldInfo> info =
         memoize(
             new Supplier<FieldInfo>() {
@@ -637,9 +651,9 @@ public abstract class TurbineElement implements Element {
       return info.get();
     }
 
-    TurbineFieldElement(ModelFactory factory, FieldSymbol symbol) {
+    TurbineFieldElement(ModelFactory factory, FieldSymbol sym) {
       super(factory);
-      this.sym = symbol;
+      this.sym = sym;
     }
 
     @Override
@@ -744,26 +758,26 @@ public abstract class TurbineElement implements Element {
   /** A {@link PackageElement} implementation backed by a {@link PackageSymbol}. */
   static class TurbinePackageElement extends TurbineElement implements PackageElement {
 
-    private final PackageSymbol symbol;
+    private final PackageSymbol sym;
 
-    public TurbinePackageElement(ModelFactory factory, PackageSymbol symbol) {
+    public TurbinePackageElement(ModelFactory factory, PackageSymbol sym) {
       super(factory);
-      this.symbol = symbol;
+      this.sym = sym;
     }
 
     @Override
     public Name getQualifiedName() {
-      return new TurbineName(symbol.toString());
+      return new TurbineName(sym.toString());
     }
 
     @Override
     public boolean isUnnamed() {
-      return symbol.binaryName().isEmpty();
+      return sym.binaryName().isEmpty();
     }
 
     @Override
     public TypeMirror asType() {
-      return factory.packageType(symbol);
+      return factory.packageType(sym);
     }
 
     @Override
@@ -778,8 +792,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Name getSimpleName() {
-      return new TurbineName(
-          symbol.binaryName().substring(symbol.binaryName().lastIndexOf('/') + 1));
+      return new TurbineName(sym.binaryName().substring(sym.binaryName().lastIndexOf('/') + 1));
     }
 
     @Override
@@ -799,24 +812,33 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
+    public PackageSymbol sym() {
+      return sym;
+    }
+
+    @Override
     public int hashCode() {
-      return symbol.hashCode();
+      return sym.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-      return obj instanceof TurbinePackageElement
-          && symbol.equals(((TurbinePackageElement) obj).symbol);
+      return obj instanceof TurbinePackageElement && sym.equals(((TurbinePackageElement) obj).sym);
     }
 
     @Override
     public String toString() {
-      return symbol.toString();
+      return sym.toString();
     }
   }
 
   /** A {@liVariableElement PackageElement} implementation backed by a {@link ParamSymbol}. */
   static class TurbineParameterElement extends TurbineElement implements VariableElement {
+
+    @Override
+    public ParamSymbol sym() {
+      return sym;
+    }
 
     @Override
     public int hashCode() {
