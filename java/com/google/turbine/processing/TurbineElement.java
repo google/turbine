@@ -832,7 +832,7 @@ public abstract class TurbineElement implements Element {
     }
   }
 
-  /** A {@liVariableElement PackageElement} implementation backed by a {@link ParamSymbol}. */
+  /** A {@link VariableElement} implementation backed by a {@link ParamSymbol}. */
   static class TurbineParameterElement extends TurbineElement implements VariableElement {
 
     @Override
