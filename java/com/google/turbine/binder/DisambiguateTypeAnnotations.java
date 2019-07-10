@@ -18,10 +18,10 @@ package com.google.turbine.binder;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -241,7 +241,8 @@ public class DisambiguateTypeAnnotations {
    */
   public static ImmutableList<AnnoInfo> groupRepeated(
       Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
-    Multimap<ClassSymbol, AnnoInfo> repeated = ArrayListMultimap.create();
+    Multimap<ClassSymbol, AnnoInfo> repeated =
+        MultimapBuilder.linkedHashKeys().arrayListValues().build();
     for (AnnoInfo anno : annotations) {
       repeated.put(anno.sym(), anno);
     }
