@@ -63,7 +63,7 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Types;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-/** An implementation of {@link Types} backed by turbine's of {@link TypeMirror}. */
+/** An implementation of {@link Types} backed by turbine's {@link TypeMirror}. */
 public class TurbineTypes implements Types {
 
   private final ModelFactory factory;
