@@ -319,11 +319,16 @@ class AbstractTurbineTypesTest {
                 "  class K {",
                 "    void f(K this, int x) {}",
                 "    void g(K this) {}",
+                "    <T extends Enum<T> & Serializable> void h(T t) {}",
                 "  }",
                 "  class L {",
                 "    void f(int x) {}",
                 "    void g() {}",
+                "    <E extends Enum<E> & Serializable> void h(E t) {}",
                 "  }",
+                "}",
+                "class M<T extends Enum<T> & Serializable> {",
+                "  void h(T t) {}",
                 "}"));
 
     Context context = new Context();

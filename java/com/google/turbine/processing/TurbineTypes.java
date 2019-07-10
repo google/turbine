@@ -132,19 +132,24 @@ public class TurbineTypes implements Types {
    * source. Thrown exception types are also ignored.
    */
   private boolean isSameMethodType(MethodTy a, MethodTy b) {
-    if (!sameTypeParameterBounds(a, b)) {
+    ImmutableMap<TyVarSymbol, Type> mapping = getMapping(a, b);
+    if (mapping == null) {
       return false;
     }
-    if (!isSameType(a.returnType(), b.returnType())) {
+    if (!sameTypeParameterBounds(a, b, mapping)) {
       return false;
     }
-    if (!isSameTypes(a.parameters(), b.parameters())) {
+    if (!isSameType(a.returnType(), subst(b.returnType(), mapping))) {
+      return false;
+    }
+    if (!isSameTypes(a.parameters(), substAll(b.parameters(), mapping))) {
       return false;
     }
     return true;
   }
 
-  private boolean sameTypeParameterBounds(MethodTy a, MethodTy b) {
+  private boolean sameTypeParameterBounds(
+      MethodTy a, MethodTy b, ImmutableMap<TyVarSymbol, Type> mapping) {
     if (a.tyParams().size() != b.tyParams().size()) {
       return false;
     }
@@ -153,7 +158,9 @@ public class TurbineTypes implements Types {
     while (ax.hasNext()) {
       TyVarSymbol x = ax.next();
       TyVarSymbol y = bx.next();
-      if (!isSameType(factory.getTyVarInfo(x).upperBound(), factory.getTyVarInfo(y).upperBound())) {
+      if (!isSameType(
+          factory.getTyVarInfo(x).upperBound(),
+          subst(factory.getTyVarInfo(y).upperBound(), mapping))) {
         return false;
       }
     }
@@ -515,11 +522,16 @@ public class TurbineTypes implements Types {
         return type;
       case METHOD_TY:
         return substMethod((MethodTy) type, mapping);
-      case WILD_TY:
       case INTERSECTION_TY:
+        return substIntersectionTy((IntersectionTy) type, mapping);
+      case WILD_TY:
         throw new UnsupportedOperationException();
     }
     throw new AssertionError(type.tyKind());
+  }
+
+  private static Type substIntersectionTy(IntersectionTy type, Map<TyVarSymbol, Type> mapping) {
+    return IntersectionTy.create(substAll(type.bounds(), mapping));
   }
 
   static MethodTy substMethod(MethodTy method, Map<TyVarSymbol, Type> mapping) {
@@ -559,6 +571,26 @@ public class TurbineTypes implements Types {
       simples.add(SimpleClassTy.create(simple.sym(), args.build(), simple.annos()));
     }
     return ClassTy.create(simples.build());
+  }
+
+  /**
+   * Returns a mapping that can be used to adapt the signature 'b' to the type parameters of 'a', or
+   * {@code null} if no such mapping exists.
+   */
+  @Nullable
+  private static ImmutableMap<TyVarSymbol, Type> getMapping(MethodTy a, MethodTy b) {
+    if (a.tyParams().size() != b.tyParams().size()) {
+      return null;
+    }
+    Iterator<TyVarSymbol> ax = a.tyParams().iterator();
+    Iterator<TyVarSymbol> bx = b.tyParams().iterator();
+    ImmutableMap.Builder<TyVarSymbol, Type> mapping = ImmutableMap.builder();
+    while (ax.hasNext()) {
+      TyVarSymbol s = ax.next();
+      TyVarSymbol t = bx.next();
+      mapping.put(t, TyVar.create(s, ImmutableList.of()));
+    }
+    return mapping.build();
   }
 
   /**
@@ -728,24 +760,16 @@ public class TurbineTypes implements Types {
     if (a.parameters().size() != b.parameters().size()) {
       return false;
     }
-    if (a.tyParams().size() != b.tyParams().size()) {
+    ImmutableMap<TyVarSymbol, Type> mapping = getMapping(a, b);
+    if (mapping == null) {
       return false;
     }
-    Iterator<TyVarSymbol> at = a.tyParams().iterator();
-    Iterator<TyVarSymbol> bt = b.tyParams().iterator();
-    ImmutableMap.Builder<TyVarSymbol, Type> mapping = ImmutableMap.builder();
-    while (at.hasNext()) {
-      TyVarSymbol s = at.next();
-      TyVarSymbol t = bt.next();
-      // JLS 8.4.4 - type parameters are the same if their bounds are equal
-      if (!isSameType(factory.getTyVarInfo(s).upperBound(), factory.getTyVarInfo(t).upperBound())) {
+    if (!sameTypeParameterBounds(a, b, mapping)) {
         return false;
-      }
-      mapping.put(s, TyVar.create(t, ImmutableList.of()));
     }
     Iterator<Type> ax = a.parameters().iterator();
     // adapt the formal parameter types of 'b' to the type parameters of 'a'
-    Iterator<Type> bx = substAll(b.parameters(), mapping.build()).iterator();
+    Iterator<Type> bx = substAll(b.parameters(), mapping).iterator();
     while (ax.hasNext()) {
       if (!eqOrErasedEq(ax.next(), bx.next())) {
         return false;
@@ -940,5 +964,4 @@ public class TurbineTypes implements Types {
     }
     return factory.asTypeMirror(type);
   }
-
 }
