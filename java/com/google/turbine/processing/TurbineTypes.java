@@ -771,15 +771,11 @@ public class TurbineTypes implements Types {
     // adapt the formal parameter types of 'b' to the type parameters of 'a'
     Iterator<Type> bx = substAll(b.parameters(), mapping).iterator();
     while (ax.hasNext()) {
-      if (!eqOrErasedEq(ax.next(), bx.next())) {
+      if (!isSameType(ax.next(), bx.next())) {
         return false;
       }
     }
     return true;
-  }
-
-  boolean eqOrErasedEq(Type a, Type b) {
-    return isSameType(a, b) || isSameType(erasure(a), erasure(b));
   }
 
   @Override
