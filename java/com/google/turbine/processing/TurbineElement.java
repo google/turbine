@@ -109,9 +109,7 @@ public abstract class TurbineElement implements Element {
 
     TurbineTypeElement(ModelFactory factory, ClassSymbol sym) {
       super(factory);
-      requireNonNull(factory);
-      requireNonNull(sym);
-      this.sym = sym;
+      this.sym = requireNonNull(sym);
       this.info =
           memoize(
               new Supplier<TypeBoundClass>() {

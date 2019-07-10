@@ -447,6 +447,17 @@ public class IntegrationTestSupport {
     return Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
   }
 
+  public static JavacTask runJavacAnalysis(
+      Map<String, String> sources, Collection<Path> classpath, ImmutableList<String> options)
+      throws Exception {
+
+    DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
+    FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
+    Path out = fs.getPath("out");
+
+    return setupJavac(sources, classpath, options, collector, fs, out);
+  }
+
   public static Map<String, byte[]> runJavac(
       Map<String, String> sources, Collection<Path> classpath) throws Exception {
     return runJavac(
@@ -457,44 +468,11 @@ public class IntegrationTestSupport {
       Map<String, String> sources, Collection<Path> classpath, ImmutableList<String> options)
       throws Exception {
 
+    DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
     FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
-
-    Path srcs = fs.getPath("srcs");
     Path out = fs.getPath("out");
 
-    Files.createDirectories(out);
-
-    ArrayList<Path> inputs = new ArrayList<>();
-    for (Map.Entry<String, String> entry : sources.entrySet()) {
-      Path path = srcs.resolve(entry.getKey());
-      if (path.getParent() != null) {
-        Files.createDirectories(path.getParent());
-      }
-      MoreFiles.asCharSink(path, UTF_8).write(entry.getValue());
-      inputs.add(path);
-    }
-
-    JavacTool compiler = JavacTool.create();
-    DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
-    JavacFileManager fileManager = new JavacFileManager(new Context(), true, UTF_8);
-    fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
-    fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
-    fileManager.setLocationFromPaths(StandardLocation.locationFor("MODULE_PATH"), classpath);
-    if (inputs.stream().filter(i -> i.getFileName().toString().equals("module-info.java")).count()
-        > 1) {
-      // multi-module mode
-      fileManager.setLocationFromPaths(
-          StandardLocation.locationFor("MODULE_SOURCE_PATH"), ImmutableList.of(srcs));
-    }
-
-    JavacTask task =
-        compiler.getTask(
-            new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
-            fileManager,
-            collector,
-            options,
-            ImmutableList.of(),
-            fileManager.getJavaFileObjectsFromPaths(inputs));
+    JavacTask task = setupJavac(sources, classpath, options, collector, fs, out);
 
     assertWithMessage(collector.getDiagnostics().toString()).that(task.call()).isTrue();
 
@@ -519,6 +497,49 @@ public class IntegrationTestSupport {
     return result;
   }
 
+  private static JavacTask setupJavac(
+      Map<String, String> sources,
+      Collection<Path> classpath,
+      ImmutableList<String> options,
+      DiagnosticCollector<JavaFileObject> collector,
+      FileSystem fs,
+      Path out)
+      throws IOException {
+    Path srcs = fs.getPath("srcs");
+
+    Files.createDirectories(out);
+
+    ArrayList<Path> inputs = new ArrayList<>();
+    for (Map.Entry<String, String> entry : sources.entrySet()) {
+      Path path = srcs.resolve(entry.getKey());
+      if (path.getParent() != null) {
+        Files.createDirectories(path.getParent());
+      }
+      MoreFiles.asCharSink(path, UTF_8).write(entry.getValue());
+      inputs.add(path);
+    }
+
+    JavacTool compiler = JavacTool.create();
+    JavacFileManager fileManager = new JavacFileManager(new Context(), true, UTF_8);
+    fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
+    fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
+    fileManager.setLocationFromPaths(StandardLocation.locationFor("MODULE_PATH"), classpath);
+    if (inputs.stream().filter(i -> i.getFileName().toString().equals("module-info.java")).count()
+        > 1) {
+      // multi-module mode
+      fileManager.setLocationFromPaths(
+          StandardLocation.locationFor("MODULE_SOURCE_PATH"), ImmutableList.of(srcs));
+    }
+
+    return compiler.getTask(
+        new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+        fileManager,
+        collector,
+        options,
+        ImmutableList.of(),
+        fileManager.getJavaFileObjectsFromPaths(inputs));
+  }
+
   /** Normalizes and stringifies a collection of class files. */
   public static String dump(Map<String, byte[]> compiled) throws Exception {
     StringBuilder sb = new StringBuilder();
@@ -535,17 +556,17 @@ public class IntegrationTestSupport {
     return sb.toString();
   }
 
-  static class TestInput {
+  public static class TestInput {
 
-    final Map<String, String> sources;
-    final Map<String, String> classes;
+    public final Map<String, String> sources;
+    public final Map<String, String> classes;
 
     public TestInput(Map<String, String> sources, Map<String, String> classes) {
       this.sources = sources;
       this.classes = classes;
     }
 
-    static TestInput parse(String text) {
+    public static TestInput parse(String text) {
       Map<String, String> sources = new LinkedHashMap<>();
       Map<String, String> classes = new LinkedHashMap<>();
       String className = null;

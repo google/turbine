@@ -17,6 +17,7 @@
 package com.google.turbine.processing;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -24,7 +25,9 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.TyKind;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A representation of the class hierarchy, with logic for performing search between subtypes and
@@ -63,7 +66,7 @@ public class ClassHierarchy {
   private class HierarchyNode {
 
     private final ClassSymbol sym;
-    private final Map<ClassSymbol, PathNode> ancestors = new HashMap<>();
+    private final Map<ClassSymbol, PathNode> ancestors = new LinkedHashMap<>();
 
     HierarchyNode(ClassSymbol sym) {
       this.sym = sym;
@@ -87,6 +90,11 @@ public class ClassHierarchy {
       for (Map.Entry<ClassSymbol, PathNode> n : child.ancestors.entrySet()) {
         ancestors.putIfAbsent(n.getKey(), new PathNode(classTy, n.getValue()));
       }
+    }
+
+    /** The supertype closure of this node. */
+    private Set<ClassSymbol> closure() {
+      return ancestors.keySet();
     }
   }
 
@@ -137,5 +145,16 @@ public class ClassHierarchy {
       path = path.ancestor;
     }
     return result.build().reverse();
+  }
+
+  /**
+   * Returns all classes in the transitive supertype hierarchy of the given class, including the
+   * class itself.
+   *
+   * <p>The iteration order of the results is undefined, and in particular no guarantees are made
+   * about the ordering of sub-types and super-types.
+   */
+  public Iterable<ClassSymbol> transitiveSupertypes(ClassSymbol s) {
+    return Iterables.concat(ImmutableList.of(s), get(s).closure());
   }
 }
