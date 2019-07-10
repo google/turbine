@@ -277,7 +277,7 @@ public class Canonicalize {
   }
 
   /** Instantiates a type argument using the given mapping. */
-  private Type instantiate(Map<TyVarSymbol, Type> mapping, Type type) {
+  private static Type instantiate(Map<TyVarSymbol, Type> mapping, Type type) {
     if (type == null) {
       return null;
     }
@@ -304,7 +304,7 @@ public class Canonicalize {
     }
   }
 
-  private Type instantiateWildTy(Map<TyVarSymbol, Type> mapping, WildTy type) {
+  private static Type instantiateWildTy(Map<TyVarSymbol, Type> mapping, WildTy type) {
     switch (type.boundKind()) {
       case NONE:
         return type;
@@ -318,7 +318,7 @@ public class Canonicalize {
     throw new AssertionError(type.boundKind());
   }
 
-  private Type instantiateClassTy(Map<TyVarSymbol, Type> mapping, ClassTy type) {
+  private static Type instantiateClassTy(Map<TyVarSymbol, Type> mapping, ClassTy type) {
     ImmutableList.Builder<SimpleClassTy> simples = ImmutableList.builder();
     for (SimpleClassTy simple : type.classes()) {
       ImmutableList.Builder<Type> args = ImmutableList.builder();
@@ -335,7 +335,7 @@ public class Canonicalize {
    * reference, or else {@code null}.
    */
   @Nullable
-  private TyVarSymbol tyVarSym(Type type) {
+  private static TyVarSymbol tyVarSym(Type type) {
     if (type.tyKind() == TyKind.TY_VAR) {
       return ((TyVar) type).sym();
     }

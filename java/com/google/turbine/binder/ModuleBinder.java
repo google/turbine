@@ -179,11 +179,11 @@ public class ModuleBinder {
     return new RequireInfo(moduleName, flags, requires != null ? requires.version() : null);
   }
 
-  private ExportInfo bindExports(ModExports directive) {
+  private static ExportInfo bindExports(ModExports directive) {
     return new ExportInfo(directive.packageName(), directive.moduleNames());
   }
 
-  private OpenInfo bindOpens(ModOpens directive) {
+  private static OpenInfo bindOpens(ModOpens directive) {
     return new OpenInfo(directive.packageName(), directive.moduleNames());
   }
 
