@@ -259,6 +259,9 @@ public class TurbineElements implements Elements {
   @Override
   public boolean overrides(
       ExecutableElement overrider, ExecutableElement overridden, TypeElement type) {
+    if (!overrider.getSimpleName().contentEquals(overridden.getSimpleName())) {
+      return false;
+    }
     TypeMirror a = overrider.asType();
     TypeMirror b = types.asMemberOf((DeclaredType) type.asType(), overridden);
     if (b == null) {

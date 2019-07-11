@@ -106,7 +106,6 @@ public class Erasure {
 
   private static Type erasureMethodTy(MethodTy ty, Function<TyVarSymbol, TyVarInfo> tenv) {
     return MethodTy.create(
-        ty.name(),
         /* tyParams= */ ImmutableSet.of(),
         erase(ty.returnType(), tenv),
         ty.receiverType() != null ? erase(ty.receiverType(), tenv) : null,

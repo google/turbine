@@ -246,7 +246,6 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
     public MethodTy asType() {
       return MethodTy.create(
-          name(),
           tyParams.keySet(),
           returnType,
           receiver != null ? receiver.type() : null,
