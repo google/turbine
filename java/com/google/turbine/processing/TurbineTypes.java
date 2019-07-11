@@ -536,7 +536,6 @@ public class TurbineTypes implements Types {
 
   static MethodTy substMethod(MethodTy method, Map<TyVarSymbol, Type> mapping) {
     return MethodTy.create(
-        method.name(),
         method.tyParams(),
         subst(method.returnType(), mapping),
         method.receiverType() != null ? subst(method.receiverType(), mapping) : null,
@@ -755,8 +754,6 @@ public class TurbineTypes implements Types {
   }
 
   private boolean isSameSignature(MethodTy a, MethodTy b) {
-    // JLS 8.4.2 says "two methods have the same signature if they have the same name...", but
-    // javac's implementation of isSubsignature ignores names, so we do too for bug compatibility.
     if (a.parameters().size() != b.parameters().size()) {
       return false;
     }

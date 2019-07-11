@@ -476,8 +476,6 @@ public interface Type {
   @AutoValue
   abstract class MethodTy implements Type {
 
-    public abstract String name();
-
     public abstract ImmutableSet<TyVarSymbol> tyParams();
 
     public abstract Type returnType();
@@ -491,14 +489,12 @@ public interface Type {
     public abstract ImmutableList<Type> thrown();
 
     public static MethodTy create(
-        String name,
         ImmutableSet<TyVarSymbol> tyParams,
         Type returnType,
         Type receiverType,
         ImmutableList<Type> parameters,
         ImmutableList<Type> thrown) {
-      return new AutoValue_Type_MethodTy(
-          name, tyParams, returnType, receiverType, parameters, thrown);
+      return new AutoValue_Type_MethodTy(tyParams, returnType, receiverType, parameters, thrown);
     }
 
     @Override
