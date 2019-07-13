@@ -80,7 +80,7 @@ public class TurbineElements implements Elements {
   @Override
   public Map<? extends ExecutableElement, ? extends AnnotationValue> getElementValuesWithDefaults(
       AnnotationMirror a) {
-    throw new UnsupportedOperationException();
+    return ((TurbineAnnotationMirror) a).getElementValuesWithDefaults();
   }
 
   @Override

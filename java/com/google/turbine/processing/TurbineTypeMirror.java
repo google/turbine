@@ -30,6 +30,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
@@ -64,9 +65,15 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     this.factory = requireNonNull(factory);
   }
 
+  protected abstract ImmutableList<AnnoInfo> annos();
+
   @Override
   public final List<? extends AnnotationMirror> getAnnotationMirrors() {
-    throw new UnsupportedOperationException();
+    ImmutableList.Builder<AnnotationMirror> result = ImmutableList.builder();
+    for (AnnoInfo anno : annos()) {
+      result.add(TurbineAnnotationMirror.create(factory, anno));
+    }
+    return result.build();
   }
 
   @Override
@@ -138,6 +145,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
       return v.visitPrimitive(this, p);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return type.annos();
     }
   }
 
@@ -237,6 +249,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     public ClassTy type() {
       return type;
     }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
+    }
   }
 
   /** An {@link ArrayType} implementation backed by a {@link ArrayTy}. */
@@ -267,6 +284,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
       return v.visitArray(this, p);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return type.annos();
     }
   }
 
@@ -310,6 +332,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     public int hashCode() {
       return getKind().hashCode();
     }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
+    }
   }
 
   /** The absence of a type, {@see javax.lang.model.util.Types#getNoType}. */
@@ -348,6 +375,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     public int hashCode() {
       return getKind().hashCode();
     }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
+    }
   }
 
   /** A void type, {@see javax.lang.model.util.Types#getNoType}. */
@@ -370,6 +402,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
       return v.visitNoType(this, p);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
     }
   }
 
@@ -442,6 +479,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     public String toString() {
       return type.toString();
     }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return type.annos();
+    }
   }
 
   /** A {@link WildcardType} implementation backed by a {@link WildTy}. */
@@ -487,6 +529,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public TypeMirror getSuperBound() {
       return type.boundKind() == BoundKind.LOWER ? factory.asTypeMirror(type.bound()) : null;
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return type.annotations();
     }
   }
 
@@ -550,6 +597,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public String toString() {
       return Joiner.on('&').join(getBounds());
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
     }
   }
 
@@ -623,6 +675,11 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
       return v.visitExecutable(this, p);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
     }
   }
 }
