@@ -94,10 +94,12 @@ class ModelFactory {
   private final Map<PackageSymbol, TurbinePackageElement> packageCache = new HashMap<>();
 
   private final ClassHierarchy cha;
+  private final ClassLoader processorLoader;
 
-  ModelFactory(Env<ClassSymbol, ? extends TypeBoundClass> env) {
+  ModelFactory(Env<ClassSymbol, ? extends TypeBoundClass> env, ClassLoader processorLoader) {
     this.env = requireNonNull(env);
     this.cha = new ClassHierarchy(env);
+    this.processorLoader = processorLoader;
   }
 
   TypeMirror asTypeMirror(Type type) {
@@ -278,5 +280,9 @@ class ModelFactory {
 
   ClassHierarchy cha() {
     return cha;
+  }
+
+  ClassLoader processorLoader() {
+    return processorLoader;
   }
 }
