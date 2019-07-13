@@ -23,16 +23,16 @@ import javax.lang.model.element.Name;
 /** An implementation of {@link Name} backed by a {@link CharSequence}. */
 public class TurbineName implements Name {
 
-  private final CharSequence name;
+  private final String name;
 
-  public TurbineName(CharSequence name) {
+  public TurbineName(String name) {
     requireNonNull(name);
     this.name = name;
   }
 
   @Override
   public boolean contentEquals(CharSequence cs) {
-    return name.toString().contentEquals(cs);
+    return name.contentEquals(cs);
   }
 
   @Override
@@ -52,7 +52,7 @@ public class TurbineName implements Name {
 
   @Override
   public String toString() {
-    return name.toString();
+    return name;
   }
 
   @Override
