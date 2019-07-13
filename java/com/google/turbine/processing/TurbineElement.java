@@ -49,6 +49,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -147,6 +148,10 @@ public abstract class TurbineElement implements Element {
       result.add(TurbineAnnotationMirror.create(factory, anno));
     }
     return result.build();
+  }
+
+  List<? extends AnnotationMirror> getAllAnnotationMirrors() {
+    return getAnnotationMirrors();
   }
 
   protected abstract ImmutableList<AnnoInfo> annos();
@@ -421,7 +426,7 @@ public abstract class TurbineElement implements Element {
       if (anno != null) {
         return TurbineAnnotationProxy.create(factory, annotationType, anno);
       }
-      if (!isInheritedAnnotation(sym)) {
+      if (!isAnnotationInherited(sym)) {
         return null;
       }
       ClassSymbol superclass = info().superclass();
@@ -439,7 +444,38 @@ public abstract class TurbineElement implements Element {
       return null;
     }
 
-    private boolean isInheritedAnnotation(ClassSymbol sym) {
+    @Override
+    List<? extends AnnotationMirror> getAllAnnotationMirrors() {
+      Map<ClassSymbol, AnnotationMirror> result = new LinkedHashMap<>();
+      for (AnnoInfo anno : annos()) {
+        result.put(anno.sym(), TurbineAnnotationMirror.create(factory, anno));
+      }
+      ClassSymbol superclass = info().superclass();
+      while (superclass != null) {
+        TypeBoundClass i = factory.getSymbol(superclass);
+        if (i == null) {
+          break;
+        }
+        for (AnnoInfo anno : i.annotations()) {
+          addAnnotationFromSuper(result, anno);
+        }
+        superclass = i.superclass();
+      }
+      return ImmutableList.copyOf(result.values());
+    }
+
+    private void addAnnotationFromSuper(Map<ClassSymbol, AnnotationMirror> result, AnnoInfo anno) {
+      if (!isAnnotationInherited(anno.sym())) {
+        return;
+      }
+      if (result.containsKey(anno.sym())) {
+        // if the same inherited annotation is present on multiple supertypes, only return one
+        return;
+      }
+      result.put(anno.sym(), TurbineAnnotationMirror.create(factory, anno));
+    }
+
+    private boolean isAnnotationInherited(ClassSymbol sym) {
       TypeBoundClass annoInfo = factory.getSymbol(sym);
       if (annoInfo == null) {
         return false;
