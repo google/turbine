@@ -20,11 +20,13 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.testing.TestClassPaths;
 import java.util.Arrays;
 import java.util.Optional;
+import javax.lang.model.element.Name;
 import javax.lang.model.util.Elements;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,5 +91,23 @@ public class TurbineElementsTest {
       assertThat(turbineElements.getConstantExpression(value))
           .isEqualTo(javacElements.getConstantExpression(value));
     }
+  }
+
+  @Test
+  public void getName() {
+    Name n = turbineElements.getName("hello");
+    assertThat(n.contentEquals("hello")).isTrue();
+    assertThat(n.contentEquals("goodbye")).isFalse();
+
+    assertThat(n.toString()).isEqualTo("hello");
+    assertThat(n.toString())
+        .isEqualTo(new String(new char[] {'h', 'e', 'l', 'l', 'o'})); // defeat interning
+
+    assertThat(n.length()).isEqualTo(5);
+
+    new EqualsTester()
+        .addEqualityGroup(turbineElements.getName("hello"), turbineElements.getName("hello"))
+        .addEqualityGroup(turbineElements.getName("goodbye"))
+        .testEquals();
   }
 }
