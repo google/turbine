@@ -35,6 +35,7 @@ import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
@@ -93,8 +94,14 @@ public abstract class TurbineElement implements Element {
 
   @Override
   public final List<? extends AnnotationMirror> getAnnotationMirrors() {
-    throw new UnsupportedOperationException();
+    ImmutableList.Builder<AnnotationMirror> result = ImmutableList.builder();
+    for (AnnoInfo anno : annos()) {
+      result.add(TurbineAnnotationMirror.create(factory, anno));
+    }
+    return result.build();
   }
+
+  protected abstract ImmutableList<AnnoInfo> annos();
 
   /** A {@link TypeElement} implementation backed by a {@link ClassSymbol}. */
   static class TurbineTypeElement extends TurbineElement implements TypeElement {
@@ -353,6 +360,11 @@ public abstract class TurbineElement implements Element {
     public boolean equals(Object obj) {
       return obj instanceof TurbineTypeElement && sym.equals(((TurbineTypeElement) obj).sym);
     }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return info().annotations();
+    }
   }
 
   /** A {@link TypeParameterElement} implementation backed by a {@link TyVarSymbol}. */
@@ -442,6 +454,11 @@ public abstract class TurbineElement implements Element {
     @Override
     public TyVarSymbol sym() {
       return sym;
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return info().annotations();
     }
   }
 
@@ -609,6 +626,11 @@ public abstract class TurbineElement implements Element {
     public <R, P> R accept(ElementVisitor<R, P> v, P p) {
       return v.visitExecutable(this, p);
     }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return info().annotations();
+    }
   }
 
   /** An {@link VariableElement} implementation backed by a {@link FieldSymbol}. */
@@ -694,6 +716,11 @@ public abstract class TurbineElement implements Element {
     @Override
     public <R, P> R accept(ElementVisitor<R, P> v, P p) {
       return v.visitVariable(this, p);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return info().annotations();
     }
   }
 
@@ -825,6 +852,12 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      // TODO(cushon): load package-info annotations
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String toString() {
       return sym.toString();
     }
@@ -921,6 +954,11 @@ public abstract class TurbineElement implements Element {
     @Override
     public String toString() {
       return String.valueOf(sym.name());
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return info().annotations();
     }
   }
 }
