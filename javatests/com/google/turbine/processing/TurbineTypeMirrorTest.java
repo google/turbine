@@ -46,7 +46,9 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class TurbineTypeMirrorTest {
 
-  private final ModelFactory factory = new ModelFactory(TestClassPaths.TURBINE_BOOTCLASSPATH.env());
+  private final ModelFactory factory =
+      new ModelFactory(
+          TestClassPaths.TURBINE_BOOTCLASSPATH.env(), ClassLoader.getSystemClassLoader());
 
   @Test
   public void primitiveTypes() {
