@@ -306,7 +306,7 @@ public class TurbineElements implements Elements {
 
   @Override
   public Name getName(CharSequence cs) {
-    throw new UnsupportedOperationException();
+    return new TurbineName(cs.toString());
   }
 
   @Override
