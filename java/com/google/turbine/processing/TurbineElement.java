@@ -21,6 +21,9 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.turbine.binder.bound.AnnotationMetadata;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -33,6 +36,8 @@ import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
@@ -41,6 +46,7 @@ import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import java.lang.annotation.Annotation;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
@@ -82,14 +88,56 @@ public abstract class TurbineElement implements Element {
     this.factory = requireNonNull(factory);
   }
 
+  static AnnoInfo getAnnotation(Iterable<AnnoInfo> annos, ClassSymbol sym) {
+    for (AnnoInfo anno : annos) {
+      if (anno.sym().equals(sym)) {
+        return anno;
+      }
+    }
+    return null;
+  }
+
   @Override
   public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-    throw new UnsupportedOperationException();
+    ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
+    TypeBoundClass info = factory.getSymbol(sym);
+    if (info == null) {
+      return null;
+    }
+    AnnoInfo anno = getAnnotation(annos(), sym);
+    if (anno == null) {
+      return null;
+    }
+    return TurbineAnnotationProxy.create(factory, annotationType, anno);
   }
 
   @Override
   public final <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-    throw new UnsupportedOperationException();
+    ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
+    TypeBoundClass info = factory.getSymbol(sym);
+    if (info == null) {
+      return null;
+    }
+    AnnotationMetadata metadata = info.annotationMetadata();
+    if (metadata == null) {
+      return null;
+    }
+    List<A> result = new ArrayList<>();
+    for (AnnoInfo anno : annos()) {
+      if (anno.sym().equals(sym)) {
+        result.add(TurbineAnnotationProxy.create(factory, annotationType, anno));
+        continue;
+      }
+      if (anno.sym().equals(metadata.repeatable())) {
+        ArrayInitValue arrayValue = (ArrayInitValue) anno.values().get("value");
+        for (Const element : arrayValue.elements()) {
+          result.add(
+              TurbineAnnotationProxy.create(
+                  factory, annotationType, ((TurbineAnnotationValue) element).info()));
+        }
+      }
+    }
+    return Iterables.toArray(result, annotationType);
   }
 
   @Override
@@ -163,7 +211,7 @@ public abstract class TurbineElement implements Element {
       return qualifiedName.get();
     }
 
-    private final Supplier<TypeMirror> superClass =
+    private final Supplier<TypeMirror> superclass =
         memoize(
             new Supplier<TypeMirror>() {
               @Override
@@ -186,7 +234,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror getSuperclass() {
-      return superClass.get();
+      return superclass.get();
     }
 
     @Override
@@ -364,6 +412,44 @@ public abstract class TurbineElement implements Element {
     @Override
     protected ImmutableList<AnnoInfo> annos() {
       return info().annotations();
+    }
+
+    @Override
+    public final <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+      ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
+      AnnoInfo anno = getAnnotation(annos(), sym);
+      if (anno != null) {
+        return TurbineAnnotationProxy.create(factory, annotationType, anno);
+      }
+      if (!isInheritedAnnotation(sym)) {
+        return null;
+      }
+      ClassSymbol superclass = info().superclass();
+      while (superclass != null) {
+        TypeBoundClass info = factory.getSymbol(superclass);
+        if (info == null) {
+          break;
+        }
+        anno = getAnnotation(info.annotations(), sym);
+        if (anno != null) {
+          return TurbineAnnotationProxy.create(factory, annotationType, anno);
+        }
+        superclass = info.superclass();
+      }
+      return null;
+    }
+
+    private boolean isInheritedAnnotation(ClassSymbol sym) {
+      TypeBoundClass annoInfo = factory.getSymbol(sym);
+      if (annoInfo == null) {
+        return false;
+      }
+      for (AnnoInfo anno : annoInfo.annotations()) {
+        if (anno.sym().equals(ClassSymbol.INHERITED)) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 
