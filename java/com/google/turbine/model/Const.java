@@ -415,6 +415,9 @@ public abstract class Const {
 
     @Override
     public String toString() {
+      if (Float.isNaN(value)) {
+        return "0.0f/0.0f";
+      }
       return value + "f";
     }
 
@@ -498,6 +501,15 @@ public abstract class Const {
 
     @Override
     public String toString() {
+      if (Double.isNaN(value)) {
+        return "0.0/0.0";
+      }
+      if (value == Double.POSITIVE_INFINITY) {
+        return "1.0/0.0";
+      }
+      if (value == Double.NEGATIVE_INFINITY) {
+        return "-1.0/0.0";
+      }
       return String.valueOf(value);
     }
 

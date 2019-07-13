@@ -28,6 +28,7 @@ import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
@@ -278,7 +279,24 @@ public class TurbineElements implements Elements {
 
   @Override
   public String getConstantExpression(Object value) {
-    throw new UnsupportedOperationException();
+    if (value instanceof Byte) {
+      return new Const.ByteValue((Byte) value).toString();
+    }
+    if (value instanceof Long) {
+      return new Const.LongValue((Long) value).toString();
+    }
+    if (value instanceof Float) {
+      return new Const.FloatValue((Float) value).toString();
+    }
+    if (value instanceof Double) {
+      return new Const.DoubleValue((Double) value).toString();
+    }
+    if (value instanceof Short) {
+      // Special-case short for consistency with javac, see:
+      // https://bugs.openjdk.java.net/browse/JDK-8227617
+      return String.format("(short)%d", (Short) value);
+    }
+    return String.valueOf(value);
   }
 
   @Override

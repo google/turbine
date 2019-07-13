@@ -29,12 +29,13 @@ import com.google.common.io.MoreFiles;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
-import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.CompUnit;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -436,15 +437,24 @@ public class IntegrationTestSupport {
       ClassPath bootClassPath,
       Optional<String> moduleVersion)
       throws IOException {
-    List<Tree.CompUnit> units =
+    BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
+    return Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
+  }
+
+  public static BindingResult turbineAnalysis(
+      Map<String, String> input,
+      ImmutableList<Path> classpath,
+      ClassPath bootClassPath,
+      Optional<String> moduleVersion)
+      throws IOException {
+    List<CompUnit> units =
         input.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toList());
 
-    Binder.BindingResult bound =
-        Binder.bind(units, ClassPathBinder.bindClasspath(classpath), bootClassPath, moduleVersion);
-    return Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
+    return Binder.bind(
+        units, ClassPathBinder.bindClasspath(classpath), bootClassPath, moduleVersion);
   }
 
   public static JavacTask runJavacAnalysis(
