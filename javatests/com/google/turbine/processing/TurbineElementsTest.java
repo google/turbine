@@ -16,15 +16,23 @@
 
 package com.google.turbine.processing;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
+import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.env.SimpleEnv;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.testing.TestClassPaths;
+import com.sun.source.util.JavacTask;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import javax.lang.model.element.Name;
 import javax.lang.model.util.Elements;
@@ -36,26 +44,53 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class TurbineElementsTest {
 
+  private static final IntegrationTestSupport.TestInput SOURCES =
+      IntegrationTestSupport.TestInput.parse(
+          Joiner.on('\n')
+              .join(
+                  "=== Test.java ===",
+                  "@A class Test extends One {}",
+                  "=== One.java ===",
+                  "@B class One extends Two {}",
+                  "=== Two.java ===",
+                  "@C(1) class Two extends Three {}",
+                  "=== Three.java ===",
+                  "@C(2) class Three extends Four {}",
+                  "=== Four.java ===",
+                  "@D class Four {}",
+                  "=== Annotations.java ===",
+                  "import java.lang.annotation.Inherited;",
+                  "@interface A {}",
+                  "@interface B {}",
+                  "@Inherited",
+                  "@interface C {",
+                  "  int value();",
+                  "}",
+                  "@Inherited",
+                  "@interface D {}"));
+
   Elements javacElements;
+  ModelFactory factory;
   TurbineElements turbineElements;
 
   @Before
   public void setup() throws Exception {
-    javacElements =
+    JavacTask task =
         IntegrationTestSupport.runJavacAnalysis(
-                ImmutableMap.of("Test.java", "class Test {}"),
-                ImmutableList.of(),
-                ImmutableList.of())
-            .getElements();
+            SOURCES.sources, ImmutableList.of(), ImmutableList.of());
+    task.analyze();
+    javacElements = task.getElements();
 
     BindingResult bound =
         IntegrationTestSupport.turbineAnalysis(
-            ImmutableMap.of("Test.java", "class Test {}"),
+            SOURCES.sources,
             ImmutableList.of(),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
-    ModelFactory factory =
-        new ModelFactory(bound.classPathEnv(), TurbineElementsTest.class.getClassLoader());
+    Env<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
+            .append(new SimpleEnv<>(bound.units()));
+    factory = new ModelFactory(env, TurbineElementsTest.class.getClassLoader());
     TurbineTypes turbineTypes = new TurbineTypes(factory);
     turbineElements = new TurbineElements(factory, turbineTypes);
   }
@@ -109,5 +144,19 @@ public class TurbineElementsTest {
         .addEqualityGroup(turbineElements.getName("hello"), turbineElements.getName("hello"))
         .addEqualityGroup(turbineElements.getName("goodbye"))
         .testEquals();
+  }
+
+  @Test
+  public void getAllAnnotationMirrors() {
+    assertThat(
+            toStrings(
+                turbineElements.getAllAnnotationMirrors(
+                    factory.typeElement(new ClassSymbol("Test")))))
+        .containsExactlyElementsIn(
+            toStrings(javacElements.getAllAnnotationMirrors(javacElements.getTypeElement("Test"))));
+  }
+
+  private static ImmutableList<String> toStrings(List<?> inputs) {
+    return inputs.stream().map(String::valueOf).collect(toImmutableList());
   }
 }
