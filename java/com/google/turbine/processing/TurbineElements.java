@@ -248,8 +248,8 @@ public class TurbineElements implements Elements {
   }
 
   @Override
-  public List<? extends AnnotationMirror> getAllAnnotationMirrors(Element e) {
-    throw new UnsupportedOperationException();
+  public List<? extends AnnotationMirror> getAllAnnotationMirrors(Element element) {
+    return ((TurbineElement) element).getAllAnnotationMirrors();
   }
 
   @Override
