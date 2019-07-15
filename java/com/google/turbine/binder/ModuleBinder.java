@@ -40,6 +40,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Ident;
@@ -60,8 +61,9 @@ public class ModuleBinder {
       PackageSourceBoundModule module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       Env<ModuleSymbol, ModuleInfo> moduleEnv,
-      Optional<String> moduleVersion) {
-    return new ModuleBinder(module, env, moduleEnv, moduleVersion).bind();
+      Optional<String> moduleVersion,
+      TurbineLogWithSource log) {
+    return new ModuleBinder(module, env, moduleEnv, moduleVersion, log).bind();
   }
 
   private final PackageSourceBoundModule module;
@@ -69,16 +71,19 @@ public class ModuleBinder {
   private final Env<ModuleSymbol, ModuleInfo> moduleEnv;
   private final Optional<String> moduleVersion;
   private final CompoundScope scope;
+  private final TurbineLogWithSource log;
 
   public ModuleBinder(
       PackageSourceBoundModule module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       Env<ModuleSymbol, ModuleInfo> moduleEnv,
-      Optional<String> moduleVersion) {
+      Optional<String> moduleVersion,
+      TurbineLogWithSource log) {
     this.module = module;
     this.env = env;
     this.moduleEnv = moduleEnv;
     this.moduleVersion = moduleVersion;
+    this.log = log;
     this.scope = module.scope().toScope(Resolve.resolveFunction(env, /* origin= */ null));
   }
 
@@ -92,7 +97,8 @@ public class ModuleBinder {
             module.source(),
             scope,
             /* values= */ new SimpleEnv<>(ImmutableMap.of()),
-            env);
+            env,
+            log);
     ImmutableList.Builder<AnnoInfo> annoInfos = ImmutableList.builder();
     for (Tree.Anno annoTree : module.module().annos()) {
       ClassSymbol sym = resolve(annoTree.position(), annoTree.name());
