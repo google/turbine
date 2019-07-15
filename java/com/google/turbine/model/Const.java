@@ -641,7 +641,7 @@ public abstract class Const {
 
     @Override
     public String toString() {
-      return String.format("(short)%d", value);
+      return String.valueOf(value);
     }
 
     @Override
