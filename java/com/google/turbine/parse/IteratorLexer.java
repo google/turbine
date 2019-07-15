@@ -56,8 +56,7 @@ public class IteratorLexer implements Lexer {
 
   @Override
   public int position() {
-    // TODO(cushon): test expression position EOF handling
-    return curr != null ? curr.position : -1;
+    return curr.position;
   }
 
   @Override
