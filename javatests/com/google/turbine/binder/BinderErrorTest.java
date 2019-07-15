@@ -568,7 +568,26 @@ public class BinderErrorTest {
           "@One.A(b = {@One.NoSuch})",
           "                 ^",
         },
-      }
+      },
+      {
+        {
+          "public class Test {", //
+          "  @interface Anno {",
+          "    Class<?> value() default Object.class;",
+          "  }",
+          "  @Anno(NoSuch.class) int x;",
+          "  @Anno(NoSuch.class) int y;",
+          "}",
+        },
+        {
+          "<>:5: error: could not resolve NoSuch",
+          "  @Anno(NoSuch.class) int x;",
+          "        ^",
+          "<>:6: error: could not resolve NoSuch",
+          "  @Anno(NoSuch.class) int y;",
+          "        ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
