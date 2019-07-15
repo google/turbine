@@ -131,7 +131,7 @@ public class ConstTest {
         .isEqualTo("@p.Anno(x=1, y=2)");
     assertThat(new Const.StringValue("\"").toString()).isEqualTo("\"\\\"\"");
     assertThat(new Const.ByteValue((byte) 42).toString()).isEqualTo("(byte)0x2a");
-    assertThat(new Const.ShortValue((short) 42).toString()).isEqualTo("(short)42");
+    assertThat(new Const.ShortValue((short) 42).toString()).isEqualTo("42");
   }
 
   private static String makeAnno(ImmutableMap<String, Const> value) {
