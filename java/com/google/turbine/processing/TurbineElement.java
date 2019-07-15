@@ -80,6 +80,7 @@ public abstract class TurbineElement implements Element {
   public abstract boolean equals(Object obj);
 
   protected final ModelFactory factory;
+  private final Supplier<ImmutableList<AnnotationMirror>> annotationMirrors;
 
   protected <T> Supplier<T> memoize(Supplier<T> supplier) {
     return factory.memoize(supplier);
@@ -87,6 +88,18 @@ public abstract class TurbineElement implements Element {
 
   protected TurbineElement(ModelFactory factory) {
     this.factory = requireNonNull(factory);
+    this.annotationMirrors =
+        factory.memoize(
+            new Supplier<ImmutableList<AnnotationMirror>>() {
+              @Override
+              public ImmutableList<AnnotationMirror> get() {
+                ImmutableList.Builder<AnnotationMirror> result = ImmutableList.builder();
+                for (AnnoInfo anno : annos()) {
+                  result.add(TurbineAnnotationMirror.create(factory, anno));
+                }
+                return result.build();
+              }
+            });
   }
 
   static AnnoInfo getAnnotation(Iterable<AnnoInfo> annos, ClassSymbol sym) {
@@ -143,11 +156,7 @@ public abstract class TurbineElement implements Element {
 
   @Override
   public final List<? extends AnnotationMirror> getAnnotationMirrors() {
-    ImmutableList.Builder<AnnotationMirror> result = ImmutableList.builder();
-    for (AnnoInfo anno : annos()) {
-      result.add(TurbineAnnotationMirror.create(factory, anno));
-    }
-    return result.build();
+    return annotationMirrors.get();
   }
 
   List<? extends AnnotationMirror> getAllAnnotationMirrors() {
