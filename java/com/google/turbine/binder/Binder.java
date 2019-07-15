@@ -112,7 +112,13 @@ public class Binder {
 
     tenv =
         constants(
-            syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
+            syms,
+            tenv,
+            CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
+            log);
+
+    log.maybeThrow();
+
     tenv =
         disambiguateTypeAnnotations(
             syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
@@ -125,7 +131,8 @@ public class Binder {
             modules,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             classPathModuleEnv,
-            moduleVersion);
+            moduleVersion,
+            log);
 
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
@@ -262,7 +269,8 @@ public class Binder {
       SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       CompoundEnv<ModuleSymbol, ModuleInfo> moduleEnv,
-      Optional<String> moduleVersion) {
+      Optional<String> moduleVersion,
+      TurbineLog log) {
     // Allow resolution of modules in the current compilation. Currently this is only needed for
     // version strings in requires directives.
     moduleEnv =
@@ -288,7 +296,9 @@ public class Binder {
             });
     ImmutableList.Builder<SourceModuleInfo> bound = ImmutableList.builder();
     for (PackageSourceBoundModule module : modules.asMap().values()) {
-      bound.add(ModuleBinder.bind(module, env, moduleEnv, moduleVersion));
+      bound.add(
+          ModuleBinder.bind(
+              module, env, moduleEnv, moduleVersion, log.withSource(module.source())));
     }
     return bound.build();
   }
@@ -296,7 +306,8 @@ public class Binder {
   private static Env<ClassSymbol, SourceTypeBoundClass> constants(
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
-      CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv) {
+      CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
+      TurbineLog log) {
 
     // Prepare to lazily evaluate constant fields in each compilation unit.
     // The laziness is necessary since constant fields can reference other
@@ -322,7 +333,8 @@ public class Binder {
                           info.source(),
                           info.scope(),
                           env1,
-                          baseEnv)
+                          baseEnv,
+                          log.withSource(info.source()))
                       .evalFieldInitializer(field.decl().init().get(), field.type());
                 } catch (LazyEnv.LazyBindingError e) {
                   // fields initializers are allowed to reference the field being initialized,
@@ -342,7 +354,9 @@ public class Binder {
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.put(sym, new ConstBinder(constenv, sym, baseEnv, env.get(sym)).bind());
+      SourceTypeBoundClass base = env.get(sym);
+      builder.put(
+          sym, new ConstBinder(constenv, sym, baseEnv, base, log.withSource(base.source())).bind());
     }
     return builder.build();
   }
