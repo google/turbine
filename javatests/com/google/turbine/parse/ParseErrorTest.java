@@ -228,6 +228,23 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void abruptMultivariableDeclaration() {
+    String input = "class T { int x,; }";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              lines(
+                  "<>:1: error: expected token <identifier>", //
+                  "class T { int x,; }",
+                  "                ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
