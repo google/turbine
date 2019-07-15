@@ -33,6 +33,7 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.Kind;
@@ -63,19 +64,29 @@ public class ConstBinder {
   private final SourceTypeBoundClass base;
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
   private final ConstEvaluator constEvaluator;
+  private final TurbineLogWithSource log;
 
   public ConstBinder(
       Env<FieldSymbol, Value> constantEnv,
       ClassSymbol origin,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
-      SourceTypeBoundClass base) {
+      SourceTypeBoundClass base,
+      TurbineLogWithSource log) {
     this.constantEnv = constantEnv;
     this.origin = origin;
     this.base = base;
     this.env = env;
+    this.log = log;
     this.constEvaluator =
         new ConstEvaluator(
-            origin, origin, base.memberImports(), base.source(), base.scope(), constantEnv, env);
+            origin,
+            origin,
+            base.memberImports(),
+            base.source(),
+            base.scope(),
+            constantEnv,
+            env,
+            log);
   }
 
   public SourceTypeBoundClass bind() {
@@ -87,7 +98,8 @@ public class ConstBinder {
                 base.source(),
                 base.enclosingScope(),
                 constantEnv,
-                env)
+                env,
+                log)
             .evaluateAnnotations(base.annotations());
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());

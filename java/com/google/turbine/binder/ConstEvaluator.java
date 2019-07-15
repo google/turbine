@@ -40,6 +40,7 @@ import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ConstCastError;
 import com.google.turbine.model.Const.Value;
@@ -91,14 +92,17 @@ public strictfp class ConstEvaluator {
 
   private final Scope scope;
 
+  private final TurbineLogWithSource log;
+
   public ConstEvaluator(
       ClassSymbol origin,
       ClassSymbol owner,
       MemberImportIndex memberImports,
       SourceFile source,
       Scope scope,
-      Env<FieldSymbol, Const.Value> values,
-      CompoundEnv<ClassSymbol, TypeBoundClass> env) {
+      Env<FieldSymbol, Value> values,
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      TurbineLogWithSource log) {
 
     this.origin = origin;
     this.owner = owner;
@@ -107,6 +111,7 @@ public strictfp class ConstEvaluator {
     this.values = values;
     this.env = env;
     this.scope = scope;
+    this.log = log;
   }
 
   /** Evaluates the given expression's value. */
@@ -177,7 +182,7 @@ public strictfp class ConstEvaluator {
       case VOID_TY:
         return Type.VOID;
       case CLASS_TY:
-        return Type.ClassTy.asNonParametricClassTy(resolveClass((ClassTy) type));
+        return resolveClass((ClassTy) type);
       case ARR_TY:
         return Type.ArrayTy.create(
             evalClassLiteralType(((Tree.ArrTy) type).elem()), ImmutableList.of());
@@ -190,19 +195,20 @@ public strictfp class ConstEvaluator {
    * Resolves the {@link ClassSymbol} for the given {@link Tree.ClassTy}, with handling for
    * non-canonical qualified type names.
    *
-   * <p>Similar to {@link HierarchyBinder#resolveClass}, except we can't unconditionally consider
+   * <p>Similar to {@code HierarchyBinder#resolveClass}, except we can't unconditionally consider
    * members of the current class (e.g. when binding constants inside annotations on that class),
    * and when we do want to consider members we can rely on them being in the current scope (it
    * isn't completed during the hierarchy phase).
    */
-  private ClassSymbol resolveClass(ClassTy classTy) {
+  private Type resolveClass(ClassTy classTy) {
     ArrayDeque<Ident> flat = new ArrayDeque<>();
     for (ClassTy curr = classTy; curr != null; curr = curr.base().orElse(null)) {
       flat.addFirst(curr.name());
     }
     LookupResult result = scope.lookup(new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
-      throw error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.peekFirst());
+      log.error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.peekFirst());
+      return Type.ErrorTy.create();
     }
     if (result.sym().symKind() != Symbol.Kind.CLASS) {
       throw error(classTy.position(), ErrorKind.UNEXPECTED_TYPE_PARAMETER, flat.peekFirst());
@@ -211,7 +217,7 @@ public strictfp class ConstEvaluator {
     for (Ident bit : result.remaining()) {
       classSym = resolveNext(classTy.position(), classSym, bit);
     }
-    return classSym;
+    return Type.ClassTy.asNonParametricClassTy(classSym);
   }
 
   private ClassSymbol resolveNext(int position, ClassSymbol sym, Ident bit) {
