@@ -443,8 +443,14 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
     }
 
     ImmutableList.Builder<Type> exceptions = ImmutableList.builder();
-    for (TySig e : sig.exceptions()) {
-      exceptions.add(BytecodeBinder.bindTy(e, scope));
+    if (!sig.exceptions().isEmpty()) {
+      for (TySig e : sig.exceptions()) {
+        exceptions.add(BytecodeBinder.bindTy(e, scope));
+      }
+    } else {
+      for (String e : m.exceptions()) {
+        exceptions.add(ClassTy.asNonParametricClassTy(new ClassSymbol(e)));
+      }
     }
 
     Const defaultValue =

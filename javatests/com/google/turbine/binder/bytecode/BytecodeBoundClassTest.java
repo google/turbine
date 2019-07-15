@@ -86,6 +86,10 @@ public class BytecodeBoundClassTest {
     <X, Y extends X, Z extends Throwable> X foo(@Deprecated X bar, Y baz) throws IOException, Z {
       return null;
     }
+
+    void baz() throws IOException {
+      throw new IOException();
+    }
   }
 
   @Test
@@ -99,6 +103,12 @@ public class BytecodeBoundClassTest {
     assertThat(m.parameters().get(0).annotations()).hasSize(1);
     assertThat(m.parameters().get(0).name()).isEqualTo("bar");
     assertThat(m.exceptions()).hasSize(2);
+
+    MethodInfo b =
+        getBytecodeBoundClass(HasMethod.class).methods().stream()
+            .filter(x -> x.name().equals("baz"))
+            .collect(onlyElement());
+    assertThat(b.exceptions()).hasSize(1);
   }
 
   @interface VoidAnno {
