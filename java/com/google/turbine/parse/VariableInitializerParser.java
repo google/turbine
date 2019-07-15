@@ -205,14 +205,14 @@ public class VariableInitializerParser {
       result.add(
           ImmutableList.<SavedToken>builder()
               .addAll(tokens.subList(start, idx - 1))
-              .add(new SavedToken(Token.EOF, null, -1))
+              .add(new SavedToken(Token.EOF, null, tokens.get(idx - 1).position))
               .build());
       start = idx;
     }
     result.add(
         ImmutableList.<SavedToken>builder()
             .addAll(tokens.subList(start, tokens.size()))
-            .add(new SavedToken(Token.EOF, null, -1))
+            .add(new SavedToken(Token.EOF, null, lexer.position()))
             .build());
     return result;
   }
