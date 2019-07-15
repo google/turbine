@@ -233,11 +233,11 @@ public abstract class TurbineElement implements Element {
                 TypeBoundClass info = info();
                 switch (info.kind()) {
                   case CLASS:
+                  case ENUM:
                     if (info.superclass() != null) {
                       return factory.asTypeMirror(info.superClassType());
                     }
                     return factory.noType();
-                  case ENUM:
                   case INTERFACE:
                   case ANNOTATION:
                     return factory.noType();

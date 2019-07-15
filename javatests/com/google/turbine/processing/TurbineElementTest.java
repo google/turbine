@@ -84,6 +84,13 @@ public class TurbineElementTest {
                 .getQualifiedName()
                 .toString())
         .isEqualTo("java.util.AbstractMap");
+
+    e = factory.typeElement(new ClassSymbol("java/lang/annotation/ElementType"));
+    assertThat(
+            ((TypeElement) ((DeclaredType) e.getSuperclass()).asElement())
+                .getQualifiedName()
+                .toString())
+        .isEqualTo("java.lang.Enum");
   }
 
   @Test
