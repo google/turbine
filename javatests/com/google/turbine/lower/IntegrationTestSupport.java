@@ -101,8 +101,11 @@ public class IntegrationTestSupport {
   public static Map<String, byte[]> canonicalize(Map<String, byte[]> in) {
     List<ClassNode> classes = toClassNodes(in);
 
-    // drop anonymous classes
-    classes = classes.stream().filter(n -> !isAnonymous(n)).collect(toCollection(ArrayList::new));
+    // drop local and anonymous classes
+    classes =
+        classes.stream()
+            .filter(n -> !isAnonymous(n) && !isLocal(n))
+            .collect(toCollection(ArrayList::new));
 
     // collect all inner classes attributes
     Map<String, InnerClassNode> infos = new HashMap<>();
@@ -122,6 +125,10 @@ public class IntegrationTestSupport {
     }
 
     return toByteCode(classes);
+  }
+
+  private static boolean isLocal(ClassNode n) {
+    return n.outerMethod != null;
   }
 
   private static boolean isAnonymous(ClassNode n) {

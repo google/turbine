@@ -1,0 +1,8 @@
+=== T.java ===
+class T {
+  Object f() {
+    class Local {
+    }
+    return new Local();
+  }
+}
