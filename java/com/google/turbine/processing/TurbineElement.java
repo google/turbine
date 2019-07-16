@@ -544,7 +544,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public List<? extends TypeMirror> getBounds() {
-      return factory.asTypeMirrors(info().upperBound().bounds());
+      ImmutableList<Type> bounds = info().upperBound().bounds();
+      return factory.asTypeMirrors(bounds.isEmpty() ? ImmutableList.of(ClassTy.OBJECT) : bounds);
     }
 
     @Override

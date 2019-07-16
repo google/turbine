@@ -396,12 +396,8 @@ public class TypeBinder {
     for (Tree.TyParam tree : trees) {
       TyVarSymbol sym = symbols.get(tree.name().value());
       ImmutableList.Builder<Type> bounds = ImmutableList.builder();
-      if (tree.bounds().isEmpty()) {
-        bounds.add(Type.ClassTy.OBJECT);
-      } else {
-        for (Tree bound : tree.bounds()) {
-          bounds.add(bindTy(scope, bound));
-        }
+      for (Tree bound : tree.bounds()) {
+        bounds.add(bindTy(scope, bound));
       }
       ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, tree.annos());
       result.put(
