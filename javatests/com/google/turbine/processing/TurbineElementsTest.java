@@ -90,7 +90,7 @@ public class TurbineElementsTest {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));
-    factory = new ModelFactory(env, TurbineElementsTest.class.getClassLoader());
+    factory = new ModelFactory(env, TurbineElementsTest.class.getClassLoader(), bound.tli());
     TurbineTypes turbineTypes = new TurbineTypes(factory);
     turbineElements = new TurbineElements(factory, turbineTypes);
   }
@@ -158,6 +158,18 @@ public class TurbineElementsTest {
                     factory.typeElement(new ClassSymbol("Test")))))
         .containsExactlyElementsIn(
             toStrings(javacElements.getAllAnnotationMirrors(javacElements.getTypeElement("Test"))));
+  }
+
+  @Test
+  public void getTypeElement() {
+    for (String name : Arrays.asList("java.util.Map", "java.util.Map.Entry")) {
+      assertThat(turbineElements.getTypeElement(name).getQualifiedName().toString())
+          .isEqualTo(name);
+    }
+    assertThat(turbineElements.getTypeElement("NoSuch")).isNull();
+    assertThat(turbineElements.getTypeElement("java.lang.Object.NoSuch")).isNull();
+    assertThat(turbineElements.getTypeElement("java.lang.NoSuch")).isNull();
+    assertThat(turbineElements.getTypeElement("java.lang.Integer.MAX_VALUE")).isNull();
   }
 
   private static ImmutableList<String> toStrings(List<?> inputs) {

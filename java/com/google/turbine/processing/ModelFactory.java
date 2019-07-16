@@ -19,6 +19,7 @@ package com.google.turbine.processing;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Verify;
@@ -31,6 +32,9 @@ import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.lookup.LookupKey;
+import com.google.turbine.binder.lookup.LookupResult;
+import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
@@ -55,6 +59,7 @@ import com.google.turbine.processing.TurbineTypeMirror.TurbinePrimitiveType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineVoidType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineWildcardType;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
@@ -93,13 +98,21 @@ class ModelFactory {
   private final Map<TyVarSymbol, TurbineTypeParameterElement> tyParamCache = new HashMap<>();
   private final Map<PackageSymbol, TurbinePackageElement> packageCache = new HashMap<>();
 
+  private final HashMap<CharSequence, ClassSymbol> inferSymbolCache = new HashMap<>();
+
   private final ClassHierarchy cha;
   private final ClassLoader processorLoader;
 
-  ModelFactory(Env<ClassSymbol, ? extends TypeBoundClass> env, ClassLoader processorLoader) {
+  private final TopLevelIndex tli;
+
+  ModelFactory(
+      Env<ClassSymbol, ? extends TypeBoundClass> env,
+      ClassLoader processorLoader,
+      TopLevelIndex tli) {
     this.env = requireNonNull(env);
     this.cha = new ClassHierarchy(env);
-    this.processorLoader = processorLoader;
+    this.processorLoader = requireNonNull(processorLoader);
+    this.tli = requireNonNull(tli);
   }
 
   TypeMirror asTypeMirror(Type type) {
@@ -222,6 +235,33 @@ class ModelFactory {
     ImmutableSet.Builder<Element> result = ImmutableSet.builder();
     for (Symbol symbol : symbols) {
       result.add(element(symbol));
+    }
+    return result.build();
+  }
+
+  public ClassSymbol inferSymbol(CharSequence name) {
+    return inferSymbolCache.computeIfAbsent(name, key -> inferSymbolImpl(name));
+  }
+
+  private ClassSymbol inferSymbolImpl(CharSequence name) {
+    LookupResult lookup = tli.scope().lookup(new LookupKey(asIdents(name)));
+    if (lookup == null) {
+      return null;
+    }
+    ClassSymbol sym = (ClassSymbol) lookup.sym();
+    for (Ident bit : lookup.remaining()) {
+      sym = getSymbol(sym).children().get(bit.value());
+      if (sym == null) {
+        return null;
+      }
+    }
+    return sym;
+  }
+
+  private static ImmutableList<Ident> asIdents(CharSequence name) {
+    ImmutableList.Builder<Ident> result = ImmutableList.builder();
+    for (String bit : Splitter.on('.').split(name)) {
+      result.add(new Ident(-1, bit));
     }
     return result.build();
   }

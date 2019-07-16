@@ -75,7 +75,14 @@ public class TurbineElements implements Elements {
 
   @Override
   public TypeElement getTypeElement(CharSequence name) {
-    throw new UnsupportedOperationException();
+    ClassSymbol sym = factory.inferSymbol(name);
+    if (sym == null) {
+      return null;
+    }
+    if (factory.getSymbol(sym) == null) {
+      return null;
+    }
+    return factory.typeElement(sym);
   }
 
   @Override
