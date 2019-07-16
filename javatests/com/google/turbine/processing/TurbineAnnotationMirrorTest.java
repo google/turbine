@@ -19,30 +19,31 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
 import com.google.turbine.binder.Binder;
-import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.diag.SourceFile;
+import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
-import com.google.turbine.parse.Parser;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.testing.TestClassPaths;
-import com.google.turbine.tree.Tree.CompUnit;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -154,8 +155,13 @@ public class TurbineAnnotationMirrorTest {
         null);
   }
 
+  private static Stream<String> typeAnnotationNames(Element e) {
+    return e.asType().getAnnotationMirrors().stream()
+        .map(anno -> anno.getAnnotationType().asElement().getSimpleName().toString());
+  }
+
   @Test
-  public void test() throws IOException {
+  public void test() throws Exception {
     TestInput input =
         TestInput.parse(
             Joiner.on('\n')
@@ -165,6 +171,8 @@ public class TurbineAnnotationMirrorTest {
                     "import java.lang.annotation.Retention;",
                     "import java.lang.annotation.RetentionPolicy;",
                     "import java.lang.annotation.Target;",
+                    "import java.util.Map;",
+                    "import java.util.Map.Entry;",
                     "@Retention(RetentionPolicy.RUNTIME)",
                     "@interface A {",
                     "  int x() default 0;",
@@ -176,21 +184,26 @@ public class TurbineAnnotationMirrorTest {
                     "  ElementType e() default ElementType.TYPE_USE;",
                     "  A f() default @A;",
                     "}",
+                    "@Retention(RetentionPolicy.RUNTIME)",
+                    "@Target(ElementType.TYPE_USE)",
+                    "@interface T {}",
+                    "@Target(ElementType.TYPE_USE)",
+                    "@interface V {}",
+                    "",
                     "@A(y = 42, z = {43})",
                     "@B",
-                    "class Test {}",
+                    "class Test {",
+                    "  class I {}",
+                    "  @T Test. @V I f;",
+                    "  Map. @T Entry g;",
+                    "  @T Entry h;",
+                    "}",
                     ""));
 
-    List<CompUnit> units =
-        input.sources.entrySet().stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toList());
-
     Binder.BindingResult bound =
-        Binder.bind(
-            units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+        IntegrationTestSupport.turbineAnalysis(
+            input.sources,
+            ImmutableList.of(),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
@@ -218,5 +231,19 @@ public class TurbineAnnotationMirrorTest {
             "c", "java.lang.String.class",
             "e", "java.lang.annotation.ElementType.TYPE_USE",
             "f", "@A");
+
+    ListMultimap<String, String> fieldTypeAnnotations =
+        te.getEnclosedElements().stream()
+            .filter(e -> e.getKind().equals(ElementKind.FIELD))
+            .collect(
+                Multimaps.flatteningToMultimap(
+                    e -> e.getSimpleName().toString(),
+                    e -> typeAnnotationNames(e),
+                    MultimapBuilder.linkedHashKeys().arrayListValues()::build));
+    assertThat(fieldTypeAnnotations)
+        .containsExactly(
+            "f", "V",
+            "g", "T",
+            "h", "T");
   }
 }
