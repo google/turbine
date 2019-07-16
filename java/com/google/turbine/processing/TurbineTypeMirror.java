@@ -252,7 +252,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     protected ImmutableList<AnnoInfo> annos() {
-      return ImmutableList.of();
+      return getLast(type.classes()).annos();
     }
   }
 
