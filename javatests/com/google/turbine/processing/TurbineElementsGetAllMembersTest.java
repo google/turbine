@@ -262,7 +262,7 @@ public class TurbineElementsGetAllMembersTest {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));
-    ModelFactory factory = new ModelFactory(env, ClassLoader.getSystemClassLoader());
+    ModelFactory factory = new ModelFactory(env, ClassLoader.getSystemClassLoader(), bound.tli());
     TurbineTypes turbineTypes = new TurbineTypes(factory);
     TurbineElements turbineElements = new TurbineElements(factory, turbineTypes);
     List<? extends Element> turbineMembers =
