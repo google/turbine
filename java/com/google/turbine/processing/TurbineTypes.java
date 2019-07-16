@@ -30,6 +30,7 @@ import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
@@ -182,7 +183,27 @@ public class TurbineTypes implements Types {
   }
 
   private boolean isSameIntersectionType(IntersectionTy a, IntersectionTy b) {
-    return isSameTypes(a.bounds(), b.bounds());
+    return isSameTypes(getBounds(a), getBounds(b));
+  }
+
+  private ImmutableList<Type> getBounds(IntersectionTy a) {
+    return getBounds(factory, a);
+  }
+
+  static ImmutableList<Type> getBounds(ModelFactory factory, IntersectionTy type) {
+    ImmutableList<Type> bounds = type.bounds();
+    if (implicitObjectBound(factory, bounds)) {
+      return ImmutableList.<Type>builder().add(ClassTy.OBJECT).addAll(bounds).build();
+    }
+    return bounds;
+  }
+
+  private static boolean implicitObjectBound(ModelFactory factory, ImmutableList<Type> bounds) {
+    if (bounds.isEmpty()) {
+      return true;
+    }
+    ClassTy first = (ClassTy) bounds.get(0);
+    return factory.getSymbol(first.sym()).kind().equals(TurbineTyKind.INTERFACE);
   }
 
   private boolean isSameWildType(WildTy a, Type other) {
@@ -290,7 +311,7 @@ public class TurbineTypes implements Types {
    */
   private boolean isSubtype(Type a, Type b, boolean strict) {
     if (b.tyKind() == TyKind.INTERSECTION_TY) {
-      for (Type bound : ((IntersectionTy) b).bounds()) {
+      for (Type bound : getBounds((IntersectionTy) b)) {
         // TODO(cushon): javac rejects e.g. `|List| isAssignable Serializable&ArrayList<?>`,
         //  i.e. it does a strict subtype test against the intersection type. Is that a bug?
         if (!isSubtype(a, bound, /* strict= */ true)) {
@@ -336,7 +357,7 @@ public class TurbineTypes implements Types {
   }
 
   private boolean isIntersectionSubtype(IntersectionTy a, Type b, boolean strict) {
-    for (Type bound : a.bounds()) {
+    for (Type bound : getBounds(a)) {
       if (isSubtype(bound, b, strict)) {
         return true;
       }
@@ -507,7 +528,7 @@ public class TurbineTypes implements Types {
     return true;
   }
 
-  private static Type subst(Type type, Map<TyVarSymbol, Type> mapping) {
+  private Type subst(Type type, Map<TyVarSymbol, Type> mapping) {
     switch (type.tyKind()) {
       case CLASS_TY:
         return substClassTy((ClassTy) type, mapping);
@@ -530,11 +551,11 @@ public class TurbineTypes implements Types {
     throw new AssertionError(type.tyKind());
   }
 
-  private static Type substIntersectionTy(IntersectionTy type, Map<TyVarSymbol, Type> mapping) {
-    return IntersectionTy.create(substAll(type.bounds(), mapping));
+  private Type substIntersectionTy(IntersectionTy type, Map<TyVarSymbol, Type> mapping) {
+    return IntersectionTy.create(substAll(getBounds(type), mapping));
   }
 
-  static MethodTy substMethod(MethodTy method, Map<TyVarSymbol, Type> mapping) {
+  private MethodTy substMethod(MethodTy method, Map<TyVarSymbol, Type> mapping) {
     return MethodTy.create(
         method.tyParams(),
         subst(method.returnType(), mapping),
@@ -543,7 +564,7 @@ public class TurbineTypes implements Types {
         substAll(method.thrown(), mapping));
   }
 
-  static ImmutableList<Type> substAll(
+  private ImmutableList<Type> substAll(
       ImmutableList<? extends Type> types, Map<TyVarSymbol, Type> mapping) {
     ImmutableList.Builder<Type> result = ImmutableList.builder();
     for (Type type : types) {
@@ -552,15 +573,15 @@ public class TurbineTypes implements Types {
     return result.build();
   }
 
-  private static Type substTyVar(TyVar type, Map<TyVarSymbol, Type> mapping) {
+  private Type substTyVar(TyVar type, Map<TyVarSymbol, Type> mapping) {
     return mapping.getOrDefault(type.sym(), type);
   }
 
-  private static Type substArrayTy(ArrayTy type, Map<TyVarSymbol, Type> mapping) {
+  private Type substArrayTy(ArrayTy type, Map<TyVarSymbol, Type> mapping) {
     return ArrayTy.create(subst(type.elementType(), mapping), type.annos());
   }
 
-  private static ClassTy substClassTy(ClassTy type, Map<TyVarSymbol, Type> mapping) {
+  private ClassTy substClassTy(ClassTy type, Map<TyVarSymbol, Type> mapping) {
     ImmutableList.Builder<SimpleClassTy> simples = ImmutableList.builder();
     for (SimpleClassTy simple : type.classes()) {
       ImmutableList.Builder<Type> args = ImmutableList.builder();
@@ -777,7 +798,59 @@ public class TurbineTypes implements Types {
 
   @Override
   public List<? extends TypeMirror> directSupertypes(TypeMirror m) {
-    throw new UnsupportedOperationException();
+    return factory.asTypeMirrors(directSupertypes(asTurbineType(m)));
+  }
+
+  public ImmutableList<Type> directSupertypes(Type t) {
+    switch (t.tyKind()) {
+      case CLASS_TY:
+        return directSupertypes((ClassTy) t);
+      case INTERSECTION_TY:
+        return ((IntersectionTy) t).bounds();
+      case TY_VAR:
+        return getBounds(factory.getTyVarInfo(((TyVar) t).sym()).upperBound());
+      case ARRAY_TY:
+        return directSupertypes((ArrayTy) t);
+      case PRIM_TY:
+      case VOID_TY:
+      case WILD_TY:
+      case ERROR_TY:
+      case NONE_TY:
+        return ImmutableList.of();
+      case METHOD_TY:
+        break;
+    }
+    throw new IllegalArgumentException(t.tyKind().name());
+  }
+
+  private ImmutableList<Type> directSupertypes(ArrayTy t) {
+    Type elem = t.elementType();
+    if (elem.tyKind() == TyKind.PRIM_TY || isObjectType(elem)) {
+      return ImmutableList.of(
+          IntersectionTy.create(
+              ImmutableList.of(ClassTy.OBJECT, ClassTy.SERIALIZABLE, ClassTy.CLONEABLE)));
+    }
+    ImmutableList<Type> ex = directSupertypes(elem);
+    return ImmutableList.of(ArrayTy.create(ex.iterator().next(), ImmutableList.of()));
+  }
+
+  private ImmutableList<Type> directSupertypes(ClassTy t) {
+    if (t.sym().equals(ClassSymbol.OBJECT)) {
+      return ImmutableList.of();
+    }
+    TypeBoundClass info = factory.getSymbol(t.sym());
+    Map<TyVarSymbol, Type> mapping = getMapping(t);
+    boolean raw = mapping == null;
+    ImmutableList.Builder<Type> builder = ImmutableList.builder();
+    if (info.superClassType() != null) {
+      builder.add(raw ? erasure(info.superClassType()) : subst(info.superClassType(), mapping));
+    } else {
+      builder.add(ClassTy.OBJECT);
+    }
+    for (Type interfaceType : info.interfaceTypes()) {
+      builder.add(raw ? erasure(interfaceType) : subst(interfaceType, mapping));
+    }
+    return builder.build();
   }
 
   @Override
