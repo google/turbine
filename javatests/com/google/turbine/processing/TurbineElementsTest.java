@@ -122,7 +122,11 @@ public class TurbineElementsTest {
             Double.NEGATIVE_INFINITY,
             Double.POSITIVE_INFINITY,
             Double.MAX_VALUE,
-            Double.MIN_VALUE)) {
+            Double.MIN_VALUE,
+            'a',
+            '\n',
+            "hello",
+            "\"hello\n\"")) {
       assertThat(turbineElements.getConstantExpression(value))
           .isEqualTo(javacElements.getConstantExpression(value));
     }
