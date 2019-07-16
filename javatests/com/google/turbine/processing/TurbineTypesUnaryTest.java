@@ -20,7 +20,10 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.TruthJUnit.assume;
 import static org.junit.Assert.fail;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import org.junit.Test;
@@ -98,5 +101,35 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
     assertWithMessage("erasure(`%s`) = erasure(`%s`)", javacA, turbineA)
         .that(actual)
         .isEqualTo(expected);
+  }
+
+  private static final ImmutableSet<TypeKind> UNSUPPORTED_BY_DIRECT_SUPERTYPES =
+      ImmutableSet.of(TypeKind.EXECUTABLE, TypeKind.PACKAGE);
+
+  @Test
+  public void directSupertypes() {
+    assume().that(UNSUPPORTED_BY_DIRECT_SUPERTYPES).doesNotContain(javacA.getKind());
+
+    String expected = Joiner.on(", ").join(javacTypes.directSupertypes(javacA));
+    String actual = Joiner.on(", ").join(turbineTypes.directSupertypes(turbineA));
+    assertWithMessage("directSupertypes(`%s`) = directSupertypes(`%s`)", javacA, turbineA)
+        .that(actual)
+        .isEqualTo(expected);
+  }
+
+  @Test
+  public void directSupertypesThrows() {
+    assume().that(UNSUPPORTED_BY_DIRECT_SUPERTYPES).contains(javacA.getKind());
+
+    try {
+      javacTypes.directSupertypes(turbineA);
+      fail();
+    } catch (IllegalArgumentException expected) {
+    }
+    try {
+      turbineTypes.directSupertypes(turbineA);
+      fail();
+    } catch (IllegalArgumentException expected) {
+    }
   }
 }

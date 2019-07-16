@@ -138,10 +138,14 @@ class ModelFactory {
         return new TurbineTypeVariable(this, (TyVar) type);
       case INTERSECTION_TY:
         IntersectionTy intersectionTy = (IntersectionTy) type;
-        if (intersectionTy.bounds().size() == 1) {
-          return createTypeMirror(getOnlyElement(intersectionTy.bounds()));
+        switch (intersectionTy.bounds().size()) {
+          case 0:
+            return createTypeMirror(ClassTy.OBJECT);
+          case 1:
+            return createTypeMirror(getOnlyElement(intersectionTy.bounds()));
+          default:
+            return new TurbineIntersectionType(this, intersectionTy);
         }
-        return new TurbineIntersectionType(this, intersectionTy);
       case NONE_TY:
         return new TurbineNoType(this);
       case METHOD_TY:
@@ -152,7 +156,7 @@ class ModelFactory {
   }
 
   /** Creates a list of {@link TurbineTypeMirror}s backed by the given {@link Type}s. */
-  ImmutableList<TypeMirror> asTypeMirrors(ImmutableList<? extends Type> types) {
+  ImmutableList<TypeMirror> asTypeMirrors(Iterable<? extends Type> types) {
     ImmutableList.Builder<TypeMirror> result = ImmutableList.builder();
     for (Type type : types) {
       result.add(asTypeMirror(type));

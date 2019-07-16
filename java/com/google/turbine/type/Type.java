@@ -110,6 +110,9 @@ public interface Type {
     /** The {@link ClassTy} for {@code java.lang.String}. */
     public static final ClassTy STRING = asNonParametricClassTy(ClassSymbol.STRING);
 
+    public static final ClassTy CLONEABLE = asNonParametricClassTy(ClassSymbol.CLONEABLE);
+    public static final ClassTy SERIALIZABLE = asNonParametricClassTy(ClassSymbol.SERIALIZABLE);
+
     /** Returns a {@link ClassTy} with no type arguments for the given {@link ClassSymbol}. */
     public static ClassTy asNonParametricClassTy(ClassSymbol i) {
       return ClassTy.create(

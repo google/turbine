@@ -578,14 +578,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
             new Supplier<ImmutableList<TypeMirror>>() {
               @Override
               public ImmutableList<TypeMirror> get() {
-                ImmutableList.Builder<TypeMirror> result = ImmutableList.builder();
-                ImmutableList<Type> bounds = type.bounds();
-                if (factory.getSymbol(((ClassTy) bounds.get(0)).sym()).kind()
-                    == TurbineTyKind.INTERFACE) {
-                  result.add(factory.asTypeMirror(ClassTy.OBJECT));
-                }
-                result.addAll(factory.asTypeMirrors(bounds));
-                return result.build();
+                return factory.asTypeMirrors(TurbineTypes.getBounds(factory, type));
               }
             });
 

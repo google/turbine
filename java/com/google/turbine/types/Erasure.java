@@ -67,7 +67,7 @@ public class Erasure {
 
   private static Type eraseIntersectionTy(
       IntersectionTy ty, Function<TyVarSymbol, TyVarInfo> tenv) {
-    return erase(ty.bounds().get(0), tenv);
+    return ty.bounds().isEmpty() ? ClassTy.OBJECT : erase(ty.bounds().get(0), tenv);
   }
 
   private static Type eraseTyVar(
