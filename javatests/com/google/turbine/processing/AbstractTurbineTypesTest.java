@@ -371,7 +371,7 @@ class AbstractTurbineTypesTest {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));
-    ModelFactory factory = new ModelFactory(env, ClassLoader.getSystemClassLoader());
+    ModelFactory factory = new ModelFactory(env, ClassLoader.getSystemClassLoader(), bound.tli());
     Types turbineTypes = new TurbineTypes(factory);
     ImmutableMap<String, Element> turbineElements =
         bound.units().keySet().stream()
