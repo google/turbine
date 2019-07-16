@@ -296,6 +296,12 @@ public class TurbineElements implements Elements {
       // https://bugs.openjdk.java.net/browse/JDK-8227617
       return String.format("(short)%d", (Short) value);
     }
+    if (value instanceof String) {
+      return new Const.StringValue((String) value).toString();
+    }
+    if (value instanceof Character) {
+      return new Const.CharValue((Character) value).toString();
+    }
     return String.valueOf(value);
   }
 
