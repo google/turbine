@@ -112,8 +112,11 @@ public class TurbineElements implements Elements {
   }
 
   @Override
-  public Name getBinaryName(TypeElement type) {
-    throw new UnsupportedOperationException();
+  public Name getBinaryName(TypeElement element) {
+    if (!(element instanceof TurbineTypeElement)) {
+      throw new IllegalArgumentException(element.toString());
+    }
+    return getName(((TurbineTypeElement) element).sym().binaryName().replace('/', '.'));
   }
 
   /**
