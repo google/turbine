@@ -30,7 +30,7 @@ import java.util.EnumSet;
  */
 public class AnnotationMetadata {
 
-  private static final ImmutableSet<TurbineElementType> DEFAULT_TARGETS = getDefaultElements();
+  public static final ImmutableSet<TurbineElementType> DEFAULT_TARGETS = getDefaultElements();
 
   private static ImmutableSet<TurbineElementType> getDefaultElements() {
     EnumSet<TurbineElementType> values = EnumSet.allOf(TurbineElementType.class);
