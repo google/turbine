@@ -27,7 +27,10 @@ import com.google.common.collect.Iterables;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.tree.Tree;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** JLS 4 types. */
@@ -528,13 +531,28 @@ public interface Type {
   /** An error type. */
   @AutoValue
   abstract class ErrorTy implements Type {
-    public static ErrorTy create() {
-      return new AutoValue_Type_ErrorTy();
+    abstract String name();
+
+    public static ErrorTy create(Iterable<Tree.Ident> names) {
+      List<String> bits = new ArrayList<>();
+      for (Tree.Ident ident : names) {
+        bits.add(ident.value());
+      }
+      return create(Joiner.on('.').join(bits));
+    }
+
+    public static ErrorTy create(String name) {
+      return new AutoValue_Type_ErrorTy(name);
     }
 
     @Override
     public TyKind tyKind() {
       return TyKind.ERROR_TY;
+    }
+
+    @Override
+    public final String toString() {
+      return name();
     }
   }
 }
