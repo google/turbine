@@ -184,4 +184,13 @@ public class TurbineElementsTest {
     assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("One"))).isFalse();
     assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("Test"))).isTrue();
   }
+
+  @Test
+  public void getBinaryName() {
+    assertThat(
+            turbineElements
+                .getBinaryName(turbineElements.getTypeElement("java.util.Map.Entry"))
+                .toString())
+        .isEqualTo("java.util.Map$Entry");
+  }
 }
