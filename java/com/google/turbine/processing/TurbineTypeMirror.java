@@ -330,7 +330,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public int hashCode() {
-      return getKind().hashCode();
+      return symbol.hashCode();
     }
 
     @Override
