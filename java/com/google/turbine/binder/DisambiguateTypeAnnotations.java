@@ -20,8 +20,10 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -43,7 +45,6 @@ import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Disambiguate annotations on field, parameter, and method return types that could be declaration
@@ -156,7 +157,7 @@ public class DisambiguateTypeAnnotations {
     annotations = groupRepeated(env, annotations);
     ImmutableList.Builder<AnnoInfo> typeAnnotations = ImmutableList.builder();
     for (AnnoInfo anno : annotations) {
-      Set<TurbineElementType> target = env.get(anno.sym()).annotationMetadata().target();
+      ImmutableSet<TurbineElementType> target = getTarget(env, anno);
       if (target.contains(TurbineElementType.TYPE_USE)) {
         typeAnnotations.add(anno);
       }
@@ -165,6 +166,23 @@ public class DisambiguateTypeAnnotations {
       }
     }
     return addAnnotationsToType(type, typeAnnotations.build());
+  }
+
+  private static ImmutableSet<TurbineElementType> getTarget(
+      Env<ClassSymbol, TypeBoundClass> env, AnnoInfo anno) {
+    ClassSymbol sym = anno.sym();
+    if (sym == null) {
+      return AnnotationMetadata.DEFAULT_TARGETS;
+    }
+    TypeBoundClass info = env.get(sym);
+    if (info == null) {
+      return AnnotationMetadata.DEFAULT_TARGETS;
+    }
+    AnnotationMetadata metadata = info.annotationMetadata();
+    if (metadata == null) {
+      return AnnotationMetadata.DEFAULT_TARGETS;
+    }
+    return metadata.target();
   }
 
   private static ImmutableList<FieldInfo> bindFields(
