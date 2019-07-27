@@ -44,7 +44,10 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type.ClassTy;
 import java.io.IOError;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -160,5 +163,19 @@ public class ClassPathBinderTest {
     } catch (IOException e) {
       assertThat(e).hasMessageThat().contains("NOT_A_JAR");
     }
+  }
+
+  @Test
+  public void resources() throws Exception {
+    Path path = temporaryFolder.newFile("tmp.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      jos.putNextEntry(new JarEntry("foo/bar/hello.txt"));
+      jos.write("hello".getBytes(UTF_8));
+      jos.putNextEntry(new JarEntry("foo/bar/Baz.class"));
+      jos.write("goodbye".getBytes(UTF_8));
+    }
+    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    assertThat(new String(classPath.resource("foo/bar/hello.txt").get(), UTF_8)).isEqualTo("hello");
+    assertThat(classPath.resource("foo/bar/Baz.class")).isNull();
   }
 }

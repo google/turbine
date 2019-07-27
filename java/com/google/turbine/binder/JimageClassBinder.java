@@ -256,5 +256,10 @@ public class JimageClassBinder {
     public TopLevelIndex index() {
       return index;
     }
+
+    @Override
+    public Supplier<byte[]> resource(String input) {
+      return null;
+    }
   }
 }
