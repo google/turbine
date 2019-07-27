@@ -105,6 +105,11 @@ public class CtSymClassBinder {
       public TopLevelIndex index() {
         return index;
       }
+
+      @Override
+      public Supplier<byte[]> resource(String input) {
+        return null;
+      }
     };
   }
 

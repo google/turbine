@@ -53,6 +53,7 @@ public class ClassPathBinder {
     Map<ClassSymbol, BytecodeBoundClass> transitive = new LinkedHashMap<>();
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
+    Map<String, Supplier<byte[]>> resources = new HashMap<>();
     Env<ClassSymbol, BytecodeBoundClass> benv =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
@@ -62,7 +63,7 @@ public class ClassPathBinder {
         };
     for (Path path : paths) {
       try {
-        bindJar(path, map, modules, benv, transitive);
+        bindJar(path, map, modules, benv, transitive, resources);
       } catch (IOException e) {
         throw new IOException("error reading " + path, e);
       }
@@ -89,6 +90,11 @@ public class ClassPathBinder {
       public TopLevelIndex index() {
         return index;
       }
+
+      @Override
+      public Supplier<byte[]> resource(String path) {
+        return resources.get(path);
+      }
     };
   }
 
@@ -97,12 +103,14 @@ public class ClassPathBinder {
       Map<ClassSymbol, BytecodeBoundClass> env,
       Map<ModuleSymbol, ModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> benv,
-      Map<ClassSymbol, BytecodeBoundClass> transitive)
+      Map<ClassSymbol, BytecodeBoundClass> transitive,
+      Map<String, Supplier<byte[]>> resources)
       throws IOException {
     // TODO(cushon): don't leak file descriptors
     for (Zip.Entry ze : new Zip.ZipIterable(path)) {
       String name = ze.name();
       if (!name.endsWith(".class")) {
+        resources.put(name, toByteArrayOrDie(ze));
         continue;
       }
       if (name.startsWith(TRANSITIVE_PREFIX)) {
