@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import com.google.common.base.Supplier;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
@@ -24,7 +25,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 
 /**
- * A compilation classpath, e.g. the user or platform class path. Maybe backed by a search path of
+ * A compilation classpath, e.g. the user or platform class path. May be backed by a search path of
  * jar files, or a jrtfs filesystem.
  */
 public interface ClassPath {
@@ -36,4 +37,6 @@ public interface ClassPath {
 
   /** The classpath's top level index. */
   TopLevelIndex index();
+
+  Supplier<byte[]> resource(String path);
 }
