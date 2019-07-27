@@ -120,7 +120,7 @@ public class TurbineFiler implements Filer {
         case OTHER:
           generatedResources.put(path, e.bytes());
           break;
-        default:
+        case HTML:
           throw new UnsupportedOperationException(String.valueOf(e.getKind()));
       }
     }
@@ -203,7 +203,7 @@ public class TurbineFiler implements Filer {
     }
   }
 
-  private String packageRelativePath(String pkg, String relativeName) {
+  private static String packageRelativePath(String pkg, String relativeName) {
     if (pkg.isEmpty()) {
       return relativeName;
     }
@@ -351,7 +351,7 @@ public class TurbineFiler implements Filer {
       try {
         return loader.getResource(path).toURI();
       } catch (URISyntaxException e) {
-        throw new UnsupportedOperationException(e);
+        throw new AssertionError(e);
       }
     }
 

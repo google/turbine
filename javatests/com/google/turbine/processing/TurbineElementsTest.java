@@ -49,6 +49,7 @@ public class TurbineElementsTest {
           Joiner.on('\n')
               .join(
                   "=== Test.java ===",
+                  "@Deprecated",
                   "@A class Test extends One {}",
                   "=== One.java ===",
                   "@B class One extends Two {}",
@@ -174,5 +175,13 @@ public class TurbineElementsTest {
 
   private static ImmutableList<String> toStrings(List<?> inputs) {
     return inputs.stream().map(String::valueOf).collect(toImmutableList());
+  }
+
+  @Test
+  public void isDeprecated() {
+    assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("java.lang.Object")))
+        .isFalse();
+    assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("One"))).isFalse();
+    assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("Test"))).isTrue();
   }
 }

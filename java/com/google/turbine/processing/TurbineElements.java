@@ -32,7 +32,9 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
+import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
+import com.google.turbine.type.AnnoInfo;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.List;
@@ -97,8 +99,16 @@ public class TurbineElements implements Elements {
   }
 
   @Override
-  public boolean isDeprecated(Element e) {
-    throw new UnsupportedOperationException();
+  public boolean isDeprecated(Element element) {
+    if (!(element instanceof TurbineElement)) {
+      throw new IllegalArgumentException(element.toString());
+    }
+    for (AnnoInfo a : ((TurbineTypeElement) element).annos()) {
+      if (a.sym().equals(ClassSymbol.DEPRECATED)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

@@ -36,6 +36,7 @@ public class ClassSymbol implements Symbol {
   public static final ClassSymbol INHERITED = new ClassSymbol("java/lang/annotation/Inherited");
   public static final ClassSymbol CLONEABLE = new ClassSymbol("java/lang/Cloneable");
   public static final ClassSymbol SERIALIZABLE = new ClassSymbol("java/io/Serializable");
+  public static final ClassSymbol DEPRECATED = new ClassSymbol("java/lang/Deprecated");
   public static final ClassSymbol ERROR = new ClassSymbol("<error>");
 
   public static final ClassSymbol CHARACTER = new ClassSymbol("java/lang/Character");
