@@ -16,11 +16,15 @@
 
 package com.google.turbine.type;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.ErrorTy;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -47,5 +51,19 @@ public class TypeTest {
                 ImmutableList.of()))
         .addEqualityGroup(ClassTy.asNonParametricClassTy(new ClassSymbol("java/util/Map$Entry")))
         .testEquals();
+  }
+
+  private static final int NO_POSITION = -1;
+
+  @Test
+  public void error() {
+    assertThat(
+            ErrorTy.create(
+                    ImmutableList.of(
+                        new Ident(NO_POSITION, "com"),
+                        new Ident(NO_POSITION, "foo"),
+                        new Ident(NO_POSITION, "Bar")))
+                .name())
+        .isEqualTo("com.foo.Bar");
   }
 }
