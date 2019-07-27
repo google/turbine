@@ -715,7 +715,9 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public AnnotationValue getDefaultValue() {
-      throw new UnsupportedOperationException();
+      return info().defaultValue() != null
+          ? TurbineAnnotationMirror.annotationValue(factory, info().defaultValue())
+          : null;
     }
 
     @Override

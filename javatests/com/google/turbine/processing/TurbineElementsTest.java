@@ -17,6 +17,7 @@
 package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
@@ -34,6 +35,7 @@ import com.sun.source.util.JavacTask;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.util.Elements;
 import org.junit.Before;
@@ -65,7 +67,7 @@ public class TurbineElementsTest {
                   "@interface B {}",
                   "@Inherited",
                   "@interface C {",
-                  "  int value();",
+                  "  int value() default 42;",
                   "}",
                   "@Inherited",
                   "@interface D {}"));
@@ -192,5 +194,15 @@ public class TurbineElementsTest {
                 .getBinaryName(turbineElements.getTypeElement("java.util.Map.Entry"))
                 .toString())
         .isEqualTo("java.util.Map$Entry");
+  }
+
+  @Test
+  public void methodDefaultTest() {
+    assertThat(
+            ((ExecutableElement)
+                    getOnlyElement(turbineElements.getTypeElement("C").getEnclosedElements()))
+                .getDefaultValue()
+                .getValue())
+        .isEqualTo(42);
   }
 }
