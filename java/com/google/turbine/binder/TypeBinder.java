@@ -657,7 +657,7 @@ public class TypeBinder {
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
       log.error(names.get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
-      return Type.ErrorTy.create();
+      return Type.ErrorTy.create(names);
     }
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
@@ -669,7 +669,7 @@ public class TypeBinder {
       case TY_PARAM:
         if (!result.remaining().isEmpty()) {
           log.error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
-          return Type.ErrorTy.create();
+          return Type.ErrorTy.create(names);
         }
         return Type.TyVar.create((TyVarSymbol) sym, annos);
       default:
@@ -693,7 +693,7 @@ public class TypeBinder {
       Tree.ClassTy curr = flat.get(idx);
       sym = resolveNext(sym, curr.name());
       if (sym == null) {
-        return Type.ErrorTy.create();
+        return Type.ErrorTy.create(bits);
       }
 
       annotations = bindAnnotations(scope, curr.annos());

@@ -336,6 +336,7 @@ public class ConstBinder {
         }
       case PRIM_TY:
       case VOID_TY:
+      case ERROR_TY:
         return type;
       case INTERSECTION_TY:
         return IntersectionTy.create(bindTypes(((IntersectionTy) type).bounds()));
