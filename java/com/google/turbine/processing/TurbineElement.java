@@ -812,7 +812,10 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Object getConstantValue() {
-      throw new UnsupportedOperationException();
+      if (info().value() == null) {
+        return null;
+      }
+      return info().value().getValue();
     }
 
     @Override

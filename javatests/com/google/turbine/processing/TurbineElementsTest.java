@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
@@ -35,8 +36,10 @@ import com.sun.source.util.JavacTask;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +73,17 @@ public class TurbineElementsTest {
                   "  int value() default 42;",
                   "}",
                   "@Inherited",
-                  "@interface D {}"));
+                  "@interface D {}",
+                  "=== com/pkg/P.java ===",
+                  "package com.pkg;",
+                  "@interface P {}",
+                  "=== com/pkg/package-info.java ===",
+                  "@P",
+                  "package com.pkg;",
+                  "=== Const.java ===",
+                  "class Const {",
+                  "  static final int X = 1867;",
+                  "}"));
 
   Elements javacElements;
   ModelFactory factory;
@@ -204,5 +217,16 @@ public class TurbineElementsTest {
                 .getDefaultValue()
                 .getValue())
         .isEqualTo(42);
+  }
+
+  @Test
+  public void constantFieldTest() {
+    assertThat(
+            ((VariableElement)
+                    turbineElements.getTypeElement("Const").getEnclosedElements().stream()
+                        .filter(x -> x.getKind().equals(ElementKind.FIELD))
+                        .collect(onlyElement()))
+                .getConstantValue())
+        .isEqualTo(1867);
   }
 }
