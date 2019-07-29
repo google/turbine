@@ -21,7 +21,9 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -560,7 +562,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Set<Modifier> getModifiers() {
-      return EnumSet.noneOf(Modifier.class);
+      return ImmutableSet.of();
     }
 
     @Override
@@ -868,7 +870,7 @@ public abstract class TurbineElement implements Element {
     METHOD
   }
 
-  private static EnumSet<Modifier> asModifierSet(ModifierOwner modifierOwner, int access) {
+  private static ImmutableSet<Modifier> asModifierSet(ModifierOwner modifierOwner, int access) {
     EnumSet<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
     if ((access & TurbineFlag.ACC_PUBLIC) == TurbineFlag.ACC_PUBLIC) {
       modifiers.add(Modifier.PUBLIC);
@@ -914,7 +916,7 @@ public abstract class TurbineElement implements Element {
       modifiers.add(Modifier.STRICTFP);
     }
 
-    return modifiers;
+    return Sets.immutableEnumSet(modifiers);
   }
 
   /** A {@link PackageElement} implementation backed by a {@link PackageSymbol}. */
@@ -949,7 +951,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Set<Modifier> getModifiers() {
-      return EnumSet.noneOf(Modifier.class);
+      return ImmutableSet.of();
     }
 
     @Override
