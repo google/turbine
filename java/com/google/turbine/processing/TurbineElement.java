@@ -372,11 +372,9 @@ public abstract class TurbineElement implements Element {
             new Supplier<Element>() {
               @Override
               public Element get() {
-                TypeBoundClass info = info();
-                if (info != null && info.owner() != null) {
-                  return factory.typeElement(info.owner());
-                }
-                return factory.packageElement(sym.owner());
+                return getNestingKind().equals(NestingKind.TOP_LEVEL)
+                    ? factory.packageElement(sym.owner())
+                    : factory.typeElement(info().owner());
               }
             });
 
