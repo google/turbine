@@ -49,6 +49,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.NoType;
+import javax.lang.model.type.NullType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -595,6 +596,44 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     protected ImmutableList<AnnoInfo> annos() {
       return ImmutableList.of();
+    }
+  }
+
+  /** A {@link NullType} implementation. */
+  public static class TurbineNullType extends TurbineTypeMirror implements NullType {
+
+    @Override
+    public Type asTurbineType() {
+      return Type.PrimTy.create(TurbineConstantTypeKind.NULL, ImmutableList.of());
+    }
+
+    public TurbineNullType(ModelFactory factory) {
+      super(factory);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof NullType;
+    }
+
+    @Override
+    public int hashCode() {
+      return super.hashCode();
+    }
+
+    @Override
+    public TypeKind getKind() {
+      return TypeKind.NULL;
+    }
+
+    @Override
+    public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+      return v.visitNull(this, p);
     }
   }
 

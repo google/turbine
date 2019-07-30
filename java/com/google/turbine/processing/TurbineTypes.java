@@ -984,7 +984,7 @@ public class TurbineTypes implements Types {
 
   @Override
   public NullType getNullType() {
-    throw new UnsupportedOperationException();
+    return factory.nullType();
   }
 
   @Override
