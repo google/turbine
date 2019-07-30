@@ -229,4 +229,17 @@ public class TurbineElementsTest {
                 .getConstantValue())
         .isEqualTo(1867);
   }
+
+  @Test
+  public void packageElement() {
+    assertThat(
+            toStrings(
+                turbineElements.getAllAnnotationMirrors(
+                    turbineElements.getPackageElement("com.pkg"))))
+        .containsExactly("@com.pkg.P");
+    assertThat(
+            turbineElements.getAllAnnotationMirrors(turbineElements.getPackageElement("java.lang")))
+        .isEmpty();
+    assertThat(turbineElements.getPackageElement("com.google.no.such.pkg")).isNull();
+  }
 }
