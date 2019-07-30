@@ -16,7 +16,9 @@
 
 package com.google.turbine.processing;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -33,6 +35,7 @@ import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
+import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
@@ -47,6 +50,7 @@ import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.type.Type.WildTy.BoundKind;
+import com.google.turbine.type.Type.WildUnboundedTy;
 import com.google.turbine.types.Erasure;
 import java.util.Iterator;
 import java.util.List;
@@ -950,7 +954,32 @@ public class TurbineTypes implements Types {
 
   @Override
   public PrimitiveType getPrimitiveType(TypeKind kind) {
-    throw new UnsupportedOperationException();
+    checkArgument(kind.isPrimitive(), "%s is not a primitive type", kind);
+    return (PrimitiveType)
+        factory.asTypeMirror(PrimTy.create(primitiveType(kind), ImmutableList.of()));
+  }
+
+  private static TurbineConstantTypeKind primitiveType(TypeKind kind) {
+    switch (kind) {
+      case BOOLEAN:
+        return TurbineConstantTypeKind.BOOLEAN;
+      case BYTE:
+        return TurbineConstantTypeKind.BYTE;
+      case SHORT:
+        return TurbineConstantTypeKind.SHORT;
+      case INT:
+        return TurbineConstantTypeKind.INT;
+      case LONG:
+        return TurbineConstantTypeKind.LONG;
+      case CHAR:
+        return TurbineConstantTypeKind.CHAR;
+      case FLOAT:
+        return TurbineConstantTypeKind.FLOAT;
+      case DOUBLE:
+        return TurbineConstantTypeKind.DOUBLE;
+      default:
+        throw new IllegalArgumentException(kind + " is not a primitive type");
+    }
   }
 
   @Override
@@ -960,28 +989,70 @@ public class TurbineTypes implements Types {
 
   @Override
   public NoType getNoType(TypeKind kind) {
-    throw new UnsupportedOperationException();
+    switch (kind) {
+      case VOID:
+        return (NoType) factory.asTypeMirror(Type.VOID);
+      case NONE:
+        return factory.noType();
+      default:
+        throw new IllegalArgumentException(kind.toString());
+    }
   }
 
   @Override
   public ArrayType getArrayType(TypeMirror componentType) {
-    throw new UnsupportedOperationException();
+    return (ArrayType)
+        factory.asTypeMirror(ArrayTy.create(asTurbineType(componentType), ImmutableList.of()));
   }
 
   @Override
   public WildcardType getWildcardType(TypeMirror extendsBound, TypeMirror superBound) {
-    throw new UnsupportedOperationException();
+    WildTy type;
+    if (extendsBound != null) {
+      type = WildTy.WildUpperBoundedTy.create(asTurbineType(extendsBound), ImmutableList.of());
+    } else if (superBound != null) {
+      type = WildTy.WildLowerBoundedTy.create(asTurbineType(superBound), ImmutableList.of());
+    } else {
+      type = WildUnboundedTy.create(ImmutableList.of());
+    }
+    return (WildcardType) factory.asTypeMirror(type);
   }
 
   @Override
   public DeclaredType getDeclaredType(TypeElement typeElem, TypeMirror... typeArgs) {
-    throw new UnsupportedOperationException();
+    requireNonNull(typeElem);
+    ImmutableList.Builder<Type> args = ImmutableList.builder();
+    for (TypeMirror t : typeArgs) {
+      args.add(asTurbineType(t));
+    }
+    TurbineTypeElement element = (TurbineTypeElement) typeElem;
+    return (DeclaredType)
+        factory.asTypeMirror(
+            ClassTy.create(
+                ImmutableList.of(
+                    SimpleClassTy.create(element.sym(), args.build(), ImmutableList.of()))));
   }
 
   @Override
   public DeclaredType getDeclaredType(
       DeclaredType containing, TypeElement typeElem, TypeMirror... typeArgs) {
-    throw new UnsupportedOperationException();
+    if (containing == null) {
+      return getDeclaredType(typeElem, typeArgs);
+    }
+    requireNonNull(typeElem);
+    ClassTy base = (ClassTy) asTurbineType(containing);
+    TurbineTypeElement element = (TurbineTypeElement) typeElem;
+    ImmutableList.Builder<Type> args = ImmutableList.builder();
+    for (TypeMirror t : typeArgs) {
+      args.add(asTurbineType(t));
+    }
+    return (DeclaredType)
+        factory.asTypeMirror(
+            ClassTy.create(
+                ImmutableList.<SimpleClassTy>builder()
+                    .addAll(base.classes())
+                    .add(SimpleClassTy.create(element.sym(), args.build(), ImmutableList.of()))
+                    .build()));
   }
 
   private static ClassSymbol enclosingClass(Symbol symbol) {
