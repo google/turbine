@@ -39,6 +39,7 @@ import java.util.Optional;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import org.junit.Before;
@@ -83,7 +84,19 @@ public class TurbineElementsTest {
                   "=== Const.java ===",
                   "class Const {",
                   "  static final int X = 1867;",
-                  "}"));
+                  "}",
+                  "=== com/pkg/empty/package-info.java ===",
+                  "@P",
+                  "package com.pkg.empty;",
+                  "import com.pkg.P;",
+                  "=== com/pkg/A.java ===",
+                  "package com.pkg;",
+                  "class A {",
+                  "  class I {}",
+                  "}",
+                  "=== com/pkg/B.java ===",
+                  "package com.pkg;",
+                  "class B {}"));
 
   Elements javacElements;
   ModelFactory factory;
@@ -241,5 +254,15 @@ public class TurbineElementsTest {
             turbineElements.getAllAnnotationMirrors(turbineElements.getPackageElement("java.lang")))
         .isEmpty();
     assertThat(turbineElements.getPackageElement("com.google.no.such.pkg")).isNull();
+  }
+
+  @Test
+  public void packageMembers() {
+    assertThat(
+            turbineElements.getPackageElement("com.pkg").getEnclosedElements().stream()
+                .map(e -> ((TypeElement) e).getQualifiedName().toString())
+                .collect(toImmutableList()))
+        .containsExactly("com.pkg.P", "com.pkg.A", "com.pkg.B");
+    assertThat(turbineElements.getPackageElement("com.pkg.empty").getEnclosedElements()).isEmpty();
   }
 }
