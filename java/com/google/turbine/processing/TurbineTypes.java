@@ -35,6 +35,7 @@ import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
+import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
@@ -82,7 +83,14 @@ public class TurbineTypes implements Types {
 
   @Override
   public Element asElement(TypeMirror t) {
-    throw new UnsupportedOperationException();
+    switch (t.getKind()) {
+      case DECLARED:
+        return ((TurbineDeclaredType) t).asElement();
+      case TYPEVAR:
+        return ((TurbineTypeVariable) t).asElement();
+      default:
+        return null;
+    }
   }
 
   @Override

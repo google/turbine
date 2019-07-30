@@ -132,4 +132,16 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
     } catch (IllegalArgumentException expected) {
     }
   }
+
+  @Test
+  public void asElement() {
+    // TODO(cushon): this looks like a javac bug
+    assume().that(javacA.getKind()).isNotEqualTo(TypeKind.INTERSECTION);
+
+    String expected = String.valueOf(javacTypes.asElement(javacA));
+    String actual = String.valueOf(turbineTypes.asElement(turbineA));
+    assertWithMessage("asElement(`%s`) = asElement(`%s`)", javacA, turbineA)
+        .that(actual)
+        .isEqualTo(expected);
+  }
 }
