@@ -22,8 +22,8 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.base.StandardSystemProperty;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.Binder;
@@ -39,29 +39,36 @@ import com.google.turbine.parse.Parser;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree.CompUnit;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.MirroredTypesException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class TurbineAnnotationProxyTest {
+
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Retention(RetentionPolicy.RUNTIME)
   public @interface A {
@@ -101,6 +108,16 @@ public class TurbineAnnotationProxyTest {
 
   @Test
   public void test() throws IOException {
+
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
+      addClass(jos, TurbineAnnotationProxyTest.class);
+      addClass(jos, A.class);
+      addClass(jos, B.class);
+      addClass(jos, C.class);
+      addClass(jos, R.class);
+    }
+
     TestInput input =
         TestInput.parse(
             Joiner.on('\n')
@@ -130,12 +147,7 @@ public class TurbineAnnotationProxyTest {
     Binder.BindingResult bound =
         Binder.bind(
             units,
-            ClassPathBinder.bindClasspath(
-                Splitter.on(File.pathSeparatorChar)
-                    .splitToList(StandardSystemProperty.JAVA_CLASS_PATH.value())
-                    .stream()
-                    .map(Paths::get)
-                    .collect(toImmutableList())),
+            ClassPathBinder.bindClasspath(ImmutableList.of(lib)),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
@@ -193,6 +205,14 @@ public class TurbineAnnotationProxyTest {
         .addEqualityGroup(I.class.getAnnotation(A.class))
         .addEqualityGroup("unrelated")
         .testEquals();
+  }
+
+  private static void addClass(JarOutputStream jos, Class<?> clazz) throws IOException {
+    String entryPath = clazz.getName().replace('.', '/') + ".class";
+    jos.putNextEntry(new JarEntry(entryPath));
+    try (InputStream is = clazz.getClassLoader().getResourceAsStream(entryPath)) {
+      ByteStreams.copy(is, jos);
+    }
   }
 
   private static String getQualifiedName(TypeMirror typeMirror) {
