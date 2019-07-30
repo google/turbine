@@ -19,6 +19,7 @@ package com.google.turbine.processing;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -31,6 +32,7 @@ import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
+import com.google.turbine.binder.lookup.PackageScope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
@@ -965,7 +967,20 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public List<TurbineTypeElement> getEnclosedElements() {
-      throw new UnsupportedOperationException();
+      ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
+      PackageScope scope = factory.tli().lookupPackage(Splitter.on('/').split(sym.binaryName()));
+      for (ClassSymbol key : scope.classes()) {
+        if (key.binaryName().contains("$") && factory.getSymbol(key).owner() != null) {
+          // Skip member classes: only top-level classes are enclosed by the package.
+          // The initial check for '$' is an optimization.
+          continue;
+        }
+        if (key.simpleName().equals("package-info")) {
+          continue;
+        }
+        result.add(factory.typeElement(key));
+      }
+      return result.build().asList();
     }
 
     @Override

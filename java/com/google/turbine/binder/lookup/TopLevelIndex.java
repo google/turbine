@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder.lookup;
 
-import com.google.common.collect.ImmutableList;
 
 /**
  * An index of canonical type names.
@@ -36,5 +35,5 @@ public interface TopLevelIndex {
   Scope scope();
 
   /** Returns a scope to look up members of the given package. */
-  Scope lookupPackage(ImmutableList<String> packagename);
+  PackageScope lookupPackage(Iterable<String> packagename);
 }
