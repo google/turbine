@@ -34,6 +34,7 @@ import com.google.turbine.bytecode.ClassFile.ModuleInfo.ProvideInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.RequireInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.UseInfo;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
 import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -426,6 +427,9 @@ public class ClassReader {
           ImmutableList.builder();
       for (ImmutableList.Builder<AnnotationInfo> x : parameterAnnotationsBuilder) {
         parameterAnnotations.add(x.build());
+      }
+      if ((accessFlags & TurbineFlag.ACC_BRIDGE) == TurbineFlag.ACC_BRIDGE) {
+        continue;
       }
       methods.add(
           new ClassFile.MethodInfo(

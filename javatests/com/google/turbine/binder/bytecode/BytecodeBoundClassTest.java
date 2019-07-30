@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.bound.TurbineClassValue;
@@ -31,7 +30,6 @@ import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
-import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
@@ -39,7 +37,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -143,6 +143,38 @@ public class BytecodeBoundClassTest {
     assertThat(f.annotations()).hasSize(1);
   }
 
+  interface Y {
+    Object f();
+  }
+
+  interface X extends Y {
+    String f();
+  }
+
+  @Test
+  public void covariantBridges() {
+    assertThat(getBytecodeBoundClass(X.class, Y.class).methods()).hasSize(1);
+  }
+
+  interface A<T> {
+    void f(T t);
+  }
+
+  interface B<T extends Number> extends A<T> {
+    @Override
+    void f(T t);
+  }
+
+  interface C<T extends Integer> extends B<T> {
+    @Override
+    void f(T t);
+  }
+
+  @Test
+  public void genericBridges() {
+    assertThat(getBytecodeBoundClass(C.class, B.class, A.class).methods()).hasSize(1);
+  }
+
   private static byte[] toByteArrayOrDie(InputStream is) {
     try {
       return ByteStreams.toByteArray(is);
@@ -162,15 +194,29 @@ public class BytecodeBoundClassTest {
         "test.jar");
   }
 
-  private BytecodeBoundClass getBytecodeBoundClass(Class<?> clazz) {
-    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
-    env =
-        CompoundEnv.of(env)
+  private BytecodeBoundClass getBytecodeBoundClass(Class<?> clazz, Class<?>... classpath) {
+    Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
+    Env<ClassSymbol, BytecodeBoundClass> env =
+        CompoundEnv.of(TURBINE_BOOTCLASSPATH.env())
             .append(
-                new SimpleEnv<>(
-                    ImmutableMap.of(
-                        new ClassSymbol(BytecodeBoundClass.class.getName().replace('.', '/')),
-                        getBytecodeBoundClass(env, BytecodeBoundClassTest.class))));
+                new Env<ClassSymbol, BytecodeBoundClass>() {
+                  @Override
+                  public BytecodeBoundClass get(ClassSymbol sym) {
+                    return map.get(sym);
+                  }
+                });
+    addClass(clazz, map, env);
+    addClass(BytecodeBoundClassTest.class, map, env);
+    for (Class<?> c : classpath) {
+      addClass(c, map, env);
+    }
     return getBytecodeBoundClass(env, clazz);
+  }
+
+  private void addClass(
+      Class<?> clazz,
+      Map<ClassSymbol, BytecodeBoundClass> map,
+      Env<ClassSymbol, BytecodeBoundClass> env) {
+    map.put(new ClassSymbol(clazz.getName().replace('.', '/')), getBytecodeBoundClass(env, clazz));
   }
 }
