@@ -235,6 +235,7 @@ public class DisambiguateTypeAnnotations {
         TyVar tyVar = (TyVar) type;
         return Type.TyVar.create(tyVar.sym(), appendAnnotations(tyVar.annos(), extra));
       case VOID_TY:
+      case ERROR_TY:
         return type;
       case WILD_TY:
         throw new AssertionError("unexpected wildcard type outside type argument context");
