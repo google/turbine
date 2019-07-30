@@ -988,10 +988,20 @@ public abstract class TurbineElement implements Element {
       return obj instanceof TurbinePackageElement && sym.equals(((TurbinePackageElement) obj).sym);
     }
 
+    private final Supplier<ImmutableList<AnnoInfo>> annos =
+        memoize(
+            new Supplier<ImmutableList<AnnoInfo>>() {
+              @Override
+              public ImmutableList<AnnoInfo> get() {
+                TypeBoundClass info =
+                    factory.getSymbol(new ClassSymbol(sym.binaryName() + "/package-info"));
+                return info != null ? info.annotations() : ImmutableList.of();
+              }
+            });
+
     @Override
     protected ImmutableList<AnnoInfo> annos() {
-      // TODO(cushon): load package-info annotations
-      throw new UnsupportedOperationException();
+      return annos.get();
     }
 
     @Override

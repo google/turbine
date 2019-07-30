@@ -18,6 +18,8 @@ package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
@@ -72,7 +74,11 @@ public class TurbineElements implements Elements {
 
   @Override
   public PackageElement getPackageElement(CharSequence name) {
-    throw new UnsupportedOperationException();
+    ImmutableList<String> packageName = ImmutableList.copyOf(Splitter.on('.').split(name));
+    if (factory.tli().lookupPackage(packageName) == null) {
+      return null;
+    }
+    return factory.packageElement(new PackageSymbol(Joiner.on('/').join(packageName)));
   }
 
   @Override

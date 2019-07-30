@@ -329,4 +329,8 @@ class ModelFactory {
   ClassLoader processorLoader() {
     return processorLoader;
   }
+
+  TopLevelIndex tli() {
+    return tli;
+  }
 }
