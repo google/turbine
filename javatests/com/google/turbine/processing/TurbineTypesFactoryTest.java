@@ -173,4 +173,9 @@ public class TurbineTypesFactoryTest {
     } catch (IllegalArgumentException expected) {
     }
   }
+
+  @Test
+  public void nullType() {
+    assertThat(turbineTypes.getNullType().getKind()).isEqualTo(TypeKind.NULL);
+  }
 }

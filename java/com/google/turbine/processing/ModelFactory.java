@@ -54,6 +54,7 @@ import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineIntersectionType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineNoType;
+import com.google.turbine.processing.TurbineTypeMirror.TurbineNullType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbinePackageType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbinePrimitiveType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
@@ -73,6 +74,7 @@ import java.util.Map;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.NoType;
+import javax.lang.model.type.NullType;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -183,6 +185,10 @@ class ModelFactory {
 
   NoType packageType(PackageSymbol symbol) {
     return new TurbinePackageType(this, symbol);
+  }
+
+  public NullType nullType() {
+    return new TurbineNullType(this);
   }
 
   /** Creates an {@link Element} backed by the given {@link Symbol}. */
