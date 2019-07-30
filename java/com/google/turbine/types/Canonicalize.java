@@ -100,6 +100,7 @@ public class Canonicalize {
       case PRIM_TY:
       case VOID_TY:
       case TY_VAR:
+      case ERROR_TY:
         return type;
       case WILD_TY:
         return canonicalizeWildTy(base, (WildTy) type);
@@ -118,6 +119,9 @@ public class Canonicalize {
   }
 
   private ClassTy canon(ClassSymbol base, ClassTy ty) {
+    if (ty.sym().equals(ClassSymbol.ERROR)) {
+      return ty;
+    }
     if (isRaw(ty)) {
       return Erasure.eraseClassTy(ty);
     }
