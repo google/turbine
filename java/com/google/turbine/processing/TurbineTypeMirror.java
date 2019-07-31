@@ -34,6 +34,7 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ErrorTy;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
@@ -46,6 +47,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.NoType;
@@ -290,6 +292,57 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     protected ImmutableList<AnnoInfo> annos() {
       return type.annos();
+    }
+  }
+
+  /** An {@link ErrorType} implementation backed by a {@link ErrorTy}. */
+  static class TurbineErrorType extends TurbineTypeMirror implements ErrorType {
+
+    private final ErrorTy type;
+
+    public TurbineErrorType(ModelFactory factory, ErrorTy type) {
+      super(factory);
+      this.type = type;
+    }
+
+    @Override
+    public TypeKind getKind() {
+      return TypeKind.ERROR;
+    }
+
+    @Override
+    public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+      return v.visitError(this, p);
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public Type asTurbineType() {
+      return type;
+    }
+
+    @Override
+    public Element asElement() {
+      return factory.noElement(type.name());
+    }
+
+    @Override
+    public TypeMirror getEnclosingType() {
+      return factory.noType();
+    }
+
+    @Override
+    public List<? extends TypeMirror> getTypeArguments() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public String toString() {
+      return type.toString();
     }
   }
 

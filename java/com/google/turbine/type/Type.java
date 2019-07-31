@@ -531,7 +531,7 @@ public interface Type {
   /** An error type. */
   @AutoValue
   abstract class ErrorTy implements Type {
-    abstract String name();
+    public abstract String name();
 
     public static ErrorTy create(Iterable<Tree.Ident> names) {
       List<String> bits = new ArrayList<>();

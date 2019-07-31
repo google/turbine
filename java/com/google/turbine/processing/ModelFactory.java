@@ -52,6 +52,7 @@ import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineArrayType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
+import com.google.turbine.processing.TurbineTypeMirror.TurbineErrorType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineIntersectionType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineNoType;
@@ -65,6 +66,7 @@ import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ErrorTy;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
@@ -167,6 +169,7 @@ class ModelFactory {
       case METHOD_TY:
         return new TurbineExecutableType(this, (MethodTy) type);
       case ERROR_TY:
+        return new TurbineErrorType(this, (ErrorTy) type);
     }
     throw new AssertionError(type.tyKind());
   }
