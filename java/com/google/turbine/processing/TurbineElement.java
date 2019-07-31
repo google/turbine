@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.turbine.binder.bound.AnnotationMetadata;
+import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -44,10 +45,12 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.ErrorTy;
 import java.lang.annotation.Annotation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -240,6 +243,14 @@ public abstract class TurbineElement implements Element {
                   case ENUM:
                     if (info.superclass() != null) {
                       return factory.asTypeMirror(info.superClassType());
+                    }
+                    if (info instanceof SourceTypeBoundClass) {
+                      // support simple name for stuff that doesn't exist
+                      TyDecl decl = ((SourceTypeBoundClass) info).decl();
+                      if (decl.xtnds().isPresent()) {
+                        return factory.asTypeMirror(
+                            ErrorTy.create(decl.xtnds().get().name().value()));
+                      }
                     }
                     return factory.noType();
                   case INTERFACE:

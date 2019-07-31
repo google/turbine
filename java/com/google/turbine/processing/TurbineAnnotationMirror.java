@@ -17,6 +17,7 @@
 package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
@@ -31,6 +32,7 @@ import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.type.AnnoInfo;
+import com.google.turbine.type.Type.ErrorTy;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,7 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -85,6 +88,10 @@ class TurbineAnnotationMirror implements AnnotationMirror, AnnotationValue {
             new Supplier<DeclaredType>() {
               @Override
               public DeclaredType get() {
+                if (anno.sym() == null) {
+                  return (ErrorType)
+                      factory.asTypeMirror(ErrorTy.create(getLast(anno.tree().name()).value()));
+                }
                 return (DeclaredType) factory.typeElement(anno.sym()).asType();
               }
             });

@@ -69,6 +69,10 @@ public class AnnoInfo {
     return sym;
   }
 
+  public Tree.Anno tree() {
+    return tree;
+  }
+
   public AnnoInfo withValues(ImmutableMap<String, Const> values) {
     return new AnnoInfo(source, sym, tree, values);
   }
