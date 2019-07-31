@@ -38,6 +38,7 @@ import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
+import com.google.turbine.processing.TurbineTypeMirror.TurbineErrorType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -92,6 +93,8 @@ public class TurbineTypes implements Types {
         return ((TurbineDeclaredType) t).asElement();
       case TYPEVAR:
         return ((TurbineTypeVariable) t).asElement();
+      case ERROR:
+        return ((TurbineErrorType) t).asElement();
       default:
         return null;
     }
