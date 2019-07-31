@@ -326,4 +326,14 @@ public class TurbineElementsTest {
                 + "two with extra *\n"
                 + "");
   }
+
+  @Test
+  public void syntheticParameters() {
+    assertThat(
+            ((ExecutableElement)
+                    getOnlyElement(
+                        turbineElements.getTypeElement("com.pkg.A.I").getEnclosedElements()))
+                .getParameters())
+        .isEmpty();
+  }
 }

@@ -691,6 +691,11 @@ public abstract class TurbineElement implements Element {
               public ImmutableList<VariableElement> get() {
                 ImmutableList.Builder<VariableElement> result = ImmutableList.builder();
                 for (ParamInfo param : info().parameters()) {
+                  if (param.synthetic()) {
+                    // ExecutableElement#getParameters doesn't expect synthetic or mandated
+                    // parameters
+                    continue;
+                  }
                   result.add(factory.parameterElement(param.sym()));
                 }
                 return result.build();
