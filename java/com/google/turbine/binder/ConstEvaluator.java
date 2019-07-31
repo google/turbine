@@ -921,8 +921,11 @@ public strictfp class ConstEvaluator {
    */
   AnnoInfo evaluateAnnotation(AnnoInfo info) {
     Map<String, Type> template = new LinkedHashMap<>();
-    for (MethodInfo method : env.get(info.sym()).methods()) {
-      template.put(method.name(), method.returnType());
+    TypeBoundClass annoClass = env.get(info.sym());
+    if (annoClass != null) {
+      for (MethodInfo method : annoClass.methods()) {
+        template.put(method.name(), method.returnType());
+      }
     }
 
     Map<String, Const> values = new LinkedHashMap<>();
