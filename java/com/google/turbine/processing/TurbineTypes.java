@@ -561,9 +561,21 @@ public class TurbineTypes implements Types {
       case INTERSECTION_TY:
         return substIntersectionTy((IntersectionTy) type, mapping);
       case WILD_TY:
-        throw new UnsupportedOperationException();
+        return substWildTy((WildTy) type, mapping);
     }
     throw new AssertionError(type.tyKind());
+  }
+
+  private Type substWildTy(WildTy type, Map<TyVarSymbol, Type> mapping) {
+    switch (type.boundKind()) {
+      case NONE:
+        return type;
+      case UPPER:
+        return Type.WildUpperBoundedTy.create(subst(type.bound(), mapping), ImmutableList.of());
+      case LOWER:
+        return Type.WildLowerBoundedTy.create(subst(type.bound(), mapping), ImmutableList.of());
+    }
+    throw new AssertionError(type.boundKind());
   }
 
   private Type substIntersectionTy(IntersectionTy type, Map<TyVarSymbol, Type> mapping) {
@@ -798,7 +810,7 @@ public class TurbineTypes implements Types {
       return false;
     }
     if (!sameTypeParameterBounds(a, b, mapping)) {
-        return false;
+      return false;
     }
     Iterator<Type> ax = a.parameters().iterator();
     // adapt the formal parameter types of 'b' to the type parameters of 'a'
@@ -1108,7 +1120,12 @@ public class TurbineTypes implements Types {
     }
     Type type = type(element);
     for (ClassTy ty : path) {
-      type = subst(type, getMapping(ty));
+      ImmutableMap<TyVarSymbol, Type> mapping = getMapping(ty);
+      if (mapping == null) {
+        type = erasure(type);
+        break;
+      }
+      type = subst(type, mapping);
     }
     return factory.asTypeMirror(type);
   }
