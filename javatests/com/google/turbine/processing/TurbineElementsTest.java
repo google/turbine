@@ -59,8 +59,21 @@ public class TurbineElementsTest {
                   "@Deprecated",
                   "@A class Test extends One {}",
                   "=== One.java ===",
-                  "@B class One extends Two {}",
+                  "/** javadoc",
+                  "  * for",
+                  "  * one",
+                  "  */",
+                  "@B class One extends Two {",
+                  "  /** method javadoc */",
+                  "  void f() {}",
+                  "  /** field javadoc */",
+                  "  int x;",
+                  "}",
                   "=== Two.java ===",
+                  "/** javadoc",
+                  " for",
+                  " two with extra *",
+                  " */",
                   "@C(1) class Two extends Three {}",
                   "=== Three.java ===",
                   "@C(2) class Three extends Four {}",
@@ -279,5 +292,38 @@ public class TurbineElementsTest {
     assertThat(e.getSimpleName().toString()).isEqualTo("Foo");
     assertThat(e.getEnclosingElement().toString()).isEmpty();
     assertThat(e.getEnclosingElement().getKind()).isEqualTo(ElementKind.PACKAGE);
+  }
+
+  @Test
+  public void javadoc() {
+    TypeElement e = turbineElements.getTypeElement("One");
+    assertThat(turbineElements.getDocComment(e))
+        .isEqualTo(
+            " javadoc\n" //
+                + " for\n"
+                + " one\n"
+                + "");
+
+    assertThat(
+            turbineElements.getDocComment(
+                e.getEnclosedElements().stream()
+                    .filter(x -> x.getKind().equals(ElementKind.FIELD))
+                    .collect(onlyElement())))
+        .isEqualTo(" field javadoc ");
+
+    assertThat(
+            turbineElements.getDocComment(
+                e.getEnclosedElements().stream()
+                    .filter(x -> x.getKind().equals(ElementKind.METHOD))
+                    .collect(onlyElement())))
+        .isEqualTo(" method javadoc ");
+
+    e = turbineElements.getTypeElement("Two");
+    assertThat(turbineElements.getDocComment(e))
+        .isEqualTo(
+            " javadoc\n" //
+                + "for\n"
+                + "two with extra *\n"
+                + "");
   }
 }

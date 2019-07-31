@@ -45,7 +45,9 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.TyDecl;
+import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
@@ -79,6 +81,8 @@ import javax.lang.model.type.TypeMirror;
 public abstract class TurbineElement implements Element {
 
   public abstract Symbol sym();
+
+  public abstract String javadoc();
 
   @Override
   public abstract int hashCode();
@@ -432,6 +436,15 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
+    public String javadoc() {
+      TypeBoundClass info = info();
+      if (!(info instanceof SourceTypeBoundClass)) {
+        return null;
+      }
+      return ((SourceTypeBoundClass) info).decl().javadoc();
+    }
+
+    @Override
     public boolean equals(Object obj) {
       return obj instanceof TurbineTypeElement && sym.equals(((TurbineTypeElement) obj).sym);
     }
@@ -602,6 +615,11 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
+    public String javadoc() {
+      return null;
+    }
+
+    @Override
     protected ImmutableList<AnnoInfo> annos() {
       return info().annotations();
     }
@@ -633,6 +651,12 @@ public abstract class TurbineElement implements Element {
     @Override
     public MethodSymbol sym() {
       return sym;
+    }
+
+    @Override
+    public String javadoc() {
+      MethDecl decl = info().decl();
+      return decl != null ? decl.javadoc() : null;
     }
 
     @Override
@@ -803,6 +827,12 @@ public abstract class TurbineElement implements Element {
     @Override
     public FieldSymbol sym() {
       return sym;
+    }
+
+    @Override
+    public String javadoc() {
+      VarDecl decl = info().decl();
+      return decl != null ? decl.javadoc() : null;
     }
 
     private final Supplier<FieldInfo> info =
@@ -1005,6 +1035,11 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
+    public String javadoc() {
+      return null;
+    }
+
+    @Override
     public int hashCode() {
       return sym.hashCode();
     }
@@ -1042,6 +1077,11 @@ public abstract class TurbineElement implements Element {
     @Override
     public ParamSymbol sym() {
       return sym;
+    }
+
+    @Override
+    public String javadoc() {
+      return null;
     }
 
     @Override
