@@ -222,6 +222,20 @@ public class TurbineElementsGetAllMembersTest {
         "abstract class Test implements A, B {",
         "}",
       },
+      {
+        "=== A.java ===",
+        "import java.util.List;",
+        "interface A<T> {",
+        "  List<? extends T> f();",
+        "}",
+        "=== Test.java ===",
+        "import java.util.List;",
+        "class Test<T extends Number> implements A<T> {",
+        "  public List<? extends T> f() {",
+        "    return null;",
+        "  }",
+        "}",
+      },
     };
     return Arrays.stream(inputs)
         .map(input -> TestInput.parse(Joiner.on('\n').join(input)))
