@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -101,7 +102,30 @@ public class TurbineElements implements Elements {
 
   @Override
   public String getDocComment(Element e) {
-    throw new UnsupportedOperationException();
+    if (!(e instanceof TurbineElement)) {
+      throw new IllegalArgumentException(e.toString());
+    }
+    String comment = ((TurbineElement) e).javadoc();
+    if (comment == null) {
+      return null;
+    }
+    StringBuilder sb = new StringBuilder();
+    boolean first = true;
+    for (String line : Splitter.on('\n').split(comment)) {
+      int start = 0;
+      if (!first) {
+        sb.append('\n');
+        while (start < line.length() && CharMatcher.whitespace().matches(line.charAt(start))) {
+          start++;
+        }
+        while (start < line.length() && line.charAt(start) == '*') {
+          start++;
+        }
+      }
+      sb.append(line, start, line.length());
+      first = false;
+    }
+    return sb.toString();
   }
 
   @Override
