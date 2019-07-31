@@ -1123,4 +1123,102 @@ public abstract class TurbineElement implements Element {
       return info().annotations();
     }
   }
+
+  static class TurbineNoTypeElement implements TypeElement {
+
+    private final ModelFactory factory;
+    private final String name;
+
+    public TurbineNoTypeElement(ModelFactory factory, String name) {
+      this.factory = factory;
+      this.name = requireNonNull(name);
+    }
+
+    @Override
+    public TypeMirror asType() {
+      return factory.noType();
+    }
+
+    @Override
+    public ElementKind getKind() {
+      return ElementKind.CLASS;
+    }
+
+    @Override
+    public Set<Modifier> getModifiers() {
+      return ImmutableSet.of();
+    }
+
+    @Override
+    public Name getSimpleName() {
+      return new TurbineName(name.substring(name.lastIndexOf('.') + 1));
+    }
+
+    @Override
+    public TypeMirror getSuperclass() {
+      return factory.noType();
+    }
+
+    @Override
+    public List<? extends TypeMirror> getInterfaces() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public List<? extends TypeParameterElement> getTypeParameters() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public Element getEnclosingElement() {
+      int idx = name.lastIndexOf('.');
+      String packageName;
+      if (idx == -1) {
+        packageName = "";
+      } else {
+        packageName = name.substring(0, idx).replace('.', '/');
+      }
+      return factory.packageElement(new PackageSymbol(packageName));
+    }
+
+    @Override
+    public List<? extends Element> getEnclosedElements() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public NestingKind getNestingKind() {
+      return NestingKind.TOP_LEVEL;
+    }
+
+    @Override
+    public Name getQualifiedName() {
+      return new TurbineName(name);
+    }
+
+    @Override
+    public List<? extends AnnotationMirror> getAnnotationMirrors() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public <A extends Annotation> A getAnnotation(Class<A> aClass) {
+      return null;
+    }
+
+    @Override
+    public <A extends Annotation> A[] getAnnotationsByType(Class<A> aClass) {
+      return null;
+    }
+
+    @Override
+    public <R, P> R accept(ElementVisitor<R, P> elementVisitor, P p) {
+      return elementVisitor.visitType(this, p);
+    }
+
+    @Override
+    public String toString() {
+      return getSimpleName().toString();
+    }
+  }
 }

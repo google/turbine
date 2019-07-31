@@ -45,6 +45,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
+import com.google.turbine.processing.TurbineElement.TurbineNoTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbinePackageElement;
 import com.google.turbine.processing.TurbineElement.TurbineParameterElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
@@ -210,6 +211,10 @@ class ModelFactory {
         break;
     }
     throw new AssertionError(symbol.symKind());
+  }
+
+  Element noElement(String name) {
+    return new TurbineNoTypeElement(this, name);
   }
 
   TurbineFieldElement fieldElement(FieldSymbol symbol) {
