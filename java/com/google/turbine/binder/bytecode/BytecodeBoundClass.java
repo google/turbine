@@ -425,7 +425,9 @@ public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBou
       if (idx < m.parameters().size()) {
         ParameterInfo paramInfo = m.parameters().get(idx);
         name = paramInfo.name();
-        access = paramInfo.access();
+        // ignore parameter modifiers for bug-parity with javac:
+        // https://bugs.openjdk.java.net/browse/JDK-8226216
+        // access = paramInfo.access();
       } else {
         name = "arg" + idx;
       }
