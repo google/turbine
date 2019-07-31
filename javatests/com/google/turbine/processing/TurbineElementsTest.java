@@ -36,6 +36,7 @@ import com.sun.source.util.JavacTask;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
@@ -264,5 +265,19 @@ public class TurbineElementsTest {
                 .collect(toImmutableList()))
         .containsExactly("com.pkg.P", "com.pkg.A", "com.pkg.B");
     assertThat(turbineElements.getPackageElement("com.pkg.empty").getEnclosedElements()).isEmpty();
+  }
+
+  @Test
+  public void noElement() {
+    Element e = factory.noElement("com.google.Foo");
+    assertThat(e.getKind()).isEqualTo(ElementKind.CLASS);
+    assertThat(e.getSimpleName().toString()).isEqualTo("Foo");
+    assertThat(e.getEnclosingElement().toString()).isEqualTo("com.google");
+    assertThat(e.getEnclosingElement().getKind()).isEqualTo(ElementKind.PACKAGE);
+
+    e = factory.noElement("Foo");
+    assertThat(e.getSimpleName().toString()).isEqualTo("Foo");
+    assertThat(e.getEnclosingElement().toString()).isEmpty();
+    assertThat(e.getEnclosingElement().getKind()).isEqualTo(ElementKind.PACKAGE);
   }
 }
