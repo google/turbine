@@ -199,8 +199,7 @@ public class TurbineElementsTest {
             toStrings(
                 turbineElements.getAllAnnotationMirrors(
                     factory.typeElement(new ClassSymbol("Test")))))
-        .containsExactlyElementsIn(
-            toStrings(javacElements.getAllAnnotationMirrors(javacElements.getTypeElement("Test"))));
+        .containsExactly("@java.lang.Deprecated", "@A", "@C(1)", "@D");
   }
 
   @Test
