@@ -149,8 +149,9 @@ public class BytecodeBinder {
   }
 
   private static boolean shouldSkip(TurbineAnnotationValue anno) {
-    // ct.sym contains a fake annotation jdk/Profile+Annotation without a corresponding class file.
-    return anno.sym().equals(ClassSymbol.PROFILE_ANNOTATION);
+    // ct.sym contains fake annotations without corresponding class files.
+    return anno.sym().equals(ClassSymbol.PROFILE_ANNOTATION)
+        || anno.sym().equals(ClassSymbol.PROPRIETARY_ANNOTATION);
   }
 
   private static ClassSymbol asClassSymbol(String s) {
