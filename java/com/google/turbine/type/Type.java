@@ -17,6 +17,7 @@
 package com.google.turbine.type;
 
 import static com.google.common.collect.Iterables.getLast;
+import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
@@ -529,9 +530,21 @@ public interface Type {
   }
 
   /** An error type. */
-  @AutoValue
-  abstract class ErrorTy implements Type {
-    public abstract String name();
+  final class ErrorTy implements Type {
+
+    private final String name;
+
+    private ErrorTy(String name) {
+      this.name = requireNonNull(name);
+    }
+
+    /**
+     * Best-effort syntactic context for use in diagnostics or by annotations processors. This may
+     * be a simple or qualified name, it is not a canonical qualified name.
+     */
+    public String name() {
+      return name;
+    }
 
     public static ErrorTy create(Iterable<Tree.Ident> names) {
       List<String> bits = new ArrayList<>();
@@ -542,7 +555,7 @@ public interface Type {
     }
 
     public static ErrorTy create(String name) {
-      return new AutoValue_Type_ErrorTy(name);
+      return new ErrorTy(name);
     }
 
     @Override
@@ -553,6 +566,23 @@ public interface Type {
     @Override
     public final String toString() {
       return name();
+    }
+
+    @Override
+    public final int hashCode() {
+      return System.identityHashCode(this);
+    }
+
+    @Override
+    public final boolean equals(Object other) {
+      // The name associated with an error type is context for use in diagnostics or by annotations
+      // processors. Two error types with the same name don't necessarily represent the same type.
+
+      // TODO(cushon): should error types compare equal to themselves if they correspond to the same
+      // source location? Investigate storing the source position for this type, or replacing with
+      // `this == other` (and removing interning in ModelFactory).
+
+      return false;
     }
   }
 }
