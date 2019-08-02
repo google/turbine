@@ -539,8 +539,8 @@ public interface Type {
     }
 
     /**
-     * Best-effort syntactic context for use in diagnostics or by annotations processors. This may
-     * be a simple or qualified name, it is not a canonical qualified name.
+     * Best-effort syntactic context for use in diagnostics or by annotation processors. This may be
+     * a simple or qualified name; it is not a canonical qualified name.
      */
     public String name() {
       return name;
