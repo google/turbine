@@ -22,6 +22,8 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.TyKind;
@@ -106,6 +108,9 @@ public class ClassHierarchy {
   private HierarchyNode compute(ClassSymbol sym) {
     HierarchyNode node = new HierarchyNode(sym);
     TypeBoundClass info = env.get(sym);
+    if (info == null) {
+      throw TurbineError.format(/* source= */ null, ErrorKind.SYMBOL_NOT_FOUND, sym);
+    }
     if (info.superClassType() != null) {
       node.add(info.superClassType());
     }

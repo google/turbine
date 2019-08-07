@@ -41,6 +41,8 @@ import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
@@ -76,6 +78,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An {@link Element} implementation backed by a {@link Symbol}. */
 public abstract class TurbineElement implements Element {
@@ -200,8 +203,17 @@ public abstract class TurbineElement implements Element {
               });
     }
 
+    @Nullable
     TypeBoundClass info() {
       return info.get();
+    }
+
+    TypeBoundClass infoNonNull() {
+      TypeBoundClass info = info();
+      if (info == null) {
+        throw TurbineError.format(/* source= */ null, ErrorKind.SYMBOL_NOT_FOUND, sym);
+      }
+      return info;
     }
 
     @Override
@@ -241,7 +253,7 @@ public abstract class TurbineElement implements Element {
             new Supplier<TypeMirror>() {
               @Override
               public TypeMirror get() {
-                TypeBoundClass info = info();
+                TypeBoundClass info = infoNonNull();
                 switch (info.kind()) {
                   case CLASS:
                   case ENUM:
@@ -280,7 +292,7 @@ public abstract class TurbineElement implements Element {
             new Supplier<List<TypeMirror>>() {
               @Override
               public List<TypeMirror> get() {
-                return factory.asTypeMirrors(info().interfaceTypes());
+                return factory.asTypeMirrors(infoNonNull().interfaceTypes());
               }
             });
 
@@ -295,7 +307,7 @@ public abstract class TurbineElement implements Element {
               @Override
               public ImmutableList<TypeParameterElement> get() {
                 ImmutableList.Builder<TypeParameterElement> result = ImmutableList.builder();
-                for (TyVarSymbol p : info().typeParameters().values()) {
+                for (TyVarSymbol p : infoNonNull().typeParameters().values()) {
                   result.add(factory.typeParameterElement(p));
                 }
                 return result.build();
@@ -346,7 +358,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public ElementKind getKind() {
-      TypeBoundClass info = info();
+      TypeBoundClass info = infoNonNull();
       switch (info.kind()) {
         case CLASS:
           return ElementKind.CLASS;
@@ -362,7 +374,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Set<Modifier> getModifiers() {
-      return asModifierSet(ModifierOwner.TYPE, info().access() & ~TurbineFlag.ACC_SUPER);
+      return asModifierSet(ModifierOwner.TYPE, infoNonNull().access() & ~TurbineFlag.ACC_SUPER);
     }
 
     private final Supplier<TurbineName> simpleName =
@@ -405,7 +417,7 @@ public abstract class TurbineElement implements Element {
             new Supplier<ImmutableList<Element>>() {
               @Override
               public ImmutableList<Element> get() {
-                TypeBoundClass info = info();
+                TypeBoundClass info = infoNonNull();
                 ImmutableList.Builder<Element> result = ImmutableList.builder();
                 for (FieldInfo field : info.fields()) {
                   result.add(factory.fieldElement(field.sym()));
@@ -451,7 +463,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     protected ImmutableList<AnnoInfo> annos() {
-      return info().annotations();
+      return infoNonNull().annotations();
     }
 
     @Override
@@ -464,7 +476,7 @@ public abstract class TurbineElement implements Element {
       if (!isAnnotationInherited(sym)) {
         return null;
       }
-      ClassSymbol superclass = info().superclass();
+      ClassSymbol superclass = infoNonNull().superclass();
       while (superclass != null) {
         TypeBoundClass info = factory.getSymbol(superclass);
         if (info == null) {
@@ -485,7 +497,7 @@ public abstract class TurbineElement implements Element {
       for (AnnoInfo anno : annos()) {
         result.put(anno.sym(), TurbineAnnotationMirror.create(factory, anno));
       }
-      ClassSymbol superclass = info().superclass();
+      ClassSymbol superclass = infoNonNull().superclass();
       while (superclass != null) {
         TypeBoundClass i = factory.getSymbol(superclass);
         if (i == null) {
@@ -554,6 +566,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
+    @Nullable
     private TyVarInfo info() {
       return info.get();
     }
@@ -639,6 +652,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
+    @Nullable
     MethodInfo info() {
       return info.get();
     }
@@ -849,6 +863,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
+    @Nullable
     FieldInfo info() {
       return info.get();
     }
@@ -1111,6 +1126,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
+    @Nullable
     ParamInfo info() {
       return info.get();
     }
