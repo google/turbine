@@ -47,7 +47,8 @@ public class TurbineError extends Error {
     NOT_AN_ANNOTATION("%s is not an annotation"),
     NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
     DUPLICATE_DECLARATION("duplicate declaration of %s"),
-    BAD_MODULE_INFO("unexpected declaration found in module-info");
+    BAD_MODULE_INFO("unexpected declaration found in module-info"),
+    PROC("annotation processor reported error");
 
     private final String message;
 

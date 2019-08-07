@@ -200,7 +200,7 @@ public abstract class TurbineElement implements Element {
               });
     }
 
-    private TypeBoundClass info() {
+    TypeBoundClass info() {
       return info.get();
     }
 

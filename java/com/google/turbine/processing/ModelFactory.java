@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,6 +30,7 @@ import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
@@ -74,6 +74,7 @@ import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.NoType;
@@ -90,9 +91,18 @@ import javax.lang.model.type.TypeMirror;
  * maintain a reference to this class, and use it to lazily construct edges in the type and element
  * graph.
  */
-class ModelFactory {
+public class ModelFactory {
 
-  private final Env<ClassSymbol, ? extends TypeBoundClass> env;
+  public Env<ClassSymbol, ? extends TypeBoundClass> env;
+
+  private final AtomicInteger round = new AtomicInteger(0);
+
+  public void round(CompoundEnv<ClassSymbol, TypeBoundClass> env, TopLevelIndex tli) {
+    this.env = env;
+    this.tli = tli;
+    round.getAndIncrement();
+    cha.round(env);
+  }
 
   private final HashMap<Type, TurbineTypeMirror> typeCache = new HashMap<>();
 
@@ -108,9 +118,9 @@ class ModelFactory {
   private final ClassHierarchy cha;
   private final ClassLoader processorLoader;
 
-  private final TopLevelIndex tli;
+  private TopLevelIndex tli;
 
-  ModelFactory(
+  public ModelFactory(
       Env<ClassSymbol, ? extends TypeBoundClass> env,
       ClassLoader processorLoader,
       TopLevelIndex tli) {
@@ -132,8 +142,20 @@ class ModelFactory {
    * future, e.g. as additional types are generated.
    */
   <T> Supplier<T> memoize(Supplier<T> s) {
-    // TODO(cushon): reset cached state between rounds
-    return Suppliers.memoize(s);
+    return new Supplier<T>() {
+      T v;
+      int initializedInRound = -1;
+
+      @Override
+      public T get() {
+        int r = round.get();
+        if (initializedInRound != r) {
+          v = s.get();
+          initializedInRound = r;
+        }
+        return v;
+      }
+    };
   }
 
   /** Creates a {@link TurbineTypeMirror} backed by a {@link Type}. */
@@ -228,7 +250,7 @@ class ModelFactory {
     return methodCache.computeIfAbsent(symbol, k -> new TurbineExecutableElement(this, symbol));
   }
 
-  TurbineTypeElement typeElement(ClassSymbol symbol) {
+  public TurbineTypeElement typeElement(ClassSymbol symbol) {
     Verify.verify(!symbol.simpleName().equals("package-info"), "%s", symbol);
     return classCache.computeIfAbsent(symbol, k -> new TurbineTypeElement(this, symbol));
   }

@@ -96,7 +96,8 @@ public class TurbineFiler implements Filer {
     return ImmutableMap.copyOf(generatedResources);
   }
 
-  TurbineFiler(Set<String> seen, Function<String, Supplier<byte[]>> classPath, ClassLoader loader) {
+  public TurbineFiler(
+      Set<String> seen, Function<String, Supplier<byte[]>> classPath, ClassLoader loader) {
     this.seen = seen;
     this.classPath = classPath;
     this.loader = loader;

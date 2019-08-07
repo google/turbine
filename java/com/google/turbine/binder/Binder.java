@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.CompUnitPreprocessor.PreprocessedCompUnit;
+import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.binder.Resolve.CanonicalResolver;
 import com.google.turbine.binder.bound.BoundClass;
 import com.google.turbine.binder.bound.HeaderBoundClass;
@@ -51,6 +52,7 @@ import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog;
@@ -72,7 +74,43 @@ public class Binder {
       ClassPath classpath,
       ClassPath bootclasspath,
       Optional<String> moduleVersion) {
+    return bind(units, classpath, Processing.ProcessorInfo.empty(), bootclasspath, moduleVersion);
+  }
 
+  /** Binds symbols and types to the given compilation units. */
+  public static BindingResult bind(
+      List<CompUnit> units,
+      ClassPath classpath,
+      ProcessorInfo processorInfo,
+      ClassPath bootclasspath,
+      Optional<String> moduleVersion) {
+    TurbineLog log = new TurbineLog();
+    BindingResult br =
+        bind(
+            log,
+            units,
+            /* generatedSources= */ ImmutableList.of(),
+            /* generatedClasses= */ ImmutableMap.of(),
+            classpath,
+            bootclasspath,
+            moduleVersion);
+    if (!processorInfo.processors().isEmpty()) {
+      br =
+          Processing.process(
+              log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
+    }
+    log.maybeThrow();
+    return br;
+  }
+
+  static BindingResult bind(
+      TurbineLog log,
+      List<CompUnit> units,
+      ImmutableList<SourceFile> generatedSources,
+      ImmutableMap<String, byte[]> generatedClasses,
+      ClassPath classpath,
+      ClassPath bootclasspath,
+      Optional<String> moduleVersion) {
     ImmutableList<PreprocessedCompUnit> preProcessedUnits = CompUnitPreprocessor.preprocess(units);
 
     SimpleEnv<ClassSymbol, SourceBoundClass> ienv = bindSourceBoundClasses(preProcessedUnits);
@@ -91,8 +129,6 @@ public class Binder {
     CompoundEnv<ModuleSymbol, ModuleInfo> classPathModuleEnv =
         CompoundEnv.of(classpath.moduleEnv()).append(bootclasspath.moduleEnv());
 
-    TurbineLog log = new TurbineLog();
-
     BindPackagesResult bindPackagesResult =
         bindPackages(log, ienv, tli, preProcessedUnits, classPathEnv);
 
@@ -108,17 +144,12 @@ public class Binder {
             henv,
             CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
 
-    log.maybeThrow();
-
     tenv =
         constants(
             syms,
             tenv,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             log);
-
-    log.maybeThrow();
-
     tenv =
         disambiguateTypeAnnotations(
             syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
@@ -138,7 +169,9 @@ public class Binder {
     for (ClassSymbol sym : syms) {
       result.put(sym, tenv.get(sym));
     }
-    return new BindingResult(result.build(), boundModules, classPathEnv, tli);
+
+    return new BindingResult(
+        result.build(), boundModules, classPathEnv, tli, generatedSources, generatedClasses);
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
@@ -406,17 +439,23 @@ public class Binder {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
     private final ImmutableList<SourceModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
-    private final CompoundTopLevelIndex tli;
+    private final TopLevelIndex tli;
+    private final ImmutableList<SourceFile> generatedSources;
+    private final ImmutableMap<String, byte[]> generatedClasses;
 
-    private BindingResult(
+    public BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
         ImmutableList<SourceModuleInfo> modules,
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
-        CompoundTopLevelIndex tli) {
+        TopLevelIndex tli,
+        ImmutableList<SourceFile> generatedSources,
+        ImmutableMap<String, byte[]> generatedClasses) {
       this.units = units;
       this.modules = modules;
       this.classPathEnv = classPathEnv;
       this.tli = tli;
+      this.generatedSources = generatedSources;
+      this.generatedClasses = generatedClasses;
     }
 
     /** Bound nodes for sources in the compilation. */
@@ -435,6 +474,14 @@ public class Binder {
 
     public TopLevelIndex tli() {
       return tli;
+    }
+
+    public ImmutableList<SourceFile> generatedSources() {
+      return generatedSources;
+    }
+
+    public ImmutableMap<String, byte[]> generatedClasses() {
+      return generatedClasses;
     }
   }
 }

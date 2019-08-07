@@ -19,6 +19,7 @@ package com.google.turbine.processing;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.type.Type;
@@ -35,11 +36,15 @@ import java.util.Set;
  */
 public class ClassHierarchy {
 
-  // TODO(cushon): reset between rounds
   private final Map<ClassSymbol, HierarchyNode> cache = new HashMap<>();
-  private final Env<ClassSymbol, ? extends TypeBoundClass> env;
+  private Env<ClassSymbol, ? extends TypeBoundClass> env;
 
   ClassHierarchy(Env<ClassSymbol, ? extends TypeBoundClass> env) {
+    this.env = env;
+  }
+
+  public void round(CompoundEnv<ClassSymbol, TypeBoundClass> env) {
+    cache.clear();
     this.env = env;
   }
 

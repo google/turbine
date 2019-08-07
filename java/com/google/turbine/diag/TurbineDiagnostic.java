@@ -56,7 +56,7 @@ public class TurbineDiagnostic {
     return args;
   }
 
-  private static TurbineDiagnostic create(
+  public static TurbineDiagnostic create(
       ErrorKind kind, String diagnostic, ImmutableList<Object> args) {
     switch (kind) {
       case SYMBOL_NOT_FOUND:

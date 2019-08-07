@@ -36,6 +36,40 @@ public class TurbineLog {
     }
   }
 
+  /**
+   * Returns true if a non-deferrable error was raised during annotation processing, i.e. an error
+   * reported by an annotation processor.
+   *
+   * <p>Errors reported by turbine (e.g. missing symbols) are non-fatal, since they may be fixed by
+   * code generated in later processing rounds.
+   */
+  public boolean errorRaised() {
+    for (TurbineDiagnostic error : errors) {
+      switch (error.kind()) {
+        case PROC:
+          return true;
+        default:
+      }
+    }
+    return false;
+  }
+
+  /** Reset the log between annotation processing rounds. */
+  public void clear() {
+    errors.clear();
+  }
+
+  /**
+   * Reports an annotation processing diagnostic.
+   *
+   * <p>This is a stop-gap until annotation processing diagnostic positions are implemented; see the
+   * {@link javax.annotation.processing.Messager} implementation.
+   */
+  // TODO(cl/260804999): finish implementing AP diagnostics, especially position handling
+  public void error(String message) {
+    errors.add(TurbineDiagnostic.create(ErrorKind.PROC, message, ImmutableList.of()));
+  }
+
   /** A log for a specific source file. */
   public class TurbineLogWithSource {
 
