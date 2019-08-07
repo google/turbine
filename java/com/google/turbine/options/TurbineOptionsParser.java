@@ -71,6 +71,9 @@ public class TurbineOptionsParser {
         case "--processors":
           builder.addProcessors(readList(argumentDeque));
           break;
+        case "--builtin_processors":
+          builder.addBuiltinProcessors(readList(argumentDeque));
+          break;
         case "--processorpath":
           builder.addProcessorPathEntries(readList(argumentDeque));
           break;

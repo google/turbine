@@ -34,6 +34,7 @@ public class TurbineOptions {
   private final ImmutableList<String> sources;
   private final ImmutableList<String> processorPath;
   private final ImmutableSet<String> processors;
+  private final ImmutableSet<String> builtinProcessors;
   private final ImmutableList<String> sourceJars;
   private final Optional<String> outputDeps;
   private final ImmutableSet<String> directJars;
@@ -56,6 +57,7 @@ public class TurbineOptions {
       ImmutableList<String> sources,
       ImmutableList<String> processorPath,
       ImmutableSet<String> processors,
+      ImmutableSet<String> builtinProcessors,
       ImmutableList<String> sourceJars,
       @Nullable String outputDeps,
       ImmutableSet<String> directJars,
@@ -76,6 +78,7 @@ public class TurbineOptions {
     this.sources = checkNotNull(sources, "sources must not be null");
     this.processorPath = checkNotNull(processorPath, "processorPath must not be null");
     this.processors = checkNotNull(processors, "processors must not be null");
+    this.builtinProcessors = checkNotNull(builtinProcessors, "builtinProcessors must not be null");
     this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
     this.outputDeps = Optional.ofNullable(outputDeps);
     this.directJars = checkNotNull(directJars, "directJars must not be null");
@@ -140,6 +143,11 @@ public class TurbineOptions {
   /** Annotation processor class names. */
   public ImmutableSet<String> processors() {
     return processors;
+  }
+
+  /** Class names of annotation processor that are built in. */
+  public ImmutableSet<String> builtinProcessors() {
+    return builtinProcessors;
   }
 
   /** Source jars for compilation. */
@@ -218,6 +226,7 @@ public class TurbineOptions {
     private final ImmutableList.Builder<String> sources = ImmutableList.builder();
     private final ImmutableList.Builder<String> processorPath = ImmutableList.builder();
     private final ImmutableSet.Builder<String> processors = ImmutableSet.builder();
+    private final ImmutableSet.Builder<String> builtinProcessors = ImmutableSet.builder();
     private final ImmutableList.Builder<String> sourceJars = ImmutableList.builder();
     private final ImmutableSet.Builder<String> bootClassPath = ImmutableSet.builder();
     @Nullable private String release;
@@ -244,6 +253,7 @@ public class TurbineOptions {
           sources.build(),
           processorPath.build(),
           processors.build(),
+          builtinProcessors.build(),
           sourceJars.build(),
           outputDeps,
           directJars.build(),
@@ -295,6 +305,11 @@ public class TurbineOptions {
 
     public Builder addProcessors(Iterable<String> processors) {
       this.processors.addAll(processors);
+      return this;
+    }
+
+    public Builder addBuiltinProcessors(Iterable<String> builtinProcessors) {
+      this.builtinProcessors.addAll(builtinProcessors);
       return this;
     }
 

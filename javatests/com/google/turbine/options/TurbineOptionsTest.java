@@ -361,4 +361,12 @@ public class TurbineOptionsTest {
     } catch (IllegalArgumentException expected) {
     }
   }
+
+  @Test
+  public void builtinProcessors() throws Exception {
+    String[] lines = {"--builtin_processors", "BuiltinProcessor"};
+    TurbineOptions options =
+        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
+    assertThat(options.builtinProcessors()).containsExactly("BuiltinProcessor");
+  }
 }
