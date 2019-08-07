@@ -36,4 +36,18 @@ public class SourceFile {
   public String source() {
     return source;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof SourceFile)) {
+      return false;
+    }
+    SourceFile that = (SourceFile) obj;
+    return path.equals(that.path) && source.equals(that.source);
+  }
+
+  @Override
+  public int hashCode() {
+    return path != null ? path.hashCode() : 0;
+  }
 }

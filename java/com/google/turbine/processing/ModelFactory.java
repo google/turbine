@@ -358,6 +358,25 @@ public class ModelFactory {
     return tyParams.get(tyVar);
   }
 
+  static ClassSymbol enclosingClass(Symbol sym) {
+    switch (sym.symKind()) {
+      case CLASS:
+        return (ClassSymbol) sym;
+      case TY_PARAM:
+        return enclosingClass(((TyVarSymbol) sym).owner());
+      case METHOD:
+        return ((MethodSymbol) sym).owner();
+      case FIELD:
+        return ((FieldSymbol) sym).owner();
+      case PARAMETER:
+        return ((ParamSymbol) sym).owner().owner();
+      case PACKAGE:
+      case MODULE:
+        throw new IllegalArgumentException(sym.toString());
+    }
+    throw new AssertionError(sym.symKind());
+  }
+
   ClassHierarchy cha() {
     return cha;
   }

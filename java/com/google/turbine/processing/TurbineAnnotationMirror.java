@@ -48,32 +48,29 @@ import javax.lang.model.type.TypeMirror;
  * An implementation of {@link AnnotationMirror} and {@link AnnotationValue} backed by {@link
  * AnnoInfo} and {@link Const.Value}.
  */
-class TurbineAnnotationMirror implements AnnotationMirror, AnnotationValue {
+class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, AnnotationMirror {
 
-  static AnnotationValue annotationValue(ModelFactory factory, Const value) {
+  static TurbineAnnotationValueMirror annotationValue(ModelFactory factory, Const value) {
     switch (value.kind()) {
       case ARRAY:
-        ImmutableList.Builder<AnnotationValue> values = ImmutableList.builder();
-        for (Const element : ((ArrayInitValue) value).elements()) {
-          values.add(annotationValue(factory, element));
-        }
-        return new TurbineArrayConstant(values.build());
+        return new TurbineArrayConstant(factory, (ArrayInitValue) value);
       case PRIMITIVE:
-        return (Const.Value) value;
+        return new TurbinePrimitiveConstant((Const.Value) value);
       case CLASS_LITERAL:
-        return new TurbineClassConstant(factory.asTypeMirror(((TurbineClassValue) value).type()));
+        return new TurbineClassConstant(factory, (TurbineClassValue) value);
       case ENUM_CONSTANT:
-        return new TurbineEnumConstant(factory.fieldElement(((EnumConstantValue) value).sym()));
+        return new TurbineEnumConstant(factory, (EnumConstantValue) value);
       case ANNOTATION:
-        return create(factory, ((TurbineAnnotationValue) value).info());
+        return new TurbineAnnotationMirror(factory, (TurbineAnnotationValue) value);
     }
     throw new AssertionError(value.kind());
   }
 
   static TurbineAnnotationMirror create(ModelFactory factory, AnnoInfo anno) {
-    return new TurbineAnnotationMirror(factory, anno);
+    return new TurbineAnnotationMirror(factory, new TurbineAnnotationValue(anno));
   }
 
+  private final TurbineAnnotationValue value;
   private final AnnoInfo anno;
   private final Supplier<DeclaredType> type;
   private final Supplier<ImmutableMap<String, MethodInfo>> elements;
@@ -81,8 +78,9 @@ class TurbineAnnotationMirror implements AnnotationMirror, AnnotationValue {
   private final Supplier<ImmutableMap<ExecutableElement, AnnotationValue>>
       elementValuesWithDefaults;
 
-  private TurbineAnnotationMirror(ModelFactory factory, AnnoInfo anno) {
-    this.anno = anno;
+  private TurbineAnnotationMirror(ModelFactory factory, TurbineAnnotationValue value) {
+    this.value = value;
+    this.anno = value.info();
     this.type =
         factory.memoize(
             new Supplier<DeclaredType>() {
@@ -186,44 +184,73 @@ class TurbineAnnotationMirror implements AnnotationMirror, AnnotationValue {
     return v.visitAnnotation(getValue(), p);
   }
 
-  private static class TurbineArrayConstant implements AnnotationValue {
+  public AnnoInfo anno() {
+    return anno;
+  }
 
-    private final ImmutableList<AnnotationValue> values;
+  @Override
+  public Const value() {
+    return value;
+  }
 
-    private TurbineArrayConstant(ImmutableList<AnnotationValue> values) {
-      this.values = values;
+  private static class TurbineArrayConstant implements TurbineAnnotationValueMirror {
+
+    private final ArrayInitValue value;
+    private final Supplier<ImmutableList<AnnotationValue>> elements;
+
+    private TurbineArrayConstant(ModelFactory factory, ArrayInitValue value) {
+      this.value = value;
+      this.elements =
+          factory.memoize(
+              new Supplier<ImmutableList<AnnotationValue>>() {
+                @Override
+                public ImmutableList<AnnotationValue> get() {
+                  ImmutableList.Builder<AnnotationValue> values = ImmutableList.builder();
+                  for (Const element : value.elements()) {
+                    values.add(annotationValue(factory, element));
+                  }
+                  return values.build();
+                }
+              });
     }
 
     @Override
     public List<AnnotationValue> getValue() {
-      return values;
+      return elements.get();
     }
 
     @Override
     public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
-      return v.visitArray(values, p);
+      return v.visitArray(elements.get(), p);
     }
 
     @Override
     public String toString() {
       StringBuilder sb = new StringBuilder("{");
-      Joiner.on(", ").appendTo(sb, values);
+      Joiner.on(", ").appendTo(sb, elements.get());
       sb.append("}");
       return sb.toString();
     }
+
+    @Override
+    public Const value() {
+      return value;
+    }
   }
 
-  private static class TurbineClassConstant implements AnnotationValue {
+  private static class TurbineClassConstant implements TurbineAnnotationValueMirror {
 
-    private final TypeMirror value;
+    private final TurbineClassValue value;
+    private final TypeMirror typeMirror;
 
-    private TurbineClassConstant(TypeMirror value) {
+    private TurbineClassConstant(ModelFactory factory, TurbineClassValue value) {
       this.value = value;
+      this.typeMirror = factory.asTypeMirror(value.type());
     }
 
     @Override
     public TypeMirror getValue() {
-      return value;
+      return typeMirror;
     }
 
     @Override
@@ -233,31 +260,83 @@ class TurbineAnnotationMirror implements AnnotationMirror, AnnotationValue {
 
     @Override
     public String toString() {
-      return value + ".class";
+      return typeMirror + ".class";
+    }
+
+    @Override
+    public Const value() {
+      return value;
     }
   }
 
-  private static class TurbineEnumConstant implements AnnotationValue {
+  private static class TurbineEnumConstant implements TurbineAnnotationValueMirror {
 
-    private final TurbineFieldElement value;
+    private final EnumConstantValue value;
+    private final TurbineFieldElement fieldElement;
 
-    private TurbineEnumConstant(TurbineFieldElement value) {
+    private TurbineEnumConstant(ModelFactory factory, EnumConstantValue value) {
+      this.value = value;
+      this.fieldElement = factory.fieldElement(value.sym());
+    }
+
+    @Override
+    public Object getValue() {
+      return fieldElement;
+    }
+
+    @Override
+    public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
+      return v.visitEnumConstant(fieldElement, p);
+    }
+
+    @Override
+    public String toString() {
+      return fieldElement.getEnclosingElement() + "." + fieldElement.getSimpleName();
+    }
+
+    @Override
+    public Const value() {
+      return value;
+    }
+  }
+
+  private static class TurbinePrimitiveConstant implements TurbineAnnotationValueMirror {
+
+    private final Const.Value value;
+
+    public TurbinePrimitiveConstant(Const.Value value) {
       this.value = value;
     }
 
     @Override
     public Object getValue() {
-      return value;
+      return value.getValue();
     }
 
     @Override
     public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
-      return v.visitEnumConstant(value, p);
+      return value.accept(v, p);
     }
 
     @Override
     public String toString() {
-      return value.getEnclosingElement() + "." + value.getSimpleName();
+      return value.toString();
+    }
+
+    @Override
+    public int hashCode() {
+      return value.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof TurbinePrimitiveConstant
+          && value.equals(((TurbinePrimitiveConstant) obj).value);
+    }
+
+    @Override
+    public Const value() {
+      return value;
     }
   }
 }

@@ -259,7 +259,7 @@ public class BinderErrorTest {
         {
           "<>:2: error: java.lang.Object is not an annotation", //
           "  @Object int x;",
-          "   ^",
+          "  ^",
         },
       },
       {
@@ -271,7 +271,7 @@ public class BinderErrorTest {
         {
           "<>:2: error: java.lang.Deprecated is not @Repeatable", //
           "  @Deprecated @Deprecated int x;",
-          "   ^",
+          "  ^",
         },
       },
       {
@@ -283,7 +283,7 @@ public class BinderErrorTest {
         {
           "<>:2: error: could not resolve NoSuch.NoSuch", //
           "  @NoSuch.NoSuch int x;",
-          "   ^",
+          "  ^",
         },
       },
       {
@@ -501,7 +501,7 @@ public class BinderErrorTest {
           "                      ^",
           "<>:3: error: could not resolve NoSuchAnno",
           "@NoSuchAnno",
-          " ^",
+          "^",
         },
       },
       {

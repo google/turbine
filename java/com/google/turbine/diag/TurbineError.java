@@ -19,6 +19,7 @@ package com.google.turbine.diag;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.ImmutableList;
+import javax.tools.Diagnostic;
 
 /** A compilation error. */
 public class TurbineError extends Error {
@@ -48,7 +49,7 @@ public class TurbineError extends Error {
     NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
     DUPLICATE_DECLARATION("duplicate declaration of %s"),
     BAD_MODULE_INFO("unexpected declaration found in module-info"),
-    PROC("annotation processor reported error");
+    PROC("%s");
 
     private final String message;
 
@@ -82,7 +83,8 @@ public class TurbineError extends Error {
   public static TurbineError format(
       SourceFile source, int position, ErrorKind kind, Object... args) {
     return new TurbineError(
-        ImmutableList.of(TurbineDiagnostic.format(source, position, kind, args)));
+        ImmutableList.of(
+            TurbineDiagnostic.format(Diagnostic.Kind.ERROR, source, position, kind, args)));
   }
 
   private final ImmutableList<TurbineDiagnostic> diagnostics;

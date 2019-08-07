@@ -151,13 +151,14 @@ public class Parser {
           break;
         case AT:
           {
+            int pos = position;
             next();
             if (token == INTERFACE) {
               decls.add(annotationDeclaration(access, annos.build()));
               access = EnumSet.noneOf(TurbineModifier.class);
               annos = ImmutableList.builder();
             } else {
-              annos.add(annotation());
+              annos.add(annotation(pos));
             }
             break;
           }
@@ -487,8 +488,9 @@ public class Parser {
           annos = ImmutableList.builder();
           break OUTER;
         case AT:
+          int pos = position;
           next();
-          annos.add(annotation());
+          annos.add(annotation(pos));
           break;
         default:
           throw error(token);
@@ -591,13 +593,14 @@ public class Parser {
         case AT:
           {
             // TODO(cushon): de-dup with top-level parsing
+            int pos = position;
             next();
             if (token == INTERFACE) {
               acc.add(annotationDeclaration(access, annos.build()));
               access = EnumSet.noneOf(TurbineModifier.class);
               annos = ImmutableList.builder();
             } else {
-              annos.add(annotation());
+              annos.add(annotation(pos));
             }
             break;
           }
@@ -780,8 +783,9 @@ public class Parser {
     }
     ImmutableList.Builder<Anno> builder = ImmutableList.builder();
     while (token == Token.AT) {
+      int pos = position;
       next();
-      builder.add(annotation());
+      builder.add(annotation(pos));
     }
     return builder.build();
   }
@@ -886,8 +890,9 @@ public class Parser {
           Tree expr = cparser.expression();
           token = cparser.token;
           if (expr == null && token == Token.AT) {
+            int annoPos = position;
             next();
-            expr = annotation();
+            expr = annotation(annoPos);
           }
           if (expr == null) {
             throw error(token);
@@ -1070,13 +1075,14 @@ public class Parser {
     OUTER:
     while (true) {
       ImmutableList<Anno> annotations = maybeAnnos();
+      int pos = position;
       Ident name = eatIdent();
       ImmutableList<Tree> bounds = ImmutableList.of();
       if (token == Token.EXTENDS) {
         next();
         bounds = tybounds();
       }
-      acc.add(new TyParam(position, name, bounds, annotations));
+      acc.add(new TyParam(pos, name, bounds, annotations));
       switch (token) {
         case COMMA:
           eat(Token.COMMA);
@@ -1291,8 +1297,9 @@ public class Parser {
           access.add(TurbineModifier.STRICTFP);
           break;
         case AT:
+          int pos = position;
           next();
-          annos.add(annotation());
+          annos.add(annotation(pos));
           break;
         default:
           return access;
@@ -1340,8 +1347,7 @@ public class Parser {
     return name.build();
   }
 
-  private Anno annotation() {
-    int pos = position;
+  private Anno annotation(int pos) {
     ImmutableList<Ident> name = qualIdent();
 
     ImmutableList.Builder<Expression> args = ImmutableList.builder();

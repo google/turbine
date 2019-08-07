@@ -133,8 +133,9 @@ public class ConstExpressionParser {
       case LPAREN:
         return maybeCast();
       case LBRACE:
+        int pos = position;
         eat();
-        return arrayInitializer();
+        return arrayInitializer(pos);
       case IDENT:
         return qualIdent();
       case BYTE:
@@ -244,10 +245,10 @@ public class ConstExpressionParser {
     position = lexer.position();
   }
 
-  private Tree.Expression arrayInitializer() {
+  private Tree.Expression arrayInitializer(int pos) {
     if (token == Token.RBRACE) {
       eat();
-      return new Tree.ArrayInit(position, ImmutableList.<Tree.Expression>of());
+      return new Tree.ArrayInit(pos, ImmutableList.<Tree.Expression>of());
     }
 
     ImmutableList.Builder<Tree.Expression> exprs = ImmutableList.builder();
@@ -273,11 +274,12 @@ public class ConstExpressionParser {
           return null;
       }
     }
-    return new Tree.ArrayInit(position, exprs.build());
+    return new Tree.ArrayInit(pos, exprs.build());
   }
 
   /** Finish hex, decimal, octal, and binary integer literals (see JLS 3.10.1). */
   private Tree.Expression finishLiteral(TurbineConstantTypeKind kind, boolean negate) {
+    int pos = position;
     String text = ident().value();
     Const.Value value;
     switch (kind) {
@@ -354,7 +356,7 @@ public class ConstExpressionParser {
         throw new AssertionError(kind);
     }
     eat();
-    return new Tree.Literal(position, kind, value);
+    return new Tree.Literal(pos, kind, value);
   }
 
   static boolean isOctal(String text) {

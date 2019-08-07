@@ -467,11 +467,17 @@ public class IntegrationTestSupport {
   public static JavacTask runJavacAnalysis(
       Map<String, String> sources, Collection<Path> classpath, ImmutableList<String> options)
       throws Exception {
+    return runJavacAnalysis(sources, classpath, options, new DiagnosticCollector<>());
+  }
 
-    DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
+  public static JavacTask runJavacAnalysis(
+      Map<String, String> sources,
+      Collection<Path> classpath,
+      ImmutableList<String> options,
+      DiagnosticCollector<JavaFileObject> collector)
+      throws Exception {
     FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
     Path out = fs.getPath("out");
-
     return setupJavac(sources, classpath, options, collector, fs, out);
   }
 

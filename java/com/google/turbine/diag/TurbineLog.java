@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import javax.tools.Diagnostic;
 
 /** A log that collects diagnostics. */
 public class TurbineLog {
@@ -31,9 +32,18 @@ public class TurbineLog {
   }
 
   public void maybeThrow() {
-    if (!errors.isEmpty()) {
+    if (anyErrors()) {
       throw new TurbineError(ImmutableList.copyOf(errors));
     }
+  }
+
+  private boolean anyErrors() {
+    for (TurbineDiagnostic error : errors) {
+      if (error.severity().equals(Diagnostic.Kind.ERROR)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -45,10 +55,8 @@ public class TurbineLog {
    */
   public boolean errorRaised() {
     for (TurbineDiagnostic error : errors) {
-      switch (error.kind()) {
-        case PROC:
-          return true;
-        default:
+      if (error.kind().equals(ErrorKind.PROC) && error.severity().equals(Diagnostic.Kind.ERROR)) {
+        return true;
       }
     }
     return false;
@@ -59,15 +67,9 @@ public class TurbineLog {
     errors.clear();
   }
 
-  /**
-   * Reports an annotation processing diagnostic.
-   *
-   * <p>This is a stop-gap until annotation processing diagnostic positions are implemented; see the
-   * {@link javax.annotation.processing.Messager} implementation.
-   */
-  // TODO(cl/260804999): finish implementing AP diagnostics, especially position handling
-  public void error(String message) {
-    errors.add(TurbineDiagnostic.create(ErrorKind.PROC, message, ImmutableList.of()));
+  /** Reports an annotation processing diagnostic with no position information. */
+  public void diagnostic(Diagnostic.Kind severity, String message) {
+    errors.add(TurbineDiagnostic.format(severity, ErrorKind.PROC, message));
   }
 
   /** A log for a specific source file. */
@@ -79,12 +81,12 @@ public class TurbineLog {
       this.source = source;
     }
 
-    public void error(ErrorKind kind, Object... args) {
-      errors.add(TurbineDiagnostic.format(source, kind, args));
+    public void diagnostic(Diagnostic.Kind severity, int position, ErrorKind kind, Object... args) {
+      errors.add(TurbineDiagnostic.format(severity, source, position, kind, args));
     }
 
     public void error(int position, ErrorKind kind, Object... args) {
-      errors.add(TurbineDiagnostic.format(source, position, kind, args));
+      diagnostic(Diagnostic.Kind.ERROR, position, kind, args);
     }
   }
 }

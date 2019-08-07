@@ -26,11 +26,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
-import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
-import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.Symbol;
-import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
@@ -161,23 +158,10 @@ public class TurbineElements implements Elements {
   }
 
   private static PackageSymbol packageSymbol(Symbol sym) {
-    switch (sym.symKind()) {
-      case CLASS:
-        return ((ClassSymbol) sym).owner();
-      case TY_PARAM:
-        return packageSymbol(((TyVarSymbol) sym).owner());
-      case METHOD:
-        return ((MethodSymbol) sym).owner().owner();
-      case FIELD:
-        return ((FieldSymbol) sym).owner().owner();
-      case PARAMETER:
-        return ((ParamSymbol) sym).owner().owner().owner();
-      case PACKAGE:
-        return (PackageSymbol) sym;
-      case MODULE:
-        throw new IllegalArgumentException(sym.toString());
+    if (sym.symKind().equals(Symbol.Kind.PACKAGE)) {
+      return (PackageSymbol) sym;
     }
-    throw new AssertionError(sym.symKind());
+    return ModelFactory.enclosingClass(sym).owner();
   }
 
   @Override

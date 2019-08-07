@@ -23,20 +23,16 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
-import javax.tools.Diagnostic.Kind;
 
 /** Turbine's {@link ProcessingEnvironment). */
 public class TurbineProcessingEnvironment implements ProcessingEnvironment {
 
   private final Filer filer;
   private final TurbineTypes turbineTypes;
-  private final TurbineLog log;
   private final Map<String, String> processorOptions;
   private final TurbineElements turbineElements;
   private final SourceVersion sourceVersion;
+  private final Messager messager;
 
   public TurbineProcessingEnvironment(
       ModelFactory factory,
@@ -46,10 +42,10 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
       SourceVersion sourceVersion) {
     this.filer = filer;
     this.turbineTypes = new TurbineTypes(factory);
-    this.log = log;
     this.processorOptions = processorOptions;
     this.sourceVersion = sourceVersion;
     this.turbineElements = new TurbineElements(factory, turbineTypes);
+    this.messager = new TurbineMessager(factory, log);
   }
 
   @Override
@@ -59,32 +55,7 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
 
   @Override
   public Messager getMessager() {
-    return new Messager() {
-      @Override
-      public void printMessage(Kind kind, CharSequence msg) {
-        printMessage(kind, msg, null);
-      }
-
-      @Override
-      public void printMessage(Kind kind, CharSequence msg, Element e) {
-        printMessage(kind, msg, e, null);
-      }
-
-      @Override
-      public void printMessage(Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
-        printMessage(kind, msg, null, null, null);
-      }
-
-      @Override
-      public void printMessage(
-          Kind kind, CharSequence msg, Element e, AnnotationMirror a, AnnotationValue v) {
-        // TODO(cushon): support diagnostic kinds other than ERROR
-        // TODO(cushon): use the element, annotation, and value to determine a source position
-        if (kind == Kind.ERROR) {
-          log.error(msg.toString());
-        }
-      }
-    };
+    return messager;
   }
 
   @Override
