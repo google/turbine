@@ -61,6 +61,10 @@ class TurbineMessager implements Messager {
 
   @Override
   public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
+    if (e == null) {
+      printMessage(kind, msg);
+      return;
+    }
     Symbol sym = ((TurbineElement) e).sym();
     SourceFile source = getSource(sym);
     int position = getPosition(sym);
@@ -69,6 +73,10 @@ class TurbineMessager implements Messager {
 
   @Override
   public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
+    if (a == null || e == null) {
+      printMessage(kind, msg, e);
+      return;
+    }
     SourceFile source = getSource(((TurbineElement) e).sym());
     int position = ((TurbineAnnotationMirror) a).anno().tree().position();
     log.withSource(source).diagnostic(kind, position, TurbineError.ErrorKind.PROC, msg);
@@ -77,6 +85,10 @@ class TurbineMessager implements Messager {
   @Override
   public void printMessage(
       Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a, AnnotationValue v) {
+    if (a == null || e == null || v == null) {
+      printMessage(kind, msg, e, a);
+      return;
+    }
     SourceFile source = getSource(((TurbineElement) e).sym());
     AnnoInfo anno = ((TurbineAnnotationMirror) a).anno();
     int position = locateInAnnotation(((TurbineAnnotationValueMirror) v).value(), anno);
