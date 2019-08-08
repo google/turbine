@@ -22,14 +22,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
+import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.TurbineAnnotationValue;
+import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.lower.Lower.Lowered;
+import com.google.turbine.model.Const;
 import com.google.turbine.proto.DepsProto;
+import com.google.turbine.type.AnnoInfo;
+import com.google.turbine.type.Type;
 import java.io.BufferedInputStream;
 import java.io.IOError;
 import java.io.IOException;
@@ -82,11 +90,57 @@ public class Dependencies {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(new SimpleEnv<>(bound.units()))
             .append(bound.classPathEnv());
-    Set<ClassSymbol> closure = new LinkedHashSet<>();
+    Set<ClassSymbol> closure = new LinkedHashSet<>(lowered.symbols());
     for (ClassSymbol sym : lowered.symbols()) {
-      addSuperTypes(closure, env, sym);
+      TypeBoundClass info = env.get(sym);
+      addAnnotations(closure, info.annotations());
+      for (MethodInfo method : info.methods()) {
+        addAnnotations(closure, method.annotations());
+      }
+      for (FieldInfo field : info.fields()) {
+        addAnnotations(closure, field.annotations());
+      }
+      addSuperTypes(closure, env, info);
     }
     return closure;
+  }
+
+  private static void addAnnotations(
+      Set<ClassSymbol> closure, ImmutableList<AnnoInfo> annotations) {
+    for (AnnoInfo annoInfo : annotations) {
+      addAnnotation(closure, annoInfo);
+    }
+  }
+
+  private static void addAnnotation(Set<ClassSymbol> closure, AnnoInfo annoInfo) {
+    closure.add(annoInfo.sym());
+    for (Const c : annoInfo.values().values()) {
+      addConst(closure, c);
+    }
+  }
+
+  private static void addConst(Set<ClassSymbol> closure, Const c) {
+    switch (c.kind()) {
+      case ARRAY:
+        for (Const e : ((Const.ArrayInitValue) c).elements()) {
+          addConst(closure, e);
+        }
+        break;
+      case CLASS_LITERAL:
+        Type t = ((TurbineClassValue) c).type();
+        if (t.tyKind() == Type.TyKind.CLASS_TY) {
+          closure.add(((Type.ClassTy) t).sym());
+        }
+        break;
+      case ENUM_CONSTANT:
+        closure.add(((EnumConstantValue) c).sym().owner());
+        break;
+      case ANNOTATION:
+        addAnnotation(closure, ((TurbineAnnotationValue) c).info());
+        break;
+      case PRIMITIVE:
+        // continue below
+    }
   }
 
   private static void addSuperTypes(
@@ -98,6 +152,11 @@ public class Dependencies {
     if (info == null) {
       return;
     }
+    addSuperTypes(closure, env, info);
+  }
+
+  private static void addSuperTypes(
+      Set<ClassSymbol> closure, Env<ClassSymbol, TypeBoundClass> env, TypeBoundClass info) {
     if (info.superclass() != null) {
       addSuperTypes(closure, env, info.superclass());
     }

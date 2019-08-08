@@ -332,6 +332,96 @@ public class DependenciesTest {
     }
   }
 
+  @Test
+  public void annotations_recursive() throws Exception {
+    Path libA = libA();
+    Path libB = libB();
+
+    DepsProto.Dependencies deps =
+        new DepsBuilder()
+            .setClasspath(libA, libB)
+            .addSourceLines(
+                "Test.java", //
+                "import a.A;",
+                "import b.B;",
+                "@A(B.class)",
+                "class Test {",
+                "}")
+            .run();
+    assertThat(depsMap(deps))
+        .containsExactly(
+            libA, DepsProto.Dependency.Kind.EXPLICIT, libB, DepsProto.Dependency.Kind.EXPLICIT);
+  }
+
+  @Test
+  public void annotations_field() throws Exception {
+    Path libA = libA();
+    Path libB = libB();
+    DepsProto.Dependencies deps =
+        new DepsBuilder()
+            .setClasspath(libA, libB)
+            .addSourceLines(
+                "Test.java", //
+                "import a.A;",
+                "import b.B;",
+                "class Test {",
+                "  @A(B.class)",
+                "  int x;",
+                "}")
+            .run();
+    assertThat(depsMap(deps))
+        .containsExactly(
+            libA, DepsProto.Dependency.Kind.EXPLICIT, libB, DepsProto.Dependency.Kind.EXPLICIT);
+  }
+
+  @Test
+  public void annotations_method() throws Exception {
+    Path libA = libA();
+    Path libB = libB();
+    DepsProto.Dependencies deps =
+        new DepsBuilder()
+            .setClasspath(libA, libB)
+            .addSourceLines(
+                "Test.java", //
+                "import a.A;",
+                "import b.B;",
+                "class Test {",
+                "  @A(B.class)",
+                "  void f() {}",
+                "}")
+            .run();
+    assertThat(depsMap(deps))
+        .containsExactly(
+            libA, DepsProto.Dependency.Kind.EXPLICIT, libB, DepsProto.Dependency.Kind.EXPLICIT);
+  }
+
+  private Path libB() throws Exception {
+    return new LibraryBuilder()
+        .addSourceLines(
+            "b/B.java",
+            "package b;",
+            "import java.lang.annotation.Retention;",
+            "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
+            "@Retention(RUNTIME)",
+            "public @interface B {",
+            "}")
+        .compileToJar("libb.jar");
+  }
+
+  private Path libA() throws Exception {
+    return new LibraryBuilder()
+        .addSourceLines(
+            "a/A.java",
+            "package a;",
+            "import java.lang.annotation.Retention;",
+            "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
+            "@Retention(RUNTIME)",
+            "public @interface A {",
+            "  Class<?> value() default Object.class;",
+            "}")
+        .compileToJar("liba.jar");
+  }
+
   void writeDeps(Path path, ImmutableMap<String, DepsProto.Dependency.Kind> deps)
       throws IOException {
     DepsProto.Dependencies.Builder builder =
