@@ -42,9 +42,12 @@ import com.google.turbine.proto.DepsProto;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.zip.Zip;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -94,20 +97,41 @@ public class Main {
   }
 
   public static boolean compile(TurbineOptions options) throws IOException {
+    return compile(
+        options, new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8))));
+  }
+
+  public static boolean compile(TurbineOptions options, PrintWriter out) throws IOException {
+    try {
+      return compileInternal(options, out);
+    } finally {
+      out.flush();
+    }
+  }
+
+  private static boolean compileInternal(TurbineOptions options, PrintWriter out)
+      throws IOException {
     usage(options);
 
     ImmutableList<CompUnit> units = parseAll(options);
 
     ClassPath bootclasspath = bootclasspath(options);
 
-    Collection<String> reducedClasspath =
-        Dependencies.reduceClasspath(
-            options.classPath(), options.directJars(), options.depsArtifacts());
-
-    BindingResult bound = bind(options, units, bootclasspath, reducedClasspath);
-
-    // TODO(cushon): reduced classpath fallback
-    // bound = bind(options, units, bootclasspath, options.classPath());
+    BindingResult bound;
+    if (shouldReduceClasspath(options)) {
+      Collection<String> reducedClasspath =
+          Dependencies.reduceClasspath(
+              options.classPath(), options.directJars(), options.depsArtifacts());
+      try {
+        bound = bind(options, units, bootclasspath, reducedClasspath);
+      } catch (TurbineError e) {
+        bound = bind(options, units, bootclasspath, options.classPath());
+        out.println(e.getMessage());
+        out.println("warning: falling back to transitive classpath");
+      }
+    } else {
+      bound = bind(options, units, bootclasspath, options.classPath());
+    }
 
     // TODO(cushon): parallelize
     Lowered lowered = Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv());
@@ -125,6 +149,17 @@ public class Main {
 
     writeSources(options, bound.generatedSources());
     writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
+    return true;
+  }
+
+  private static boolean shouldReduceClasspath(TurbineOptions options) {
+    if (!options.shouldReduceClassPath()) {
+      return false;
+    }
+    if (options.directJars().isEmpty()) {
+      // the compilation doesn't support strict deps (e.g. proto libraries)
+      return false;
+    }
     return true;
   }
 

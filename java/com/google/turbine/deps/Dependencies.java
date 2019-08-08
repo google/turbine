@@ -184,17 +184,11 @@ public class Dependencies {
   /**
    * Filters a transitive classpath to contain only the entries for direct dependencies, and the
    * types needed to compile those direct deps as reported by jdeps.
-   *
-   * <p>If no direct dependency information is available the full transitive classpath is returned.
    */
   public static Collection<String> reduceClasspath(
       ImmutableList<String> transitiveClasspath,
       ImmutableSet<String> directJars,
       ImmutableList<String> depsArtifacts) {
-    if (directJars.isEmpty()) {
-      // the compilation doesn't support strict deps (e.g. proto libraries)
-      return transitiveClasspath;
-    }
     Set<String> reduced = new HashSet<>(directJars);
     for (String path : depsArtifacts) {
       DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();

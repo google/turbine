@@ -256,8 +256,7 @@ public class DependenciesTest {
             "j.jar");
     ImmutableSet<String> directJars = ImmutableSet.of();
     ImmutableList<String> depsArtifacts = ImmutableList.of();
-    assertThat(Dependencies.reduceClasspath(classpath, directJars, depsArtifacts))
-        .containsExactlyElementsIn(classpath);
+    assertThat(Dependencies.reduceClasspath(classpath, directJars, depsArtifacts)).isEmpty();
   }
 
   @Test
