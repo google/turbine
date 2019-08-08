@@ -16,11 +16,12 @@
 
 package com.google.turbine.lower;
 
-import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -497,7 +498,9 @@ public class IntegrationTestSupport {
 
     JavacTask task = setupJavac(sources, classpath, options, collector, fs, out);
 
-    assertWithMessage(collector.getDiagnostics().toString()).that(task.call()).isTrue();
+    if (!task.call()) {
+      fail(collector.getDiagnostics().stream().map(d -> d.toString()).collect(joining("\n")));
+    }
 
     List<Path> classes = new ArrayList<>();
     Files.walkFileTree(
