@@ -17,16 +17,20 @@
 package com.google.turbine.main;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
+import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.proto.DepsProto.Dependency.Kind;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -123,7 +127,7 @@ public class ReducedClasspathTest {
             optionsWithBootclasspath()
                 .setOutput(output.toString())
                 .addSources(ImmutableList.of(src.toString()))
-                .setShouldReduceClassPath(true)
+                .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
                 .addClassPathEntries(
                     ImmutableList.of(
                         // ensure that the compilation succeeds without falling back by adding
@@ -159,7 +163,7 @@ public class ReducedClasspathTest {
             optionsWithBootclasspath()
                 .setOutput(output.toString())
                 .addSources(ImmutableList.of(src.toString()))
-                .setShouldReduceClassPath(true)
+                .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
                 .addClassPathEntries(
                     ImmutableList.of(liba.toString(), libb.toString(), libc.toString()))
                 .addDirectJars(ImmutableList.of(libc.toString()))
@@ -169,5 +173,47 @@ public class ReducedClasspathTest {
     assertThat(sw.toString()).contains("warning: falling back to transitive classpath");
     assertThat(sw.toString()).contains("could not resolve I");
     assertThat(ok).isTrue();
+  }
+
+  @Test
+  public void bazelFallback() throws Exception {
+    Path src = temporaryFolder.newFile("Test.java").toPath();
+    Files.write(
+        src,
+        ImmutableList.of(
+            "import c.C;", //
+            "class Test extends C {",
+            "  I i;",
+            "}"),
+        UTF_8);
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path jdeps = temporaryFolder.newFile("output.jdeps").toPath();
+
+    StringWriter sw = new StringWriter();
+    boolean ok =
+        Main.compile(
+            optionsWithBootclasspath()
+                .setOutput(output.toString())
+                .setTargetLabel("//java/com/google/foo")
+                .setOutputDeps(jdeps.toString())
+                .addSources(ImmutableList.of(src.toString()))
+                .setReducedClasspathMode(ReducedClasspathMode.BAZEL_REDUCED)
+                .addClassPathEntries(ImmutableList.of(libc.toString()))
+                .build(),
+            new PrintWriter(sw, true));
+    assertThat(sw.toString()).contains("warning: falling back to transitive classpath");
+    assertThat(sw.toString()).contains("could not resolve I");
+    assertThat(ok).isTrue();
+    DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(jdeps))) {
+      deps.mergeFrom(is);
+    }
+    assertThat(deps.build())
+        .isEqualTo(
+            DepsProto.Dependencies.newBuilder()
+                .setRequiresReducedClasspathFallback(true)
+                .setRuleLabel("//java/com/google/foo")
+                .build());
   }
 }

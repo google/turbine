@@ -36,6 +36,7 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.options.TurbineOptions;
+import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import com.google.turbine.options.TurbineOptionsParser;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
@@ -118,19 +119,35 @@ public class Main {
     ClassPath bootclasspath = bootclasspath(options);
 
     BindingResult bound;
-    if (shouldReduceClasspath(options)) {
-      Collection<String> reducedClasspath =
-          Dependencies.reduceClasspath(
-              options.classPath(), options.directJars(), options.depsArtifacts());
-      try {
-        bound = bind(options, units, bootclasspath, reducedClasspath);
-      } catch (TurbineError e) {
+    switch (options.reducedClasspathMode()) {
+      case NONE:
+      case BAZEL_FALLBACK:
         bound = bind(options, units, bootclasspath, options.classPath());
-        out.println(e.getMessage());
-        out.println("warning: falling back to transitive classpath");
-      }
-    } else {
-      bound = bind(options, units, bootclasspath, options.classPath());
+        break;
+      case JAVABUILDER_REDUCED:
+        Collection<String> reducedClasspath =
+            Dependencies.reduceClasspath(
+                options.classPath(), options.directJars(), options.depsArtifacts());
+        try {
+          bound = bind(options, units, bootclasspath, reducedClasspath);
+        } catch (TurbineError e) {
+          e.printStackTrace(out);
+          out.println("warning: falling back to transitive classpath");
+          bound = bind(options, units, bootclasspath, options.classPath());
+        }
+        break;
+      case BAZEL_REDUCED:
+        try {
+          bound = bind(options, units, bootclasspath, options.classPath());
+        } catch (TurbineError e) {
+          e.printStackTrace(out);
+          out.println("warning: falling back to transitive classpath");
+          writeJdepsForFallback(options);
+          return true;
+        }
+        break;
+      default:
+        throw new AssertionError(options.reducedClasspathMode());
     }
 
     // TODO(cushon): parallelize
@@ -152,15 +169,20 @@ public class Main {
     return true;
   }
 
-  private static boolean shouldReduceClasspath(TurbineOptions options) {
-    if (!options.shouldReduceClassPath()) {
-      return false;
+  /**
+   * Writes a jdeps proto that indiciates to Blaze that the transitive classpath compilation failed,
+   * and it should fall back to the transitive classpath. Used only when {@link
+   * ReducedClasspathMode#BAZEL_REDUCED}.
+   */
+  public static void writeJdepsForFallback(TurbineOptions options) throws IOException {
+    try (OutputStream os =
+        new BufferedOutputStream(Files.newOutputStream(Paths.get(options.outputDeps().get())))) {
+      DepsProto.Dependencies.newBuilder()
+          .setRuleLabel(options.targetLabel().get())
+          .setRequiresReducedClasspathFallback(true)
+          .build()
+          .writeTo(os);
     }
-    if (options.directJars().isEmpty()) {
-      // the compilation doesn't support strict deps (e.g. proto libraries)
-      return false;
-    }
-    return true;
   }
 
   private static BindingResult bind(
