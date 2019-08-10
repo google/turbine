@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -121,10 +122,18 @@ public class TurbineOptionsParser {
           builder.setJavacFallback(false);
           break;
         case "--reduce_classpath":
-          builder.setShouldReduceClassPath(true);
+          builder.setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED);
           break;
         case "--noreduce_classpath":
-          builder.setShouldReduceClassPath(false);
+          builder.setReducedClasspathMode(ReducedClasspathMode.NONE);
+          break;
+        case "--reduce_classpath_mode":
+          builder.setReducedClasspathMode(ReducedClasspathMode.valueOf(readOne(argumentDeque)));
+          break;
+        case "--full_classpath_length":
+        case "--reduced_classpath_length":
+          // TODO(b/124508265): implement classpath metrics
+          readOne(argumentDeque);
           break;
         case "--profile":
           builder.setProfile(readOne(argumentDeque));

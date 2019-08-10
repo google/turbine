@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -368,5 +369,16 @@ public class TurbineOptionsTest {
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
     assertThat(options.builtinProcessors()).containsExactly("BuiltinProcessor");
+  }
+
+  @Test
+  public void reducedClasspathMode() throws Exception {
+    for (ReducedClasspathMode mode : ReducedClasspathMode.values()) {
+      TurbineOptions options =
+          TurbineOptionsParser.parse(
+              Iterables.concat(
+                  BASE_ARGS, ImmutableList.of("--reduce_classpath_mode", mode.name())));
+      assertThat(options.reducedClasspathMode()).isEqualTo(mode);
+    }
   }
 }

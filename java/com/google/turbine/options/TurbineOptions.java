@@ -26,6 +26,32 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /** Header compilation options. */
 public class TurbineOptions {
 
+  /**
+   * This modes controls how a probablistic Java classpath reduction is used. For each mode except
+   * {@code NONE} a speculative compilation is performed against a subset of the original classpath.
+   * If it fails due to a missing symbol, it is retried with the original transitive classpath.
+   */
+  public enum ReducedClasspathMode {
+    /**
+     * Bazel performs classpath reduction, and invokes turbine passing only the reduced classpath.
+     * If the compilation fails and requires fallback, turbine finishes with exit code 0 but records
+     * that the reduced classpath compilation failed in the jdeps proto.
+     */
+    BAZEL_REDUCED,
+    /**
+     * Indicates that the reduced classpath compilation failed when Bazel previously invoked
+     * turbine, and that we are retrying with a transitive classpath.
+     */
+    BAZEL_FALLBACK,
+    /**
+     * Turbine implements reduced classpaths locally, with in-process fallback if the compilation
+     * fails.
+     */
+    JAVABUILDER_REDUCED,
+    /** Reduced classpaths are disabled, and a full transitive classpath is used. */
+    NONE
+  }
+
   private final Optional<String> output;
   private final ImmutableList<String> classPath;
   private final ImmutableSet<String> bootClassPath;
@@ -44,7 +70,7 @@ public class TurbineOptions {
   private final boolean javacFallback;
   private final boolean help;
   private final ImmutableList<String> javacOpts;
-  private final boolean shouldReduceClassPath;
+  private final ReducedClasspathMode reducedClasspathMode;
   private final Optional<String> profile;
   private final Optional<String> gensrcOutput;
 
@@ -67,7 +93,7 @@ public class TurbineOptions {
       boolean javacFallback,
       boolean help,
       ImmutableList<String> javacOpts,
-      boolean shouldReduceClassPath,
+      ReducedClasspathMode reducedClasspathMode,
       @Nullable String profile,
       @Nullable String gensrcOutput) {
     this.output = Optional.ofNullable(output);
@@ -88,7 +114,7 @@ public class TurbineOptions {
     this.javacFallback = javacFallback;
     this.help = help;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
-    this.shouldReduceClassPath = shouldReduceClassPath;
+    this.reducedClasspathMode = reducedClasspathMode;
     this.profile = Optional.ofNullable(profile);
     this.gensrcOutput = Optional.ofNullable(gensrcOutput);
   }
@@ -199,9 +225,27 @@ public class TurbineOptions {
     return javacOpts;
   }
 
-  /** Returns true if the reduced classpath optimization is enabled. */
+  /**
+   * Returns true if the reduced classpath optimization is enabled.
+   *
+   * @deprecated use {@link #reducedClasspathMode} instead.
+   */
+  @Deprecated
   public boolean shouldReduceClassPath() {
-    return shouldReduceClassPath;
+    switch (reducedClasspathMode) {
+      case JAVABUILDER_REDUCED:
+        return true;
+      case BAZEL_REDUCED:
+      case BAZEL_FALLBACK:
+      case NONE:
+        return false;
+    }
+    throw new AssertionError(reducedClasspathMode);
+  }
+
+  /** The reduced classpath optimization mode. */
+  public ReducedClasspathMode reducedClasspathMode() {
+    return reducedClasspathMode;
   }
 
   /** An optional path for profiling output. */
@@ -239,7 +283,7 @@ public class TurbineOptions {
     private boolean javacFallback = true;
     private boolean help = false;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
-    private boolean shouldReduceClassPath = true;
+    private ReducedClasspathMode reducedClasspathMode = ReducedClasspathMode.JAVABUILDER_REDUCED;
     private @Nullable String profile;
     private @Nullable String gensrcOutput;
 
@@ -263,7 +307,7 @@ public class TurbineOptions {
           javacFallback,
           help,
           javacOpts.build(),
-          shouldReduceClassPath,
+          reducedClasspathMode,
           profile,
           gensrcOutput);
     }
@@ -358,8 +402,16 @@ public class TurbineOptions {
       return this;
     }
 
-    public Builder setShouldReduceClassPath(boolean shouldReduceClassPath) {
-      this.shouldReduceClassPath = shouldReduceClassPath;
+    /** @deprecated use {@link #setReducedClasspathMode} instead. */
+    @Deprecated
+    public Builder setShouldReduceClassPath(boolean reduce) {
+      this.reducedClasspathMode =
+          reduce ? ReducedClasspathMode.JAVABUILDER_REDUCED : ReducedClasspathMode.NONE;
+      return this;
+    }
+
+    public Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode) {
+      this.reducedClasspathMode = reducedClasspathMode;
       return this;
     }
 
