@@ -262,10 +262,14 @@ public class DisambiguateTypeAnnotations {
       Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
     Multimap<ClassSymbol, AnnoInfo> repeated =
         MultimapBuilder.linkedHashKeys().arrayListValues().build();
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (AnnoInfo anno : annotations) {
+      if (anno.sym() == null) {
+        result.add(anno);
+        continue;
+      }
       repeated.put(anno.sym(), anno);
     }
-    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (Map.Entry<ClassSymbol, Collection<AnnoInfo>> entry : repeated.asMap().entrySet()) {
       ClassSymbol symbol = entry.getKey();
       Collection<AnnoInfo> infos = entry.getValue();
