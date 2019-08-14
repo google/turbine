@@ -33,6 +33,7 @@ import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type.ErrorTy;
+import com.google.turbine.type.Type.TyKind;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,7 +256,13 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
 
     @Override
     public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
-      return v.visitType(getValue(), p);
+      if (value.type().tyKind() == TyKind.ERROR_TY) {
+        // represent unresolvable class literals as the string value "<error>" for compatibility
+        // with javac: https://bugs.openjdk.java.net/browse/JDK-8229535
+        return v.visitString("<error>", p);
+      } else {
+        return v.visitType(getValue(), p);
+      }
     }
 
     @Override
