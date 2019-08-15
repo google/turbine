@@ -119,7 +119,14 @@ public class Main {
     ClassPath bootclasspath = bootclasspath(options);
 
     BindingResult bound;
-    switch (options.reducedClasspathMode()) {
+    ReducedClasspathMode reducedClasspathMode = options.reducedClasspathMode();
+    if (reducedClasspathMode == ReducedClasspathMode.JAVABUILDER_REDUCED
+        && options.directJars().isEmpty()) {
+      // the compilation doesn't support reduced classpaths
+      // TODO(cushon): make this a usage error, see TODO in Dependencies.reduceClasspath
+      reducedClasspathMode = ReducedClasspathMode.NONE;
+    }
+    switch (reducedClasspathMode) {
       case NONE:
       case BAZEL_FALLBACK:
         bound = bind(options, units, bootclasspath, options.classPath());
@@ -147,7 +154,7 @@ public class Main {
         }
         break;
       default:
-        throw new AssertionError(options.reducedClasspathMode());
+        throw new AssertionError(reducedClasspathMode);
     }
 
     // TODO(cushon): parallelize
