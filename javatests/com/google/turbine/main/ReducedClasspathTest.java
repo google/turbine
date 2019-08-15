@@ -170,8 +170,12 @@ public class ReducedClasspathTest {
                 .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
                 .build(),
             new PrintWriter(sw, true));
-    assertThat(sw.toString()).contains("warning: falling back to transitive classpath");
-    assertThat(sw.toString()).contains("could not resolve I");
+    assertThat(sw.toString())
+        .isEqualTo(
+            (src + ":3: error: could not resolve I\n")
+                + "  I i;\n"
+                + "  ^\n"
+                + "warning: falling back to transitive classpath\n");
     assertThat(ok).isTrue();
   }
 
@@ -202,8 +206,12 @@ public class ReducedClasspathTest {
                 .addClassPathEntries(ImmutableList.of(libc.toString()))
                 .build(),
             new PrintWriter(sw, true));
-    assertThat(sw.toString()).contains("warning: falling back to transitive classpath");
-    assertThat(sw.toString()).contains("could not resolve I");
+    assertThat(sw.toString())
+        .isEqualTo(
+            (src + ":3: error: could not resolve I\n")
+                + "  I i;\n"
+                + "  ^\n"
+                + "warning: falling back to transitive classpath\n");
     assertThat(ok).isTrue();
     DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
     try (InputStream is = new BufferedInputStream(Files.newInputStream(jdeps))) {

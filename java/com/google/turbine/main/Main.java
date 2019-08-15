@@ -131,7 +131,7 @@ public class Main {
         try {
           bound = bind(options, units, bootclasspath, reducedClasspath);
         } catch (TurbineError e) {
-          e.printStackTrace(out);
+          out.println(e.getMessage());
           out.println("warning: falling back to transitive classpath");
           bound = bind(options, units, bootclasspath, options.classPath());
         }
@@ -140,7 +140,7 @@ public class Main {
         try {
           bound = bind(options, units, bootclasspath, options.classPath());
         } catch (TurbineError e) {
-          e.printStackTrace(out);
+          out.println(e.getMessage());
           out.println("warning: falling back to transitive classpath");
           writeJdepsForFallback(options);
           return true;
