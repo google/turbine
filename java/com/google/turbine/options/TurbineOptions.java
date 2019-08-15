@@ -67,7 +67,6 @@ public class TurbineOptions {
   private final Optional<String> targetLabel;
   private final Optional<String> injectingRuleKind;
   private final ImmutableList<String> depsArtifacts;
-  private final boolean javacFallback;
   private final boolean help;
   private final ImmutableList<String> javacOpts;
   private final ReducedClasspathMode reducedClasspathMode;
@@ -90,7 +89,6 @@ public class TurbineOptions {
       @Nullable String targetLabel,
       @Nullable String injectingRuleKind,
       ImmutableList<String> depsArtifacts,
-      boolean javacFallback,
       boolean help,
       ImmutableList<String> javacOpts,
       ReducedClasspathMode reducedClasspathMode,
@@ -111,7 +109,6 @@ public class TurbineOptions {
     this.targetLabel = Optional.ofNullable(targetLabel);
     this.injectingRuleKind = Optional.ofNullable(injectingRuleKind);
     this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
-    this.javacFallback = javacFallback;
     this.help = help;
     this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
     this.reducedClasspathMode = reducedClasspathMode;
@@ -210,11 +207,6 @@ public class TurbineOptions {
     return depsArtifacts;
   }
 
-  /** Fall back to javac-turbine for error reporting. */
-  public boolean javacFallback() {
-    return javacFallback;
-  }
-
   /** Print usage information. */
   public boolean help() {
     return help;
@@ -280,7 +272,6 @@ public class TurbineOptions {
     @Nullable private String targetLabel;
     @Nullable private String injectingRuleKind;
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
-    private boolean javacFallback = true;
     private boolean help = false;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
     private ReducedClasspathMode reducedClasspathMode = ReducedClasspathMode.JAVABUILDER_REDUCED;
@@ -304,7 +295,6 @@ public class TurbineOptions {
           targetLabel,
           injectingRuleKind,
           depsArtifacts.build(),
-          javacFallback,
           help,
           javacOpts.build(),
           reducedClasspathMode,
@@ -384,11 +374,6 @@ public class TurbineOptions {
 
     public Builder addAllDepsArtifacts(Iterable<String> depsArtifacts) {
       this.depsArtifacts.addAll(depsArtifacts);
-      return this;
-    }
-
-    public Builder setJavacFallback(boolean javacFallback) {
-      this.javacFallback = javacFallback;
       return this;
     }
 
