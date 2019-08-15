@@ -20,8 +20,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
 import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
@@ -223,5 +225,37 @@ public class ReducedClasspathTest {
                 .setRequiresReducedClasspathFallback(true)
                 .setRuleLabel("//java/com/google/foo")
                 .build());
+  }
+
+  @Test
+  public void noFallbackWithoutDirectJarsAndJdeps() throws Exception {
+    Path src = temporaryFolder.newFile("Test.java").toPath();
+    Files.write(
+        src,
+        ImmutableList.of(
+            "import c.C;", //
+            "class Test extends C {",
+            "  I i;",
+            "}"),
+        UTF_8);
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+
+    StringWriter sw = new StringWriter();
+    try {
+      Main.compile(
+          optionsWithBootclasspath()
+              .setOutput(output.toString())
+              .addSources(ImmutableList.of(src.toString()))
+              .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
+              .addClassPathEntries(ImmutableList.of(libc.toString()))
+              .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
+              .build(),
+          new PrintWriter(sw, true));
+      fail();
+    } catch (TurbineError e) {
+      assertThat(e).hasMessageThat().contains("could not resolve I");
+    }
+    assertThat(sw.toString()).doesNotContain("warning: falling back to transitive classpath");
   }
 }
