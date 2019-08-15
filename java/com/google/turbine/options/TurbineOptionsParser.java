@@ -116,10 +116,8 @@ public class TurbineOptionsParser {
           builder.setInjectingRuleKind(readOne(argumentDeque));
           break;
         case "--javac_fallback":
-          builder.setJavacFallback(true);
-          break;
         case "--nojavac_fallback":
-          builder.setJavacFallback(false);
+          // TODO(cushon): remove this case once blaze stops passing the flag
           break;
         case "--reduce_classpath":
           builder.setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED);
