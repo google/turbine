@@ -750,8 +750,9 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror getReceiverType() {
-      // TODO(cushon): javac returns null, the spec says NONE
-      return info().receiver() != null ? factory.asTypeMirror(info().receiver().type()) : null;
+      return info().receiver() != null
+          ? factory.asTypeMirror(info().receiver().type())
+          : factory.noType();
     }
 
     @Override

@@ -61,6 +61,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
@@ -389,11 +390,17 @@ class AbstractTurbineTypesTest {
 
       ListMultimap<String, TypeMirror> javacInputs =
           MultimapBuilder.linkedHashKeys().arrayListValues().build();
-      javacElements.get(name).getEnclosedElements().forEach(e -> getTypes(e, javacInputs));
+      javacElements
+          .get(name)
+          .getEnclosedElements()
+          .forEach(e -> getTypes(javacTypes, e, javacInputs));
 
       ListMultimap<String, TypeMirror> turbineInputs =
           MultimapBuilder.linkedHashKeys().arrayListValues().build();
-      turbineElements.get(name).getEnclosedElements().forEach(e -> getTypes(e, turbineInputs));
+      turbineElements
+          .get(name)
+          .getEnclosedElements()
+          .forEach(e -> getTypes(turbineTypes, e, turbineInputs));
 
       assertThat(turbineInputs.keySet()).containsExactlyElementsIn(javacInputs.keySet());
 
@@ -417,7 +424,8 @@ class AbstractTurbineTypesTest {
   /**
    * Discover all types contained in the given element, keyed by their immediate enclosing element.
    */
-  private static void getTypes(Element element, Multimap<String, TypeMirror> types) {
+  private static void getTypes(
+      Types typeUtils, Element element, Multimap<String, TypeMirror> types) {
     element.accept(
         new ElementScanner8<Void, Void>() {
 
@@ -496,7 +504,13 @@ class AbstractTurbineTypesTest {
             scan(e.getParameters(), null);
             addType(e, e.asType());
             addType(e, e.getReturnType());
-            addType(e, e.getReceiverType());
+            TypeMirror receiverType = e.getReceiverType();
+            if (receiverType == null) {
+              // work around a javac bug in JDK < 14, see:
+              // https://bugs.openjdk.java.net/browse/JDK-8222369
+              receiverType = typeUtils.getNoType(TypeKind.NONE);
+            }
+            addType(e, receiverType);
             addType(e, e.getThrownTypes());
             return null;
           }
