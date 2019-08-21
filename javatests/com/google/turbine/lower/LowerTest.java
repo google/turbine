@@ -356,7 +356,7 @@ public class LowerTest {
                       int typeRef, TypePath typePath, String desc, boolean visible) {
                     path[0] = typePath;
                     return null;
-                  };
+                  }
                 };
               }
             },
@@ -610,9 +610,10 @@ public class LowerTest {
       assertThat(error)
           .hasMessageThat()
           .contains(
-              "Test.java:3: error: could not locate class file for A\n"
-                  + "     I i;\n"
-                  + "       ^");
+              lines(
+                  "Test.java:3: error: could not locate class file for A",
+                  "     I i;",
+                  "       ^"));
     }
   }
 
@@ -646,6 +647,6 @@ public class LowerTest {
   }
 
   static String lines(String... lines) {
-    return Joiner.on("\n").join(lines);
+    return Joiner.on(System.lineSeparator()).join(lines);
   }
 }
