@@ -22,6 +22,7 @@ import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
@@ -174,10 +175,12 @@ public class ReducedClasspathTest {
             new PrintWriter(sw, true));
     assertThat(sw.toString())
         .isEqualTo(
-            (src + ":3: error: could not resolve I\n")
-                + "  I i;\n"
-                + "  ^\n"
-                + "warning: falling back to transitive classpath\n");
+            lines(
+                src + ":3: error: could not resolve I",
+                "  I i;",
+                "  ^",
+                "warning: falling back to transitive classpath",
+                ""));
     assertThat(ok).isTrue();
   }
 
@@ -210,10 +213,12 @@ public class ReducedClasspathTest {
             new PrintWriter(sw, true));
     assertThat(sw.toString())
         .isEqualTo(
-            (src + ":3: error: could not resolve I\n")
-                + "  I i;\n"
-                + "  ^\n"
-                + "warning: falling back to transitive classpath\n");
+            lines(
+                src + ":3: error: could not resolve I",
+                "  I i;",
+                "  ^",
+                "warning: falling back to transitive classpath",
+                ""));
     assertThat(ok).isTrue();
     DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
     try (InputStream is = new BufferedInputStream(Files.newInputStream(jdeps))) {
@@ -257,5 +262,9 @@ public class ReducedClasspathTest {
       assertThat(e).hasMessageThat().contains("could not resolve I");
     }
     assertThat(sw.toString()).doesNotContain("warning: falling back to transitive classpath");
+  }
+
+  static String lines(String... lines) {
+    return Joiner.on(System.lineSeparator()).join(lines);
   }
 }
