@@ -602,6 +602,18 @@ public class BinderErrorTest {
           "  @A @B void f() {}",
           "     ^",
         },
+      },
+      {
+        {
+          "public class Test {", //
+          "  @A(\"bar\") void f() {}",
+          "}",
+        },
+        {
+          "<>:2: error: could not resolve A", //
+          "  @A(\"bar\") void f() {}",
+          "  ^",
+        },
       }
     };
     return Arrays.asList((Object[][]) testCases);

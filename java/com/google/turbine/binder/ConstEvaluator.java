@@ -920,6 +920,11 @@ public strictfp class ConstEvaluator {
    * expression trees.
    */
   AnnoInfo evaluateAnnotation(AnnoInfo info) {
+    // bail if annotation has not been resolved
+    if (info.sym() == null) {
+      return info;
+    }
+
     Map<String, Type> template = new LinkedHashMap<>();
     TypeBoundClass annoClass = env.get(info.sym());
     if (annoClass != null) {
