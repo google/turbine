@@ -173,7 +173,11 @@ public class ConstBinder {
     ImmutableSet<TurbineElementType> target = null;
     ClassSymbol repeatable = null;
     for (AnnoInfo annotation : annotations) {
-      switch (annotation.sym().binaryName()) {
+      ClassSymbol sym = annotation.sym();
+      if (sym == null) {
+        continue;
+      }
+      switch (sym.binaryName()) {
         case "java/lang/annotation/Retention":
           retention = bindRetention(annotation);
           break;
