@@ -614,6 +614,18 @@ public class BinderErrorTest {
           "  @A(\"bar\") void f() {}",
           "  ^",
         },
+      },
+      {
+        {
+          "@NoSuch",
+          "@interface A {", //
+          "}",
+        },
+        {
+          "<>:1: error: could not resolve NoSuch", //
+          "@NoSuch",
+          "^",
+        },
       }
     };
     return Arrays.asList((Object[][]) testCases);
