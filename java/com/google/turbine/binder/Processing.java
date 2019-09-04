@@ -107,7 +107,12 @@ public class Processing {
     for (Processor processor : processorInfo.processors()) {
       processor.init(
           new TurbineProcessingEnvironment(
-              factory, filer, log, processorInfo.options(), processorInfo.sourceVersion()));
+              factory,
+              filer,
+              log,
+              processorInfo.options(),
+              processorInfo.sourceVersion(),
+              processorInfo.loader()));
     }
 
     Map<Processor, Pattern> wanted = new HashMap<>();

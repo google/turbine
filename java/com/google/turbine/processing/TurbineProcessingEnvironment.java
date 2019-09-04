@@ -23,6 +23,7 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Turbine's {@link ProcessingEnvironment). */
 public class TurbineProcessingEnvironment implements ProcessingEnvironment {
@@ -33,19 +34,22 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
   private final TurbineElements turbineElements;
   private final SourceVersion sourceVersion;
   private final Messager messager;
+  private final ClassLoader processorLoader;
 
   public TurbineProcessingEnvironment(
       ModelFactory factory,
       Filer filer,
       TurbineLog log,
       Map<String, String> processorOptions,
-      SourceVersion sourceVersion) {
+      SourceVersion sourceVersion,
+      @Nullable ClassLoader processorLoader) {
     this.filer = filer;
     this.turbineTypes = new TurbineTypes(factory);
     this.processorOptions = processorOptions;
     this.sourceVersion = sourceVersion;
     this.turbineElements = new TurbineElements(factory, turbineTypes);
     this.messager = new TurbineMessager(factory, log);
+    this.processorLoader = processorLoader;
   }
 
   @Override
@@ -81,5 +85,9 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
   @Override
   public Locale getLocale() {
     return Locale.ENGLISH;
+  }
+
+  public ClassLoader processorLoader() {
+    return processorLoader;
   }
 }
