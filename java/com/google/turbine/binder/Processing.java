@@ -20,6 +20,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -62,6 +63,7 @@ import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Top level annotation processing logic, see also {@link Binder}. */
@@ -160,7 +162,12 @@ public class Processing {
           }
           // discard the result of Processor#process because 'claiming' annotations is a bad idea
           // TODO(cushon): consider disallowing this, or reporting a diagnostic
-          boolean unused = processor.process(annotations, roundEnv);
+          try {
+            boolean unused = processor.process(annotations, roundEnv);
+          } catch (Throwable t) {
+            log.diagnostic(Diagnostic.Kind.ERROR, Throwables.getStackTraceAsString(t));
+            log.maybeThrow();
+          }
         }
       }
       Collection<SourceFile> files = filer.finishRound();
@@ -200,7 +207,12 @@ public class Processing {
                 errorRaised,
                 ImmutableSetMultimap.of());
       }
-      processor.process(ImmutableSet.of(), roundEnv);
+      try {
+        processor.process(ImmutableSet.of(), roundEnv);
+      } catch (Throwable t) {
+        log.diagnostic(Diagnostic.Kind.ERROR, Throwables.getStackTraceAsString(t));
+        log.maybeThrow();
+      }
     }
 
     Collection<SourceFile> files = filer.finishRound();
