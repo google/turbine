@@ -33,6 +33,8 @@ import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
@@ -40,6 +42,8 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -93,6 +97,73 @@ public class ProcessingIntegrationTest {
       assertThat(e.diagnostics()).hasSize(2);
       assertThat(e.diagnostics().get(0).message()).contains("could not resolve NoSuch");
       assertThat(e.diagnostics().get(1).message()).contains("crash!");
+    }
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class WarningProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (first) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, "proc warning");
+        try {
+          JavaFileObject file = processingEnv.getFiler().createSourceFile("Gen.java");
+          try (Writer writer = file.openWriter()) {
+            writer.write("class Gen {}");
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        first = false;
+      }
+      if (roundEnv.processingOver()) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "proc error");
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void warnings() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        IntegrationTestSupport.TestInput.parse(
+                Joiner.on('\n')
+                    .join(
+                        "=== Test.java ===", //
+                        "@Deprecated",
+                        "class Test {",
+                        "}"))
+            .sources
+            .entrySet()
+            .stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+    try {
+      Binder.bind(
+          units,
+          ClassPathBinder.bindClasspath(ImmutableList.of()),
+          Processing.ProcessorInfo.create(
+              ImmutableList.of(new WarningProcessor()),
+              getClass().getClassLoader(),
+              ImmutableMap.of(),
+              SourceVersion.latestSupported()),
+          TestClassPaths.TURBINE_BOOTCLASSPATH,
+          Optional.empty());
+    } catch (TurbineError e) {
+      ImmutableList<String> diags =
+          e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+      assertThat(diags).hasSize(2);
+      assertThat(diags.get(0)).contains("proc warning");
+      assertThat(diags.get(1)).contains("proc error");
     }
   }
 }
