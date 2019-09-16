@@ -18,6 +18,7 @@ package com.google.turbine.diag;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.tools.Diagnostic;
@@ -64,7 +65,12 @@ public class TurbineLog {
 
   /** Reset the log between annotation processing rounds. */
   public void clear() {
-    errors.clear();
+    Iterator<TurbineDiagnostic> it = errors.iterator();
+    while (it.hasNext()) {
+      if (it.next().severity().equals(Diagnostic.Kind.ERROR)) {
+        it.remove();
+      }
+    }
   }
 
   /** Reports an annotation processing diagnostic with no position information. */
