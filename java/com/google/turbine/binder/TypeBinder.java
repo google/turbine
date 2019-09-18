@@ -570,7 +570,7 @@ public class TypeBinder {
       ImmutableList<Ident> name = tree.name();
       LookupResult lookupResult = scope.lookup(new LookupKey(name));
       ClassSymbol sym = resolveAnnoSymbol(tree, name, lookupResult);
-      result.add(new AnnoInfo(base.source(), sym, tree, null));
+      result.add(new AnnoInfo(base.source(), sym, tree, ImmutableMap.of()));
     }
     return result.build();
   }

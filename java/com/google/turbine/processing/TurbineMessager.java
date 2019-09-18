@@ -33,6 +33,7 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.Const;
+import com.google.turbine.processing.TurbineElement.TurbineNoTypeElement;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.type.AnnoInfo;
 import java.util.Iterator;
@@ -61,7 +62,7 @@ class TurbineMessager implements Messager {
 
   @Override
   public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
-    if (e == null) {
+    if (e == null || e instanceof TurbineNoTypeElement) {
       printMessage(kind, msg);
       return;
     }
@@ -73,7 +74,7 @@ class TurbineMessager implements Messager {
 
   @Override
   public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
-    if (a == null || e == null) {
+    if (a == null || e == null || e instanceof TurbineNoTypeElement) {
       printMessage(kind, msg, e);
       return;
     }
@@ -85,7 +86,7 @@ class TurbineMessager implements Messager {
   @Override
   public void printMessage(
       Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a, AnnotationValue v) {
-    if (a == null || e == null || v == null) {
+    if (a == null || e == null || e instanceof TurbineNoTypeElement || v == null) {
       printMessage(kind, msg, e, a);
       return;
     }

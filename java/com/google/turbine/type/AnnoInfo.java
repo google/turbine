@@ -17,6 +17,7 @@
 package com.google.turbine.type;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -41,7 +42,7 @@ public class AnnoInfo {
     this.source = source;
     this.sym = sym;
     this.tree = tree;
-    this.values = values;
+    this.values = requireNonNull(values);
   }
 
   /** The annotation's source, for diagnostics. */

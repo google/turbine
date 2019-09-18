@@ -63,6 +63,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -118,7 +119,7 @@ public abstract class TurbineElement implements Element {
 
   static AnnoInfo getAnnotation(Iterable<AnnoInfo> annos, ClassSymbol sym) {
     for (AnnoInfo anno : annos) {
-      if (anno.sym().equals(sym)) {
+      if (Objects.equals(anno.sym(), sym)) {
         return anno;
       }
     }
