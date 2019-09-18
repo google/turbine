@@ -981,7 +981,7 @@ public strictfp class ConstEvaluator {
     if (sym == null) {
       return null;
     }
-    AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, null));
+    AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, ImmutableMap.of()));
     return new TurbineAnnotationValue(annoInfo);
   }
 

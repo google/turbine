@@ -102,7 +102,7 @@ public class ModuleBinder {
     ImmutableList.Builder<AnnoInfo> annoInfos = ImmutableList.builder();
     for (Tree.Anno annoTree : module.module().annos()) {
       ClassSymbol sym = resolve(annoTree.position(), annoTree.name());
-      annoInfos.add(new AnnoInfo(module.source(), sym, annoTree, null));
+      annoInfos.add(new AnnoInfo(module.source(), sym, annoTree, ImmutableMap.of()));
     }
     ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(annoInfos.build());
 
