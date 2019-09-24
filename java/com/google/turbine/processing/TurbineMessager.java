@@ -45,7 +45,7 @@ import javax.tools.Diagnostic;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Turbine's implementation of {@link Messager}. */
-class TurbineMessager implements Messager {
+public class TurbineMessager implements Messager {
   private final ModelFactory factory;
   private final TurbineLog log;
 

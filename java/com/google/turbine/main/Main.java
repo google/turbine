@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.google.common.io.MoreFiles;
 import com.google.turbine.binder.Binder;
@@ -106,12 +107,18 @@ public class Main {
      */
     public abstract int reducedClasspathLength();
 
+    public abstract ImmutableMap<String, byte[]> processorStatistics();
+
     static Result create(
         boolean transitiveClasspathFallback,
         int transitiveClasspathLength,
-        int reducedClasspathLength) {
+        int reducedClasspathLength,
+        ImmutableMap<String, byte[]> processorStatistics) {
       return new AutoValue_Main_Result(
-          transitiveClasspathFallback, transitiveClasspathLength, reducedClasspathLength);
+          transitiveClasspathFallback,
+          transitiveClasspathLength,
+          reducedClasspathLength,
+          processorStatistics);
     }
   }
 
@@ -167,7 +174,8 @@ public class Main {
           return Result.create(
               /* transitiveClasspathFallback= */ true,
               /* transitiveClasspathLength= */ transitiveClasspathLength,
-              /* reducedClasspathLength= */ reducedClasspathLength);
+              /* reducedClasspathLength= */ reducedClasspathLength,
+              /* processorStatistics= */ ImmutableMap.of());
         }
         break;
       default:
@@ -193,7 +201,8 @@ public class Main {
     return Result.create(
         /* transitiveClasspathFallback= */ transitiveClasspathFallback,
         /* transitiveClasspathLength= */ transitiveClasspathLength,
-        /* reducedClasspathLength= */ reducedClasspathLength);
+        /* reducedClasspathLength= */ reducedClasspathLength,
+        /* processorStatistics= */ bound.statistics());
   }
 
   /**

@@ -16,39 +16,44 @@
 
 package com.google.turbine.processing;
 
-import com.google.turbine.diag.TurbineLog;
 import java.util.Locale;
 import java.util.Map;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Turbine's {@link ProcessingEnvironment). */
 public class TurbineProcessingEnvironment implements ProcessingEnvironment {
 
   private final Filer filer;
-  private final TurbineTypes turbineTypes;
+  private final Types types;
   private final Map<String, String> processorOptions;
-  private final TurbineElements turbineElements;
+  private final Elements elements;
+  private final Map<String, byte[]> statistics;
   private final SourceVersion sourceVersion;
   private final Messager messager;
   private final ClassLoader processorLoader;
 
   public TurbineProcessingEnvironment(
-      ModelFactory factory,
       Filer filer,
-      TurbineLog log,
+      Types types,
+      Elements elements,
+      Messager messager,
       Map<String, String> processorOptions,
       SourceVersion sourceVersion,
-      @Nullable ClassLoader processorLoader) {
+      @Nullable ClassLoader processorLoader,
+      Map<String, byte[]> statistics) {
     this.filer = filer;
-    this.turbineTypes = new TurbineTypes(factory);
+    this.types = types;
     this.processorOptions = processorOptions;
     this.sourceVersion = sourceVersion;
-    this.turbineElements = new TurbineElements(factory, turbineTypes);
-    this.messager = new TurbineMessager(factory, log);
+    this.elements = elements;
+    this.statistics = statistics;
+    this.messager = messager;
     this.processorLoader = processorLoader;
   }
 
@@ -68,13 +73,13 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
   }
 
   @Override
-  public TurbineElements getElementUtils() {
-    return turbineElements;
+  public Elements getElementUtils() {
+    return elements;
   }
 
   @Override
-  public TurbineTypes getTypeUtils() {
-    return turbineTypes;
+  public Types getTypeUtils() {
+    return types;
   }
 
   @Override
@@ -89,5 +94,12 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
 
   public ClassLoader processorLoader() {
     return processorLoader;
+  }
+
+  public void addStatistics(String key, byte[] extension) {
+    byte[] existing = statistics.put(key, extension);
+    if (existing != null) {
+      throw new IllegalStateException("duplicate statistics reported for " + key);
+    }
   }
 }
