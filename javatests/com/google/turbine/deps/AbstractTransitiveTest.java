@@ -155,15 +155,13 @@ public abstract class AbstractTransitiveTest {
                 .build().stream()
                 .map(Path::toString)
                 .collect(toImmutableList());
-    boolean ok =
-        Main.compile(
-            optionsWithBootclasspath()
-                .addSources(sources)
-                .addClassPathEntries(
-                    ImmutableList.of(libb).stream().map(Path::toString).collect(toImmutableList()))
-                .setOutput(libc.toString())
-                .build());
-    assertThat(ok).isTrue();
+    Main.compile(
+        optionsWithBootclasspath()
+            .addSources(sources)
+            .addClassPathEntries(
+                ImmutableList.of(libb).stream().map(Path::toString).collect(toImmutableList()))
+            .setOutput(libc.toString())
+            .build());
 
     assertThat(readJar(libc).keySet())
         .containsExactly(
