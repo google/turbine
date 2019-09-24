@@ -129,9 +129,10 @@ public class TurbineOptionsParser {
           builder.setReducedClasspathMode(ReducedClasspathMode.valueOf(readOne(argumentDeque)));
           break;
         case "--full_classpath_length":
+          builder.setFullClasspathLength(Integer.parseInt(readOne(argumentDeque)));
+          break;
         case "--reduced_classpath_length":
-          // TODO(b/124508265): implement classpath metrics
-          readOne(argumentDeque);
+          builder.setReducedClasspathLength(Integer.parseInt(readOne(argumentDeque)));
           break;
         case "--profile":
           builder.setProfile(readOne(argumentDeque));

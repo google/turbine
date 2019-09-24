@@ -84,13 +84,11 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    boolean ok =
-        Main.compile(
-            optionsWithBootclasspath()
-                .addSources(ImmutableList.of(src.toString()))
-                .setOutput(output.toString())
-                .build());
-    assertThat(ok).isTrue();
+    Main.compile(
+        optionsWithBootclasspath()
+            .addSources(ImmutableList.of(src.toString()))
+            .setOutput(output.toString())
+            .build());
 
     Map<String, byte[]> data = readJar(output);
     assertThat(data.keySet()).containsExactly("test/package-info.class");
@@ -106,13 +104,11 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    boolean ok =
-        Main.compile(
-            optionsWithBootclasspath()
-                .setSourceJars(ImmutableList.of(srcjar.toString()))
-                .setOutput(output.toString())
-                .build());
-    assertThat(ok).isTrue();
+    Main.compile(
+        optionsWithBootclasspath()
+            .setSourceJars(ImmutableList.of(srcjar.toString()))
+            .setOutput(output.toString())
+            .build());
 
     Map<String, byte[]> data = readJar(output);
     assertThat(data.keySet()).containsExactly("test/package-info.class");
@@ -150,15 +146,13 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    boolean ok =
-        Main.compile(
-            TurbineOptions.builder()
-                .setRelease("9")
-                .addSources(ImmutableList.of(src.toString()))
-                .setSourceJars(ImmutableList.of(srcjar.toString()))
-                .setOutput(output.toString())
-                .build());
-    assertThat(ok).isTrue();
+    Main.compile(
+        TurbineOptions.builder()
+            .setRelease("9")
+            .addSources(ImmutableList.of(src.toString()))
+            .setSourceJars(ImmutableList.of(srcjar.toString()))
+            .setOutput(output.toString())
+            .build());
 
     Map<String, byte[]> data = readJar(output);
     assertThat(data.keySet())
@@ -172,15 +166,13 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    boolean ok =
-        Main.compile(
-            optionsWithBootclasspath()
-                .addSources(ImmutableList.of(src.toString()))
-                .setTargetLabel("//foo:foo")
-                .setInjectingRuleKind("foo_library")
-                .setOutput(output.toString())
-                .build());
-    assertThat(ok).isTrue();
+    Main.compile(
+        optionsWithBootclasspath()
+            .addSources(ImmutableList.of(src.toString()))
+            .setTargetLabel("//foo:foo")
+            .setInjectingRuleKind("foo_library")
+            .setOutput(output.toString())
+            .build());
 
     try (JarFile jarFile = new JarFile(output.toFile())) {
       Manifest manifest = jarFile.getManifest();
@@ -201,13 +193,11 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    boolean ok =
-        Main.compile(
-            TurbineOptions.builder()
-                .addSources(ImmutableList.of(src.toString()))
-                .setOutput(output.toString())
-                .build());
-    assertThat(ok).isTrue();
+    Main.compile(
+        TurbineOptions.builder()
+            .addSources(ImmutableList.of(src.toString()))
+            .setOutput(output.toString())
+            .build());
 
     Map<String, byte[]> data = readJar(output);
     assertThat(data.keySet()).containsExactly("java/lang/Object.class");

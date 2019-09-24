@@ -19,6 +19,7 @@ package com.google.turbine.main;
 import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 import com.google.common.io.MoreFiles;
@@ -43,12 +44,9 @@ import com.google.turbine.proto.DepsProto;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.zip.Zip;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -81,7 +79,8 @@ public class Main {
   public static void main(String[] args) throws IOException {
     boolean ok;
     try {
-      ok = compile(args);
+      compile(args);
+      ok = true;
     } catch (TurbineError | UsageException e) {
       System.err.println(e.getMessage());
       ok = false;
@@ -92,26 +91,35 @@ public class Main {
     System.exit(ok ? 0 : 1);
   }
 
-  public static boolean compile(String[] args) throws IOException {
-    TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(args));
-    return compile(options);
-  }
+  /** The result of a turbine invocation. */
+  @AutoValue
+  public abstract static class Result {
+    /** Returns {@code true} if transitive classpath fallback occurred. */
+    public abstract boolean transitiveClasspathFallback();
 
-  public static boolean compile(TurbineOptions options) throws IOException {
-    return compile(
-        options, new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, UTF_8))));
-  }
+    /** The length of the transitive classpath. */
+    public abstract int transitiveClasspathLength();
 
-  public static boolean compile(TurbineOptions options, PrintWriter out) throws IOException {
-    try {
-      return compileInternal(options, out);
-    } finally {
-      out.flush();
+    /**
+     * The length of the reduced classpath, or {@link #transitiveClasspathLength} if classpath
+     * reduction is not supported.
+     */
+    public abstract int reducedClasspathLength();
+
+    static Result create(
+        boolean transitiveClasspathFallback,
+        int transitiveClasspathLength,
+        int reducedClasspathLength) {
+      return new AutoValue_Main_Result(
+          transitiveClasspathFallback, transitiveClasspathLength, reducedClasspathLength);
     }
   }
 
-  private static boolean compileInternal(TurbineOptions options, PrintWriter out)
-      throws IOException {
+  public static void compile(String[] args) throws IOException {
+    compile(TurbineOptionsParser.parse(Arrays.asList(args)));
+  }
+
+  public static Result compile(TurbineOptions options) throws IOException {
     usage(options);
 
     ImmutableList<CompUnit> units = parseAll(options);
@@ -126,31 +134,40 @@ public class Main {
       // TODO(cushon): make this a usage error, see TODO in Dependencies.reduceClasspath
       reducedClasspathMode = ReducedClasspathMode.NONE;
     }
+    boolean transitiveClasspathFallback = false;
+    ImmutableList<String> classPath = options.classPath();
+    int transitiveClasspathLength = classPath.size();
+    int reducedClasspathLength = classPath.size();
     switch (reducedClasspathMode) {
       case NONE:
+        bound = bind(options, units, bootclasspath, classPath);
+        break;
       case BAZEL_FALLBACK:
-        bound = bind(options, units, bootclasspath, options.classPath());
+        reducedClasspathLength = options.reducedClasspathLength();
+        bound = bind(options, units, bootclasspath, classPath);
+        transitiveClasspathFallback = true;
         break;
       case JAVABUILDER_REDUCED:
         Collection<String> reducedClasspath =
-            Dependencies.reduceClasspath(
-                options.classPath(), options.directJars(), options.depsArtifacts());
+            Dependencies.reduceClasspath(classPath, options.directJars(), options.depsArtifacts());
+        reducedClasspathLength = reducedClasspath.size();
         try {
           bound = bind(options, units, bootclasspath, reducedClasspath);
         } catch (TurbineError e) {
-          out.println(e.getMessage());
-          out.println("warning: falling back to transitive classpath");
-          bound = bind(options, units, bootclasspath, options.classPath());
+          bound = bind(options, units, bootclasspath, classPath);
+          transitiveClasspathFallback = true;
         }
         break;
       case BAZEL_REDUCED:
+        transitiveClasspathLength = options.fullClasspathLength();
         try {
-          bound = bind(options, units, bootclasspath, options.classPath());
+          bound = bind(options, units, bootclasspath, classPath);
         } catch (TurbineError e) {
-          out.println(e.getMessage());
-          out.println("warning: falling back to transitive classpath");
           writeJdepsForFallback(options);
-          return true;
+          return Result.create(
+              /* transitiveClasspathFallback= */ true,
+              /* transitiveClasspathLength= */ transitiveClasspathLength,
+              /* reducedClasspathLength= */ reducedClasspathLength);
         }
         break;
       default:
@@ -173,7 +190,10 @@ public class Main {
 
     writeSources(options, bound.generatedSources());
     writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
-    return true;
+    return Result.create(
+        /* transitiveClasspathFallback= */ transitiveClasspathFallback,
+        /* transitiveClasspathLength= */ transitiveClasspathLength,
+        /* reducedClasspathLength= */ reducedClasspathLength);
   }
 
   /**

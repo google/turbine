@@ -24,9 +24,11 @@ import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
+import com.google.turbine.main.Main.Result;
 import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.proto.DepsProto.Dependency.Kind;
@@ -35,8 +37,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -125,7 +125,7 @@ public class ReducedClasspathTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    boolean ok =
+    Result result =
         Main.compile(
             optionsWithBootclasspath()
                 .setOutput(output.toString())
@@ -143,7 +143,7 @@ public class ReducedClasspathTest {
                 .addDirectJars(ImmutableList.of(libc.toString()))
                 .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
                 .build());
-    assertThat(ok).isTrue();
+    assertThat(result.transitiveClasspathFallback()).isFalse();
   }
 
   @Test
@@ -160,8 +160,7 @@ public class ReducedClasspathTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    StringWriter sw = new StringWriter();
-    boolean ok =
+    Result result =
         Main.compile(
             optionsWithBootclasspath()
                 .setOutput(output.toString())
@@ -171,17 +170,10 @@ public class ReducedClasspathTest {
                     ImmutableList.of(liba.toString(), libb.toString(), libc.toString()))
                 .addDirectJars(ImmutableList.of(libc.toString()))
                 .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
-                .build(),
-            new PrintWriter(sw, true));
-    assertThat(sw.toString())
-        .isEqualTo(
-            lines(
-                src + ":3: error: could not resolve I",
-                "  I i;",
-                "  ^",
-                "warning: falling back to transitive classpath",
-                ""));
-    assertThat(ok).isTrue();
+                .build());
+    assertThat(result.transitiveClasspathFallback()).isTrue();
+    assertThat(result.reducedClasspathLength()).isEqualTo(2);
+    assertThat(result.transitiveClasspathLength()).isEqualTo(3);
   }
 
   @Test
@@ -199,8 +191,7 @@ public class ReducedClasspathTest {
     Path output = temporaryFolder.newFile("output.jar").toPath();
     Path jdeps = temporaryFolder.newFile("output.jdeps").toPath();
 
-    StringWriter sw = new StringWriter();
-    boolean ok =
+    Result result =
         Main.compile(
             optionsWithBootclasspath()
                 .setOutput(output.toString())
@@ -209,20 +200,15 @@ public class ReducedClasspathTest {
                 .addSources(ImmutableList.of(src.toString()))
                 .setReducedClasspathMode(ReducedClasspathMode.BAZEL_REDUCED)
                 .addClassPathEntries(ImmutableList.of(libc.toString()))
-                .build(),
-            new PrintWriter(sw, true));
-    assertThat(sw.toString())
-        .isEqualTo(
-            lines(
-                src + ":3: error: could not resolve I",
-                "  I i;",
-                "  ^",
-                "warning: falling back to transitive classpath",
-                ""));
-    assertThat(ok).isTrue();
+                .setReducedClasspathLength(1)
+                .setFullClasspathLength(3)
+                .build());
+    assertThat(result.transitiveClasspathFallback()).isTrue();
+    assertThat(result.reducedClasspathLength()).isEqualTo(1);
+    assertThat(result.transitiveClasspathLength()).isEqualTo(3);
     DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
     try (InputStream is = new BufferedInputStream(Files.newInputStream(jdeps))) {
-      deps.mergeFrom(is);
+      deps.mergeFrom(is, ExtensionRegistry.getEmptyRegistry());
     }
     assertThat(deps.build())
         .isEqualTo(
@@ -246,7 +232,6 @@ public class ReducedClasspathTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    StringWriter sw = new StringWriter();
     try {
       Main.compile(
           optionsWithBootclasspath()
@@ -255,13 +240,11 @@ public class ReducedClasspathTest {
               .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
               .addClassPathEntries(ImmutableList.of(libc.toString()))
               .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
-              .build(),
-          new PrintWriter(sw, true));
+              .build());
       fail();
     } catch (TurbineError e) {
       assertThat(e).hasMessageThat().contains("could not resolve I");
     }
-    assertThat(sw.toString()).doesNotContain("warning: falling back to transitive classpath");
   }
 
   static String lines(String... lines) {

@@ -72,6 +72,8 @@ public class TurbineOptions {
   private final ReducedClasspathMode reducedClasspathMode;
   private final Optional<String> profile;
   private final Optional<String> gensrcOutput;
+  private final int fullClasspathLength;
+  private final int reducedClasspathLength;
 
   private TurbineOptions(
       @Nullable String output,
@@ -93,7 +95,9 @@ public class TurbineOptions {
       ImmutableList<String> javacOpts,
       ReducedClasspathMode reducedClasspathMode,
       @Nullable String profile,
-      @Nullable String gensrcOutput) {
+      @Nullable String gensrcOutput,
+      int fullClasspathLength,
+      int reducedClasspathLength) {
     this.output = Optional.ofNullable(output);
     this.classPath = checkNotNull(classPath, "classPath must not be null");
     this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
@@ -114,6 +118,8 @@ public class TurbineOptions {
     this.reducedClasspathMode = reducedClasspathMode;
     this.profile = Optional.ofNullable(profile);
     this.gensrcOutput = Optional.ofNullable(gensrcOutput);
+    this.fullClasspathLength = fullClasspathLength;
+    this.reducedClasspathLength = reducedClasspathLength;
   }
 
   /** Paths to the Java source files to compile. */
@@ -250,6 +256,14 @@ public class TurbineOptions {
     return gensrcOutput;
   }
 
+  public int fullClasspathLength() {
+    return fullClasspathLength;
+  }
+
+  public int reducedClasspathLength() {
+    return reducedClasspathLength;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -277,6 +291,8 @@ public class TurbineOptions {
     private ReducedClasspathMode reducedClasspathMode = ReducedClasspathMode.JAVABUILDER_REDUCED;
     private @Nullable String profile;
     private @Nullable String gensrcOutput;
+    private int fullClasspathLength;
+    private int reducedClasspathLength;
 
     public TurbineOptions build() {
       return new TurbineOptions(
@@ -299,7 +315,9 @@ public class TurbineOptions {
           javacOpts.build(),
           reducedClasspathMode,
           profile,
-          gensrcOutput);
+          gensrcOutput,
+          fullClasspathLength,
+          reducedClasspathLength);
     }
 
     public Builder setOutput(String output) {
@@ -412,6 +430,16 @@ public class TurbineOptions {
 
     public Builder setGensrcOutput(String gensrcOutput) {
       this.gensrcOutput = gensrcOutput;
+      return this;
+    }
+
+    public Builder setFullClasspathLength(int fullClasspathLength) {
+      this.fullClasspathLength = fullClasspathLength;
+      return this;
+    }
+
+    public Builder setReducedClasspathLength(int reducedClasspathLength) {
+      this.reducedClasspathLength = reducedClasspathLength;
       return this;
     }
   }
