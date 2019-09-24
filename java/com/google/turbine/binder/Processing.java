@@ -39,9 +39,12 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.processing.ModelFactory;
+import com.google.turbine.processing.TurbineElements;
 import com.google.turbine.processing.TurbineFiler;
+import com.google.turbine.processing.TurbineMessager;
 import com.google.turbine.processing.TurbineProcessingEnvironment;
 import com.google.turbine.processing.TurbineRoundEnvironment;
+import com.google.turbine.processing.TurbineTypes;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.type.AnnoInfo;
 import java.net.MalformedURLException;
@@ -106,15 +109,22 @@ public class Processing {
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
     ModelFactory factory = new ModelFactory(env, processorInfo.loader(), result.tli());
 
+    Map<String, byte[]> statistics = new LinkedHashMap<>();
+
+    TurbineTypes turbineTypes = new TurbineTypes(factory);
+    TurbineProcessingEnvironment processingEnv =
+        new TurbineProcessingEnvironment(
+            filer,
+            turbineTypes,
+            new TurbineElements(factory, turbineTypes),
+            new TurbineMessager(factory, log),
+            processorInfo.options(),
+            processorInfo.sourceVersion(),
+            processorInfo.loader(),
+            statistics);
     for (Processor processor : processorInfo.processors()) {
-      processor.init(
-          new TurbineProcessingEnvironment(
-              factory,
-              filer,
-              log,
-              processorInfo.options(),
-              processorInfo.sourceVersion(),
-              processorInfo.loader()));
+
+      processor.init(processingEnv);
     }
 
     Map<Processor, Pattern> wanted = new HashMap<>();
@@ -245,8 +255,22 @@ public class Processing {
               result.classPathEnv(),
               result.tli(),
               result.generatedSources(),
-              filer.generatedClasses());
+              filer.generatedClasses(),
+              /* statistics= */ ImmutableMap.of());
     }
+
+    if (!statistics.isEmpty()) {
+      result =
+          new BindingResult(
+              result.units(),
+              result.modules(),
+              result.classPathEnv(),
+              result.tli(),
+              result.generatedSources(),
+              result.generatedClasses(),
+              ImmutableMap.copyOf(statistics));
+    }
+
     return result;
   }
 

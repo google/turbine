@@ -171,7 +171,13 @@ public class Binder {
     }
 
     return new BindingResult(
-        result.build(), boundModules, classPathEnv, tli, generatedSources, generatedClasses);
+        result.build(),
+        boundModules,
+        classPathEnv,
+        tli,
+        generatedSources,
+        generatedClasses,
+        /* statistics= */ ImmutableMap.of());
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
@@ -442,6 +448,7 @@ public class Binder {
     private final TopLevelIndex tli;
     private final ImmutableList<SourceFile> generatedSources;
     private final ImmutableMap<String, byte[]> generatedClasses;
+    private final ImmutableMap<String, byte[]> statistics;
 
     public BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
@@ -449,13 +456,15 @@ public class Binder {
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
         TopLevelIndex tli,
         ImmutableList<SourceFile> generatedSources,
-        ImmutableMap<String, byte[]> generatedClasses) {
+        ImmutableMap<String, byte[]> generatedClasses,
+        ImmutableMap<String, byte[]> statistics) {
       this.units = units;
       this.modules = modules;
       this.classPathEnv = classPathEnv;
       this.tli = tli;
       this.generatedSources = generatedSources;
       this.generatedClasses = generatedClasses;
+      this.statistics = statistics;
     }
 
     /** Bound nodes for sources in the compilation. */
@@ -482,6 +491,10 @@ public class Binder {
 
     public ImmutableMap<String, byte[]> generatedClasses() {
       return generatedClasses;
+    }
+
+    public ImmutableMap<String, byte[]> statistics() {
+      return statistics;
     }
   }
 }
