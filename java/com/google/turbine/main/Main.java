@@ -161,7 +161,7 @@ public class Main {
         try {
           bound = bind(options, units, bootclasspath, reducedClasspath);
         } catch (TurbineError e) {
-          bound = bind(options, units, bootclasspath, classPath);
+          bound = fallback(options, units, bootclasspath, classPath);
           transitiveClasspathFallback = true;
         }
         break;
@@ -203,6 +203,16 @@ public class Main {
         /* transitiveClasspathLength= */ transitiveClasspathLength,
         /* reducedClasspathLength= */ reducedClasspathLength,
         bound.statistics());
+  }
+
+  // don't inline this; we want it to show up in profiles
+  private static BindingResult fallback(
+      TurbineOptions options,
+      ImmutableList<CompUnit> units,
+      ClassPath bootclasspath,
+      ImmutableList<String> classPath)
+      throws IOException {
+    return bind(options, units, bootclasspath, classPath);
   }
 
   /**
