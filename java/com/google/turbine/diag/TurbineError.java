@@ -90,8 +90,12 @@ public class TurbineError extends Error {
   private final ImmutableList<TurbineDiagnostic> diagnostics;
 
   public TurbineError(ImmutableList<TurbineDiagnostic> diagnostics) {
-    super(diagnostics.stream().map(d -> d.diagnostic()).collect(joining(System.lineSeparator())));
     this.diagnostics = diagnostics;
+  }
+
+  @Override
+  public String getMessage() {
+    return diagnostics.stream().map(d -> d.diagnostic()).collect(joining(System.lineSeparator()));
   }
 
   public ImmutableList<TurbineDiagnostic> diagnostics() {
