@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -62,6 +63,7 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.type.Type;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -177,7 +179,7 @@ public class Binder {
         tli,
         generatedSources,
         generatedClasses,
-        /* statistics= */ ImmutableMap.of());
+        Statistics.empty());
   }
 
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
@@ -440,6 +442,32 @@ public class Binder {
     return builder.build();
   }
 
+  /** Statistics about annotation processing. */
+  @AutoValue
+  public abstract static class Statistics {
+
+    /**
+     * The total elapsed time spent in {@link Processor#init} and {@link Processor#process} across
+     * all rounds for each annotation processor.
+     */
+    public abstract ImmutableMap<String, Duration> processingTime();
+
+    /**
+     * Serialized protos containing processor-specific metrics. Currently only supported for Dagger.
+     */
+    public abstract ImmutableMap<String, byte[]> processorMetrics();
+
+    public static Statistics create(
+        ImmutableMap<String, Duration> processingTime,
+        ImmutableMap<String, byte[]> processorMetrics) {
+      return new AutoValue_Binder_Statistics(processingTime, processorMetrics);
+    }
+
+    public static Statistics empty() {
+      return create(ImmutableMap.of(), ImmutableMap.of());
+    }
+  }
+
   /** The result of binding: bound nodes for sources in the compilation, and the classpath. */
   public static class BindingResult {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
@@ -448,7 +476,7 @@ public class Binder {
     private final TopLevelIndex tli;
     private final ImmutableList<SourceFile> generatedSources;
     private final ImmutableMap<String, byte[]> generatedClasses;
-    private final ImmutableMap<String, byte[]> statistics;
+    private final Statistics statistics;
 
     public BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
@@ -457,7 +485,7 @@ public class Binder {
         TopLevelIndex tli,
         ImmutableList<SourceFile> generatedSources,
         ImmutableMap<String, byte[]> generatedClasses,
-        ImmutableMap<String, byte[]> statistics) {
+        Statistics statistics) {
       this.units = units;
       this.modules = modules;
       this.classPathEnv = classPathEnv;
@@ -493,8 +521,18 @@ public class Binder {
       return generatedClasses;
     }
 
-    public ImmutableMap<String, byte[]> statistics() {
+    public Statistics statistics() {
       return statistics;
+    }
+
+    public BindingResult withGeneratedClasses(ImmutableMap<String, byte[]> generatedClasses) {
+      return new BindingResult(
+          units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
+    }
+
+    public BindingResult withStatistics(Statistics statistics) {
+      return new BindingResult(
+          units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
     }
   }
 }

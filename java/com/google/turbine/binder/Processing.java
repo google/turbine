@@ -19,6 +19,7 @@ package com.google.turbine.binder;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -27,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Sets;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -51,6 +53,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -122,9 +125,11 @@ public class Processing {
             processorInfo.sourceVersion(),
             processorInfo.loader(),
             statistics);
+    Timers timers = new Timers();
     for (Processor processor : processorInfo.processors()) {
-
-      processor.init(processingEnv);
+      try (Timers.Timer unused = timers.start(processor)) {
+        processor.init(processingEnv);
+      }
     }
 
     Map<Processor, Pattern> wanted = new HashMap<>();
@@ -170,10 +175,10 @@ public class Processing {
             roundEnv =
                 new TurbineRoundEnvironment(factory, syms, false, errorRaised, allAnnotations);
           }
-          // discard the result of Processor#process because 'claiming' annotations is a bad idea
-          // TODO(cushon): consider disallowing this, or reporting a diagnostic
-          try {
-            boolean unused = processor.process(annotations, roundEnv);
+          try (Timers.Timer unused = timers.start(processor)) {
+            // discard the result of Processor#process because 'claiming' annotations is a bad idea
+            // TODO(cushon): consider disallowing this, or reporting a diagnostic
+            processor.process(annotations, roundEnv);
           } catch (Throwable t) {
             log.diagnostic(Diagnostic.Kind.ERROR, Throwables.getStackTraceAsString(t));
             log.maybeThrow();
@@ -217,7 +222,7 @@ public class Processing {
                 errorRaised,
                 ImmutableSetMultimap.of());
       }
-      try {
+      try (Timers.Timer unused = timers.start(processor)) {
         processor.process(ImmutableSet.of(), roundEnv);
       } catch (Throwable t) {
         log.diagnostic(Diagnostic.Kind.ERROR, Throwables.getStackTraceAsString(t));
@@ -248,28 +253,11 @@ public class Processing {
     if (!filer.generatedClasses().isEmpty()) {
       // add any generated class files to the output
       // TODO(cushon): consider handling generated classes after each round
-      result =
-          new BindingResult(
-              result.units(),
-              result.modules(),
-              result.classPathEnv(),
-              result.tli(),
-              result.generatedSources(),
-              filer.generatedClasses(),
-              /* statistics= */ ImmutableMap.of());
+      result = result.withGeneratedClasses(filer.generatedClasses());
     }
 
-    if (!statistics.isEmpty()) {
-      result =
-          new BindingResult(
-              result.units(),
-              result.modules(),
-              result.classPathEnv(),
-              result.tli(),
-              result.generatedSources(),
-              result.generatedClasses(),
-              ImmutableMap.copyOf(statistics));
-    }
+    result =
+        result.withStatistics(Statistics.create(timers.build(), ImmutableMap.copyOf(statistics)));
 
     return result;
   }
@@ -463,6 +451,43 @@ public class Processing {
           /* loader= */ null,
           /* options= */ ImmutableMap.of(),
           /* sourceVersion= */ SourceVersion.latest());
+    }
+  }
+
+  private static class Timers {
+    private final Map<Class<?>, Stopwatch> processorTimers = new LinkedHashMap<>();
+
+    Timer start(Processor processor) {
+      Class<? extends Processor> clazz = processor.getClass();
+      Stopwatch sw = processorTimers.get(clazz);
+      if (sw == null) {
+        sw = Stopwatch.createUnstarted();
+        processorTimers.put(clazz, sw);
+      }
+      sw.start();
+      return new Timer(sw);
+    }
+
+    private static class Timer implements AutoCloseable {
+
+      private final Stopwatch sw;
+
+      public Timer(Stopwatch sw) {
+        this.sw = sw;
+      }
+
+      @Override
+      public void close() {
+        sw.stop();
+      }
+    }
+
+    ImmutableMap<String, Duration> build() {
+      ImmutableMap.Builder<String, Duration> result = ImmutableMap.builder();
+      for (Map.Entry<Class<?>, Stopwatch> e : processorTimers.entrySet()) {
+        result.put(e.getKey().getCanonicalName(), e.getValue().elapsed());
+      }
+      return result.build();
     }
   }
 }
