@@ -29,6 +29,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import java.util.Objects;
 import javax.tools.Diagnostic;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A compilation error. */
 public class TurbineDiagnostic {
@@ -36,7 +37,7 @@ public class TurbineDiagnostic {
   private final Diagnostic.Kind severity;
   private final ErrorKind kind;
   private final ImmutableList<Object> args;
-  private final SourceFile source;
+  private final @Nullable SourceFile source;
   private final int position;
   private final Supplier<LineMap> lineMap =
       Suppliers.memoize(
@@ -51,7 +52,7 @@ public class TurbineDiagnostic {
       Diagnostic.Kind severity,
       ErrorKind kind,
       ImmutableList<Object> args,
-      SourceFile source,
+      @Nullable SourceFile source,
       int position) {
     this.severity = requireNonNull(severity);
     this.kind = requireNonNull(kind);
@@ -149,8 +150,15 @@ public class TurbineDiagnostic {
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof TurbineDiagnostic
-        && diagnostic().equals(((TurbineDiagnostic) obj).diagnostic());
+    if (!(obj instanceof TurbineDiagnostic)) {
+      return false;
+    }
+    TurbineDiagnostic that = (TurbineDiagnostic) obj;
+    return severity.equals(that.severity)
+        && kind.equals(that.kind)
+        && args.equals(that.args)
+        && Objects.equals(source, that.source)
+        && position == that.position;
   }
 
   public String path() {

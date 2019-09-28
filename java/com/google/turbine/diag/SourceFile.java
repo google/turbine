@@ -16,6 +16,8 @@
 
 package com.google.turbine.diag;
 
+import java.util.Objects;
+
 /** A source file. */
 public class SourceFile {
 
@@ -43,7 +45,7 @@ public class SourceFile {
       return false;
     }
     SourceFile that = (SourceFile) obj;
-    return path.equals(that.path) && source.equals(that.source);
+    return Objects.equals(path, that.path) && source.equals(that.source);
   }
 
   @Override

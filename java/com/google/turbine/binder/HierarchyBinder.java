@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.HeaderBoundClass;
@@ -120,7 +121,7 @@ public class HierarchyBinder {
     // Resolve the base symbol in the qualified name.
     LookupResult result = lookup(ty, new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
-      log.error(ty.position(), ErrorKind.CANNOT_RESOLVE, ty);
+      log.error(ty.position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(flat));
       return null;
     }
     // Resolve pieces in the qualified name referring to member types.
