@@ -288,7 +288,7 @@ public class TurbineOptions {
     private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
     private boolean help = false;
     private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
-    private ReducedClasspathMode reducedClasspathMode = ReducedClasspathMode.JAVABUILDER_REDUCED;
+    private ReducedClasspathMode reducedClasspathMode = ReducedClasspathMode.NONE;
     private @Nullable String profile;
     private @Nullable String gensrcOutput;
     private int fullClasspathLength;

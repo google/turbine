@@ -96,7 +96,8 @@ public class TurbineOptionsTest {
     assertThat(options.outputDeps()).hasValue("out.jdeps");
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
     assertThat(options.injectingRuleKind()).hasValue("foo_library");
-    assertThat(options.shouldReduceClassPath()).isTrue();
+    assertThat(options.reducedClasspathMode()).isEqualTo(ReducedClasspathMode.NONE);
+    assertThat(options.shouldReduceClassPath()).isFalse();
   }
 
   @Test
