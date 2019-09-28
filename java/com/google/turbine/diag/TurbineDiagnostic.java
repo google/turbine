@@ -22,8 +22,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -39,14 +37,6 @@ public class TurbineDiagnostic {
   private final ImmutableList<Object> args;
   private final @Nullable SourceFile source;
   private final int position;
-  private final Supplier<LineMap> lineMap =
-      Suppliers.memoize(
-          new Supplier<LineMap>() {
-            @Override
-            public LineMap get() {
-              return LineMap.create(source.source());
-            }
-          });
 
   private TurbineDiagnostic(
       Diagnostic.Kind severity,
@@ -83,7 +73,7 @@ public class TurbineDiagnostic {
     sb.append(": error: ");
     sb.append(message().trim()).append(System.lineSeparator());
     if (line() != -1 && column() != -1) {
-      sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(lineMap.get().line(position)))
+      sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position)))
           .append(System.lineSeparator());
       sb.append(Strings.repeat(" ", column() - 1)).append('^');
     }
@@ -166,11 +156,11 @@ public class TurbineDiagnostic {
   }
 
   public int line() {
-    return position != -1 ? lineMap.get().lineNumber(position) : -1;
+    return position != -1 ? source.lineMap().lineNumber(position) : -1;
   }
 
   public int column() {
-    return position != -1 ? lineMap.get().column(position) + 1 : -1;
+    return position != -1 ? source.lineMap().column(position) + 1 : -1;
   }
 
   public String message() {
