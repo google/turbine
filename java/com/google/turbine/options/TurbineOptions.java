@@ -223,24 +223,6 @@ public class TurbineOptions {
     return javacOpts;
   }
 
-  /**
-   * Returns true if the reduced classpath optimization is enabled.
-   *
-   * @deprecated use {@link #reducedClasspathMode} instead.
-   */
-  @Deprecated
-  public boolean shouldReduceClassPath() {
-    switch (reducedClasspathMode) {
-      case JAVABUILDER_REDUCED:
-        return true;
-      case BAZEL_REDUCED:
-      case BAZEL_FALLBACK:
-      case NONE:
-        return false;
-    }
-    throw new AssertionError(reducedClasspathMode);
-  }
-
   /** The reduced classpath optimization mode. */
   public ReducedClasspathMode reducedClasspathMode() {
     return reducedClasspathMode;
