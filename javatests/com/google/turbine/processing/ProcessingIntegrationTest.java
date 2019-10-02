@@ -18,14 +18,18 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.MoreCollectors;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing;
+import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
@@ -44,6 +48,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -166,5 +171,87 @@ public class ProcessingIntegrationTest {
       assertThat(diags.get(0)).contains("proc warning");
       assertThat(diags.get(1)).contains("proc error");
     }
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class ResourceProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (first) {
+        try {
+          try (Writer writer = processingEnv.getFiler().createSourceFile("Gen").openWriter()) {
+            writer.write("class Gen {}");
+          }
+          try (Writer writer =
+              processingEnv
+                  .getFiler()
+                  .createResource(StandardLocation.SOURCE_OUTPUT, "", "source.txt")
+                  .openWriter()) {
+            writer.write("hello source output");
+          }
+          try (Writer writer =
+              processingEnv
+                  .getFiler()
+                  .createResource(StandardLocation.CLASS_OUTPUT, "", "class.txt")
+                  .openWriter()) {
+            writer.write("hello class output");
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        first = false;
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void resources() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        IntegrationTestSupport.TestInput.parse(
+                Joiner.on('\n')
+                    .join(
+                        "=== Test.java ===", //
+                        "@Deprecated",
+                        "class Test {",
+                        "}"))
+            .sources
+            .entrySet()
+            .stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+    BindingResult bound =
+        Binder.bind(
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ProcessorInfo.create(
+                ImmutableList.of(new ResourceProcessor()),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+
+    assertThat(bound.generatedSources().stream().map(s -> s.path()).collect(toImmutableList()))
+        .containsExactly("Gen.java", "source.txt");
+    assertThat(bound.generatedClasses().keySet()).containsExactly("class.txt");
+
+    assertThat(
+            bound.generatedSources().stream()
+                .filter(s -> s.path().equals("source.txt"))
+                .collect(MoreCollectors.onlyElement())
+                .source())
+        .isEqualTo("hello source output");
+    assertThat(new String(bound.generatedClasses().get("class.txt"), UTF_8))
+        .isEqualTo("hello class output");
   }
 }
