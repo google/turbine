@@ -129,9 +129,9 @@ public class ReducedClasspathTest {
         Main.compile(
             optionsWithBootclasspath()
                 .setOutput(output.toString())
-                .addSources(ImmutableList.of(src.toString()))
+                .setSources(ImmutableList.of(src.toString()))
                 .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
-                .addClassPathEntries(
+                .setClassPath(
                     ImmutableList.of(
                         // ensure that the compilation succeeds without falling back by adding
                         // a jar to the transitive classpath that doesn't exist, which would cause
@@ -140,8 +140,8 @@ public class ReducedClasspathTest {
                         liba.toString(),
                         libb.toString(),
                         libc.toString()))
-                .addDirectJars(ImmutableList.of(libc.toString()))
-                .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
+                .setDirectJars(ImmutableList.of(libc.toString()))
+                .setDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
                 .build());
     assertThat(result.transitiveClasspathFallback()).isFalse();
   }
@@ -164,12 +164,11 @@ public class ReducedClasspathTest {
         Main.compile(
             optionsWithBootclasspath()
                 .setOutput(output.toString())
-                .addSources(ImmutableList.of(src.toString()))
+                .setSources(ImmutableList.of(src.toString()))
                 .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
-                .addClassPathEntries(
-                    ImmutableList.of(liba.toString(), libb.toString(), libc.toString()))
-                .addDirectJars(ImmutableList.of(libc.toString()))
-                .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
+                .setClassPath(ImmutableList.of(liba.toString(), libb.toString(), libc.toString()))
+                .setDirectJars(ImmutableList.of(libc.toString()))
+                .setDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
                 .build());
     assertThat(result.transitiveClasspathFallback()).isTrue();
     assertThat(result.reducedClasspathLength()).isEqualTo(2);
@@ -197,9 +196,9 @@ public class ReducedClasspathTest {
                 .setOutput(output.toString())
                 .setTargetLabel("//java/com/google/foo")
                 .setOutputDeps(jdeps.toString())
-                .addSources(ImmutableList.of(src.toString()))
+                .setSources(ImmutableList.of(src.toString()))
                 .setReducedClasspathMode(ReducedClasspathMode.BAZEL_REDUCED)
-                .addClassPathEntries(ImmutableList.of(libc.toString()))
+                .setClassPath(ImmutableList.of(libc.toString()))
                 .setReducedClasspathLength(1)
                 .setFullClasspathLength(3)
                 .build());
@@ -236,10 +235,10 @@ public class ReducedClasspathTest {
       Main.compile(
           optionsWithBootclasspath()
               .setOutput(output.toString())
-              .addSources(ImmutableList.of(src.toString()))
+              .setSources(ImmutableList.of(src.toString()))
               .setReducedClasspathMode(ReducedClasspathMode.JAVABUILDER_REDUCED)
-              .addClassPathEntries(ImmutableList.of(libc.toString()))
-              .addAllDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
+              .setClassPath(ImmutableList.of(libc.toString()))
+              .setDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
               .build());
       fail();
     } catch (TurbineError e) {

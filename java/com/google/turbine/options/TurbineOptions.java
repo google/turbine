@@ -16,15 +16,15 @@
 
 package com.google.turbine.options;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Header compilation options. */
-public class TurbineOptions {
+@AutoValue
+public abstract class TurbineOptions {
 
   /**
    * This modes controls how a probablistic Java classpath reduction is used. For each mode except
@@ -52,106 +52,23 @@ public class TurbineOptions {
     NONE
   }
 
-  private final Optional<String> output;
-  private final ImmutableList<String> classPath;
-  private final ImmutableSet<String> bootClassPath;
-  private final Optional<String> release;
-  private final Optional<String> system;
-  private final ImmutableList<String> sources;
-  private final ImmutableList<String> processorPath;
-  private final ImmutableSet<String> processors;
-  private final ImmutableSet<String> builtinProcessors;
-  private final ImmutableList<String> sourceJars;
-  private final Optional<String> outputDeps;
-  private final ImmutableSet<String> directJars;
-  private final Optional<String> targetLabel;
-  private final Optional<String> injectingRuleKind;
-  private final ImmutableList<String> depsArtifacts;
-  private final boolean help;
-  private final ImmutableList<String> javacOpts;
-  private final ReducedClasspathMode reducedClasspathMode;
-  private final Optional<String> profile;
-  private final Optional<String> gensrcOutput;
-  private final int fullClasspathLength;
-  private final int reducedClasspathLength;
-
-  private TurbineOptions(
-      @Nullable String output,
-      ImmutableList<String> classPath,
-      ImmutableSet<String> bootClassPath,
-      @Nullable String release,
-      @Nullable String system,
-      ImmutableList<String> sources,
-      ImmutableList<String> processorPath,
-      ImmutableSet<String> processors,
-      ImmutableSet<String> builtinProcessors,
-      ImmutableList<String> sourceJars,
-      @Nullable String outputDeps,
-      ImmutableSet<String> directJars,
-      @Nullable String targetLabel,
-      @Nullable String injectingRuleKind,
-      ImmutableList<String> depsArtifacts,
-      boolean help,
-      ImmutableList<String> javacOpts,
-      ReducedClasspathMode reducedClasspathMode,
-      @Nullable String profile,
-      @Nullable String gensrcOutput,
-      int fullClasspathLength,
-      int reducedClasspathLength) {
-    this.output = Optional.ofNullable(output);
-    this.classPath = checkNotNull(classPath, "classPath must not be null");
-    this.bootClassPath = checkNotNull(bootClassPath, "bootClassPath must not be null");
-    this.release = Optional.ofNullable(release);
-    this.system = Optional.ofNullable(system);
-    this.sources = checkNotNull(sources, "sources must not be null");
-    this.processorPath = checkNotNull(processorPath, "processorPath must not be null");
-    this.processors = checkNotNull(processors, "processors must not be null");
-    this.builtinProcessors = checkNotNull(builtinProcessors, "builtinProcessors must not be null");
-    this.sourceJars = checkNotNull(sourceJars, "sourceJars must not be null");
-    this.outputDeps = Optional.ofNullable(outputDeps);
-    this.directJars = checkNotNull(directJars, "directJars must not be null");
-    this.targetLabel = Optional.ofNullable(targetLabel);
-    this.injectingRuleKind = Optional.ofNullable(injectingRuleKind);
-    this.depsArtifacts = checkNotNull(depsArtifacts, "depsArtifacts must not be null");
-    this.help = help;
-    this.javacOpts = checkNotNull(javacOpts, "javacOpts must not be null");
-    this.reducedClasspathMode = reducedClasspathMode;
-    this.profile = Optional.ofNullable(profile);
-    this.gensrcOutput = Optional.ofNullable(gensrcOutput);
-    this.fullClasspathLength = fullClasspathLength;
-    this.reducedClasspathLength = reducedClasspathLength;
-  }
-
   /** Paths to the Java source files to compile. */
-  public ImmutableList<String> sources() {
-    return sources;
-  }
+  public abstract ImmutableList<String> sources();
 
   /** Paths to classpath artifacts. */
-  public ImmutableList<String> classPath() {
-    return classPath;
-  }
+  public abstract ImmutableList<String> classPath();
 
   /** Paths to compilation bootclasspath artifacts. */
-  public ImmutableSet<String> bootClassPath() {
-    return bootClassPath;
-  }
+  public abstract ImmutableSet<String> bootClassPath();
 
   /** The target platform version. */
-  public Optional<String> release() {
-    return release;
-  }
+  public abstract Optional<String> release();
 
   /** The target platform's system modules. */
-  public Optional<String> system() {
-    return system;
-  }
+  public abstract Optional<String> system();
 
   /** The output jar. */
-  @Nullable
-  public Optional<String> output() {
-    return output;
-  }
+  public abstract Optional<String> output();
 
   /**
    * The output jar.
@@ -161,268 +78,190 @@ public class TurbineOptions {
   @Deprecated
   @Nullable
   public String outputFile() {
-    return output.orElse(null);
+    return output().orElse(null);
   }
 
   /** Paths to annotation processor artifacts. */
-  public ImmutableList<String> processorPath() {
-    return processorPath;
-  }
+  public abstract ImmutableList<String> processorPath();
 
   /** Annotation processor class names. */
-  public ImmutableSet<String> processors() {
-    return processors;
-  }
+  public abstract ImmutableSet<String> processors();
 
   /** Class names of annotation processor that are built in. */
-  public ImmutableSet<String> builtinProcessors() {
-    return builtinProcessors;
-  }
+  public abstract ImmutableSet<String> builtinProcessors();
 
   /** Source jars for compilation. */
-  public ImmutableList<String> sourceJars() {
-    return sourceJars;
-  }
+  public abstract ImmutableList<String> sourceJars();
 
   /** Output jdeps file. */
-  public Optional<String> outputDeps() {
-    return outputDeps;
-  }
+  public abstract Optional<String> outputDeps();
 
   /** The direct dependencies. */
-  public ImmutableSet<String> directJars() {
-    return directJars;
-  }
+  public abstract ImmutableSet<String> directJars();
 
   /** The label of the target being compiled. */
-  public Optional<String> targetLabel() {
-    return targetLabel;
-  }
+  public abstract Optional<String> targetLabel();
 
   /**
    * If present, the name of the rule that injected an aspect that compiles this target.
    *
    * <p>Note that this rule will have a completely different label to {@link #targetLabel} above.
    */
-  public Optional<String> injectingRuleKind() {
-    return injectingRuleKind;
-  }
+  public abstract Optional<String> injectingRuleKind();
 
   /** The .jdeps artifacts for direct dependencies. */
-  public ImmutableList<String> depsArtifacts() {
-    return depsArtifacts;
-  }
+  public abstract ImmutableList<String> depsArtifacts();
 
   /** Print usage information. */
-  public boolean help() {
-    return help;
-  }
+  public abstract boolean help();
 
   /** Additional Java compiler flags. */
-  public ImmutableList<String> javacOpts() {
-    return javacOpts;
-  }
+  public abstract ImmutableList<String> javacOpts();
 
   /** The reduced classpath optimization mode. */
-  public ReducedClasspathMode reducedClasspathMode() {
-    return reducedClasspathMode;
-  }
+  public abstract ReducedClasspathMode reducedClasspathMode();
 
   /** An optional path for profiling output. */
-  public Optional<String> profile() {
-    return profile;
-  }
+  public abstract Optional<String> profile();
 
   /** An optional path for generated source output. */
-  public Optional<String> gensrcOutput() {
-    return gensrcOutput;
-  }
+  public abstract Optional<String> gensrcOutput();
 
-  public int fullClasspathLength() {
-    return fullClasspathLength;
-  }
+  public abstract int fullClasspathLength();
 
-  public int reducedClasspathLength() {
-    return reducedClasspathLength;
-  }
+  public abstract int reducedClasspathLength();
 
   public static Builder builder() {
-    return new Builder();
+    return new AutoValue_TurbineOptions.Builder()
+        .setSources(ImmutableList.of())
+        .setClassPath(ImmutableList.of())
+        .setBootClassPath(ImmutableList.of())
+        .setProcessorPath(ImmutableList.of())
+        .setProcessors(ImmutableList.of())
+        .setBuiltinProcessors(ImmutableList.of())
+        .setSourceJars(ImmutableList.of())
+        .setDirectJars(ImmutableList.of())
+        .setDepsArtifacts(ImmutableList.of())
+        .setJavacOpts(ImmutableList.of())
+        .setReducedClasspathMode(ReducedClasspathMode.NONE)
+        .setHelp(false)
+        .setFullClasspathLength(0)
+        .setReducedClasspathLength(0);
   }
 
   /** A {@link Builder} for {@link TurbineOptions}. */
-  public static class Builder {
+  @AutoValue.Builder
+  public abstract static class Builder {
+    public abstract Builder setOutput(String output);
 
-    private String output;
-    private final ImmutableList.Builder<String> classPath = ImmutableList.builder();
-    private final ImmutableList.Builder<String> sources = ImmutableList.builder();
-    private final ImmutableList.Builder<String> processorPath = ImmutableList.builder();
-    private final ImmutableSet.Builder<String> processors = ImmutableSet.builder();
-    private final ImmutableSet.Builder<String> builtinProcessors = ImmutableSet.builder();
-    private final ImmutableList.Builder<String> sourceJars = ImmutableList.builder();
-    private final ImmutableSet.Builder<String> bootClassPath = ImmutableSet.builder();
-    @Nullable private String release;
-    @Nullable private String system;
-    private String outputDeps;
-    private final ImmutableSet.Builder<String> directJars = ImmutableSet.builder();
-    @Nullable private String targetLabel;
-    @Nullable private String injectingRuleKind;
-    private final ImmutableList.Builder<String> depsArtifacts = ImmutableList.builder();
-    private boolean help = false;
-    private final ImmutableList.Builder<String> javacOpts = ImmutableList.builder();
-    private ReducedClasspathMode reducedClasspathMode = ReducedClasspathMode.NONE;
-    private @Nullable String profile;
-    private @Nullable String gensrcOutput;
-    private int fullClasspathLength;
-    private int reducedClasspathLength;
-
-    public TurbineOptions build() {
-      return new TurbineOptions(
-          output,
-          classPath.build(),
-          bootClassPath.build(),
-          release,
-          system,
-          sources.build(),
-          processorPath.build(),
-          processors.build(),
-          builtinProcessors.build(),
-          sourceJars.build(),
-          outputDeps,
-          directJars.build(),
-          targetLabel,
-          injectingRuleKind,
-          depsArtifacts.build(),
-          help,
-          javacOpts.build(),
-          reducedClasspathMode,
-          profile,
-          gensrcOutput,
-          fullClasspathLength,
-          reducedClasspathLength);
+    /** @deprecated use {@link #setClassPath(ImmutableList)} instead. */
+    @Deprecated
+    public Builder addClassPathEntries(Iterable<String> sources) {
+      return setClassPath(ImmutableList.copyOf(sources));
     }
 
-    public Builder setOutput(String output) {
-      this.output = output;
-      return this;
+    public abstract Builder setClassPath(ImmutableList<String> classPath);
+
+    public abstract Builder setBootClassPath(ImmutableList<String> bootClassPath);
+
+    /** @deprecated use {@link #setBootClassPath(ImmutableList)} instead. */
+    @Deprecated
+    public Builder addBootClassPathEntries(Iterable<String> sources) {
+      return setBootClassPath(ImmutableList.copyOf(sources));
     }
 
-    public Builder addClassPathEntries(Iterable<String> classPath) {
-      this.classPath.addAll(classPath);
-      return this;
-    }
+    public abstract Builder setRelease(String release);
 
-    public Builder addBootClassPathEntries(Iterable<String> bootClassPath) {
-      this.bootClassPath.addAll(bootClassPath);
-      return this;
-    }
+    public abstract Builder setSystem(String system);
 
-    public Builder setRelease(String release) {
-      this.release = release;
-      return this;
-    }
+    public abstract Builder setSources(ImmutableList<String> sources);
 
-    public Builder setSystem(String system) {
-      this.system = system;
-      return this;
-    }
-
+    /** @deprecated use {@link #setSources(ImmutableList)} instead. */
+    @Deprecated
     public Builder addSources(Iterable<String> sources) {
-      this.sources.addAll(sources);
-      return this;
+      return setSources(ImmutableList.copyOf(sources));
     }
 
+    /** @deprecated use {@link #setProcessorPath(ImmutableList)} instead. */
+    @Deprecated
     public Builder addProcessorPathEntries(Iterable<String> processorPath) {
-      this.processorPath.addAll(processorPath);
-      return this;
+      return setProcessorPath(ImmutableList.copyOf(processorPath));
     }
 
+    public abstract Builder setProcessorPath(ImmutableList<String> processorPath);
+
+    /** @deprecated use {@link #setProcessors(ImmutableList)} instead. */
+    @Deprecated
     public Builder addProcessors(Iterable<String> processors) {
-      this.processors.addAll(processors);
-      return this;
+      return setProcessors(ImmutableList.copyOf(processors));
     }
 
+    public abstract Builder setProcessors(ImmutableList<String> processors);
+
+    /** @deprecated use {@link #setBuiltinProcessors(ImmutableList)} instead. */
+    @Deprecated
     public Builder addBuiltinProcessors(Iterable<String> builtinProcessors) {
-      this.builtinProcessors.addAll(builtinProcessors);
-      return this;
+      return setBuiltinProcessors(ImmutableList.copyOf(builtinProcessors));
     }
+
+    public abstract Builder setBuiltinProcessors(ImmutableList<String> builtinProcessors);
 
     // TODO(cushon): remove this when turbine dependency is updated
     public Builder setTempDir(String tempDir) {
       return this;
     }
 
-    public Builder setSourceJars(Iterable<String> sourceJars) {
-      this.sourceJars.addAll(sourceJars);
-      return this;
-    }
+    public abstract Builder setSourceJars(ImmutableList<String> sourceJars);
 
-    public Builder setOutputDeps(String outputDeps) {
-      this.outputDeps = outputDeps;
-      return this;
-    }
+    public abstract Builder setOutputDeps(String outputDeps);
 
-    public Builder setTargetLabel(String targetLabel) {
-      this.targetLabel = targetLabel;
-      return this;
-    }
+    public abstract Builder setTargetLabel(String targetLabel);
 
-    public Builder setInjectingRuleKind(String injectingRuleKind) {
-      this.injectingRuleKind = injectingRuleKind;
-      return this;
-    }
+    public abstract Builder setInjectingRuleKind(String injectingRuleKind);
 
+    /** @deprecated use {@link #setDepsArtifacts(ImmutableList)} instead. */
+    @Deprecated
     public Builder addAllDepsArtifacts(Iterable<String> depsArtifacts) {
-      this.depsArtifacts.addAll(depsArtifacts);
-      return this;
+      return setDepsArtifacts(ImmutableList.copyOf(depsArtifacts));
     }
 
-    public Builder setHelp(boolean help) {
-      this.help = help;
-      return this;
-    }
+    public abstract Builder setDepsArtifacts(ImmutableList<String> depsArtifacts);
 
+    public abstract Builder setHelp(boolean help);
+
+    /** @deprecated use {@link #setJavacOpts(ImmutableList)} instead. */
+    @Deprecated
     public Builder addAllJavacOpts(Iterable<String> javacOpts) {
-      this.javacOpts.addAll(javacOpts);
-      return this;
+      return setJavacOpts(ImmutableList.copyOf(javacOpts));
     }
+
+    public abstract Builder setJavacOpts(ImmutableList<String> javacOpts);
 
     /** @deprecated use {@link #setReducedClasspathMode} instead. */
     @Deprecated
     public Builder setShouldReduceClassPath(boolean reduce) {
-      this.reducedClasspathMode =
-          reduce ? ReducedClasspathMode.JAVABUILDER_REDUCED : ReducedClasspathMode.NONE;
-      return this;
+      return setReducedClasspathMode(
+          reduce ? ReducedClasspathMode.JAVABUILDER_REDUCED : ReducedClasspathMode.NONE);
     }
 
-    public Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode) {
-      this.reducedClasspathMode = reducedClasspathMode;
-      return this;
+    public abstract Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode);
+
+    /** @deprecated use {@link #setDirectJars(ImmutableList)} instead. */
+    @Deprecated
+    public Builder addDirectJars(Iterable<String> directJars) {
+      return setDirectJars(ImmutableList.copyOf(directJars));
     }
 
-    public Builder addDirectJars(ImmutableList<String> jars) {
-      this.directJars.addAll(jars);
-      return this;
-    }
+    public abstract Builder setDirectJars(ImmutableList<String> jars);
 
-    public Builder setProfile(String profile) {
-      this.profile = profile;
-      return this;
-    }
+    public abstract Builder setProfile(String profile);
 
-    public Builder setGensrcOutput(String gensrcOutput) {
-      this.gensrcOutput = gensrcOutput;
-      return this;
-    }
+    public abstract Builder setGensrcOutput(String gensrcOutput);
 
-    public Builder setFullClasspathLength(int fullClasspathLength) {
-      this.fullClasspathLength = fullClasspathLength;
-      return this;
-    }
+    public abstract Builder setFullClasspathLength(int fullClasspathLength);
 
-    public Builder setReducedClasspathLength(int reducedClasspathLength) {
-      this.reducedClasspathLength = reducedClasspathLength;
-      return this;
-    }
+    public abstract Builder setReducedClasspathLength(int reducedClasspathLength);
+
+    public abstract TurbineOptions build();
   }
 }

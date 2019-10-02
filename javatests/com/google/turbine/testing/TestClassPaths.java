@@ -67,7 +67,7 @@ public class TestClassPaths {
   public static TurbineOptions.Builder optionsWithBootclasspath() {
     TurbineOptions.Builder options = TurbineOptions.builder();
     if (!BOOTCLASSPATH.isEmpty()) {
-      options.addBootClassPathEntries(
+      options.setBootClassPath(
           BOOTCLASSPATH.stream().map(Path::toString).collect(toImmutableList()));
     } else {
       options.setRelease("8");
