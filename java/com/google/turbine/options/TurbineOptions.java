@@ -206,11 +206,6 @@ public abstract class TurbineOptions {
 
     public abstract Builder setBuiltinProcessors(ImmutableList<String> builtinProcessors);
 
-    // TODO(cushon): remove this when turbine dependency is updated
-    public Builder setTempDir(String tempDir) {
-      return this;
-    }
-
     public abstract Builder setSourceJars(ImmutableList<String> sourceJars);
 
     public abstract Builder setOutputDeps(String outputDeps);
