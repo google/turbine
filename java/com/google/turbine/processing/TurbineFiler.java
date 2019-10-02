@@ -79,7 +79,6 @@ public class TurbineFiler implements Filer {
 
   private final Map<String, SourceFile> generatedSources = new LinkedHashMap<>();
   private final Map<String, byte[]> generatedClasses = new LinkedHashMap<>();
-  private final Map<String, byte[]> generatedResources = new LinkedHashMap<>();
 
   /** Generated source file objects from all rounds. */
   public ImmutableList<SourceFile> generatedSources() {
@@ -89,11 +88,6 @@ public class TurbineFiler implements Filer {
   /** Generated class file objects from all rounds. */
   public ImmutableMap<String, byte[]> generatedClasses() {
     return ImmutableMap.copyOf(generatedClasses);
-  }
-
-  /** Generated resource file objects from all rounds. */
-  public ImmutableMap<String, byte[]> generatedResources() {
-    return ImmutableMap.copyOf(generatedResources);
   }
 
   public TurbineFiler(
@@ -119,7 +113,16 @@ public class TurbineFiler implements Filer {
           generatedClasses.put(path, e.bytes());
           break;
         case OTHER:
-          generatedResources.put(path, e.bytes());
+          switch (e.location()) {
+            case CLASS_OUTPUT:
+              generatedClasses.put(path, e.bytes());
+              break;
+            case SOURCE_OUTPUT:
+              this.generatedSources.put(path, new SourceFile(path, e.contents()));
+              break;
+            default:
+              throw new AssertionError(e.location());
+          }
           break;
         case HTML:
           throw new UnsupportedOperationException(String.valueOf(e.getKind()));
@@ -135,7 +138,7 @@ public class TurbineFiler implements Filer {
       throws IOException {
     String name = n.toString();
     checkArgument(!name.contains("/"), "invalid type name: %s", name);
-    return create(Kind.SOURCE, name.replace('.', '/') + ".java");
+    return create(StandardLocation.SOURCE_OUTPUT, Kind.SOURCE, name.replace('.', '/') + ".java");
   }
 
   @Override
@@ -143,25 +146,28 @@ public class TurbineFiler implements Filer {
       throws IOException {
     String name = n.toString();
     checkArgument(!name.contains("/"), "invalid type name: %s", name);
-    return create(Kind.CLASS, name.replace('.', '/') + ".class");
+    return create(StandardLocation.CLASS_OUTPUT, Kind.CLASS, name.replace('.', '/') + ".class");
   }
 
   @Override
   public FileObject createResource(
       Location location, CharSequence p, CharSequence r, Element... originatingElements)
       throws IOException {
+    checkArgument(location instanceof StandardLocation, "%s", location);
     String pkg = p.toString();
     String relativeName = r.toString();
     checkArgument(!pkg.contains("/"), "invalid package: %s", pkg);
     String path = packageRelativePath(pkg, relativeName);
-    return create(Kind.OTHER, path);
+    return create((StandardLocation) location, Kind.OTHER, path);
   }
 
-  private JavaFileObject create(Kind kind, String path) throws FilerException {
+  private JavaFileObject create(StandardLocation location, Kind kind, String path)
+      throws FilerException {
+    checkArgument(location.isOutputLocation());
     if (!seen.add(path)) {
       throw new FilerException("already created " + path);
     }
-    TurbineJavaFileObject result = new TurbineJavaFileObject(kind, path);
+    TurbineJavaFileObject result = new TurbineJavaFileObject(location, kind, path);
     files.add(result);
     return result;
   }
@@ -270,11 +276,13 @@ public class TurbineFiler implements Filer {
 
   private static class TurbineJavaFileObject extends WriteOnlyFileObject implements JavaFileObject {
 
+    private final StandardLocation location;
     private final Kind kind;
     private final CharSequence name;
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-    public TurbineJavaFileObject(Kind kind, CharSequence name) {
+    public TurbineJavaFileObject(StandardLocation location, Kind kind, CharSequence name) {
+      this.location = location;
       this.kind = kind;
       this.name = name;
     }
@@ -335,6 +343,10 @@ public class TurbineFiler implements Filer {
 
     public String contents() {
       return new String(baos.toByteArray(), UTF_8);
+    }
+
+    public StandardLocation location() {
+      return location;
     }
   }
 

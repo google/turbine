@@ -66,6 +66,7 @@ import com.google.turbine.type.Type;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.processing.Processor;
 
 /** The entry point for analysis. */
 public class Binder {
@@ -526,6 +527,11 @@ public class Binder {
     }
 
     public BindingResult withGeneratedClasses(ImmutableMap<String, byte[]> generatedClasses) {
+      return new BindingResult(
+          units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
+    }
+
+    public BindingResult withGeneratedSources(ImmutableList<SourceFile> generatedSources) {
       return new BindingResult(
           units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
     }

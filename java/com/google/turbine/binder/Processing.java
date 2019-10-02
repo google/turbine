@@ -255,6 +255,9 @@ public class Processing {
       // TODO(cushon): consider handling generated classes after each round
       result = result.withGeneratedClasses(filer.generatedClasses());
     }
+    if (!filer.generatedSources().isEmpty()) {
+      result = result.withGeneratedSources(filer.generatedSources());
+    }
 
     result =
         result.withStatistics(Statistics.create(timers.build(), ImmutableMap.copyOf(statistics)));
