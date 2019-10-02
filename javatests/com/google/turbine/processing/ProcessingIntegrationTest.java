@@ -158,6 +158,7 @@ public class ProcessingIntegrationTest {
               SourceVersion.latestSupported()),
           TestClassPaths.TURBINE_BOOTCLASSPATH,
           Optional.empty());
+      fail();
     } catch (TurbineError e) {
       ImmutableList<String> diags =
           e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
