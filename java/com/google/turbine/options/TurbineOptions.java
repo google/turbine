@@ -232,13 +232,6 @@ public abstract class TurbineOptions {
 
     public abstract Builder setJavacOpts(ImmutableList<String> javacOpts);
 
-    /** @deprecated use {@link #setReducedClasspathMode} instead. */
-    @Deprecated
-    public Builder setShouldReduceClassPath(boolean reduce) {
-      return setReducedClasspathMode(
-          reduce ? ReducedClasspathMode.JAVABUILDER_REDUCED : ReducedClasspathMode.NONE);
-    }
-
     public abstract Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode);
 
     /** @deprecated use {@link #setDirectJars(ImmutableList)} instead. */
