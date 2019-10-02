@@ -35,8 +35,8 @@ public class TransitiveTest extends AbstractTransitiveTest {
     Path out = temporaryFolder.newFolder().toPath().resolve("out.jar");
     Main.compile(
         optionsWithBootclasspath()
-            .addSources(sources.stream().map(Path::toString).collect(toImmutableList()))
-            .addClassPathEntries(classpath.stream().map(Path::toString).collect(toImmutableList()))
+            .setSources(sources.stream().map(Path::toString).collect(toImmutableList()))
+            .setClassPath(classpath.stream().map(Path::toString).collect(toImmutableList()))
             .setOutput(out.toString())
             .build());
     return out;

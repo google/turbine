@@ -70,19 +70,19 @@ public class TurbineOptionsParser {
           readOne(argumentDeque);
           break;
         case "--processors":
-          builder.addProcessors(readList(argumentDeque));
+          builder.setProcessors(readList(argumentDeque));
           break;
         case "--builtin_processors":
-          builder.addBuiltinProcessors(readList(argumentDeque));
+          builder.setBuiltinProcessors(readList(argumentDeque));
           break;
         case "--processorpath":
-          builder.addProcessorPathEntries(readList(argumentDeque));
+          builder.setProcessorPath(readList(argumentDeque));
           break;
         case "--classpath":
-          builder.addClassPathEntries(readList(argumentDeque));
+          builder.setClassPath(readList(argumentDeque));
           break;
         case "--bootclasspath":
-          builder.addBootClassPathEntries(readList(argumentDeque));
+          builder.setBootClassPath(readList(argumentDeque));
           break;
         case "--release":
           builder.setRelease(readOne(argumentDeque));
@@ -94,20 +94,20 @@ public class TurbineOptionsParser {
           {
             ImmutableList<String> javacopts = readJavacopts(argumentDeque);
             setReleaseFromJavacopts(builder, javacopts);
-            builder.addAllJavacOpts(javacopts);
+            builder.setJavacOpts(javacopts);
             break;
           }
         case "--sources":
-          builder.addSources(readList(argumentDeque));
+          builder.setSources(readList(argumentDeque));
           break;
         case "--output_deps":
           builder.setOutputDeps(readOne(argumentDeque));
           break;
         case "--direct_dependencies":
-          builder.addDirectJars(readList(argumentDeque));
+          builder.setDirectJars(readList(argumentDeque));
           break;
         case "--deps_artifacts":
-          builder.addAllDepsArtifacts(readList(argumentDeque));
+          builder.setDepsArtifacts(readList(argumentDeque));
           break;
         case "--target_label":
           builder.setTargetLabel(readOne(argumentDeque));

@@ -86,7 +86,7 @@ public class MainTest {
 
     Main.compile(
         optionsWithBootclasspath()
-            .addSources(ImmutableList.of(src.toString()))
+            .setSources(ImmutableList.of(src.toString()))
             .setOutput(output.toString())
             .build());
 
@@ -149,7 +149,7 @@ public class MainTest {
     Main.compile(
         TurbineOptions.builder()
             .setRelease("9")
-            .addSources(ImmutableList.of(src.toString()))
+            .setSources(ImmutableList.of(src.toString()))
             .setSourceJars(ImmutableList.of(srcjar.toString()))
             .setOutput(output.toString())
             .build());
@@ -168,7 +168,7 @@ public class MainTest {
 
     Main.compile(
         optionsWithBootclasspath()
-            .addSources(ImmutableList.of(src.toString()))
+            .setSources(ImmutableList.of(src.toString()))
             .setTargetLabel("//foo:foo")
             .setInjectingRuleKind("foo_library")
             .setOutput(output.toString())
@@ -195,7 +195,7 @@ public class MainTest {
 
     Main.compile(
         TurbineOptions.builder()
-            .addSources(ImmutableList.of(src.toString()))
+            .setSources(ImmutableList.of(src.toString()))
             .setOutput(output.toString())
             .build());
 
@@ -213,7 +213,7 @@ public class MainTest {
     try {
       Main.compile(
           TurbineOptions.builder()
-              .addSources(ImmutableList.of(src.toString()))
+              .setSources(ImmutableList.of(src.toString()))
               .setOutput(output.toString())
               .build());
       fail();
@@ -228,7 +228,7 @@ public class MainTest {
     MoreFiles.asCharSink(src, UTF_8).write("public class Test {}");
 
     try {
-      Main.compile(optionsWithBootclasspath().addSources(ImmutableList.of(src.toString())).build());
+      Main.compile(optionsWithBootclasspath().setSources(ImmutableList.of(src.toString())).build());
       fail();
     } catch (UsageException expected) {
       assertThat(expected).hasMessageThat().contains("--output is required");
