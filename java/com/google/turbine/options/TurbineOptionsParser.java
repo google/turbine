@@ -94,7 +94,7 @@ public class TurbineOptionsParser {
           {
             ImmutableList<String> javacopts = readJavacopts(argumentDeque);
             setReleaseFromJavacopts(builder, javacopts);
-            builder.setJavacOpts(javacopts);
+            builder.addAllJavacOpts(javacopts);
             break;
           }
         case "--sources":

@@ -262,13 +262,22 @@ public class TurbineOptionsTest {
   @Test
   public void javacopts() throws Exception {
     String[] lines = {
-      "--javacopts", "--release", "9", "--", "--sources", "Test.java",
+      "--javacopts",
+      "--release",
+      "8",
+      "--",
+      "--sources",
+      "Test.java",
+      "--javacopts",
+      "--release",
+      "9",
+      "--",
     };
 
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    assertThat(options.javacOpts()).containsExactly("--release", "9").inOrder();
+    assertThat(options.javacOpts()).containsExactly("--release", "8", "--release", "9").inOrder();
     assertThat(options.sources()).containsExactly("Test.java");
   }
 
