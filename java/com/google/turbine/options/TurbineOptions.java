@@ -142,7 +142,7 @@ public abstract class TurbineOptions {
         .setSourceJars(ImmutableList.of())
         .setDirectJars(ImmutableList.of())
         .setDepsArtifacts(ImmutableList.of())
-        .setJavacOpts(ImmutableList.of())
+        .addAllJavacOpts(ImmutableList.of())
         .setReducedClasspathMode(ReducedClasspathMode.NONE)
         .setHelp(false)
         .setFullClasspathLength(0)
@@ -224,13 +224,12 @@ public abstract class TurbineOptions {
 
     public abstract Builder setHelp(boolean help);
 
-    /** @deprecated use {@link #setJavacOpts(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addAllJavacOpts(Iterable<String> javacOpts) {
-      return setJavacOpts(ImmutableList.copyOf(javacOpts));
-    }
+    abstract ImmutableList.Builder<String> javacOptsBuilder();
 
-    public abstract Builder setJavacOpts(ImmutableList<String> javacOpts);
+    public Builder addAllJavacOpts(Iterable<String> javacOpts) {
+      javacOptsBuilder().addAll(javacOpts);
+      return this;
+    }
 
     public abstract Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode);
 
