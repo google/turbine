@@ -433,7 +433,8 @@ public class ClassReader {
       for (ImmutableList.Builder<AnnotationInfo> x : parameterAnnotationsBuilder) {
         parameterAnnotations.add(x.build());
       }
-      if ((accessFlags & TurbineFlag.ACC_BRIDGE) == TurbineFlag.ACC_BRIDGE) {
+      if ((accessFlags & (TurbineFlag.ACC_BRIDGE | TurbineFlag.ACC_SYNTHETIC)) != 0) {
+        // javac doesn't enter synthetic members for reasons 'lost to history', so we don't either
         continue;
       }
       methods.add(
