@@ -140,6 +140,9 @@ public class TurbineOptionsParser {
         case "--gensrc_output":
           builder.setGensrcOutput(readOne(argumentDeque));
           break;
+        case "--resource_output":
+          builder.setResourceOutput(readOne(argumentDeque));
+          break;
         case "--help":
           builder.setHelp(true);
           break;

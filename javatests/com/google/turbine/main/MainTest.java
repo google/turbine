@@ -231,7 +231,9 @@ public class MainTest {
       Main.compile(optionsWithBootclasspath().setSources(ImmutableList.of(src.toString())).build());
       fail();
     } catch (UsageException expected) {
-      assertThat(expected).hasMessageThat().contains("--output is required");
+      assertThat(expected)
+          .hasMessageThat()
+          .contains("at least one of --output, --gensrc_output, or --resource_output is required");
     }
   }
 }

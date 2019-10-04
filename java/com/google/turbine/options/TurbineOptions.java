@@ -127,6 +127,9 @@ public abstract class TurbineOptions {
   /** An optional path for generated source output. */
   public abstract Optional<String> gensrcOutput();
 
+  /** An optional path for generated resource output. */
+  public abstract Optional<String> resourceOutput();
+
   public abstract int fullClasspathLength();
 
   public abstract int reducedClasspathLength();
@@ -244,6 +247,8 @@ public abstract class TurbineOptions {
     public abstract Builder setProfile(String profile);
 
     public abstract Builder setGensrcOutput(String gensrcOutput);
+
+    public abstract Builder setResourceOutput(String resourceOutput);
 
     public abstract Builder setFullClasspathLength(int fullClasspathLength);
 
