@@ -1,3 +1,3 @@
 # Turbine
 
-Turbine is a header compiler for Java.
+The turbine is a header compiler for Java.
