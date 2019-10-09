@@ -25,7 +25,6 @@ import static com.google.turbine.tree.TurbineModifier.PROTECTED;
 import static com.google.turbine.tree.TurbineModifier.PUBLIC;
 import static com.google.turbine.tree.TurbineModifier.VARARGS;
 
-import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -1006,7 +1005,9 @@ public class Parser {
           break OUTER;
       }
     }
-    Verify.verify(typeAnnos.isEmpty());
+    if (!typeAnnos.isEmpty()) {
+      throw error(token);
+    }
     // the parameter name is `this` for receiver parameters, and a qualified this expression
     // for inner classes
     Ident name = identOrThis();
