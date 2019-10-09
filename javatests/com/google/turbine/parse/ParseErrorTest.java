@@ -245,6 +245,23 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void invalidAnnotation() {
+    String input = "@Foo(x =  @E [] x) class T {}";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              lines(
+                  "<>:1: error: invalid annotation argument", //
+                  "@Foo(x =  @E [] x) class T {}",
+                  "                ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
