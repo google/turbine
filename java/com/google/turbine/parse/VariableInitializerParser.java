@@ -280,6 +280,9 @@ public class VariableInitializerParser {
     int lastType = -1;
     int lastComma = -1;
     for (int i = 0; i < many; i++) {
+      if (ltIndices.isEmpty()) {
+        throw error(ErrorKind.UNEXPECTED_TOKEN, ">");
+      }
       lastType = ltIndices.removeLast();
       lastComma = commaIndices.removeLast();
     }
