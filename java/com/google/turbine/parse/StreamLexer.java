@@ -238,7 +238,9 @@ public class StreamLexer implements Lexer {
           return identifier();
 
         case ASCII_SUB:
-          verify(reader.done());
+          if (!reader.done()) {
+            throw error(ErrorKind.UNEXPECTED_EOF);
+          }
           return Token.EOF;
 
         case '-':
