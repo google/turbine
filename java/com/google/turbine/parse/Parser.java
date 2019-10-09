@@ -943,9 +943,13 @@ public class Parser {
     return ty;
   }
 
-  private static Type extraDims(Type type, Deque<ImmutableList<Anno>> extra) {
+  private Type extraDims(Type type, Deque<ImmutableList<Anno>> extra) {
     if (extra.isEmpty()) {
       return type;
+    }
+    if (type == null) {
+      // trailing dims without a type, e.g. for a constructor declaration
+      throw error(token);
     }
     if (type.kind() == Kind.ARR_TY) {
       ArrTy arrTy = (ArrTy) type;
