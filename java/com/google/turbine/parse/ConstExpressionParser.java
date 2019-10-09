@@ -96,7 +96,7 @@ public class ConstExpressionParser {
     }
   }
 
-  private Tree.Expression primary(boolean negate) {
+  private Tree.@Nullable Expression primary(boolean negate) {
     switch (token) {
       case INT_LITERAL:
         return finishLiteral(TurbineConstantTypeKind.INT, negate);
@@ -563,12 +563,16 @@ public class ConstExpressionParser {
     return new Tree.TypeCast(position, new Tree.PrimTy(position, ImmutableList.of(), ty), rhs);
   }
 
-  private Tree.AnnoExpr annotation() {
+  private Tree.@Nullable AnnoExpr annotation() {
     if (token != Token.AT) {
       throw new AssertionError();
     }
     eat();
-    ImmutableList<Ident> name = ((Tree.ConstVarName) qualIdent()).name();
+    Tree.ConstVarName constVarName = (Tree.ConstVarName) qualIdent();
+    if (constVarName == null) {
+      return null;
+    }
+    ImmutableList<Ident> name = constVarName.name();
     ImmutableList.Builder<Tree.Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {
       eat();
