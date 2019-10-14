@@ -249,7 +249,8 @@ public class Main {
         Processing.initializeProcessors(
             /* javacopts= */ options.javacOpts(),
             /* processorPath= */ options.processorPath(),
-            /* processorNames= */ options.processors()),
+            /* processorNames= */ options.processors(),
+            /* builtinProcessors= */ options.builtinProcessors()),
         bootclasspath,
         /* moduleVersion=*/ Optional.empty());
   }
