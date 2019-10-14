@@ -317,7 +317,8 @@ public class Processing {
   public static ProcessorInfo initializeProcessors(
       ImmutableList<String> javacopts,
       ImmutableList<String> processorPath,
-      ImmutableSet<String> processorNames)
+      ImmutableSet<String> processorNames,
+      ImmutableSet<String> builtinProcessors)
       throws MalformedURLException {
     ClassLoader processorLoader = null;
     ImmutableList.Builder<Processor> processors = ImmutableList.builder();
@@ -333,7 +334,12 @@ public class Processing {
                     if (name.startsWith("com.sun.source.")
                         || name.startsWith("com.sun.tools.")
                         || name.startsWith("com.google.common.collect.")
-                        || name.startsWith("com.google.common.base.")) {
+                        || name.startsWith("com.google.common.base.")
+                        || name.startsWith("com.google.common.graph.")
+                        || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
+                        || name.startsWith("dagger.model.")
+                        || name.startsWith("dagger.spi.")
+                        || builtinProcessors.contains(name)) {
                       return Class.forName(name);
                     }
                     throw new ClassNotFoundException(name);
