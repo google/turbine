@@ -290,6 +290,7 @@ public class Canonicalize {
         return instantiateWildTy(mapping, (WildTy) type);
       case PRIM_TY:
       case VOID_TY:
+      case ERROR_TY:
         return type;
       case CLASS_TY:
         return instantiateClassTy(mapping, (ClassTy) type);
