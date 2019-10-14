@@ -142,7 +142,8 @@ public class ImportIndex implements ImportScope {
       TurbineLogWithSource log, TopLevelIndex cpi, ImportDecl i) {
     LookupResult base = cpi.scope().lookup(new LookupKey(i.type()));
     if (base == null) {
-      log.error(i.position(), ErrorKind.SYMBOL_NOT_FOUND, Joiner.on(".").join(i.type()));
+      log.error(
+          i.position(), ErrorKind.SYMBOL_NOT_FOUND, new ClassSymbol(Joiner.on("/").join(i.type())));
       return null;
     }
     return new ImportScope() {
