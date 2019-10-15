@@ -332,6 +332,7 @@ public class Main {
       for (SourceFile source : generatedSources) {
         addEntry(jos, source.path(), source.source().getBytes(UTF_8));
       }
+      writeManifest(jos, manifest());
     }
   }
 
@@ -375,8 +376,7 @@ public class Main {
             jos, ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ".class", entry.getValue());
       }
       if (options.targetLabel().isPresent()) {
-        addEntry(jos, MANIFEST_DIR, new byte[] {});
-        addEntry(jos, MANIFEST_NAME, manifestContent(options));
+        writeManifest(jos, manifest(options));
       }
     }
   }
@@ -399,7 +399,15 @@ public class Main {
     jos.write(bytes);
   }
 
-  private static byte[] manifestContent(TurbineOptions turbineOptions) throws IOException {
+  private static void writeManifest(JarOutputStream jos, Manifest manifest) throws IOException {
+    addEntry(jos, MANIFEST_DIR, new byte[] {});
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    manifest.write(out);
+    addEntry(jos, MANIFEST_NAME, out.toByteArray());
+  }
+
+  /** Creates a default {@link Manifest}. */
+  private static Manifest manifest() {
     Manifest manifest = new Manifest();
     Attributes attributes = manifest.getMainAttributes();
     attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
@@ -407,15 +415,20 @@ public class Main {
     if (attributes.getValue(createdBy) == null) {
       attributes.put(createdBy, "bazel");
     }
+    return manifest;
+  }
+
+  /** Creates a {@link Manifest} that includes the target label and injecting rule kind. */
+  private static Manifest manifest(TurbineOptions turbineOptions) {
+    Manifest manifest = manifest();
+    Attributes attributes = manifest.getMainAttributes();
     if (turbineOptions.targetLabel().isPresent()) {
       attributes.put(TARGET_LABEL, turbineOptions.targetLabel().get());
     }
     if (turbineOptions.injectingRuleKind().isPresent()) {
       attributes.put(INJECTING_RULE_KIND, turbineOptions.injectingRuleKind().get());
     }
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    manifest.write(out);
-    return out.toByteArray();
+    return manifest;
   }
 
   private static ImmutableList<Path> toPaths(Iterable<String> paths) {
