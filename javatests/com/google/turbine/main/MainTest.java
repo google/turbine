@@ -17,7 +17,9 @@
 package com.google.turbine.main;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
@@ -40,6 +42,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -165,6 +168,7 @@ public class MainTest {
     MoreFiles.asCharSink(src, UTF_8).write("class Foo {}");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path gensrcOutput = temporaryFolder.newFile("gensrcOutput.jar").toPath();
 
     Main.compile(
         optionsWithBootclasspath()
@@ -172,16 +176,37 @@ public class MainTest {
             .setTargetLabel("//foo:foo")
             .setInjectingRuleKind("foo_library")
             .setOutput(output.toString())
+            .setGensrcOutput(gensrcOutput.toString())
             .build());
 
     try (JarFile jarFile = new JarFile(output.toFile())) {
+      try (Stream<JarEntry> entries = jarFile.stream()) {
+        assertThat(entries.map(JarEntry::getName))
+            .containsAtLeast("META-INF/", "META-INF/MANIFEST.MF");
+      }
       Manifest manifest = jarFile.getManifest();
       Attributes attributes = manifest.getMainAttributes();
-      assertThat(attributes.getValue("Target-Label")).isEqualTo("//foo:foo");
-      assertThat(attributes.getValue("Injecting-Rule-Kind")).isEqualTo("foo_library");
+      assertThat(
+              attributes.entrySet().stream()
+                  .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue)))
+          .containsExactly(
+              "Created-By", "bazel",
+              "Manifest-Version", "1.0",
+              "Target-Label", "//foo:foo",
+              "Injecting-Rule-Kind", "foo_library");
       assertThat(jarFile.getEntry(JarFile.MANIFEST_NAME).getLastModifiedTime().toInstant())
           .isEqualTo(
               LocalDateTime.of(2010, 1, 1, 0, 0, 0).atZone(ZoneId.systemDefault()).toInstant());
+    }
+    try (JarFile jarFile = new JarFile(gensrcOutput.toFile())) {
+      Manifest manifest = jarFile.getManifest();
+      Attributes attributes = manifest.getMainAttributes();
+      assertThat(
+              attributes.entrySet().stream()
+                  .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue)))
+          .containsExactly(
+              "Created-By", "bazel",
+              "Manifest-Version", "1.0");
     }
   }
 
