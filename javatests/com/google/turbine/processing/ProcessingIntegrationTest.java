@@ -17,14 +17,15 @@
 package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.MoreCollectors;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -37,6 +38,7 @@ import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.Optional;
@@ -248,10 +250,98 @@ public class ProcessingIntegrationTest {
     assertThat(
             bound.generatedSources().stream()
                 .filter(s -> s.path().equals("source.txt"))
-                .collect(MoreCollectors.onlyElement())
+                .collect(onlyElement())
                 .source())
         .isEqualTo("hello source output");
     assertThat(new String(bound.generatedClasses().get("class.txt"), UTF_8))
         .isEqualTo("hello class output");
+  }
+
+  @Test
+  public void getAllAnnotations() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        IntegrationTestSupport.TestInput.parse(
+                Joiner.on('\n')
+                    .join(
+                        "=== A.java ===", //
+                        "import java.lang.annotation.Inherited;",
+                        "@Inherited",
+                        "@interface A {}",
+                        "=== B.java ===", //
+                        "@interface B {}",
+                        "=== One.java ===", //
+                        "@A @B class One {}",
+                        "=== Two.java ===", //
+                        "class Two extends One {}"))
+            .sources
+            .entrySet()
+            .stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+    BindingResult bound =
+        Binder.bind(
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ProcessorInfo.create(
+                ImmutableList.of(new ElementsAnnotatedWithProcessor()),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+
+    assertThat(
+            new String(
+                bound.generatedClasses().entrySet().stream()
+                    .filter(s -> s.getKey().equals("output.txt"))
+                    .collect(onlyElement())
+                    .getValue(),
+                UTF_8))
+        .isEqualTo("A: One, Two\nB: One\n");
+  }
+
+  @SupportedAnnotationTypes("*")
+  private static class ElementsAnnotatedWithProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (first) {
+        try (PrintWriter writer =
+            new PrintWriter(
+                processingEnv
+                    .getFiler()
+                    .createResource(StandardLocation.CLASS_OUTPUT, "", "output.txt")
+                    .openWriter(),
+                /* autoFlush= */ true)) {
+          printAnnotatedElements(roundEnv, writer, "A");
+          printAnnotatedElements(roundEnv, writer, "B");
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        first = false;
+      }
+      return false;
+    }
+
+    private void printAnnotatedElements(
+        RoundEnvironment roundEnv, PrintWriter writer, String annotation) {
+      writer.println(
+          annotation
+              + ": "
+              + roundEnv
+                  .getElementsAnnotatedWith(
+                      processingEnv.getElementUtils().getTypeElement(annotation))
+                  .stream()
+                  .map(e -> e.getSimpleName().toString())
+                  .collect(joining(", ")));
+    }
   }
 }
