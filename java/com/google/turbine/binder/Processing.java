@@ -63,6 +63,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -287,6 +288,9 @@ public class Processing {
           addAnno(result, annoInfo, sym);
         }
       }
+      for (ClassSymbol inheritedAnno : inheritedAnnotations(info.superclass(), env)) {
+        result.put(inheritedAnno, sym);
+      }
       for (TypeBoundClass.MethodInfo method : info.methods()) {
         for (AnnoInfo annoInfo : method.annotations()) {
           addAnno(result, annoInfo, method.sym());
@@ -304,6 +308,44 @@ public class Processing {
       }
     }
     return result.build();
+  }
+
+  // TODO(cushon): consider memoizing this (or isAnnotationInherited) if they show up in profiles
+  private static Set<ClassSymbol> inheritedAnnotations(
+      ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env) {
+    ImmutableSet.Builder<ClassSymbol> result = ImmutableSet.builder();
+    ClassSymbol curr = sym;
+    while (curr != null) {
+      TypeBoundClass info = env.get(curr);
+      if (info == null) {
+        break;
+      }
+      for (AnnoInfo anno : info.annotations()) {
+        ClassSymbol annoSym = anno.sym();
+        if (annoSym == null) {
+          continue;
+        }
+        if (isAnnotationInherited(env, annoSym)) {
+          result.add(annoSym);
+        }
+      }
+      curr = info.superclass();
+    }
+    return result.build();
+  }
+
+  private static boolean isAnnotationInherited(
+      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
+    TypeBoundClass annoInfo = env.get(sym);
+    if (annoInfo == null) {
+      return false;
+    }
+    for (AnnoInfo anno : annoInfo.annotations()) {
+      if (Objects.equals(anno.sym(), ClassSymbol.INHERITED)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static void addAnno(
