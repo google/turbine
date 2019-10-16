@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder;
@@ -292,13 +293,16 @@ public class ProcessingIntegrationTest {
             Optional.empty());
 
     assertThat(
-            new String(
-                bound.generatedClasses().entrySet().stream()
-                    .filter(s -> s.getKey().equals("output.txt"))
-                    .collect(onlyElement())
-                    .getValue(),
-                UTF_8))
-        .isEqualTo("A: One, Two\nB: One\n");
+            Splitter.on(System.lineSeparator())
+                .omitEmptyStrings()
+                .split(
+                    new String(
+                        bound.generatedClasses().entrySet().stream()
+                            .filter(s -> s.getKey().equals("output.txt"))
+                            .collect(onlyElement())
+                            .getValue(),
+                        UTF_8)))
+        .containsExactly("A: One, Two", "B: One");
   }
 
   @SupportedAnnotationTypes("*")
