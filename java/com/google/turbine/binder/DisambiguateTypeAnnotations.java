@@ -307,7 +307,8 @@ public class DisambiguateTypeAnnotations {
   // TODO(b/142002426): kill this with fire
   static boolean isKotlinRepeatable(TypeBoundClass info) {
     for (AnnoInfo metaAnno : info.annotations()) {
-      if (metaAnno.sym().binaryName().equals("kotlin/annotation/Repeatable")) {
+      if (metaAnno.sym() != null
+          && metaAnno.sym().binaryName().equals("kotlin/annotation/Repeatable")) {
         return true;
       }
     }
