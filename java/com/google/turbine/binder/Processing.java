@@ -288,7 +288,8 @@ public class Processing {
           addAnno(result, annoInfo, sym);
         }
       }
-      for (ClassSymbol inheritedAnno : inheritedAnnotations(info.superclass(), env)) {
+      for (ClassSymbol inheritedAnno :
+          inheritedAnnotations(new HashSet<>(), info.superclass(), env)) {
         result.put(inheritedAnno, sym);
       }
       for (TypeBoundClass.MethodInfo method : info.methods()) {
@@ -312,10 +313,10 @@ public class Processing {
 
   // TODO(cushon): consider memoizing this (or isAnnotationInherited) if they show up in profiles
   private static Set<ClassSymbol> inheritedAnnotations(
-      ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env) {
+      Set<ClassSymbol> seen, ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableSet.Builder<ClassSymbol> result = ImmutableSet.builder();
     ClassSymbol curr = sym;
-    while (curr != null) {
+    while (curr != null && seen.add(curr)) {
       TypeBoundClass info = env.get(curr);
       if (info == null) {
         break;
