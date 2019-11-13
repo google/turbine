@@ -279,6 +279,9 @@ public class DisambiguateTypeAnnotations {
           elements.add(new TurbineAnnotationValue(element));
         }
         TypeBoundClass info = env.get(symbol);
+        if (info == null || info.annotationMetadata() == null) {
+          continue;
+        }
         ClassSymbol container = info.annotationMetadata().repeatable();
         if (container == null) {
           if (isKotlinRepeatable(info)) {
