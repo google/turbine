@@ -1007,6 +1007,9 @@ public strictfp class ConstEvaluator {
     }
     switch (ty.tyKind()) {
       case PRIM_TY:
+        if (!(value instanceof Const.Value)) {
+          throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
+        }
         return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
       case CLASS_TY:
       case TY_VAR:

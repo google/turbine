@@ -650,6 +650,23 @@ public class BinderErrorTest {
           "          ^",
         },
       },
+      {
+        {
+          "@interface Anno {",
+          "  int value();",
+          "}",
+          "enum E {",
+          "  ONE",
+          "}",
+          "@Anno(value = E.ONE)",
+          "interface Test {}",
+        },
+        {
+          "<>:7: error: could not evaluate constant expression", //
+          "@Anno(value = E.ONE)",
+          "              ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
