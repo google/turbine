@@ -256,9 +256,6 @@ public class Main {
   }
 
   private static void usage(TurbineOptions options) {
-    if (options.sources().isEmpty() && options.sourceJars().isEmpty()) {
-      throw new UsageException("no sources were provided");
-    }
     if (options.help()) {
       throw new UsageException();
     }
