@@ -29,6 +29,7 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.options.TurbineOptions;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -259,6 +260,20 @@ public class MainTest {
       assertThat(expected)
           .hasMessageThat()
           .contains("at least one of --output, --gensrc_output, or --resource_output is required");
+    }
+  }
+
+  @Test
+  public void noSources() throws IOException {
+    // Compilations with no sources (or source jars) are accepted, and create empty for requested
+    // outputs. This is helpful for the Bazel integration, which allows java_library rules to be
+    // declared without sources.
+    File gensrc = temporaryFolder.newFile("gensrc.jar");
+    Main.compile(optionsWithBootclasspath().setGensrcOutput(gensrc.toString()).build());
+    try (JarFile jarFile = new JarFile(gensrc);
+        Stream<JarEntry> entries = jarFile.stream()) {
+      assertThat(entries.map(JarEntry::getName))
+          .containsExactly("META-INF/", "META-INF/MANIFEST.MF");
     }
   }
 }
