@@ -20,17 +20,25 @@ import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
+import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.options.TurbineOptions;
+import com.google.turbine.proto.ManifestProto;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -38,12 +46,18 @@ import java.time.ZoneId;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -187,9 +201,10 @@ public class MainTest {
       }
       Manifest manifest = jarFile.getManifest();
       Attributes attributes = manifest.getMainAttributes();
-      assertThat(
-              attributes.entrySet().stream()
-                  .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue)))
+      ImmutableMap<String, ?> entries =
+          attributes.entrySet().stream()
+              .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue));
+      assertThat(entries)
           .containsExactly(
               "Created-By", "bazel",
               "Manifest-Version", "1.0",
@@ -202,9 +217,10 @@ public class MainTest {
     try (JarFile jarFile = new JarFile(gensrcOutput.toFile())) {
       Manifest manifest = jarFile.getManifest();
       Attributes attributes = manifest.getMainAttributes();
-      assertThat(
-              attributes.entrySet().stream()
-                  .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue)))
+      ImmutableMap<String, ?> entries =
+          attributes.entrySet().stream()
+              .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue));
+      assertThat(entries)
           .containsExactly(
               "Created-By", "bazel",
               "Manifest-Version", "1.0");
@@ -275,5 +291,78 @@ public class MainTest {
       assertThat(entries.map(JarEntry::getName))
           .containsExactly("META-INF/", "META-INF/MANIFEST.MF");
     }
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class SourceGeneratingProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (first) {
+        try (Writer writer = processingEnv.getFiler().createSourceFile("g.Gen").openWriter()) {
+          writer.write("package g; class Gen {}");
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        first = false;
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void testManifestProto() throws IOException {
+    Path src = temporaryFolder.newFile("Foo.java").toPath();
+    MoreFiles.asCharSink(src, UTF_8).write("package f; @Deprecated class Foo {}");
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path gensrcOutput = temporaryFolder.newFile("gensrcOutput.jar").toPath();
+    Path manifestProtoOutput = temporaryFolder.newFile("manifest.proto").toPath();
+
+    Main.compile(
+        optionsWithBootclasspath()
+            .setSources(ImmutableList.of(src.toString()))
+            .setTargetLabel("//foo:foo")
+            .setInjectingRuleKind("foo_library")
+            .setOutput(output.toString())
+            .setGensrcOutput(gensrcOutput.toString())
+            .setOutputManifest(manifestProtoOutput.toString())
+            .setProcessors(ImmutableList.of(SourceGeneratingProcessor.class.getName()))
+            .build());
+
+    assertThat(readManifestProto(manifestProtoOutput))
+        .isEqualTo(
+            ManifestProto.Manifest.newBuilder()
+                .addCompilationUnit(
+                    ManifestProto.CompilationUnit.newBuilder()
+                        .setPkg("f")
+                        .addTopLevel("Foo")
+                        .setPath(src.toString())
+                        .setGeneratedByAnnotationProcessor(false)
+                        .build())
+                .addCompilationUnit(
+                    ManifestProto.CompilationUnit.newBuilder()
+                        .setPkg("g")
+                        .addTopLevel("Gen")
+                        .setPath("g/Gen.java")
+                        .setGeneratedByAnnotationProcessor(true)
+                        .build())
+                .build());
+  }
+
+  private static ManifestProto.Manifest readManifestProto(Path manifestProtoOutput)
+      throws IOException {
+    ManifestProto.Manifest.Builder manifest = ManifestProto.Manifest.newBuilder();
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(manifestProtoOutput))) {
+      manifest.mergeFrom(is, ExtensionRegistry.getEmptyRegistry());
+    }
+    return manifest.build();
   }
 }
