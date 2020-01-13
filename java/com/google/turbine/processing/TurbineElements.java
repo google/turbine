@@ -35,6 +35,7 @@ import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.type.AnnoInfo;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.List;
@@ -341,7 +342,10 @@ public class TurbineElements implements Elements {
 
   @Override
   public void printElements(Writer w, Element... elements) {
-    throw new UnsupportedOperationException();
+    PrintWriter pw = new PrintWriter(w, true);
+    for (Element element : elements) {
+      pw.println(element.toString());
+    }
   }
 
   @Override
