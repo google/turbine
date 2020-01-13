@@ -33,6 +33,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.testing.TestClassPaths;
 import com.sun.source.util.JavacTask;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -334,5 +335,19 @@ public class TurbineElementsTest {
                         turbineElements.getTypeElement("com.pkg.A.I").getEnclosedElements()))
                 .getParameters())
         .isEmpty();
+  }
+
+  @Test
+  public void printElements() {
+    StringWriter w = new StringWriter();
+    turbineElements.printElements(
+        w,
+        turbineElements.getTypeElement("com.pkg.A"),
+        turbineElements.getTypeElement("com.pkg.A.I"));
+    assertThat(w.toString()).isEqualTo(lines("com.pkg.A", "com.pkg.A.I"));
+  }
+
+  private String lines(String... lines) {
+    return Joiner.on(System.lineSeparator()).join(lines) + System.lineSeparator();
   }
 }
