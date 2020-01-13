@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.turbine.diag.SourceFile;
@@ -81,8 +80,8 @@ public class TurbineFiler implements Filer {
   private final Map<String, byte[]> generatedClasses = new LinkedHashMap<>();
 
   /** Generated source file objects from all rounds. */
-  public ImmutableList<SourceFile> generatedSources() {
-    return ImmutableList.copyOf(generatedSources.values());
+  public ImmutableMap<String, SourceFile> generatedSources() {
+    return ImmutableMap.copyOf(generatedSources);
   }
 
   /** Generated class file objects from all rounds. */

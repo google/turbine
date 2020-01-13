@@ -244,15 +244,10 @@ public class ProcessingIntegrationTest {
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
-    assertThat(bound.generatedSources().stream().map(s -> s.path()).collect(toImmutableList()))
-        .containsExactly("Gen.java", "source.txt");
+    assertThat(bound.generatedSources().keySet()).containsExactly("Gen.java", "source.txt");
     assertThat(bound.generatedClasses().keySet()).containsExactly("class.txt");
 
-    assertThat(
-            bound.generatedSources().stream()
-                .filter(s -> s.path().equals("source.txt"))
-                .collect(onlyElement())
-                .source())
+    assertThat(bound.generatedSources().get("source.txt").source())
         .isEqualTo("hello source output");
     assertThat(new String(bound.generatedClasses().get("class.txt"), UTF_8))
         .isEqualTo("hello class output");

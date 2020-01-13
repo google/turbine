@@ -103,6 +103,9 @@ public class TurbineOptionsParser {
         case "--output_deps":
           builder.setOutputDeps(readOne(argumentDeque));
           break;
+        case "--output_manifest_proto":
+          builder.setOutputManifest(readOne(argumentDeque));
+          break;
         case "--direct_dependencies":
           builder.setDirectJars(readList(argumentDeque));
           break;

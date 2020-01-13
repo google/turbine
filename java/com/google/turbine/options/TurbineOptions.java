@@ -96,6 +96,9 @@ public abstract class TurbineOptions {
   /** Output jdeps file. */
   public abstract Optional<String> outputDeps();
 
+  /** Output manifest file. */
+  public abstract Optional<String> outputManifest();
+
   /** The direct dependencies. */
   public abstract ImmutableSet<String> directJars();
 
@@ -212,6 +215,8 @@ public abstract class TurbineOptions {
     public abstract Builder setSourceJars(ImmutableList<String> sourceJars);
 
     public abstract Builder setOutputDeps(String outputDeps);
+
+    public abstract Builder setOutputManifest(String outputManifest);
 
     public abstract Builder setTargetLabel(String targetLabel);
 
