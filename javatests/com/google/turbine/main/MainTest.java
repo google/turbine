@@ -54,6 +54,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
@@ -364,5 +365,40 @@ public class MainTest {
       manifest.mergeFrom(is, ExtensionRegistry.getEmptyRegistry());
     }
     return manifest.build();
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class CrashyProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+      throw new AssertionError();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      return false;
+    }
+  }
+
+  @Test
+  public void noSourcesProcessing() throws IOException {
+    // Compilations with no sources shouldn't initialize annotation processors.
+    File gensrc = temporaryFolder.newFile("gensrc.jar");
+    Main.compile(
+        optionsWithBootclasspath()
+            .setProcessors(ImmutableList.of(CrashyProcessor.class.getName()))
+            .setGensrcOutput(gensrc.toString())
+            .build());
+    try (JarFile jarFile = new JarFile(gensrc);
+        Stream<JarEntry> entries = jarFile.stream()) {
+      assertThat(entries.map(JarEntry::getName))
+          .containsExactly("META-INF/", "META-INF/MANIFEST.MF");
+    }
   }
 }

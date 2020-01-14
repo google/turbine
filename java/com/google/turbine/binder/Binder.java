@@ -97,7 +97,7 @@ public class Binder {
             classpath,
             bootclasspath,
             moduleVersion);
-    if (!processorInfo.processors().isEmpty()) {
+    if (!processorInfo.processors().isEmpty() && !units.isEmpty()) {
       br =
           Processing.process(
               log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
