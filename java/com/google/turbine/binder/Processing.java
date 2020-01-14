@@ -383,6 +383,7 @@ public class Processing {
                         || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
                         || name.startsWith("dagger.model.")
                         || name.startsWith("dagger.spi.")
+                        || name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
                         || builtinProcessors.contains(name)) {
                       return Class.forName(name);
                     }
