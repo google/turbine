@@ -16,6 +16,7 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -455,11 +456,11 @@ public class IntegrationTestSupport {
       ClassPath bootClassPath,
       Optional<String> moduleVersion)
       throws IOException {
-    List<CompUnit> units =
+    ImmutableList<CompUnit> units =
         input.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
-            .collect(toList());
+            .collect(toImmutableList());
 
     return Binder.bind(
         units, ClassPathBinder.bindClasspath(classpath), bootClassPath, moduleVersion);

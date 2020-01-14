@@ -19,7 +19,6 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -260,11 +259,11 @@ public class TurbineElementsGetAllMembersTest {
     List<? extends Element> javacMembers =
         javacElements.getAllMembers(requireNonNull(javacElements.getTypeElement("Test")));
 
-    List<CompUnit> units =
+    ImmutableList<CompUnit> units =
         input.sources.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
-            .collect(toList());
+            .collect(toImmutableList());
 
     Binder.BindingResult bound =
         Binder.bind(
