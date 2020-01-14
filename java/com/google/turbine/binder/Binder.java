@@ -64,7 +64,6 @@ import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.type.Type;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import javax.annotation.processing.Processor;
 
@@ -73,7 +72,7 @@ public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static BindingResult bind(
-      List<CompUnit> units,
+      ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
       Optional<String> moduleVersion) {
@@ -82,7 +81,7 @@ public class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static BindingResult bind(
-      List<CompUnit> units,
+      ImmutableList<CompUnit> units,
       ClassPath classpath,
       ProcessorInfo processorInfo,
       ClassPath bootclasspath,
@@ -108,7 +107,7 @@ public class Binder {
 
   static BindingResult bind(
       TurbineLog log,
-      List<CompUnit> units,
+      ImmutableList<CompUnit> units,
       ImmutableMap<String, SourceFile> generatedSources,
       ImmutableMap<String, byte[]> generatedClasses,
       ClassPath classpath,

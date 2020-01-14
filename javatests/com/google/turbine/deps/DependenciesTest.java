@@ -39,7 +39,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +86,7 @@ public class DependenciesTest {
 
   static class DepsBuilder {
     List<Path> classpath;
-    List<CompUnit> units = new ArrayList<>();
+    ImmutableList.Builder<CompUnit> units = ImmutableList.builder();
 
     DepsBuilder setClasspath(Path... classpath) {
       this.classpath = ImmutableList.copyOf(classpath);
@@ -102,7 +101,7 @@ public class DependenciesTest {
     DepsProto.Dependencies run() throws IOException {
       BindingResult bound =
           Binder.bind(
-              units,
+              units.build(),
               ClassPathBinder.bindClasspath(classpath),
               TestClassPaths.TURBINE_BOOTCLASSPATH,
               /* moduleVersion=*/ Optional.empty());

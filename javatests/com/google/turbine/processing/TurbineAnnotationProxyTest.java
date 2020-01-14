@@ -18,7 +18,6 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -49,7 +48,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -138,11 +136,11 @@ public class TurbineAnnotationProxyTest {
                     "class Test extends Super {}",
                     ""));
 
-    List<CompUnit> units =
+    ImmutableList<CompUnit> units =
         input.sources.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
-            .collect(toList());
+            .collect(toImmutableList());
 
     Binder.BindingResult bound =
         Binder.bind(

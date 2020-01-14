@@ -78,7 +78,7 @@ public class Processing {
 
   static BindingResult process(
       TurbineLog log,
-      final List<CompUnit> initialSources,
+      final ImmutableList<CompUnit> initialSources,
       final ClassPath classpath,
       ProcessorInfo processorInfo,
       ClassPath bootclasspath,
@@ -147,7 +147,8 @@ public class Processing {
 
     Set<ClassSymbol> allSymbols = new HashSet<>();
 
-    List<CompUnit> units = new ArrayList<>(initialSources);
+    ImmutableList.Builder<CompUnit> units =
+        ImmutableList.<CompUnit>builder().addAll(initialSources);
 
     Set<Processor> toRun = new LinkedHashSet<>();
 
@@ -202,7 +203,7 @@ public class Processing {
       result =
           Binder.bind(
               log,
-              units,
+              units.build(),
               filer.generatedSources(),
               filer.generatedClasses(),
               classpath,
@@ -242,7 +243,7 @@ public class Processing {
       result =
           Binder.bind(
               log,
-              units,
+              units.build(),
               filer.generatedSources(),
               filer.generatedClasses(),
               classpath,
