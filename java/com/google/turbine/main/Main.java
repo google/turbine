@@ -353,9 +353,7 @@ public class Main {
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {
       for (Map.Entry<String, byte[]> resource : generatedResources.entrySet()) {
-        if (!resource.getKey().endsWith(".class")) {
-          addEntry(jos, resource.getKey(), resource.getValue());
-        }
+        addEntry(jos, resource.getKey(), resource.getValue());
       }
     }
   }

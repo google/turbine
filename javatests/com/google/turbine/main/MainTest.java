@@ -37,6 +37,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -64,6 +65,9 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 @RunWith(JUnit4.class)
 public class MainTest {
@@ -399,6 +403,72 @@ public class MainTest {
         Stream<JarEntry> entries = jarFile.stream()) {
       assertThat(entries.map(JarEntry::getName))
           .containsExactly("META-INF/", "META-INF/MANIFEST.MF");
+    }
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class ClassGeneratingProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (first) {
+        try (OutputStream outputStream =
+            processingEnv.getFiler().createClassFile("g.Gen").openOutputStream()) {
+          outputStream.write(dump());
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        first = false;
+      }
+      return false;
+    }
+
+    public static byte[] dump() {
+      ClassWriter classWriter = new ClassWriter(0);
+      classWriter.visit(
+          Opcodes.V1_8,
+          Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
+          "g/Gen",
+          null,
+          "java/lang/Object",
+          null);
+      {
+        MethodVisitor methodVisitor =
+            classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        methodVisitor.visitCode();
+        methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+        methodVisitor.visitMethodInsn(
+            Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        methodVisitor.visitInsn(Opcodes.RETURN);
+        methodVisitor.visitMaxs(1, 1);
+        methodVisitor.visitEnd();
+      }
+      classWriter.visitEnd();
+      return classWriter.toByteArray();
+    }
+  }
+
+  @Test
+  public void classGeneration() throws IOException {
+    Path src = temporaryFolder.newFile("package-info.jar").toPath();
+    MoreFiles.asCharSink(src, UTF_8).write("@Deprecated package test;");
+    File resources = temporaryFolder.newFile("resources.jar");
+    Main.compile(
+        optionsWithBootclasspath()
+            .setProcessors(ImmutableList.of(ClassGeneratingProcessor.class.getName()))
+            .setSources(ImmutableList.of(src.toString()))
+            .setResourceOutput(resources.toString())
+            .build());
+    try (JarFile jarFile = new JarFile(resources);
+        Stream<JarEntry> entries = jarFile.stream()) {
+      assertThat(entries.map(JarEntry::getName)).containsExactly("g/Gen.class");
     }
   }
 }
