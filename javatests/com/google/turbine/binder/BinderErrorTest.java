@@ -425,6 +425,9 @@ public class BinderErrorTest {
           "}",
         },
         {
+          "<>:1: error: cycle in class hierarchy: Cycle",
+          "class Cycle extends Cycle {",
+          "                    ^",
           "<>:2: error: could not resolve NoSuch", //
           "  NoSuch f;",
           "  ^",
@@ -665,6 +668,24 @@ public class BinderErrorTest {
           "<>:7: error: could not evaluate constant expression", //
           "@Anno(value = E.ONE)",
           "              ^",
+        },
+      },
+      {
+        {
+          "class T extends T {}",
+        },
+        {
+          "<>:1: error: cycle in class hierarchy: T", "class T extends T {}", "                ^",
+        },
+      },
+      {
+        {
+          "class T implements T {}",
+        },
+        {
+          "<>:1: error: cycle in class hierarchy: T",
+          "class T implements T {}",
+          "                   ^",
         },
       },
     };

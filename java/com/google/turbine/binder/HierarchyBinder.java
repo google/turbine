@@ -69,6 +69,9 @@ public class HierarchyBinder {
     ClassSymbol superclass;
     if (decl.xtnds().isPresent()) {
       superclass = resolveClass(decl.xtnds().get());
+      if (origin.equals(superclass)) {
+        log.error(decl.xtnds().get().position(), ErrorKind.CYCLIC_HIERARCHY, origin);
+      }
     } else {
       switch (decl.tykind()) {
         case ENUM:
@@ -90,6 +93,9 @@ public class HierarchyBinder {
         ClassSymbol result = resolveClass(i);
         if (result == null) {
           continue;
+        }
+        if (origin.equals(result)) {
+          log.error(i.position(), ErrorKind.CYCLIC_HIERARCHY, origin);
         }
         interfaces.add(result);
       }
