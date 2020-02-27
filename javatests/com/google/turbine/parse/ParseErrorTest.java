@@ -262,6 +262,23 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void unclosedComment() {
+    String input = "/** *\u001a/ class Test {}";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unclosed comment", //
+                  "/** *\u001a/ class Test {}",
+                  "^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
