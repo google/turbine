@@ -49,6 +49,7 @@ public class TurbineError extends Error {
     NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
     DUPLICATE_DECLARATION("duplicate declaration of %s"),
     BAD_MODULE_INFO("unexpected declaration found in module-info"),
+    UNCLOSED_COMMENT("unclosed comment"),
     PROC("%s");
 
     private final String message;

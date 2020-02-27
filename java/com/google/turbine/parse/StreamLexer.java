@@ -162,9 +162,11 @@ public class StreamLexer implements Lexer {
                       break;
                     case ASCII_SUB:
                       if (reader.done()) {
-                        return Token.EOF;
+                        throw TurbineError.format(
+                            reader.source(), position, ErrorKind.UNCLOSED_COMMENT);
                       }
                       eat();
+                      sawStar = false;
                       break;
                     default:
                       eat();
