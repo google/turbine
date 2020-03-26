@@ -688,6 +688,18 @@ public class BinderErrorTest {
           "                   ^",
         },
       },
+      {
+        {
+          "class T {", //
+          "  static final String s = \"a\" + + \"b\";",
+          "}",
+        },
+        {
+          "<>:2: error: bad operand type String",
+          "  static final String s = \"a\" + + \"b\";",
+          "                                     ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
