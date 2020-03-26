@@ -44,6 +44,7 @@ public class TurbineError extends Error {
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
     CANNOT_RESOLVE("could not resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
+    OPERAND_TYPE("bad operand type %s"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),
     NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
