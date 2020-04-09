@@ -129,14 +129,14 @@ public class LowerSignature {
    */
   public String methodSignature(
       Env<ClassSymbol, TypeBoundClass> env,
-      SourceTypeBoundClass.MethodInfo method,
+      TypeBoundClass.MethodInfo method,
       ClassSymbol sym) {
     if (!needsMethodSig(sym, env, method)) {
       return null;
     }
     ImmutableList<Sig.TyParamSig> typarams = tyParamSig(method.tyParams(), env);
     ImmutableList.Builder<Sig.TySig> fparams = ImmutableList.builder();
-    for (SourceTypeBoundClass.ParamInfo t : method.parameters()) {
+    for (TypeBoundClass.ParamInfo t : method.parameters()) {
       if (t.synthetic()) {
         continue;
       }
@@ -161,7 +161,7 @@ public class LowerSignature {
   }
 
   private boolean needsMethodSig(
-      ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env, SourceTypeBoundClass.MethodInfo m) {
+      ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env, TypeBoundClass.MethodInfo m) {
     if ((env.get(sym).access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM
         && m.name().equals("<init>")) {
       // JDK-8024694: javac always expects signature attribute for enum constructors
@@ -176,7 +176,7 @@ public class LowerSignature {
     if (m.returnType() != null && needsSig(m.returnType())) {
       return true;
     }
-    for (SourceTypeBoundClass.ParamInfo t : m.parameters()) {
+    for (TypeBoundClass.ParamInfo t : m.parameters()) {
       if (t.synthetic()) {
         continue;
       }
@@ -262,14 +262,14 @@ public class LowerSignature {
   private ImmutableList<Sig.TyParamSig> tyParamSig(
       Map<TyVarSymbol, TyVarInfo> px, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableList.Builder<Sig.TyParamSig> result = ImmutableList.builder();
-    for (Map.Entry<TyVarSymbol, SourceTypeBoundClass.TyVarInfo> entry : px.entrySet()) {
+    for (Map.Entry<TyVarSymbol, TypeBoundClass.TyVarInfo> entry : px.entrySet()) {
       result.add(tyParamSig(entry.getKey(), entry.getValue(), env));
     }
     return result.build();
   }
 
   private Sig.TyParamSig tyParamSig(
-      TyVarSymbol sym, SourceTypeBoundClass.TyVarInfo info, Env<ClassSymbol, TypeBoundClass> env) {
+      TyVarSymbol sym, TypeBoundClass.TyVarInfo info, Env<ClassSymbol, TypeBoundClass> env) {
 
     String identifier = sym.name();
     Sig.TySig cbound = null;
