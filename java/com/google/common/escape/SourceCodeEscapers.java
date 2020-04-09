@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * A factory for Escaper instances used to escape strings for safe use in Java.
  *
- * <p>This is a subset of source code escapers that are in the process of being open-sources as part
+ * <p>This is a subset of source code escapers that are in the process of being open-sourced as part
  * of guava, see: https://github.com/google/guava/issues/1620
  */
 // TODO(cushon): migrate to the guava version once it is open-sourced, and delete this
