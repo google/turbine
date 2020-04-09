@@ -18,8 +18,6 @@ package com.google.turbine.processing;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 
 /**
  * A combo test for {@link TurbineTypes} that compares the behaviour of bipredicates like {@link
