@@ -233,13 +233,13 @@ public class LowerTest {
                 TURBINE_BOOTCLASSPATH.env())
             .bytes();
 
-    assertThat(AsmUtils.textify(bytes.get("test/Test")))
+    assertThat(AsmUtils.textify(bytes.get("test/Test"), /* skipDebug= */ false))
         .isEqualTo(
             new String(
                 ByteStreams.toByteArray(
                     LowerTest.class.getResourceAsStream("testdata/golden/outer.txt")),
                 UTF_8));
-    assertThat(AsmUtils.textify(bytes.get("test/Test$Inner")))
+    assertThat(AsmUtils.textify(bytes.get("test/Test$Inner"), /* skipDebug= */ false))
         .isEqualTo(
             new String(
                 ByteStreams.toByteArray(

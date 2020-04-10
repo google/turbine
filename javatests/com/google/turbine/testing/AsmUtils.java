@@ -28,13 +28,15 @@ import org.objectweb.asm.util.TraceClassVisitor;
  * com.google.turbine.bytecode.ClassReader}.
  */
 public class AsmUtils {
-  public static String textify(byte[] bytes) {
+  public static String textify(byte[] bytes, boolean skipDebug) {
     Printer textifier = new Textifier();
     StringWriter sw = new StringWriter();
     new ClassReader(bytes)
         .accept(
             new TraceClassVisitor(null, textifier, new PrintWriter(sw, true)),
-            ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
+            ClassReader.SKIP_FRAMES
+                | ClassReader.SKIP_CODE
+                | (skipDebug ? ClassReader.SKIP_DEBUG : 0));
     return sw.toString();
   }
 }

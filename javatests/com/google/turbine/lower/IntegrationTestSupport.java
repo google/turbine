@@ -578,7 +578,7 @@ public class IntegrationTestSupport {
         na = na.substring(1);
       }
       sb.append(String.format("=== %s ===\n", na));
-      sb.append(AsmUtils.textify(compiled.get(key)));
+      sb.append(AsmUtils.textify(compiled.get(key), /* skipDebug= */ true));
     }
     return sb.toString();
   }
