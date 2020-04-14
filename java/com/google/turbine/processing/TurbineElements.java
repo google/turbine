@@ -265,8 +265,8 @@ public class TurbineElements implements Elements {
   }
 
   /**
-   * Returns true if an element with the given {@code visibility} and located in package {@from} is
-   * visible to elements in package {@code to}.
+   * Returns true if an element with the given {@code visibility} and located in package {@code
+   * from} is visible to elements in package {@code to}.
    */
   private static boolean isVisible(
       PackageSymbol from, PackageSymbol to, TurbineVisibility visibility) {
