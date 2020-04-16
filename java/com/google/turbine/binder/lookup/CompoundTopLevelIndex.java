@@ -19,7 +19,6 @@ package com.google.turbine.binder.lookup;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableList;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link TopLevelIndex} that aggregates multiple indices into one. */
 // Note: this implementation doesn't detect if the indices contain incompatible information,
@@ -40,25 +39,20 @@ public class CompoundTopLevelIndex implements TopLevelIndex {
     return new CompoundTopLevelIndex(ImmutableList.copyOf(indexes));
   }
 
-  private final Scope scope =
-      new Scope() {
-        @Nullable
-        @Override
-        public LookupResult lookup(LookupKey lookupKey) {
-          // Return the first matching symbol.
-          for (TopLevelIndex index : indexes) {
-            LookupResult result = index.scope().lookup(lookupKey);
-            if (result != null) {
-              return result;
-            }
-          }
-          return null;
-        }
-      };
+  private LookupResult scope(LookupKey lookupKey) {
+    // Return the first matching symbol.
+    for (TopLevelIndex index : indexes) {
+      LookupResult result = index.scope().lookup(lookupKey);
+      if (result != null) {
+        return result;
+      }
+    }
+    return null;
+  }
 
   @Override
   public Scope scope() {
-    return scope;
+    return this::scope;
   }
 
   @Override

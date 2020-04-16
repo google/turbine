@@ -20,6 +20,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.bound.EnumConstantValue;
@@ -200,7 +201,7 @@ public class Dependencies {
     for (String path : depsArtifacts) {
       DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
       try (InputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(path)))) {
-        deps.mergeFrom(is);
+        deps.mergeFrom(is, ExtensionRegistry.getGeneratedRegistry());
       } catch (IOException e) {
         throw new IOError(e);
       }
