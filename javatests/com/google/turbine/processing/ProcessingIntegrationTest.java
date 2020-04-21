@@ -45,6 +45,7 @@ import java.io.Writer;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
@@ -341,6 +342,107 @@ public class ProcessingIntegrationTest {
                   .stream()
                   .map(e -> e.getSimpleName().toString())
                   .collect(joining(", ")));
+    }
+  }
+
+  private static void logError(
+      ProcessingEnvironment processingEnv,
+      RoundEnvironment roundEnv,
+      Class<?> processorClass,
+      int round) {
+    processingEnv
+        .getMessager()
+        .printMessage(
+            Diagnostic.Kind.ERROR,
+            String.format(
+                "%d: %s {errorRaised=%s, processingOver=%s}",
+                round,
+                processorClass.getSimpleName(),
+                roundEnv.errorRaised(),
+                roundEnv.processingOver()));
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class ErrorProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    int round = 0;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      int round = ++this.round;
+      logError(processingEnv, roundEnv, getClass(), round);
+      String name = "Gen" + round;
+      try (Writer writer = processingEnv.getFiler().createSourceFile(name).openWriter()) {
+        writer.write(String.format("class %s {}", name));
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+      return false;
+    }
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class FinalRoundErrorProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    int round = 0;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      int round = ++this.round;
+      if (roundEnv.processingOver()) {
+        logError(processingEnv, roundEnv, getClass(), round);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void errorsAndFinalRound() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        IntegrationTestSupport.TestInput.parse(
+                Joiner.on('\n')
+                    .join(
+                        "=== Test.java ===", //
+                        "@Deprecated",
+                        "class Test {",
+                        "}"))
+            .sources
+            .entrySet()
+            .stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+    try {
+      Binder.bind(
+          units,
+          ClassPathBinder.bindClasspath(ImmutableList.of()),
+          Processing.ProcessorInfo.create(
+              ImmutableList.of(new ErrorProcessor(), new FinalRoundErrorProcessor()),
+              getClass().getClassLoader(),
+              ImmutableMap.of(),
+              SourceVersion.latestSupported()),
+          TestClassPaths.TURBINE_BOOTCLASSPATH,
+          Optional.empty());
+      fail();
+    } catch (TurbineError e) {
+      ImmutableList<String> diags =
+          e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+      assertThat(diags)
+          .containsExactly(
+              "1: ErrorProcessor {errorRaised=false, processingOver=false}",
+              "2: ErrorProcessor {errorRaised=true, processingOver=true}",
+              "2: FinalRoundErrorProcessor {errorRaised=true, processingOver=true}")
+          .inOrder();
     }
   }
 }

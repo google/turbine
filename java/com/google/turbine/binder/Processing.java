@@ -197,7 +197,7 @@ public class Processing {
       }
       errorRaised = log.errorRaised();
       if (errorRaised) {
-        log.maybeThrow();
+        break;
       }
       log.clear();
       result =
