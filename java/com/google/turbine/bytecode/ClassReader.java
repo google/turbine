@@ -53,25 +53,6 @@ public class ClassReader {
     return new ClassReader(path, bytes).read();
   }
 
-  @Nullable private final String path;
-  private final ByteReader reader;
-
-  private ClassReader(@Nullable String path, byte[] bytes) {
-    this.path = path;
-    this.reader = new ByteReader(bytes, 0);
-  }
-
-  @FormatMethod
-  @CheckReturnValue
-  Error error(String format, Object... args) {
-    StringBuilder sb = new StringBuilder();
-    if (path != null) {
-      sb.append(path).append(": ");
-    }
-    sb.append(String.format(format, args));
-    return new AssertionError(sb.toString());
-  }
-
   private ClassFile read() {
     int magic = reader.u4();
     if (magic != 0xcafebabe) {
@@ -142,6 +123,25 @@ public class ClassReader {
         innerclasses,
         ImmutableList.of(),
         module);
+  }
+
+  @Nullable private final String path;
+  private final ByteReader reader;
+
+  private ClassReader(@Nullable String path, byte[] bytes) {
+    this.path = path;
+    this.reader = new ByteReader(bytes, 0);
+  }
+
+  @FormatMethod
+  @CheckReturnValue
+  Error error(String format, Object... args) {
+    StringBuilder sb = new StringBuilder();
+    if (path != null) {
+      sb.append(path).append(": ");
+    }
+    sb.append(String.format(format, args));
+    return new AssertionError(sb.toString());
   }
 
   /** Reads a JVMS 4.7.9 Signature attribute. */

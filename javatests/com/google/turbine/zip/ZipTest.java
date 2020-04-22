@@ -56,6 +56,18 @@ public class ZipTest {
     testEntries(1000);
   }
 
+  private void testEntries(int entries) throws IOException {
+    Path path = temporaryFolder.newFile("test.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      for (int i = 0; i < entries; i++) {
+        String name = "entry" + i;
+        byte[] bytes = name.getBytes(UTF_8);
+        createEntry(jos, name, bytes);
+      }
+    }
+    assertThat(actual(path)).isEqualTo(expected(path));
+  }
+
   @Test
   public void zip64_testEntries() throws IOException {
     testEntries(70000);
@@ -70,18 +82,6 @@ public class ZipTest {
         byte[] bytes = name.getBytes(UTF_8);
         jos.putNextEntry(new JarEntry(name));
         jos.write(bytes);
-      }
-    }
-    assertThat(actual(path)).isEqualTo(expected(path));
-  }
-
-  private void testEntries(int entries) throws IOException {
-    Path path = temporaryFolder.newFile("test.jar").toPath();
-    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
-      for (int i = 0; i < entries; i++) {
-        String name = "entry" + i;
-        byte[] bytes = name.getBytes(UTF_8);
-        createEntry(jos, name, bytes);
       }
     }
     assertThat(actual(path)).isEqualTo(expected(path));
