@@ -140,22 +140,6 @@ public class TypeBinder {
     return new TypeBinder(log, env, sym, base).bind();
   }
 
-  private final TurbineLogWithSource log;
-  private final Env<ClassSymbol, HeaderBoundClass> env;
-  private final ClassSymbol owner;
-  private final SourceHeaderBoundClass base;
-
-  private TypeBinder(
-      TurbineLogWithSource log,
-      Env<ClassSymbol, HeaderBoundClass> env,
-      ClassSymbol owner,
-      SourceHeaderBoundClass base) {
-    this.log = log;
-    this.env = env;
-    this.owner = owner;
-    this.base = base;
-  }
-
   private SourceTypeBoundClass bind() {
     // This method uses two scopes. This first one is built up as we process the signature
     // and its elements become visible to subsequent elements (e.g. type parameters can
@@ -249,6 +233,22 @@ public class TypeBinder {
         annotations,
         base.source(),
         base.decl());
+  }
+
+  private final TurbineLogWithSource log;
+  private final Env<ClassSymbol, HeaderBoundClass> env;
+  private final ClassSymbol owner;
+  private final SourceHeaderBoundClass base;
+
+  private TypeBinder(
+      TurbineLogWithSource log,
+      Env<ClassSymbol, HeaderBoundClass> env,
+      ClassSymbol owner,
+      SourceHeaderBoundClass base) {
+    this.log = log;
+    this.env = env;
+    this.owner = owner;
+    this.base = base;
   }
 
   /** Collect synthetic and implicit methods, including default constructors and enum methods. */

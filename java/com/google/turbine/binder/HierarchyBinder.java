@@ -47,22 +47,6 @@ public class HierarchyBinder {
     return new HierarchyBinder(log, origin, base, env).bind();
   }
 
-  private final TurbineLogWithSource log;
-  private final ClassSymbol origin;
-  private final PackageSourceBoundClass base;
-  private final Env<ClassSymbol, ? extends HeaderBoundClass> env;
-
-  private HierarchyBinder(
-      TurbineLogWithSource log,
-      ClassSymbol origin,
-      PackageSourceBoundClass base,
-      Env<ClassSymbol, ? extends HeaderBoundClass> env) {
-    this.log = log;
-    this.origin = origin;
-    this.base = base;
-    this.env = env;
-  }
-
   private SourceHeaderBoundClass bind() {
     Tree.TyDecl decl = base.decl();
 
@@ -111,6 +95,22 @@ public class HierarchyBinder {
     }
 
     return new SourceHeaderBoundClass(base, superclass, interfaces.build(), typeParameters.build());
+  }
+
+  private final TurbineLogWithSource log;
+  private final ClassSymbol origin;
+  private final PackageSourceBoundClass base;
+  private final Env<ClassSymbol, ? extends HeaderBoundClass> env;
+
+  private HierarchyBinder(
+      TurbineLogWithSource log,
+      ClassSymbol origin,
+      PackageSourceBoundClass base,
+      Env<ClassSymbol, ? extends HeaderBoundClass> env) {
+    this.log = log;
+    this.origin = origin;
+    this.base = base;
+    this.env = env;
   }
 
   /**

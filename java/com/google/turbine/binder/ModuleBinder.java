@@ -66,27 +66,6 @@ public class ModuleBinder {
     return new ModuleBinder(module, env, moduleEnv, moduleVersion, log).bind();
   }
 
-  private final PackageSourceBoundModule module;
-  private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
-  private final Env<ModuleSymbol, ModuleInfo> moduleEnv;
-  private final Optional<String> moduleVersion;
-  private final CompoundScope scope;
-  private final TurbineLogWithSource log;
-
-  public ModuleBinder(
-      PackageSourceBoundModule module,
-      CompoundEnv<ClassSymbol, TypeBoundClass> env,
-      Env<ModuleSymbol, ModuleInfo> moduleEnv,
-      Optional<String> moduleVersion,
-      TurbineLogWithSource log) {
-    this.module = module;
-    this.env = env;
-    this.moduleEnv = moduleEnv;
-    this.moduleVersion = moduleVersion;
-    this.log = log;
-    this.scope = module.scope().toScope(Resolve.resolveFunction(env, /* origin= */ null));
-  }
-
   private SourceModuleInfo bind() {
     // bind annotations; constant fields are already bound
     ConstEvaluator constEvaluator =
@@ -163,6 +142,27 @@ public class ModuleBinder {
         uses.build(),
         provides.build(),
         module.source());
+  }
+
+  private final PackageSourceBoundModule module;
+  private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
+  private final Env<ModuleSymbol, ModuleInfo> moduleEnv;
+  private final Optional<String> moduleVersion;
+  private final CompoundScope scope;
+  private final TurbineLogWithSource log;
+
+  public ModuleBinder(
+      PackageSourceBoundModule module,
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      Env<ModuleSymbol, ModuleInfo> moduleEnv,
+      Optional<String> moduleVersion,
+      TurbineLogWithSource log) {
+    this.module = module;
+    this.env = env;
+    this.moduleEnv = moduleEnv;
+    this.moduleVersion = moduleVersion;
+    this.log = log;
+    this.scope = module.scope().toScope(Resolve.resolveFunction(env, /* origin= */ null));
   }
 
   private RequireInfo bindRequires(ModRequires directive) {

@@ -150,13 +150,6 @@ public class Lower {
     return new Lower(env).lower(module, symbols);
   }
 
-  private final LowerSignature sig = new LowerSignature();
-  private final Env<ClassSymbol, TypeBoundClass> env;
-
-  public Lower(Env<ClassSymbol, TypeBoundClass> env) {
-    this.env = env;
-  }
-
   private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols) {
     String name = "module-info";
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(module.annos());
@@ -188,49 +181,6 @@ public class Lower {
             moduleInfo);
     symbols.addAll(sig.classes);
     return ClassWriter.writeClass(classfile);
-  }
-
-  private ClassFile.ModuleInfo lowerModule(SourceModuleInfo module) {
-    ImmutableList.Builder<ClassFile.ModuleInfo.RequireInfo> requires = ImmutableList.builder();
-    for (RequireInfo require : module.requires()) {
-      requires.add(
-          new ClassFile.ModuleInfo.RequireInfo(
-              require.moduleName(), require.flags(), require.version()));
-    }
-    ImmutableList.Builder<ClassFile.ModuleInfo.ExportInfo> exports = ImmutableList.builder();
-    for (ExportInfo export : module.exports()) {
-      int exportAccess = 0; // not synthetic or mandated
-      exports.add(
-          new ClassFile.ModuleInfo.ExportInfo(
-              export.packageName(), exportAccess, export.modules()));
-    }
-    ImmutableList.Builder<ClassFile.ModuleInfo.OpenInfo> opens = ImmutableList.builder();
-    for (OpenInfo open : module.opens()) {
-      int openAccess = 0; // not synthetic or mandated
-      opens.add(new ClassFile.ModuleInfo.OpenInfo(open.packageName(), openAccess, open.modules()));
-    }
-    ImmutableList.Builder<ClassFile.ModuleInfo.UseInfo> uses = ImmutableList.builder();
-    for (UseInfo use : module.uses()) {
-      uses.add(new ClassFile.ModuleInfo.UseInfo(sig.descriptor(use.sym())));
-    }
-    ImmutableList.Builder<ClassFile.ModuleInfo.ProvideInfo> provides = ImmutableList.builder();
-    for (ProvideInfo provide : module.provides()) {
-      ImmutableList.Builder<String> impls = ImmutableList.builder();
-      for (ClassSymbol impl : provide.impls()) {
-        impls.add(sig.descriptor(impl));
-      }
-      provides.add(
-          new ClassFile.ModuleInfo.ProvideInfo(sig.descriptor(provide.sym()), impls.build()));
-    }
-    return new ClassFile.ModuleInfo(
-        module.name(),
-        module.flags(),
-        module.version(),
-        requires.build(),
-        exports.build(),
-        opens.build(),
-        uses.build(),
-        provides.build());
   }
 
   private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
@@ -284,6 +234,56 @@ public class Lower {
     symbols.addAll(sig.classes);
 
     return ClassWriter.writeClass(classfile);
+  }
+
+  private final LowerSignature sig = new LowerSignature();
+  private final Env<ClassSymbol, TypeBoundClass> env;
+
+  public Lower(Env<ClassSymbol, TypeBoundClass> env) {
+    this.env = env;
+  }
+
+  private ClassFile.ModuleInfo lowerModule(SourceModuleInfo module) {
+    ImmutableList.Builder<ClassFile.ModuleInfo.RequireInfo> requires = ImmutableList.builder();
+    for (RequireInfo require : module.requires()) {
+      requires.add(
+          new ClassFile.ModuleInfo.RequireInfo(
+              require.moduleName(), require.flags(), require.version()));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.ExportInfo> exports = ImmutableList.builder();
+    for (ExportInfo export : module.exports()) {
+      int exportAccess = 0; // not synthetic or mandated
+      exports.add(
+          new ClassFile.ModuleInfo.ExportInfo(
+              export.packageName(), exportAccess, export.modules()));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.OpenInfo> opens = ImmutableList.builder();
+    for (OpenInfo open : module.opens()) {
+      int openAccess = 0; // not synthetic or mandated
+      opens.add(new ClassFile.ModuleInfo.OpenInfo(open.packageName(), openAccess, open.modules()));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.UseInfo> uses = ImmutableList.builder();
+    for (UseInfo use : module.uses()) {
+      uses.add(new ClassFile.ModuleInfo.UseInfo(sig.descriptor(use.sym())));
+    }
+    ImmutableList.Builder<ClassFile.ModuleInfo.ProvideInfo> provides = ImmutableList.builder();
+    for (ProvideInfo provide : module.provides()) {
+      ImmutableList.Builder<String> impls = ImmutableList.builder();
+      for (ClassSymbol impl : provide.impls()) {
+        impls.add(sig.descriptor(impl));
+      }
+      provides.add(
+          new ClassFile.ModuleInfo.ProvideInfo(sig.descriptor(provide.sym()), impls.build()));
+    }
+    return new ClassFile.ModuleInfo(
+        module.name(),
+        module.flags(),
+        module.version(),
+        requires.build(),
+        exports.build(),
+        opens.build(),
+        uses.build(),
+        provides.build());
   }
 
   private ClassFile.MethodInfo lowerMethod(final MethodInfo m, final ClassSymbol sym) {

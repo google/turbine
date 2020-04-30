@@ -75,26 +75,6 @@ public class Canonicalize {
     return new Canonicalize(source, position, env).canonicalize(sym, type);
   }
 
-  /** Canonicalize a qualified class type, excluding type arguments. */
-  public static ClassTy canonicalizeClassTy(
-      SourceFile source,
-      int position,
-      Env<ClassSymbol, TypeBoundClass> env,
-      ClassSymbol owner,
-      ClassTy classTy) {
-    return new Canonicalize(source, position, env).canonicalizeClassTy(owner, classTy);
-  }
-
-  private final SourceFile source;
-  private final int position;
-  private final Env<ClassSymbol, TypeBoundClass> env;
-
-  public Canonicalize(SourceFile source, int position, Env<ClassSymbol, TypeBoundClass> env) {
-    this.source = source;
-    this.position = position;
-    this.env = env;
-  }
-
   private Type canonicalize(ClassSymbol base, Type type) {
     switch (type.tyKind()) {
       case PRIM_TY:
@@ -116,6 +96,44 @@ public class Canonicalize {
       default:
         throw new AssertionError(type.tyKind());
     }
+  }
+
+  private ImmutableList<Type> canonicalize(ImmutableList<Type> targs, ClassSymbol base) {
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    for (Type a : targs) {
+      result.add(canonicalize(base, a));
+    }
+    return result.build();
+  }
+
+  /** Canonicalize a qualified class type, excluding type arguments. */
+  public static ClassTy canonicalizeClassTy(
+      SourceFile source,
+      int position,
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol owner,
+      ClassTy classTy) {
+    return new Canonicalize(source, position, env).canonicalizeClassTy(owner, classTy);
+  }
+
+  private ClassTy canonicalizeClassTy(ClassSymbol base, ClassTy ty) {
+    // canonicalize type arguments first
+    ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
+    for (ClassTy.SimpleClassTy s : ty.classes()) {
+      args.add(SimpleClassTy.create(s.sym(), canonicalize(s.targs(), base), s.annos()));
+    }
+    ty = ClassTy.create(args.build());
+    return canon(base, ty);
+  }
+
+  private final SourceFile source;
+  private final int position;
+  private final Env<ClassSymbol, TypeBoundClass> env;
+
+  public Canonicalize(SourceFile source, int position, Env<ClassSymbol, TypeBoundClass> env) {
+    this.source = source;
+    this.position = position;
+    this.env = env;
   }
 
   private ClassTy canon(ClassSymbol base, ClassTy ty) {
@@ -345,24 +363,6 @@ public class Canonicalize {
       return ((TyVar) type).sym();
     }
     return null;
-  }
-
-  private ClassTy canonicalizeClassTy(ClassSymbol base, ClassTy ty) {
-    // canonicalize type arguments first
-    ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
-    for (ClassTy.SimpleClassTy s : ty.classes()) {
-      args.add(SimpleClassTy.create(s.sym(), canonicalize(s.targs(), base), s.annos()));
-    }
-    ty = ClassTy.create(args.build());
-    return canon(base, ty);
-  }
-
-  private ImmutableList<Type> canonicalize(ImmutableList<Type> targs, ClassSymbol base) {
-    ImmutableList.Builder<Type> result = ImmutableList.builder();
-    for (Type a : targs) {
-      result.add(canonicalize(base, a));
-    }
-    return result.build();
   }
 
   private Type canonicalizeWildTy(ClassSymbol base, WildTy type) {
