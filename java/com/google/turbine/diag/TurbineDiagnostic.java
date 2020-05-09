@@ -71,7 +71,7 @@ public class TurbineDiagnostic {
       sb.append(':').append(line());
     }
     sb.append(": error: ");
-    sb.append(message().trim()).append(System.lineSeparator());
+    sb.append(message()).append(System.lineSeparator());
     if (line() != -1 && column() != -1) {
       sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position)))
           .append(System.lineSeparator());
