@@ -25,8 +25,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.AnnotationMetadata;
-import com.google.turbine.binder.bound.BoundClass;
-import com.google.turbine.binder.bound.HeaderBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -69,7 +67,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * resolved and canonicalized so there are no cycles. The laziness also minimizes the amount of work
  * done on the classpath.
  */
-public class BytecodeBoundClass implements BoundClass, HeaderBoundClass, TypeBoundClass {
+public class BytecodeBoundClass implements TypeBoundClass {
 
   private final ClassSymbol sym;
   private final Env<ClassSymbol, BytecodeBoundClass> env;
