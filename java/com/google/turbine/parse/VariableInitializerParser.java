@@ -330,6 +330,8 @@ public class VariableInitializerParser {
           depth--;
           next();
           break;
+        case EOF:
+          throw error(ErrorKind.UNEXPECTED_EOF);
         default:
           next();
           break;
