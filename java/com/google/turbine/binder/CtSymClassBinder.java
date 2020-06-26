@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -44,8 +45,9 @@ public class CtSymClassBinder {
 
   @Nullable
   public static ClassPath bind(String version) throws IOException {
-    Path javaHome = Paths.get(JAVA_HOME.value());
-    Path ctSym = javaHome.resolve("lib/ct.sym");
+    String javaHome = JAVA_HOME.value();
+    requireNonNull(javaHome, "attempted to use --release, but JAVA_HOME is not set");
+    Path ctSym = Paths.get(javaHome).resolve("lib/ct.sym");
     if (!Files.exists(ctSym)) {
       throw new IllegalStateException("lib/ct.sym does not exist in " + javaHome);
     }
