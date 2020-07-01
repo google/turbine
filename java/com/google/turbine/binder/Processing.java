@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
@@ -313,7 +314,7 @@ public class Processing {
   }
 
   // TODO(cushon): consider memoizing this (or isAnnotationInherited) if they show up in profiles
-  private static Set<ClassSymbol> inheritedAnnotations(
+  private static ImmutableSet<ClassSymbol> inheritedAnnotations(
       Set<ClassSymbol> seen, ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableSet.Builder<ClassSymbol> result = ImmutableSet.builder();
     ClassSymbol curr = sym;
@@ -406,12 +407,19 @@ public class Processing {
     } else {
       processorOptions = ImmutableMap.of();
     }
+    SourceVersion sourceVersion = parseSourceVersion(javacopts);
+    return ProcessorInfo.create(
+        processors.build(), processorLoader, processorOptions, sourceVersion);
+  }
+
+  @VisibleForTesting
+  static SourceVersion parseSourceVersion(ImmutableList<String> javacopts) {
     SourceVersion sourceVersion = SourceVersion.latestSupported();
     Iterator<String> it = javacopts.iterator();
     while (it.hasNext()) {
       String option = it.next();
       switch (option) {
-        case "-target":
+        case "-source":
           if (it.hasNext()) {
             String value = it.next();
             switch (value) {
@@ -439,8 +447,7 @@ public class Processing {
           break;
       }
     }
-    return ProcessorInfo.create(
-        processors.build(), processorLoader, processorOptions, sourceVersion);
+    return sourceVersion;
   }
 
   private static URL[] toUrls(ImmutableList<String> processorPath) throws MalformedURLException {
@@ -553,4 +560,6 @@ public class Processing {
       return result.build();
     }
   }
+
+  private Processing() {}
 }
