@@ -700,6 +700,19 @@ public class BinderErrorTest {
           "                                     ^",
         },
       },
+      {
+        {
+          "import java.util.List;",
+          "class T {", //
+          "  List<int> xs = new ArrayList<>();",
+          "}",
+        },
+        {
+          "<>:3: error: unexpected type int", //
+          "  List<int> xs = new ArrayList<>();",
+          "          ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

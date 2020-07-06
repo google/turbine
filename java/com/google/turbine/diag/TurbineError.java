@@ -51,6 +51,7 @@ public class TurbineError extends Error {
     DUPLICATE_DECLARATION("duplicate declaration of %s"),
     BAD_MODULE_INFO("unexpected declaration found in module-info"),
     UNCLOSED_COMMENT("unclosed comment"),
+    UNEXPECTED_TYPE("unexpected type %s"),
     PROC("%s");
 
     private final String message;

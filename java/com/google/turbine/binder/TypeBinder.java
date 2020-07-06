@@ -618,7 +618,11 @@ public class TypeBinder {
       case WILD_TY:
         return bindWildTy(scope, (Tree.WildTy) ty);
       default:
-        return bindTy(scope, ty);
+        Type result = bindTy(scope, ty);
+        if (result.tyKind().equals(Type.TyKind.PRIM_TY)) {
+          log.error(ty.position(), ErrorKind.UNEXPECTED_TYPE, result);
+        }
+        return result;
     }
   }
 
