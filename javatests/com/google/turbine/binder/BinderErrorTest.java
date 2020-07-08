@@ -713,6 +713,21 @@ public class BinderErrorTest {
           "          ^",
         },
       },
+      {
+        {
+          "@interface A {",
+          "  int[] xs() default {};",
+          "}",
+          "@A(xs = Object.class)",
+          "class T {",
+          "}",
+        },
+        {
+          "<>:4: error: could not evaluate constant expression",
+          "@A(xs = Object.class)",
+          "        ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

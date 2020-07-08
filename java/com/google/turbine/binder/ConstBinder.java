@@ -268,11 +268,12 @@ public class ConstBinder {
     if ((base.access() & TurbineFlag.ACC_FINAL) == 0) {
       return null;
     }
-    switch (base.type().tyKind()) {
+    Type type = base.type();
+    switch (type.tyKind()) {
       case PRIM_TY:
         break;
       case CLASS_TY:
-        if (((Type.ClassTy) base.type()).sym().equals(ClassSymbol.STRING)) {
+        if (((Type.ClassTy) type).sym().equals(ClassSymbol.STRING)) {
           break;
         }
         // falls through
@@ -280,8 +281,11 @@ public class ConstBinder {
         return null;
     }
     Value value = constantEnv.get(base.sym());
-    if (value != null) {
-      value = (Value) ConstEvaluator.cast(base.type(), value);
+    if (value == null) {
+      return null;
+    }
+    if (type.tyKind().equals(TyKind.PRIM_TY)) {
+      value = ConstEvaluator.coerce(value, ((Type.PrimTy) type).primkind());
     }
     return value;
   }

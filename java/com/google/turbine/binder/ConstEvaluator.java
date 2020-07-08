@@ -318,20 +318,24 @@ public strictfp class ConstEvaluator {
   }
 
   /** Casts the value to the given type. */
-  static Const cast(Type ty, Const value) {
+  private Const cast(int position, Type ty, Const value) {
     checkNotNull(value);
     switch (ty.tyKind()) {
       case CLASS_TY:
       case TY_VAR:
         return value;
       case PRIM_TY:
+        if (!value.kind().equals(Const.Kind.PRIMITIVE)) {
+          throw error(position, ErrorKind.EXPRESSION_ERROR);
+        }
         return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
       default:
         throw new AssertionError(ty.tyKind());
     }
   }
 
-  private static Const.Value coerce(Const.Value value, TurbineConstantTypeKind kind) {
+  /** Casts the constant value to the given type. */
+  static Const.Value coerce(Const.Value value, TurbineConstantTypeKind kind) {
     switch (kind) {
       case BOOLEAN:
         return value.asBoolean();
@@ -1024,7 +1028,7 @@ public strictfp class ConstEvaluator {
                   : ImmutableList.of(value);
           ImmutableList.Builder<Const> coerced = ImmutableList.builder();
           for (Const element : elements) {
-            coerced.add(cast(elementType, element));
+            coerced.add(cast(tree.position(), elementType, element));
           }
           return new Const.ArrayInitValue(coerced.build());
         }
@@ -1043,7 +1047,7 @@ public strictfp class ConstEvaluator {
       if (value == null || value.kind() != Const.Kind.PRIMITIVE) {
         return null;
       }
-      return (Const.Value) cast(type, value);
+      return (Const.Value) cast(expression.position(), type, value);
     } catch (TurbineError error) {
       for (TurbineDiagnostic diagnostic : error.diagnostics()) {
         switch (diagnostic.kind()) {
