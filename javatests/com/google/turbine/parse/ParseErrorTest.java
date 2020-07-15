@@ -296,6 +296,23 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void arrayDot() {
+    String input = "enum\te{p;ullt[].<~>>>L\0";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              lines(
+                  "<>:1: error: unexpected token: <", //
+                  "enum\te{p;ullt[].<~>>>L\0",
+                  "                ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

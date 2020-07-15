@@ -748,7 +748,9 @@ public class Parser {
           }
           if (token == Token.DOT) {
             next();
-            // TODO(cushon): is this cast OK?
+            if (!result.kind().equals(Kind.CLASS_TY)) {
+              throw error(token);
+            }
             result = classty((ClassTy) result);
           }
           result = maybeDims(maybeAnnos(), result);
