@@ -42,15 +42,11 @@ public class CanonicalTypeBinder {
 
   static SourceTypeBoundClass bind(
       ClassSymbol sym, SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
-    ClassTy superClassType = null;
-    if (base.superClassType() != null && base.superClassType().tyKind() == TyKind.CLASS_TY) {
+    Type superClassType = base.superClassType();
+    if (superClassType != null && superClassType.tyKind() == TyKind.CLASS_TY) {
       superClassType =
           Canonicalize.canonicalizeClassTy(
-              base.source(),
-              base.decl().position(),
-              env,
-              base.owner(),
-              (ClassTy) base.superClassType());
+              base.source(), base.decl().position(), env, base.owner(), (ClassTy) superClassType);
     }
     ImmutableList.Builder<Type> interfaceTypes = ImmutableList.builder();
     for (Type i : base.interfaceTypes()) {

@@ -445,4 +445,60 @@ public class ProcessingIntegrationTest {
           .inOrder();
     }
   }
+
+  @SupportedAnnotationTypes("*")
+  public static class SuperTypeProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      TypeElement typeElement = processingEnv.getElementUtils().getTypeElement("T");
+      processingEnv
+          .getMessager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              typeElement.getSuperclass()
+                  + " "
+                  + processingEnv.getTypeUtils().directSupertypes(typeElement.asType()));
+      return false;
+    }
+  }
+
+  @Test
+  public void superType() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        IntegrationTestSupport.TestInput.parse(
+                Joiner.on('\n')
+                    .join(
+                        "=== T.java ===", //
+                        "@Deprecated",
+                        "class T extends S {",
+                        "}"))
+            .sources
+            .entrySet()
+            .stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+    try {
+      Binder.bind(
+          units,
+          ClassPathBinder.bindClasspath(ImmutableList.of()),
+          Processing.ProcessorInfo.create(
+              ImmutableList.of(new SuperTypeProcessor()),
+              getClass().getClassLoader(),
+              ImmutableMap.of(),
+              SourceVersion.latestSupported()),
+          TestClassPaths.TURBINE_BOOTCLASSPATH,
+          Optional.empty());
+      fail();
+    } catch (TurbineError e) {
+      ImmutableList<String> diags =
+          e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+      assertThat(diags).containsExactly("could not resolve S", "S [S]").inOrder();
+    }
+  }
 }
