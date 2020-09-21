@@ -728,6 +728,19 @@ public class BinderErrorTest {
           "        ^",
         },
       },
+      {
+        {
+          "package foobar;",
+          "import java.lang.annotation.Retention;",
+          "@Retention",
+          "@interface Test {}",
+        },
+        {
+          "<>:3: error: missing required annotation argument: value", //
+          "@Retention",
+          "^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

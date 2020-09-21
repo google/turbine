@@ -47,6 +47,7 @@ import com.google.turbine.model.Const.ConstCastError;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ArrayInit;
 import com.google.turbine.tree.Tree.Binary;
@@ -929,12 +930,16 @@ public strictfp class ConstEvaluator {
     if (info.sym() == null) {
       return info;
     }
-
-    Map<String, Type> template = new LinkedHashMap<>();
     TypeBoundClass annoClass = env.get(info.sym());
+    if (annoClass.kind() != TurbineTyKind.ANNOTATION) {
+      // we've already reported an error for non-annotation symbols used as annotations,
+      // skip error handling for annotation arguments
+      return info;
+    }
+    Map<String, MethodInfo> template = new LinkedHashMap<>();
     if (annoClass != null) {
       for (MethodInfo method : annoClass.methods()) {
-        template.put(method.name(), method.returnType());
+        template.put(method.name(), method);
       }
     }
 
@@ -951,20 +956,26 @@ public strictfp class ConstEvaluator {
         key = "value";
         expr = arg;
       }
-      Type ty = template.get(key);
-      if (ty == null) {
+      MethodInfo methodInfo = template.remove(key);
+      if (methodInfo == null) {
         throw error(
             arg.position(),
             ErrorKind.CANNOT_RESOLVE,
             String.format("element %s() in %s", key, info.sym()));
       }
-      Const value = evalAnnotationValue(expr, ty);
+      Const value = evalAnnotationValue(expr, methodInfo.returnType());
       if (value == null) {
         throw error(expr.position(), ErrorKind.EXPRESSION_ERROR);
       }
       Const existing = values.put(key, value);
       if (existing != null) {
         throw error(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT);
+      }
+    }
+    for (MethodInfo methodInfo : template.values()) {
+      if (!methodInfo.hasDefaultValue()) {
+        throw error(
+            info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name());
       }
     }
     return info.withValues(ImmutableMap.copyOf(values));

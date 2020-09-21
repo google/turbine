@@ -42,6 +42,7 @@ public class TurbineError extends Error {
     TYPE_PARAMETER_QUALIFIER("type parameter used as type qualifier"),
     UNEXPECTED_TOKEN("unexpected token: %s"),
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
+    MISSING_ANNOTATION_ARGUMENT("missing required annotation argument: %s"),
     CANNOT_RESOLVE("could not resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
     OPERAND_TYPE("bad operand type %s"),

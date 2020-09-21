@@ -229,6 +229,14 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return defaultValue;
     }
 
+    /**
+     * Returns true for annotation members with a default value. The default value may not have been
+     * bound yet, in which case {@link #defaultValue} may still return {@code null}.
+     */
+    public boolean hasDefaultValue() {
+      return decl() != null ? decl().defaultValue().isPresent() : defaultValue() != null;
+    }
+
     /** The declaration. */
     public MethDecl decl() {
       return decl;
