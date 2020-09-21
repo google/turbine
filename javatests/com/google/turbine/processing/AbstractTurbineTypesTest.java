@@ -231,6 +231,14 @@ class AbstractTurbineTypesTest {
         "Float",
         "Double",
       },
+      // type annotations
+      {
+        "@A List<@B Integer>",
+        "@A List",
+        "@A int @B []",
+        "@A List<@A int @B []>",
+        "Map.@A Entry<@B Integer, @C Number>",
+      },
     };
     List<String> files = new ArrayList<>();
     AtomicInteger idx = new AtomicInteger();
@@ -242,6 +250,7 @@ class AbstractTurbineTypesTest {
               "package p;",
               "import java.util.*;",
               "import java.io.*;",
+              "import java.lang.annotation.*;",
               String.format("abstract class Test%s {", idx.getAndIncrement()),
               Streams.mapWithIndex(
                       Arrays.stream(group), (x, i) -> String.format("  %s f%d;\n", x, i))
@@ -250,6 +259,9 @@ class AbstractTurbineTypesTest {
               "  abstract <V extends List<V>> V g();",
               "  abstract <W extends ArrayList> W h();",
               "  abstract <X extends Serializable> X i();",
+              "  @Target(ElementType.TYPE_USE) @interface A {}",
+              "  @Target(ElementType.TYPE_USE) @interface B {}",
+              "  @Target(ElementType.TYPE_USE) @interface C {}",
               "}");
       String content = sb.toString();
       files.add(content);

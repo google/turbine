@@ -825,7 +825,7 @@ public class TurbineTypes implements Types {
 
   @Override
   public List<? extends TypeMirror> directSupertypes(TypeMirror m) {
-    return factory.asTypeMirrors(directSupertypes(asTurbineType(m)));
+    return factory.asTypeMirrors(deannotate(directSupertypes(asTurbineType(m))));
   }
 
   public ImmutableList<Type> directSupertypes(Type t) {
@@ -882,7 +882,12 @@ public class TurbineTypes implements Types {
 
   @Override
   public TypeMirror erasure(TypeMirror typeMirror) {
-    return factory.asTypeMirror(erasure(asTurbineType(typeMirror)));
+    Type t = erasure(asTurbineType(typeMirror));
+    if (t.tyKind() == TyKind.CLASS_TY) {
+      // bug-parity with javac
+      t = deannotate(t);
+    }
+    return factory.asTypeMirror(t);
   }
 
   private Type erasure(Type type) {
@@ -894,6 +899,46 @@ public class TurbineTypes implements Types {
             return factory.getTyVarInfo(input);
           }
         });
+  }
+
+  public static Type deannotate(Type ty) {
+    switch (ty.tyKind()) {
+      case CLASS_TY:
+        return deannotateClassTy((Type.ClassTy) ty);
+      case ARRAY_TY:
+        return deannotateArrayTy((Type.ArrayTy) ty);
+      case TY_VAR:
+      case INTERSECTION_TY:
+      case WILD_TY:
+      case METHOD_TY:
+      case PRIM_TY:
+      case VOID_TY:
+      case ERROR_TY:
+      case NONE_TY:
+        return ty;
+    }
+    throw new AssertionError(ty.tyKind());
+  }
+
+  private static ImmutableList<Type> deannotate(ImmutableList<Type> types) {
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    for (Type type : types) {
+      result.add(deannotate(type));
+    }
+    return result.build();
+  }
+
+  private static Type.ArrayTy deannotateArrayTy(Type.ArrayTy ty) {
+    return ArrayTy.create(deannotate(ty.elementType()), /* annos= */ ImmutableList.of());
+  }
+
+  public static Type.ClassTy deannotateClassTy(Type.ClassTy ty) {
+    ImmutableList.Builder<Type.ClassTy.SimpleClassTy> classes = ImmutableList.builder();
+    for (Type.ClassTy.SimpleClassTy c : ty.classes()) {
+      classes.add(
+          SimpleClassTy.create(c.sym(), deannotate(c.targs()), /* annos= */ ImmutableList.of()));
+    }
+    return ClassTy.create(classes.build());
   }
 
   @Override
