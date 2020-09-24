@@ -785,7 +785,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public ElementKind getKind() {
-      return info().name().equals("<init>") ? ElementKind.CONSTRUCTOR : ElementKind.METHOD;
+      return sym.name().equals("<init>") ? ElementKind.CONSTRUCTOR : ElementKind.METHOD;
     }
 
     @Override
