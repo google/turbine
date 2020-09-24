@@ -127,22 +127,13 @@ public strictfp class ConstEvaluator {
           }
           switch (a.constantTypeKind()) {
             case CHAR:
-              return new Const.CharValue(((com.google.turbine.model.Const.CharValue) a).value());
             case INT:
-              return new Const.IntValue(((com.google.turbine.model.Const.IntValue) a).value());
             case LONG:
-              return new Const.LongValue(((com.google.turbine.model.Const.LongValue) a).value());
             case FLOAT:
-              return new Const.FloatValue(((com.google.turbine.model.Const.FloatValue) a).value());
             case DOUBLE:
-              return new Const.DoubleValue(
-                  ((com.google.turbine.model.Const.DoubleValue) a).value());
             case BOOLEAN:
-              return new Const.BooleanValue(
-                  ((com.google.turbine.model.Const.BooleanValue) a).value());
             case STRING:
-              return new Const.StringValue(
-                  ((com.google.turbine.model.Const.StringValue) a).value());
+              return a;
             case SHORT:
             case BYTE:
             case NULL:
