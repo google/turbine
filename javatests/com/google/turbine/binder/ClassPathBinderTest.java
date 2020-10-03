@@ -16,15 +16,19 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ENGLISH;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.VerifyException;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
@@ -34,6 +38,7 @@ import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
+import com.google.turbine.binder.lookup.PackageScope;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
@@ -46,36 +51,97 @@ import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.runners.Parameterized;
 
-@RunWith(JUnit4.class)
+@RunWith(Parameterized.class)
 public class ClassPathBinderTest {
+
+  @Parameterized.Parameters
+  public static ImmutableCollection<Object[]> parameters() {
+    Object[] testCases = {
+      TURBINE_BOOTCLASSPATH,
+      FileManagerClassBinder.adapt(
+          ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, ENGLISH, UTF_8),
+          StandardLocation.PLATFORM_CLASS_PATH),
+    };
+    return Arrays.stream(testCases).map(x -> new Object[] {x}).collect(toImmutableList());
+  }
+
+  private final ClassPath classPath;
+
+  public ClassPathBinderTest(ClassPath classPath) {
+    this.classPath = classPath;
+  }
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+  private static Ident ident(String string) {
+    return new Ident(/* position= */ -1, string);
+  }
+
   @Test
-  public void classPathLookup() throws IOException {
+  public void classPathLookup() {
 
-    Scope javaLang = TURBINE_BOOTCLASSPATH.index().lookupPackage(ImmutableList.of("java", "lang"));
+    Scope javaLang = classPath.index().lookupPackage(ImmutableList.of("java", "lang"));
 
-    LookupResult result = javaLang.lookup(new LookupKey(ImmutableList.of(new Ident(-1, "String"))));
+    final String string = "String";
+    LookupResult result = javaLang.lookup(new LookupKey(ImmutableList.of(ident(string))));
     assertThat(result.remaining()).isEmpty();
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/lang/String"));
 
-    result = javaLang.lookup(new LookupKey(ImmutableList.of(new Ident(-1, "Object"))));
+    result = javaLang.lookup(new LookupKey(ImmutableList.of(ident("Object"))));
     assertThat(result.remaining()).isEmpty();
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/lang/Object"));
   }
 
   @Test
-  public void classPathClasses() throws IOException {
-    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
+  public void packageScope() {
+
+    PackageScope result = classPath.index().lookupPackage(ImmutableList.of("java", "nosuch"));
+    assertThat(result).isNull();
+
+    result = classPath.index().lookupPackage(ImmutableList.of("java", "lang"));
+    assertThat(result.classes()).contains(new ClassSymbol("java/lang/String"));
+
+    assertThat(result.lookup(new LookupKey(ImmutableList.of(ident("NoSuch"))))).isNull();
+  }
+
+  @Test
+  public void scope() {
+    Scope scope = classPath.index().scope();
+    LookupResult result;
+
+    result =
+        scope.lookup(
+            new LookupKey(
+                ImmutableList.of(ident("java"), ident("util"), ident("Map"), ident("Entry"))));
+    assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
+    assertThat(result.remaining().stream().map(Ident::value)).containsExactly("Entry");
+
+    result =
+        scope.lookup(new LookupKey(ImmutableList.of(ident("java"), ident("util"), ident("Map"))));
+    assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
+    assertThat(result.remaining()).isEmpty();
+
+    result =
+        scope.lookup(
+            new LookupKey(ImmutableList.of(ident("java"), ident("util"), ident("NoSuch"))));
+    assertThat(result).isNull();
+  }
+
+  @Test
+  public void classPathClasses() {
+    Env<ClassSymbol, BytecodeBoundClass> env = classPath.env();
 
     TypeBoundClass c = env.get(new ClassSymbol("java/util/Map$Entry"));
     assertThat(c.owner()).isEqualTo(new ClassSymbol("java/util/Map"));
@@ -96,7 +162,7 @@ public class ClassPathBinderTest {
 
   @Test
   public void interfaces() {
-    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
+    Env<ClassSymbol, BytecodeBoundClass> env = classPath.env();
 
     TypeBoundClass c = env.get(new ClassSymbol("java/lang/annotation/Retention"));
     assertThat(c.interfaceTypes()).hasSize(1);
@@ -114,7 +180,7 @@ public class ClassPathBinderTest {
 
   @Test
   public void annotations() {
-    Env<ClassSymbol, BytecodeBoundClass> env = TURBINE_BOOTCLASSPATH.env();
+    Env<ClassSymbol, BytecodeBoundClass> env = classPath.env();
     TypeBoundClass c = env.get(new ClassSymbol("java/lang/annotation/Retention"));
 
     AnnoInfo anno =
@@ -177,5 +243,22 @@ public class ClassPathBinderTest {
     ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
     assertThat(new String(classPath.resource("foo/bar/hello.txt").get(), UTF_8)).isEqualTo("hello");
     assertThat(classPath.resource("foo/bar/Baz.class")).isNull();
+  }
+
+  @Test
+  public void resourcesFileManager() throws Exception {
+    Path path = temporaryFolder.newFile("tmp.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      jos.putNextEntry(new JarEntry("foo/bar/hello.txt"));
+      jos.write("hello".getBytes(UTF_8));
+      jos.putNextEntry(new JarEntry("foo/bar/Baz.class"));
+      jos.write("goodbye".getBytes(UTF_8));
+    }
+    StandardJavaFileManager fileManager =
+        ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, ENGLISH, UTF_8);
+    fileManager.setLocation(StandardLocation.CLASS_PATH, ImmutableList.of(path.toFile()));
+    ClassPath classPath = FileManagerClassBinder.adapt(fileManager, StandardLocation.CLASS_PATH);
+    assertThat(new String(classPath.resource("foo/bar/hello.txt").get(), UTF_8)).isEqualTo("hello");
+    assertThat(classPath.resource("foo/bar/NoSuch.class")).isNull();
   }
 }
