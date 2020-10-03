@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.SourceVersion.RELEASE_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -54,6 +55,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -365,7 +367,9 @@ class AbstractTurbineTypesTest {
                 /* out= */ null,
                 fileManager,
                 /* diagnosticListener= */ null,
-                /* options= */ ImmutableList.of(),
+                /* options= */ SourceVersion.latestSupported().compareTo(RELEASE_8) > 0
+                    ? ImmutableList.of("--release", "8")
+                    : ImmutableList.of(),
                 /* classes= */ ImmutableList.of(),
                 compilationUnits);
 

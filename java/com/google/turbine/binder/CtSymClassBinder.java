@@ -33,6 +33,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -81,6 +82,10 @@ public class CtSymClassBinder {
         modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);
         continue;
       }
+      // remove module path prefix introduced in https://bugs.openjdk.java.net/browse/JDK-8209865
+      if (MAJOR >= 12) {
+        idx = name.indexOf('/', idx + 1);
+      }
       ClassSymbol sym = new ClassSymbol(name.substring(idx + 1, name.length() - ".sig".length()));
       map.putIfAbsent(
           sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, ctSym + "!" + ze.name()));
@@ -123,5 +128,24 @@ public class CtSymClassBinder {
             return ze.data();
           }
         });
+  }
+
+  private static final int MAJOR = getMajor();
+
+  private static int getMajor() {
+    try {
+      Method versionMethod = Runtime.class.getMethod("version");
+      Object version = versionMethod.invoke(null);
+      return (int) version.getClass().getMethod("major").invoke(version);
+    } catch (Exception e) {
+      // continue below
+    }
+
+    int version = (int) Double.parseDouble(System.getProperty("java.class.version"));
+    if (49 <= version && version <= 52) {
+      return version - (49 - 5);
+    }
+    throw new IllegalStateException(
+        "Unknown Java version: " + System.getProperty("java.specification.version"));
   }
 }
