@@ -136,14 +136,9 @@ public class Processing {
       }
     }
 
-    Map<Processor, Pattern> wanted = new HashMap<>();
+    Map<Processor, SupportedAnnotationTypes> wanted = new HashMap<>();
     for (Processor processor : processorInfo.processors()) {
-      List<String> patterns = new ArrayList<>();
-      for (String supportedAnnotationType : processor.getSupportedAnnotationTypes()) {
-        // TODO(b/139026291): this handling of getSupportedAnnotationTypes isn't correct
-        patterns.add(supportedAnnotationType.replace("*", ".*"));
-      }
-      wanted.put(processor, Pattern.compile(Joiner.on('|').join(patterns)));
+      wanted.put(processor, SupportedAnnotationTypes.create(processor));
     }
 
     Set<ClassSymbol> allSymbols = new HashSet<>();
@@ -166,10 +161,11 @@ public class Processing {
       TurbineRoundEnvironment roundEnv = null;
       for (Processor processor : processorInfo.processors()) {
         Set<TypeElement> annotations = new HashSet<>();
-        Pattern pattern = wanted.get(processor);
-        boolean run = toRun.contains(processor);
+        SupportedAnnotationTypes supportedAnnotationTypes = wanted.get(processor);
+        boolean run = supportedAnnotationTypes.everything() || toRun.contains(processor);
         for (ClassSymbol a : allAnnotations.keys()) {
-          if (pattern.matcher(a.toString()).matches()) {
+          if (supportedAnnotationTypes.everything()
+              || supportedAnnotationTypes.pattern().matcher(a.toString()).matches()) {
             annotations.add(factory.typeElement(a));
             run = true;
           }
@@ -266,6 +262,29 @@ public class Processing {
         result.withStatistics(Statistics.create(timers.build(), ImmutableMap.copyOf(statistics)));
 
     return result;
+  }
+
+  @AutoValue
+  abstract static class SupportedAnnotationTypes {
+
+    abstract boolean everything();
+
+    abstract Pattern pattern();
+
+    static SupportedAnnotationTypes create(Processor processor) {
+      List<String> patterns = new ArrayList<>();
+      boolean everything = false;
+      for (String supportedAnnotationType : processor.getSupportedAnnotationTypes()) {
+        if (supportedAnnotationType.equals("*")) {
+          everything = true;
+        } else {
+          // TODO(b/139026291): this handling of getSupportedAnnotationTypes isn't correct
+          patterns.add(supportedAnnotationType);
+        }
+      }
+      return new AutoValue_Processing_SupportedAnnotationTypes(
+          everything, Pattern.compile(Joiner.on('|').join(patterns)));
+    }
   }
 
   private static void reportProcessorCrash(TurbineLog log, Processor processor, Throwable t) {
