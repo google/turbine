@@ -741,6 +741,18 @@ public class BinderErrorTest {
           "^",
         },
       },
+      {
+        {
+          "interface Test {", //
+          "  static final void f() {}",
+          "}",
+        },
+        {
+          "<>:2: error: unexpected modifier: final", //
+          "  static final void f() {}",
+          "                    ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

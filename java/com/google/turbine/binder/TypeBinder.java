@@ -493,6 +493,9 @@ public class TypeBinder {
             == 0) {
           access |= TurbineFlag.ACC_ABSTRACT;
         }
+        if ((access & TurbineFlag.ACC_FINAL) == TurbineFlag.ACC_FINAL) {
+          log.error(t.position(), ErrorKind.UNEXPECTED_MODIFIER, TurbineModifier.FINAL);
+        }
         break;
       case ENUM:
         if (name.equals("<init>")) {
