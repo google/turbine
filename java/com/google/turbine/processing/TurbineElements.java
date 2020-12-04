@@ -131,7 +131,7 @@ public class TurbineElements implements Elements {
     if (!(element instanceof TurbineElement)) {
       throw new IllegalArgumentException(element.toString());
     }
-    for (AnnoInfo a : ((TurbineTypeElement) element).annos()) {
+    for (AnnoInfo a : ((TurbineElement) element).annos()) {
       if (a.sym().equals(ClassSymbol.DEPRECATED)) {
         return true;
       }

@@ -225,6 +225,9 @@ public class TurbineElementsTest {
         .isFalse();
     assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("One"))).isFalse();
     assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("Test"))).isTrue();
+    for (Element e : turbineElements.getTypeElement("java.lang.Object").getEnclosedElements()) {
+      assertThat(turbineElements.isDeprecated(e)).isFalse();
+    }
   }
 
   @Test
