@@ -63,9 +63,12 @@ import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import javax.tools.Diagnostic;
 
 /**
  * Constant expression evaluation.
@@ -935,6 +938,7 @@ public strictfp class ConstEvaluator {
     }
 
     Map<String, Const> values = new LinkedHashMap<>();
+    List<TurbineDiagnostic> diagnostics = new ArrayList<>();
     for (Expression arg : info.args()) {
       Expression expr;
       String key;
@@ -949,25 +953,33 @@ public strictfp class ConstEvaluator {
       }
       MethodInfo methodInfo = template.remove(key);
       if (methodInfo == null) {
-        throw error(
-            arg.position(),
-            ErrorKind.CANNOT_RESOLVE,
-            String.format("element %s() in %s", key, info.sym()));
+        diagnostics.add(
+            errorDiagnostic(
+                arg.position(),
+                ErrorKind.CANNOT_RESOLVE,
+                String.format("element %s() in %s", key, info.sym())));
+        continue;
       }
       Const value = evalAnnotationValue(expr, methodInfo.returnType());
       if (value == null) {
-        throw error(expr.position(), ErrorKind.EXPRESSION_ERROR);
+        diagnostics.add(errorDiagnostic(expr.position(), ErrorKind.EXPRESSION_ERROR));
+        continue;
       }
       Const existing = values.put(key, value);
       if (existing != null) {
-        throw error(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT);
+        diagnostics.add(errorDiagnostic(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT));
+        continue;
       }
     }
     for (MethodInfo methodInfo : template.values()) {
       if (!methodInfo.hasDefaultValue()) {
-        throw error(
-            info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name());
+        diagnostics.add(
+            errorDiagnostic(
+                info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name()));
       }
+    }
+    if (!diagnostics.isEmpty()) {
+      throw new TurbineError(ImmutableList.copyOf(diagnostics));
     }
     return info.withValues(ImmutableMap.copyOf(values));
   }
@@ -1037,6 +1049,10 @@ public strictfp class ConstEvaluator {
       default:
         throw new AssertionError(ty.tyKind());
     }
+  }
+
+  private TurbineDiagnostic errorDiagnostic(int position, ErrorKind kind, Object... args) {
+    return TurbineDiagnostic.format(Diagnostic.Kind.ERROR, source, position, kind, args);
   }
 
   private TurbineError error(int position, ErrorKind kind, Object... args) {

@@ -93,6 +93,9 @@ public class BinderErrorTest {
           "<>:2: error: could not resolve element foo() in Anno", //
           "@Anno(foo=100, bar=200) class Test {}",
           "      ^",
+          "<>:2: error: could not resolve element bar() in Anno", //
+          "@Anno(foo=100, bar=200) class Test {}",
+          "               ^",
         },
       },
       {
