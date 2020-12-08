@@ -332,6 +332,14 @@ public class Main {
       return;
     }
     Path path = Paths.get(options.gensrcOutput().get());
+    if (Files.isDirectory(path)) {
+      for (SourceFile source : generatedSources.values()) {
+        Path to = path.resolve(source.path());
+        Files.createDirectories(to.getParent());
+        Files.write(to, source.source().getBytes(UTF_8));
+      }
+      return;
+    }
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {
@@ -349,6 +357,14 @@ public class Main {
       return;
     }
     Path path = Paths.get(options.resourceOutput().get());
+    if (Files.isDirectory(path)) {
+      for (Map.Entry<String, byte[]> resource : generatedResources.entrySet()) {
+        Path to = path.resolve(resource.getKey());
+        Files.createDirectories(to.getParent());
+        Files.write(to, resource.getValue());
+      }
+      return;
+    }
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {

@@ -40,8 +40,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Enumeration;
@@ -470,5 +473,61 @@ public class MainTest {
         Stream<JarEntry> entries = jarFile.stream()) {
       assertThat(entries.map(JarEntry::getName)).containsExactly("g/Gen.class");
     }
+  }
+
+  @Test
+  public void testGensrcDirectoryOutput() throws IOException {
+    Path src = temporaryFolder.newFile("Foo.java").toPath();
+    MoreFiles.asCharSink(src, UTF_8).write("package f; @Deprecated class Foo {}");
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path gensrc = temporaryFolder.newFolder("gensrcOutput").toPath();
+
+    Main.compile(
+        optionsWithBootclasspath()
+            .setSources(ImmutableList.of(src.toString()))
+            .setTargetLabel("//foo:foo")
+            .setInjectingRuleKind("foo_library")
+            .setOutput(output.toString())
+            .setGensrcOutput(gensrc.toString())
+            .setProcessors(ImmutableList.of(SourceGeneratingProcessor.class.getName()))
+            .build());
+
+    assertThat(listDirectoryContents(gensrc)).containsExactly(gensrc.resolve("g/Gen.java"));
+  }
+
+  @Test
+  public void testResourceDirectoryOutput() throws IOException {
+    Path src = temporaryFolder.newFile("Foo.java").toPath();
+    MoreFiles.asCharSink(src, UTF_8).write("package f; @Deprecated class Foo {}");
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path resources = temporaryFolder.newFolder("resources").toPath();
+
+    Main.compile(
+        optionsWithBootclasspath()
+            .setSources(ImmutableList.of(src.toString()))
+            .setTargetLabel("//foo:foo")
+            .setInjectingRuleKind("foo_library")
+            .setOutput(output.toString())
+            .setResourceOutput(resources.toString())
+            .setProcessors(ImmutableList.of(ClassGeneratingProcessor.class.getName()))
+            .build());
+
+    assertThat(listDirectoryContents(resources)).containsExactly(resources.resolve("g/Gen.class"));
+  }
+
+  private static ImmutableList<Path> listDirectoryContents(Path output) throws IOException {
+    ImmutableList.Builder<Path> paths = ImmutableList.builder();
+    Files.walkFileTree(
+        output,
+        new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
+            paths.add(path);
+            return FileVisitResult.CONTINUE;
+          }
+        });
+    return paths.build();
   }
 }
