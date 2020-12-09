@@ -313,6 +313,23 @@ public class ParseErrorTest {
     }
   }
 
+  @Test
+  public void implementsBeforeExtends() {
+    String input = "class T implements A extends B {}";
+    try {
+      Parser.parse(input);
+      fail("expected parsing to fail");
+    } catch (TurbineError e) {
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              lines(
+                  "<>:1: error: 'extends' must come before 'implements'",
+                  "class T implements A extends B {}",
+                  "                     ^"));
+    }
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

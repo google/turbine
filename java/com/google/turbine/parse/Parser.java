@@ -519,7 +519,15 @@ public class Parser {
         interfaces.add(classty());
       } while (maybe(Token.COMMA));
     }
-    eat(Token.LBRACE);
+    switch (token) {
+      case LBRACE:
+        next();
+        break;
+      case EXTENDS:
+        throw error(ErrorKind.EXTENDS_AFTER_IMPLEMENTS);
+      default:
+        throw error(ErrorKind.EXPECTED_TOKEN, Token.LBRACE);
+    }
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
     return new TyDecl(

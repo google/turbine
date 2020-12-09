@@ -35,6 +35,7 @@ public class TurbineError extends Error {
     INVALID_UNICODE("illegal unicode escape"),
     EMPTY_CHARACTER_LITERAL("empty char literal"),
     EXPECTED_TOKEN("expected token %s"),
+    EXTENDS_AFTER_IMPLEMENTS("'extends' must come before 'implements'"),
     INVALID_LITERAL("invalid literal: %s"),
     UNEXPECTED_TYPE_PARAMETER("unexpected type parameter %s"),
     SYMBOL_NOT_FOUND("symbol not found %s"),
