@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -439,34 +440,44 @@ public class Processing {
       String option = it.next();
       switch (option) {
         case "-source":
-          if (it.hasNext()) {
-            String value = it.next();
-            switch (value) {
-              case "5":
-              case "1.5":
-                sourceVersion = SourceVersion.RELEASE_5;
-                break;
-              case "6":
-              case "1.6":
-                sourceVersion = SourceVersion.RELEASE_6;
-                break;
-              case "7":
-              case "1.7":
-                sourceVersion = SourceVersion.RELEASE_7;
-                break;
-              case "8":
-                sourceVersion = SourceVersion.RELEASE_8;
-                break;
-              default:
-                break;
-            }
+          if (!it.hasNext()) {
+            throw new IllegalArgumentException("-source requires an argument");
           }
+          sourceVersion = parseSourceVersion(it.next());
           break;
         default:
           break;
       }
     }
     return sourceVersion;
+  }
+
+  private static SourceVersion parseSourceVersion(String value) {
+    boolean hasPrefix = value.startsWith("1.");
+    Integer version = Ints.tryParse(hasPrefix ? value.substring("1.".length()) : value);
+    if (!isValidSourceVersion(version, hasPrefix)) {
+      throw new IllegalArgumentException("invalid -source version: " + value);
+    }
+    try {
+      return SourceVersion.valueOf("RELEASE_" + version);
+    } catch (IllegalArgumentException unused) {
+      throw new IllegalArgumentException("invalid -source version: " + value);
+    }
+  }
+
+  private static boolean isValidSourceVersion(Integer version, boolean hasPrefix) {
+    if (version == null) {
+      return false;
+    }
+    if (version < 5) {
+      // the earliest source version supported by JDK 8 is Java 5
+      return false;
+    }
+    if (hasPrefix && version > 10) {
+      // javac supports legacy `1.*` version numbers for source versions up to Java 10
+      return false;
+    }
+    return true;
   }
 
   private static URL[] toUrls(ImmutableList<String> processorPath) throws MalformedURLException {

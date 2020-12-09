@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import javax.lang.model.SourceVersion;
@@ -34,5 +35,49 @@ public class ProcessingTest {
         .isEqualTo(SourceVersion.RELEASE_8);
     assertThat(Processing.parseSourceVersion(ImmutableList.of("-source", "8", "-source", "7")))
         .isEqualTo(SourceVersion.RELEASE_7);
+  }
+
+  @Test
+  public void withPrefix() {
+    assertThat(Processing.parseSourceVersion(ImmutableList.of("-source", "1.7")))
+        .isEqualTo(SourceVersion.RELEASE_7);
+    assertThat(Processing.parseSourceVersion(ImmutableList.of("-source", "1.8")))
+        .isEqualTo(SourceVersion.RELEASE_8);
+  }
+
+  @Test
+  public void invalidPrefix() {
+    IllegalArgumentException expected =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Processing.parseSourceVersion(ImmutableList.of("-source", "1.11")));
+    assertThat(expected).hasMessageThat().contains("invalid -source version: 1.11");
+  }
+
+  @Test
+  public void latestSupported() {
+    String latest = SourceVersion.latestSupported().toString();
+    assertThat(latest).startsWith("RELEASE_");
+    latest = latest.substring("RELEASE_".length());
+    assertThat(Processing.parseSourceVersion(ImmutableList.of("-source", latest)))
+        .isEqualTo(SourceVersion.latestSupported());
+  }
+
+  @Test
+  public void missingArgument() {
+    IllegalArgumentException expected =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Processing.parseSourceVersion(ImmutableList.of("-source")));
+    assertThat(expected).hasMessageThat().contains("-source requires an argument");
+  }
+
+  @Test
+  public void invalidSourceVersion() {
+    IllegalArgumentException expected =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Processing.parseSourceVersion(ImmutableList.of("-source", "NOSUCH")));
+    assertThat(expected).hasMessageThat().contains("invalid -source version: NOSUCH");
   }
 }
