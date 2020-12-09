@@ -506,12 +506,15 @@ public class ConstExpressionParser {
         return term1;
       }
       eat();
-      if (op == TurbineOperatorKind.TERNARY) {
-        term1 = ternary(term1);
-      } else if (op == TurbineOperatorKind.ASSIGN) {
-        term1 = assign(term1, op);
-      } else {
-        term1 = new Tree.Binary(position, term1, expression(op.prec()), op);
+      switch (op) {
+        case TERNARY:
+          term1 = ternary(term1);
+          break;
+        case ASSIGN:
+          term1 = assign(term1, op);
+          break;
+        default:
+          term1 = new Tree.Binary(position, term1, expression(op.prec()), op);
       }
       if (term1 == null) {
         return null;
@@ -598,5 +601,13 @@ public class ConstExpressionParser {
   @CheckReturnValue
   private TurbineError error(ErrorKind kind, Object... args) {
     return TurbineError.format(lexer.source(), lexer.position(), kind, args);
+  }
+
+  public int f() {
+    return helper(1, 2);
+  }
+
+  private int helper(int x, int y) {
+    return x + y;
   }
 }
