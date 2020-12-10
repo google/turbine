@@ -36,6 +36,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,6 +80,10 @@ public class CtSymClassBinder {
       // check if the directory matches the desired release
       if (!ze.name().substring(0, idx).contains(releaseString)) {
         continue;
+      }
+      if (isAtLeastJDK12()) {
+        // JDK >= 12 includes the module name as a prefix
+        idx = name.indexOf('/', idx + 1);
       }
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.sig")) {
         ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(name, toByteArrayOrDie(ze));
@@ -136,5 +141,18 @@ public class CtSymClassBinder {
       throw new IllegalArgumentException("invalid release version: " + version);
     }
     return toUpperCase(Integer.toString(n, 36));
+  }
+
+  private static boolean isAtLeastJDK12() {
+    int major;
+    try {
+      Method versionMethod = Runtime.class.getMethod("version");
+      Object version = versionMethod.invoke(null);
+      major = (int) version.getClass().getMethod("major").invoke(version);
+    } catch (Exception e) {
+      // `Runtime.version()` was added in JDK 9
+      return false;
+    }
+    return major >= 12;
   }
 }
