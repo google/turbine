@@ -20,6 +20,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.TruthJUnit.assume;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -226,7 +228,10 @@ public class TurbineElementsTest {
     assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("One"))).isFalse();
     assertThat(turbineElements.isDeprecated(turbineElements.getTypeElement("Test"))).isTrue();
     for (Element e : turbineElements.getTypeElement("java.lang.Object").getEnclosedElements()) {
-      assertThat(turbineElements.isDeprecated(e)).isFalse();
+      assume().that(e.getSimpleName().contentEquals("finalize")).isFalse();
+      assertWithMessage(e.getSimpleName().toString())
+          .that(turbineElements.isDeprecated(e))
+          .isFalse();
     }
   }
 
