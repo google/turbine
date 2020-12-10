@@ -16,12 +16,15 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.Ascii.toUpperCase;
 import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Ints;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBinder;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -61,7 +64,9 @@ public class CtSymClassBinder {
           }
         };
     // ct.sym contains directories whose names are the concatentation of a list of target versions
-    // (e.g. 789) and which contain interface class files with a .sig extension.
+    // formatted as a single character 0-9 or A-Z (e.g. 789A) and which contain interface class
+    // files with a .sig extension.
+    String releaseString = formatReleaseVersion(version);
     for (Zip.Entry ze : new Zip.ZipIterable(ctSym)) {
       String name = ze.name();
       if (!name.endsWith(".sig")) {
@@ -72,8 +77,7 @@ public class CtSymClassBinder {
         continue;
       }
       // check if the directory matches the desired release
-      // TODO(cushon): what happens when version numbers contain more than one digit?
-      if (!ze.name().substring(0, idx).contains(version)) {
+      if (!ze.name().substring(0, idx).contains(releaseString)) {
         continue;
       }
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.sig")) {
@@ -123,5 +127,14 @@ public class CtSymClassBinder {
             return ze.data();
           }
         });
+  }
+
+  @VisibleForTesting
+  static String formatReleaseVersion(String version) {
+    Integer n = Ints.tryParse(version);
+    if (n == null || n <= 4 || n >= 36) {
+      throw new IllegalArgumentException("invalid release version: " + version);
+    }
+    return toUpperCase(Integer.toString(n, 36));
   }
 }
