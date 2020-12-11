@@ -256,9 +256,10 @@ public class Main {
         ClassPathBinder.bindClasspath(toPaths(classpath)),
         Processing.initializeProcessors(
             /* javacopts= */ options.javacOpts(),
-            /* processorPath= */ options.processorPath(),
             /* processorNames= */ options.processors(),
-            /* builtinProcessors= */ options.builtinProcessors()),
+            Processing.processorLoader(
+                /* processorPath= */ options.processorPath(),
+                /* builtinProcessors= */ options.builtinProcessors())),
         bootclasspath,
         /* moduleVersion=*/ Optional.empty());
   }

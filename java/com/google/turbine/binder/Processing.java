@@ -381,55 +381,58 @@ public class Processing {
 
   public static ProcessorInfo initializeProcessors(
       ImmutableList<String> javacopts,
-      ImmutableList<String> processorPath,
       ImmutableSet<String> processorNames,
-      ImmutableSet<String> builtinProcessors)
-      throws MalformedURLException {
-    ClassLoader processorLoader = null;
-    ImmutableList.Builder<Processor> processors = ImmutableList.builder();
-    ImmutableMap<String, String> processorOptions;
-    if (!processorNames.isEmpty() && !javacopts.contains("-proc:none")) {
-      if (!processorPath.isEmpty()) {
-        processorLoader =
-            new URLClassLoader(
-                toUrls(processorPath),
-                new ClassLoader(getPlatformClassLoader()) {
-                  @Override
-                  protected Class<?> findClass(String name) throws ClassNotFoundException {
-                    if (name.startsWith("com.sun.source.")
-                        || name.startsWith("com.sun.tools.")
-                        || name.startsWith("com.google.common.collect.")
-                        || name.startsWith("com.google.common.base.")
-                        || name.startsWith("com.google.common.graph.")
-                        || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
-                        || name.startsWith("dagger.model.")
-                        || name.startsWith("dagger.spi.")
-                        || name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
-                        || builtinProcessors.contains(name)) {
-                      return Class.forName(name);
-                    }
-                    throw new ClassNotFoundException(name);
-                  }
-                });
-      } else {
-        processorLoader = Processing.class.getClassLoader();
-      }
-      for (String processor : processorNames) {
-        try {
-          Class<? extends Processor> clazz =
-              Class.forName(processor, false, processorLoader).asSubclass(Processor.class);
-          processors.add(clazz.getConstructor().newInstance());
-        } catch (ReflectiveOperationException e) {
-          throw new LinkageError(e.getMessage(), e);
-        }
-      }
-      processorOptions = processorOptions(javacopts);
-    } else {
-      processorOptions = ImmutableMap.of();
+      ClassLoader processorLoader) {
+    if (processorNames.isEmpty() || javacopts.contains("-proc:none")) {
+      return ProcessorInfo.empty();
     }
+    ImmutableList<Processor> processors = instantiateProcessors(processorNames, processorLoader);
+    ImmutableMap<String, String> processorOptions = processorOptions(javacopts);
     SourceVersion sourceVersion = parseSourceVersion(javacopts);
-    return ProcessorInfo.create(
-        processors.build(), processorLoader, processorOptions, sourceVersion);
+    return ProcessorInfo.create(processors, processorLoader, processorOptions, sourceVersion);
+  }
+
+  private static ImmutableList<Processor> instantiateProcessors(
+      ImmutableSet<String> processorNames, ClassLoader processorLoader) {
+    ImmutableList.Builder<Processor> processors = ImmutableList.builder();
+    for (String processor : processorNames) {
+      try {
+        Class<? extends Processor> clazz =
+            Class.forName(processor, false, processorLoader).asSubclass(Processor.class);
+        processors.add(clazz.getConstructor().newInstance());
+      } catch (ReflectiveOperationException e) {
+        throw new LinkageError(e.getMessage(), e);
+      }
+    }
+    return processors.build();
+  }
+
+  public static ClassLoader processorLoader(
+      ImmutableList<String> processorPath, ImmutableSet<String> builtinProcessors)
+      throws MalformedURLException {
+    if (processorPath.isEmpty()) {
+      return Processing.class.getClassLoader();
+    }
+    return new URLClassLoader(
+        toUrls(processorPath),
+        new ClassLoader(getPlatformClassLoader()) {
+          @Override
+          protected Class<?> findClass(String name) throws ClassNotFoundException {
+            if (name.startsWith("com.sun.source.")
+                || name.startsWith("com.sun.tools.")
+                || name.startsWith("com.google.common.collect.")
+                || name.startsWith("com.google.common.base.")
+                || name.startsWith("com.google.common.graph.")
+                || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
+                || name.startsWith("dagger.model.")
+                || name.startsWith("dagger.spi.")
+                || name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
+                || builtinProcessors.contains(name)) {
+              return Class.forName(name);
+            }
+            throw new ClassNotFoundException(name);
+          }
+        });
   }
 
   @VisibleForTesting
