@@ -68,7 +68,7 @@ import java.util.Optional;
 import javax.annotation.processing.Processor;
 
 /** The entry point for analysis. */
-public class Binder {
+public final class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static BindingResult bind(
@@ -540,4 +540,6 @@ public class Binder {
           units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
     }
   }
+
+  private Binder() {}
 }

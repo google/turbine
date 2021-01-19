@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /** Qualified name resolution. */
-public class Resolve {
+public final class Resolve {
 
   /**
    * Performs JLS 6.5.5.2 qualified type name resolution of a type with the given simple name,
@@ -213,4 +213,6 @@ public class Resolve {
     }
     throw new AssertionError(visibility);
   }
+
+  private Resolve() {}
 }

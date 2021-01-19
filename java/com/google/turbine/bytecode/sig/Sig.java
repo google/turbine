@@ -21,7 +21,7 @@ import com.google.turbine.model.TurbineConstantTypeKind;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** JVMS 4.7.9.1 signatures. */
-public class Sig {
+public final class Sig {
 
   /** A JVMS 4.7.9.1 ClassSignature. */
   public static class ClassSig {
@@ -343,4 +343,6 @@ public class Sig {
       return exceptions;
     }
   }
+
+  private Sig() {}
 }

@@ -49,7 +49,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Bind {@link Type}s from bytecode. */
-public class BytecodeBinder {
+public final class BytecodeBinder {
 
   static Type.ClassTy bindClassTy(Sig.ClassTySig sig, Function<String, TyVarSymbol> scope) {
     StringBuilder sb = new StringBuilder(sig.pkg());
@@ -212,4 +212,6 @@ public class BytecodeBinder {
         /* uses= */ ImmutableList.of(),
         /* provides= */ ImmutableList.of());
   }
+
+  private BytecodeBinder() {}
 }

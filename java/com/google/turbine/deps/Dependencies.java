@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /** Support for Bazel jdeps dependency output. */
-public class Dependencies {
+public final class Dependencies {
   /** Creates a jdeps proto for the current compilation. */
   public static DepsProto.Dependencies collectDeps(
       Optional<String> targetLabel, ClassPath bootclasspath, BindingResult bound, Lowered lowered) {
@@ -219,4 +219,6 @@ public class Dependencies {
     // preserve the order of entries in the transitive classpath
     return Collections2.filter(transitiveClasspath, Predicates.in(reduced));
   }
+
+  private Dependencies() {}
 }

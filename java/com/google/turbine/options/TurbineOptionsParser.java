@@ -33,7 +33,7 @@ import java.util.Iterator;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A command line options parser for {@link TurbineOptions}. */
-public class TurbineOptionsParser {
+public final class TurbineOptionsParser {
 
   /**
    * Parses command line options into {@link TurbineOptions}, expanding any {@code @params} files.
@@ -237,4 +237,6 @@ public class TurbineOptionsParser {
       }
     }
   }
+
+  private TurbineOptionsParser() {}
 }

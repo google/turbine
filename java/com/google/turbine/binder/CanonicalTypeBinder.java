@@ -38,7 +38,7 @@ import java.util.Map;
 /**
  * Canonicalizes all qualified types in a {@link SourceTypeBoundClass} using {@link Canonicalize}.
  */
-public class CanonicalTypeBinder {
+public final class CanonicalTypeBinder {
 
   static SourceTypeBoundClass bind(
       ClassSymbol sym, SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
@@ -177,4 +177,6 @@ public class CanonicalTypeBinder {
     }
     return result.build();
   }
+
+  private CanonicalTypeBinder() {}
 }

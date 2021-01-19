@@ -38,7 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Sets up an environment for symbols on the classpath. */
-public class ClassPathBinder {
+public final class ClassPathBinder {
 
   /**
    * The prefix for repackaged transitive dependencies; see {@link
@@ -148,4 +148,6 @@ public class ClassPathBinder {
           }
         });
   }
+
+  private ClassPathBinder() {}
 }

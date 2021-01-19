@@ -31,7 +31,7 @@ import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 
 /** Generic type erasure. */
-public class Erasure {
+public final class Erasure {
   public static Type erase(Type ty, Function<TyVarSymbol, TyVarInfo> tenv) {
     switch (ty.tyKind()) {
       case CLASS_TY:
@@ -109,4 +109,6 @@ public class Erasure {
         erase(ty.parameters(), tenv),
         erase(ty.thrown(), tenv));
   }
+
+  private Erasure() {}
 }

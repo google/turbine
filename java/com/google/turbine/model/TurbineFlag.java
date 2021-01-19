@@ -22,7 +22,7 @@ package com.google.turbine.model;
  * <p>See tables 4.1-A, 4.5-A, 4.6-A, and 4.7.6-A in JVMS 4:
  * https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html
  */
-public class TurbineFlag {
+public final class TurbineFlag {
   public static final int ACC_PUBLIC = 0x0001;
   public static final int ACC_PRIVATE = 0x0002;
   public static final int ACC_PROTECTED = 0x0004;
@@ -54,4 +54,6 @@ public class TurbineFlag {
 
   /** Synthetic constructors (e.g. of inner classes and enums). */
   public static final int ACC_SYNTH_CTOR = 1 << 18;
+
+  private TurbineFlag() {}
 }

@@ -70,7 +70,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 /** Main entry point for the turbine CLI. */
-public class Main {
+public final class Main {
 
   private static final int BUFFER_SIZE = 65536;
 
@@ -482,4 +482,6 @@ public class Main {
     }
     return result.build();
   }
+
+  private Main() {}
 }

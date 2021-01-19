@@ -45,7 +45,7 @@ import java.util.Map;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
-public class CtSymClassBinder {
+public final class CtSymClassBinder {
 
   @Nullable
   public static ClassPath bind(String version) throws IOException {
@@ -155,4 +155,6 @@ public class CtSymClassBinder {
     }
     return major >= 12;
   }
+
+  private CtSymClassBinder() {}
 }

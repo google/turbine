@@ -65,7 +65,7 @@ import java.util.Map;
  * constant binding is done, read the {@code @Target} meta-annotation for each ambiguous annotation,
  * and move it to the appropriate location.
  */
-public class DisambiguateTypeAnnotations {
+public final class DisambiguateTypeAnnotations {
   public static SourceTypeBoundClass bind(
       SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
     return new SourceTypeBoundClass(
@@ -317,4 +317,6 @@ public class DisambiguateTypeAnnotations {
     }
     return false;
   }
+
+  private DisambiguateTypeAnnotations() {}
 }

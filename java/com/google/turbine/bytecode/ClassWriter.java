@@ -27,7 +27,7 @@ import com.google.turbine.model.Const.Value;
 import java.util.List;
 
 /** Class file writing. */
-public class ClassWriter {
+public final class ClassWriter {
 
   private static final int MAGIC = 0xcafebabe;
   private static final int MINOR_VERSION = 0;
@@ -124,4 +124,6 @@ public class ClassWriter {
     result.write(body.toByteArray());
     return result.toByteArray();
   }
+
+  private ClassWriter() {}
 }

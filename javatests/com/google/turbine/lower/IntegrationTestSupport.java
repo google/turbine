@@ -82,7 +82,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
 /** Support for bytecode diffing-integration tests. */
-public class IntegrationTestSupport {
+public final class IntegrationTestSupport {
 
   /**
    * Normalizes order of members, attributes, and constant pool entries, to allow diffing bytecode.
@@ -634,4 +634,6 @@ public class IntegrationTestSupport {
       return new TestInput(sources, classes);
     }
   }
+
+  private IntegrationTestSupport() {}
 }

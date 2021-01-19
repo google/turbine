@@ -39,7 +39,7 @@ import java.util.Set;
  * This allows header compilations to be performed against a classpath containing only direct
  * dependencies and no transitive dependencies.
  */
-public class Transitive {
+public final class Transitive {
 
   public static ImmutableMap<String, byte[]> collectDeps(
       ClassPath bootClassPath, BindingResult bound) {
@@ -134,4 +134,6 @@ public class Transitive {
       addSuperTypes(closure, env, i);
     }
   }
+
+  private Transitive() {}
 }

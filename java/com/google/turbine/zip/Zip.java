@@ -71,7 +71,7 @@ import java.util.zip.ZipException;
  *       header is present only if ENDTOT in EOCD header is 0xFFFF.
  * </ul>
  */
-public class Zip {
+public final class Zip {
 
   static final int ZIP64_ENDSIG = 0x06064b50;
 
@@ -335,4 +335,6 @@ public class Zip {
         && (buf.get(index + 2) == i)
         && (buf.get(index + 3) == j);
   }
+
+  private Zip() {}
 }
