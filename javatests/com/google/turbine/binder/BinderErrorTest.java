@@ -561,9 +561,12 @@ public class BinderErrorTest {
           "class T {}",
         },
         {
-          "<>:7: error: could not resolve B", //
+          "<>:7: error: could not resolve B",
           "@One.A(b = {@B})",
           "             ^",
+          "<>:7: error: could not evaluate constant expression",
+          "@One.A(b = {@B})",
+          "           ^",
         },
       },
       {
@@ -754,6 +757,26 @@ public class BinderErrorTest {
           "<>:2: error: unexpected modifier: final", //
           "  static final void f() {}",
           "                    ^",
+        },
+      },
+      {
+        {
+          "package foobar;",
+          "import java.lang.annotation.Retention;",
+          "@Retention",
+          "@Retention",
+          "@interface Test {}",
+        },
+        {
+          "<>:3: error: missing required annotation argument: value",
+          "@Retention",
+          "^",
+          "<>:4: error: missing required annotation argument: value",
+          "@Retention",
+          "^",
+          "<>:3: error: java.lang.annotation.Retention is not @Repeatable",
+          "@Retention",
+          "^",
         },
       },
     };

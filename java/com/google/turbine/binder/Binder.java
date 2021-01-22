@@ -54,6 +54,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog;
@@ -87,19 +88,28 @@ public final class Binder {
       ClassPath bootclasspath,
       Optional<String> moduleVersion) {
     TurbineLog log = new TurbineLog();
-    BindingResult br =
-        bind(
-            log,
-            units,
-            /* generatedSources= */ ImmutableMap.of(),
-            /* generatedClasses= */ ImmutableMap.of(),
-            classpath,
-            bootclasspath,
-            moduleVersion);
-    if (!processorInfo.processors().isEmpty() && !units.isEmpty()) {
+    BindingResult br;
+    try {
       br =
-          Processing.process(
-              log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
+          bind(
+              log,
+              units,
+              /* generatedSources= */ ImmutableMap.of(),
+              /* generatedClasses= */ ImmutableMap.of(),
+              classpath,
+              bootclasspath,
+              moduleVersion);
+      if (!processorInfo.processors().isEmpty() && !units.isEmpty()) {
+        br =
+            Processing.process(
+                log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
+      }
+    } catch (TurbineError turbineError) {
+      throw new TurbineError(
+          ImmutableList.<TurbineDiagnostic>builder()
+              .addAll(log.diagnostics())
+              .addAll(turbineError.diagnostics())
+              .build());
     }
     log.maybeThrow();
     return br;

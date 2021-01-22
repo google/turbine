@@ -78,6 +78,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /** Top level annotation processing logic, see also {@link Binder}. */
 public class Processing {
 
+  @Nullable
   static BindingResult process(
       TurbineLog log,
       final ImmutableList<CompUnit> initialSources,
@@ -133,7 +134,8 @@ public class Processing {
       try (Timers.Timer unused = timers.start(processor)) {
         processor.init(processingEnv);
       } catch (Throwable t) {
-        reportProcessorCrash(log, processor, t);
+        logProcessorCrash(log, processor, t);
+        return null;
       }
     }
 
@@ -182,7 +184,8 @@ public class Processing {
             // TODO(cushon): consider disallowing this, or reporting a diagnostic
             processor.process(annotations, roundEnv);
           } catch (Throwable t) {
-            reportProcessorCrash(log, processor, t);
+            logProcessorCrash(log, processor, t);
+            return null;
           }
         }
       }
@@ -226,7 +229,8 @@ public class Processing {
       try (Timers.Timer unused = timers.start(processor)) {
         processor.process(ImmutableSet.of(), roundEnv);
       } catch (Throwable t) {
-        reportProcessorCrash(log, processor, t);
+        logProcessorCrash(log, processor, t);
+        return null;
       }
     }
 
@@ -247,7 +251,9 @@ public class Processing {
               classpath,
               bootclasspath,
               moduleVersion);
-      log.maybeThrow();
+      if (log.anyErrors()) {
+        return null;
+      }
     }
 
     if (!filer.generatedClasses().isEmpty()) {
@@ -288,13 +294,12 @@ public class Processing {
     }
   }
 
-  private static void reportProcessorCrash(TurbineLog log, Processor processor, Throwable t) {
+  private static void logProcessorCrash(TurbineLog log, Processor processor, Throwable t) {
     log.diagnostic(
         Diagnostic.Kind.ERROR,
         String.format(
             "An exception occurred in %s:\n%s",
             processor.getClass().getCanonicalName(), Throwables.getStackTraceAsString(t)));
-    log.maybeThrow();
   }
 
   /** Returns a map from annotations present in the compilation to the annotated elements. */

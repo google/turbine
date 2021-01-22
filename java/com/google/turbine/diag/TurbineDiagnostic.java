@@ -64,6 +64,10 @@ public class TurbineDiagnostic {
     return severity;
   }
 
+  boolean isError() {
+    return severity.equals(Diagnostic.Kind.ERROR);
+  }
+
   /** The diagnostic message. */
   public String diagnostic() {
     StringBuilder sb = new StringBuilder(path());

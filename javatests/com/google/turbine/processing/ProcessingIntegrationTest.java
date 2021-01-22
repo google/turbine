@@ -33,6 +33,7 @@ import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.parse.Parser;
@@ -74,22 +75,14 @@ public class ProcessingIntegrationTest {
     }
   }
 
-  private static final IntegrationTestSupport.TestInput SOURCES =
-      IntegrationTestSupport.TestInput.parse(
-          Joiner.on('\n')
-              .join(
-                  "=== Test.java ===", //
-                  "@Deprecated",
-                  "class Test extends NoSuch {",
-                  "}"));
-
   @Test
   public void crash() throws IOException {
     ImmutableList<Tree.CompUnit> units =
-        SOURCES.sources.entrySet().stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toImmutableList());
+        parseUnit(
+            "=== Test.java ===", //
+            "@Deprecated",
+            "class Test extends NoSuch {",
+            "}");
     try {
       Binder.bind(
           units,
@@ -103,9 +96,11 @@ public class ProcessingIntegrationTest {
           Optional.empty());
       fail();
     } catch (TurbineError e) {
-      assertThat(e.diagnostics()).hasSize(2);
-      assertThat(e.diagnostics().get(0).message()).contains("could not resolve NoSuch");
-      assertThat(e.diagnostics().get(1).message()).contains("crash!");
+      ImmutableList<String> messages =
+          e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
+      assertThat(messages).hasSize(2);
+      assertThat(messages.get(0)).contains("could not resolve NoSuch");
+      assertThat(messages.get(1)).contains("crash!");
     }
   }
 
@@ -143,19 +138,11 @@ public class ProcessingIntegrationTest {
   @Test
   public void warnings() throws IOException {
     ImmutableList<Tree.CompUnit> units =
-        IntegrationTestSupport.TestInput.parse(
-                Joiner.on('\n')
-                    .join(
-                        "=== Test.java ===", //
-                        "@Deprecated",
-                        "class Test {",
-                        "}"))
-            .sources
-            .entrySet()
-            .stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toImmutableList());
+        parseUnit(
+            "=== Test.java ===", //
+            "@Deprecated",
+            "class Test {",
+            "}");
     try {
       Binder.bind(
           units,
@@ -220,19 +207,11 @@ public class ProcessingIntegrationTest {
   @Test
   public void resources() throws IOException {
     ImmutableList<Tree.CompUnit> units =
-        IntegrationTestSupport.TestInput.parse(
-                Joiner.on('\n')
-                    .join(
-                        "=== Test.java ===", //
-                        "@Deprecated",
-                        "class Test {",
-                        "}"))
-            .sources
-            .entrySet()
-            .stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toImmutableList());
+        parseUnit(
+            "=== Test.java ===", //
+            "@Deprecated",
+            "class Test {",
+            "}");
     BindingResult bound =
         Binder.bind(
             units,
@@ -257,25 +236,17 @@ public class ProcessingIntegrationTest {
   @Test
   public void getAllAnnotations() throws IOException {
     ImmutableList<Tree.CompUnit> units =
-        IntegrationTestSupport.TestInput.parse(
-                Joiner.on('\n')
-                    .join(
-                        "=== A.java ===", //
-                        "import java.lang.annotation.Inherited;",
-                        "@Inherited",
-                        "@interface A {}",
-                        "=== B.java ===", //
-                        "@interface B {}",
-                        "=== One.java ===", //
-                        "@A @B class One {}",
-                        "=== Two.java ===", //
-                        "class Two extends One {}"))
-            .sources
-            .entrySet()
-            .stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toImmutableList());
+        parseUnit(
+            "=== A.java ===", //
+            "import java.lang.annotation.Inherited;",
+            "@Inherited",
+            "@interface A {}",
+            "=== B.java ===", //
+            "@interface B {}",
+            "=== One.java ===", //
+            "@A @B class One {}",
+            "=== Two.java ===", //
+            "class Two extends One {}");
     BindingResult bound =
         Binder.bind(
             units,
@@ -409,19 +380,11 @@ public class ProcessingIntegrationTest {
   @Test
   public void errorsAndFinalRound() throws IOException {
     ImmutableList<Tree.CompUnit> units =
-        IntegrationTestSupport.TestInput.parse(
-                Joiner.on('\n')
-                    .join(
-                        "=== Test.java ===", //
-                        "@Deprecated",
-                        "class Test {",
-                        "}"))
-            .sources
-            .entrySet()
-            .stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toImmutableList());
+        parseUnit(
+            "=== Test.java ===", //
+            "@Deprecated",
+            "class Test {",
+            "}");
     try {
       Binder.bind(
           units,
@@ -470,19 +433,11 @@ public class ProcessingIntegrationTest {
   @Test
   public void superType() throws IOException {
     ImmutableList<Tree.CompUnit> units =
-        IntegrationTestSupport.TestInput.parse(
-                Joiner.on('\n')
-                    .join(
-                        "=== T.java ===", //
-                        "@Deprecated",
-                        "class T extends S {",
-                        "}"))
-            .sources
-            .entrySet()
-            .stream()
-            .map(e -> new SourceFile(e.getKey(), e.getValue()))
-            .map(Parser::parse)
-            .collect(toImmutableList());
+        parseUnit(
+            "=== T.java ===", //
+            "@Deprecated",
+            "class T extends S {",
+            "}");
     try {
       Binder.bind(
           units,
@@ -500,5 +455,67 @@ public class ProcessingIntegrationTest {
           e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
       assertThat(diags).containsExactly("could not resolve S", "S [S]").inOrder();
     }
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class GenerateAnnotationProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (first) {
+        try {
+          JavaFileObject file = processingEnv.getFiler().createSourceFile("A");
+          try (Writer writer = file.openWriter()) {
+            writer.write("@interface A {}");
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        first = false;
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void generatedAnnotationDefinition() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            "@interface B {",
+            "  A value() default @A;",
+            "}",
+            "@B(value = @A)",
+            "class T {",
+            "}");
+    BindingResult bound =
+        Binder.bind(
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ProcessorInfo.create(
+                ImmutableList.of(new GenerateAnnotationProcessor()),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+    assertThat(bound.generatedSources()).containsKey("A.java");
+  }
+
+  private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {
+    return IntegrationTestSupport.TestInput.parse(Joiner.on('\n').join(lines))
+        .sources
+        .entrySet()
+        .stream()
+        .map(e -> new SourceFile(e.getKey(), e.getValue()))
+        .map(Parser::parse)
+        .collect(toImmutableList());
   }
 }

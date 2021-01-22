@@ -196,6 +196,9 @@ public class ConstBinder {
 
   private static RetentionPolicy bindRetention(AnnoInfo annotation) {
     Const value = annotation.values().get("value");
+    if (value == null) {
+      return null;
+    }
     if (value.kind() != Kind.ENUM_CONSTANT) {
       return null;
     }

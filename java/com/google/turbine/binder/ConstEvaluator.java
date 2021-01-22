@@ -63,12 +63,9 @@ import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import javax.tools.Diagnostic;
 
 /**
  * Constant expression evaluation.
@@ -938,7 +935,6 @@ public strictfp class ConstEvaluator {
     }
 
     Map<String, Const> values = new LinkedHashMap<>();
-    List<TurbineDiagnostic> diagnostics = new ArrayList<>();
     for (Expression arg : info.args()) {
       Expression expr;
       String key;
@@ -953,33 +949,27 @@ public strictfp class ConstEvaluator {
       }
       MethodInfo methodInfo = template.remove(key);
       if (methodInfo == null) {
-        diagnostics.add(
-            errorDiagnostic(
-                arg.position(),
-                ErrorKind.CANNOT_RESOLVE,
-                String.format("element %s() in %s", key, info.sym())));
+        log.error(
+            arg.position(),
+            ErrorKind.CANNOT_RESOLVE,
+            String.format("element %s() in %s", key, info.sym()));
         continue;
       }
       Const value = evalAnnotationValue(expr, methodInfo.returnType());
       if (value == null) {
-        diagnostics.add(errorDiagnostic(expr.position(), ErrorKind.EXPRESSION_ERROR));
+        log.error(expr.position(), ErrorKind.EXPRESSION_ERROR);
         continue;
       }
       Const existing = values.put(key, value);
       if (existing != null) {
-        diagnostics.add(errorDiagnostic(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT));
+        log.error(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT);
         continue;
       }
     }
     for (MethodInfo methodInfo : template.values()) {
       if (!methodInfo.hasDefaultValue()) {
-        diagnostics.add(
-            errorDiagnostic(
-                info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name()));
+        log.error(info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name());
       }
-    }
-    if (!diagnostics.isEmpty()) {
-      throw new TurbineError(ImmutableList.copyOf(diagnostics));
     }
     return info.withValues(ImmutableMap.copyOf(values));
   }
@@ -987,8 +977,9 @@ public strictfp class ConstEvaluator {
   private TurbineAnnotationValue evalAnno(Tree.Anno t) {
     LookupResult result = scope.lookup(new LookupKey(t.name()));
     if (result == null) {
-      throw error(
+      log.error(
           t.name().get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on(".").join(t.name()));
+      return null;
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (Ident name : result.remaining()) {
@@ -1022,7 +1013,8 @@ public strictfp class ConstEvaluator {
     }
     Const value = eval(tree);
     if (value == null) {
-      throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
+      log.error(tree.position(), ErrorKind.EXPRESSION_ERROR);
+      return null;
     }
     switch (ty.tyKind()) {
       case PRIM_TY:
@@ -1049,10 +1041,6 @@ public strictfp class ConstEvaluator {
       default:
         throw new AssertionError(ty.tyKind());
     }
-  }
-
-  private TurbineDiagnostic errorDiagnostic(int position, ErrorKind kind, Object... args) {
-    return TurbineDiagnostic.format(Diagnostic.Kind.ERROR, source, position, kind, args);
   }
 
   private TurbineError error(int position, ErrorKind kind, Object... args) {
