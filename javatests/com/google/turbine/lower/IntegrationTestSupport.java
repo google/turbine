@@ -410,7 +410,7 @@ public final class IntegrationTestSupport {
     final Set<String> classes1 = classes;
     new SignatureReader(signature)
         .accept(
-            new SignatureVisitor(Opcodes.ASM7) {
+            new SignatureVisitor(Opcodes.ASM9) {
               private final Set<String> classes = classes1;
               // class signatures may contain type arguments that contain class signatures
               Deque<List<String>> pieces = new ArrayDeque<>();

@@ -93,7 +93,7 @@ public class SigIntegrationTest {
           try {
             new ClassReader(Files.newInputStream(path))
                 .accept(
-                    new ClassVisitor(Opcodes.ASM7) {
+                    new ClassVisitor(Opcodes.ASM9) {
                       @Override
                       public void visit(
                           int version,
