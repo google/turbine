@@ -47,6 +47,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.Tree.VarDecl;
@@ -262,11 +263,16 @@ public abstract class TurbineElement implements Element {
                       return factory.asTypeMirror(info.superClassType());
                     }
                     if (info instanceof SourceTypeBoundClass) {
-                      // support simple name for stuff that doesn't exist
+                      // support simple names for stuff that doesn't exist
                       TyDecl decl = ((SourceTypeBoundClass) info).decl();
                       if (decl.xtnds().isPresent()) {
-                        return factory.asTypeMirror(
-                            ErrorTy.create(decl.xtnds().get().name().value()));
+                        ArrayDeque<Tree.Ident> flat = new ArrayDeque<>();
+                        for (Tree.ClassTy curr = decl.xtnds().get();
+                            curr != null;
+                            curr = curr.base().orElse(null)) {
+                          flat.addFirst(curr.name());
+                        }
+                        return factory.asTypeMirror(ErrorTy.create(flat));
                       }
                     }
                     return factory.noType();

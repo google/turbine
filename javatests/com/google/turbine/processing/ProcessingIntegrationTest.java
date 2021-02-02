@@ -19,6 +19,7 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.fail;
@@ -507,6 +508,51 @@ public class ProcessingIntegrationTest {
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     assertThat(bound.generatedSources()).containsKey("A.java");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class GenerateQualifiedProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      String superType =
+          processingEnv.getElementUtils().getTypeElement("T").getSuperclass().toString();
+      processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, superType);
+      return false;
+    }
+  }
+
+  @Test
+  public void qualifiedErrorType() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            "class T extends G.I {",
+            "}");
+    try {
+      Binder.bind(
+          units,
+          ClassPathBinder.bindClasspath(ImmutableList.of()),
+          ProcessorInfo.create(
+              ImmutableList.of(new GenerateQualifiedProcessor()),
+              getClass().getClassLoader(),
+              ImmutableMap.of(),
+              SourceVersion.latestSupported()),
+          TestClassPaths.TURBINE_BOOTCLASSPATH,
+          Optional.empty());
+      fail();
+    } catch (TurbineError e) {
+      assertThat(
+              e.diagnostics().stream()
+                  .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
+                  .map(d -> d.message()))
+          .containsExactly("G.I");
+    }
   }
 
   private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {
