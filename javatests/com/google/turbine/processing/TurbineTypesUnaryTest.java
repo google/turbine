@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.types.Deannotate;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -143,5 +144,17 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
     assertWithMessage("asElement(`%s`) = asElement(`%s`)", javacA, turbineA)
         .that(actual)
         .isEqualTo(expected);
+  }
+
+  @Test
+  public void deannotate() {
+    String toString = turbineA.toString();
+    String deannotated =
+        Deannotate.deannotate(((TurbineTypeMirror) turbineA).asTurbineType()).toString();
+    if (toString.contains("@")) {
+      assertWithMessage("deannotate(`%s`) = `%s`", toString, deannotated)
+          .that(deannotated)
+          .doesNotContain("@");
+    }
   }
 }

@@ -779,6 +779,23 @@ public class BinderErrorTest {
           "^",
         },
       },
+      {
+        {
+          "import java.util.List;", //
+          "class Test {",
+          "  @interface A {}",
+          "  void f(List<@NoSuch int> xs) {}",
+          "}",
+        },
+        {
+          "<>:4: error: could not resolve NoSuch",
+          "  void f(List<@NoSuch int> xs) {}",
+          "              ^",
+          "<>:4: error: unexpected type int",
+          "  void f(List<@NoSuch int> xs) {}",
+          "                         ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

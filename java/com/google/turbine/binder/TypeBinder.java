@@ -54,6 +54,7 @@ import com.google.turbine.tree.TurbineModifier;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
+import com.google.turbine.types.Deannotate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -623,7 +624,10 @@ public class TypeBinder {
       default:
         Type result = bindTy(scope, ty);
         if (result.tyKind().equals(Type.TyKind.PRIM_TY)) {
-          log.error(ty.position(), ErrorKind.UNEXPECTED_TYPE, result);
+          // Omit type annotations when printing the type in the diagnostic, since they're
+          // irrelevant and could be invalid if there were deferred errors.
+          // TODO(cushon): consider ensuring this is done for all diagnostics that mention types
+          log.error(ty.position(), ErrorKind.UNEXPECTED_TYPE, Deannotate.deannotate(result));
         }
         return result;
     }

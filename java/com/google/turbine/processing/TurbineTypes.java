@@ -901,7 +901,11 @@ public class TurbineTypes implements Types {
         });
   }
 
-  public static Type deannotate(Type ty) {
+  /**
+   * Remove some type annotation metadata for bug-compatibility with javac, which does this
+   * inconsistently (see https://bugs.openjdk.java.net/browse/JDK-8042981).
+   */
+  private static Type deannotate(Type ty) {
     switch (ty.tyKind()) {
       case CLASS_TY:
         return deannotateClassTy((Type.ClassTy) ty);
