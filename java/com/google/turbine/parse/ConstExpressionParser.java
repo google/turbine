@@ -571,6 +571,7 @@ public class ConstExpressionParser {
       throw new AssertionError();
     }
     eat();
+    int pos = position;
     Tree.ConstVarName constVarName = (Tree.ConstVarName) qualIdent();
     if (constVarName == null) {
       return null;
@@ -580,10 +581,10 @@ public class ConstExpressionParser {
     if (token == Token.LPAREN) {
       eat();
       while (token != Token.RPAREN) {
-        int pos = position;
+        int argPos = position;
         Tree.Expression expression = expression();
         if (expression == null) {
-          throw TurbineError.format(lexer.source(), pos, ErrorKind.INVALID_ANNOTATION_ARGUMENT);
+          throw TurbineError.format(lexer.source(), argPos, ErrorKind.INVALID_ANNOTATION_ARGUMENT);
         }
         args.add(expression);
         if (token != Token.COMMA) {
@@ -595,7 +596,7 @@ public class ConstExpressionParser {
         eat();
       }
     }
-    return new Tree.AnnoExpr(position, new Tree.Anno(position, name, args.build()));
+    return new Tree.AnnoExpr(pos, new Tree.Anno(pos, name, args.build()));
   }
 
   @CheckReturnValue

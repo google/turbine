@@ -991,6 +991,9 @@ public strictfp class ConstEvaluator {
     if (sym == null) {
       return null;
     }
+    if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
+      log.error(t.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
+    }
     AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, ImmutableMap.of()));
     return new TurbineAnnotationValue(annoInfo);
   }

@@ -796,6 +796,22 @@ public class BinderErrorTest {
           "                         ^",
         },
       },
+      {
+        {
+          "@interface B {}",
+          "@interface A {",
+          "  B[] value() default @B;",
+          "}",
+          "interface C {}",
+          "@A(value = @C)",
+          "class T {}",
+        },
+        {
+          "<>:6: error: C is not an annotation", //
+          "@A(value = @C)",
+          "            ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
