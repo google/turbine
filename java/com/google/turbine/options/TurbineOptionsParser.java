@@ -100,6 +100,7 @@ public final class TurbineOptionsParser {
         case "--sources":
           builder.setSources(readList(argumentDeque));
           break;
+        case "--output_deps_proto":
         case "--output_deps":
           builder.setOutputDeps(readOne(argumentDeque));
           break;
@@ -140,6 +141,7 @@ public final class TurbineOptionsParser {
         case "--profile":
           builder.setProfile(readOne(argumentDeque));
           break;
+        case "--generated_sources_output":
         case "--gensrc_output":
           builder.setGensrcOutput(readOne(argumentDeque));
           break;
@@ -148,6 +150,14 @@ public final class TurbineOptionsParser {
           break;
         case "--help":
           builder.setHelp(true);
+          break;
+        case "--experimental_fix_deps_tool":
+        case "--strict_java_deps":
+        case "--native_header_output":
+        case "--compress_jar":
+          // these flags don't apply to turbine, but are accepted (and ignored) for compatibility
+          // with JavaBuilder command lines
+          readOne(argumentDeque);
           break;
         default:
           throw new IllegalArgumentException("unknown option: " + next);

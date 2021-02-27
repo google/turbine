@@ -373,4 +373,27 @@ public class TurbineOptionsTest {
       assertThat(options.reducedClasspathMode()).isEqualTo(mode);
     }
   }
+
+  @Test
+  public void javaBuilderCompatibility() throws Exception {
+    TurbineOptions options =
+        TurbineOptionsParser.parse(
+            Iterables.concat(
+                BASE_ARGS,
+                ImmutableList.of(
+                    "--output_deps_proto",
+                    "output_deps.proto",
+                    "--generated_sources_output",
+                    "generated_sources.jar",
+                    "--experimental_fix_deps_tool",
+                    "ignored",
+                    "--strict_java_deps",
+                    "ignored",
+                    "--native_header_output",
+                    "ignored",
+                    "--compress_jar",
+                    "ignored")));
+    assertThat(options.outputDeps()).hasValue("output_deps.proto");
+    assertThat(options.gensrcOutput()).hasValue("generated_sources.jar");
+  }
 }
