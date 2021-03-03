@@ -180,6 +180,7 @@ public class LowerIntegrationTest {
       "field_anno.test",
       "annotation_bool_default.test",
       "annotation_class_default.test",
+      "annotation_clinit.test",
       "annotation_declaration.test",
       "annotation_enum_default.test",
       "annotations_default.test",

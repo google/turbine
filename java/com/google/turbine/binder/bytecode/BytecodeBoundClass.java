@@ -379,6 +379,10 @@ public class BytecodeBoundClass implements TypeBoundClass {
               ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
               int idx = 0;
               for (ClassFile.MethodInfo m : classFile.get().methods()) {
+                if (m.name().equals("<clinit>")) {
+                  // Don't bother reading class initializers, which we don't need
+                  continue;
+                }
                 methods.add(bindMethod(idx++, m));
               }
               return methods.build();

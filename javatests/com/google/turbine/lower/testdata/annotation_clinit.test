@@ -1,0 +1,18 @@
+%%% pkg/Anno.java %%%
+package pkg;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Anno {
+  String CONSTANT = Anno.class.toString();
+
+  String value() default "";
+}
+
+=== pkg/T.java ===
+package pkg;
+
+@Anno
+class T {}
