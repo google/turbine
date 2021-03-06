@@ -149,7 +149,7 @@ public final class CtSymClassBinder {
       Method versionMethod = Runtime.class.getMethod("version");
       Object version = versionMethod.invoke(null);
       major = (int) version.getClass().getMethod("major").invoke(version);
-    } catch (Exception e) {
+    } catch (ReflectiveOperationException e) {
       // `Runtime.version()` was added in JDK 9
       return false;
     }
