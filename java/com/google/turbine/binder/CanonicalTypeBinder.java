@@ -129,9 +129,7 @@ public final class CanonicalTypeBinder {
               base.defaultValue(),
               base.decl(),
               base.annotations(),
-              base.receiver() != null
-                  ? param(source, base.decl().position(), env, sym, base.receiver())
-                  : null));
+              base.receiver() != null ? param(source, pos, env, sym, base.receiver()) : null));
     }
     return result.build();
   }

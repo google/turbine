@@ -216,11 +216,12 @@ public class ModuleBinder {
     }
     ClassSymbol sym = (ClassSymbol) result.sym();
     for (Tree.Ident name : result.remaining()) {
-      sym = Resolve.resolve(env, /* origin= */ null, sym, name);
-      if (sym == null) {
+      ClassSymbol next = Resolve.resolve(env, /* origin= */ null, sym, name);
+      if (next == null) {
         throw error(
             ErrorKind.SYMBOL_NOT_FOUND, pos, new ClassSymbol(sym.binaryName() + '$' + name));
       }
+      sym = next;
     }
     return sym;
   }
