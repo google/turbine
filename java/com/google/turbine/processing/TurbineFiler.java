@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
@@ -361,7 +362,7 @@ public class TurbineFiler implements Filer {
     @Override
     public URI toUri() {
       try {
-        return loader.getResource(path).toURI();
+        return requireNonNull(loader.getResource(path)).toURI();
       } catch (URISyntaxException e) {
         throw new AssertionError(e);
       }

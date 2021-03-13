@@ -18,6 +18,7 @@ package com.google.turbine.binder.bytecode;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Verify.verify;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -512,6 +513,9 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   private static RetentionPolicy bindRetention(AnnotationInfo annotation) {
     ElementValue val = annotation.elementValuePairs().get("value");
+    if (val == null) {
+      return null;
+    }
     if (val.kind() != Kind.ENUM) {
       return null;
     }
@@ -525,6 +529,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
   private static ImmutableSet<TurbineElementType> bindTarget(AnnotationInfo annotation) {
     ImmutableSet.Builder<TurbineElementType> result = ImmutableSet.builder();
     ElementValue val = annotation.elementValuePairs().get("value");
+    requireNonNull(val);
     switch (val.kind()) {
       case ARRAY:
         for (ElementValue element : ((ArrayValue) val).elements()) {
@@ -551,6 +556,9 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   private static ClassSymbol bindRepeatable(AnnotationInfo annotation) {
     ElementValue val = annotation.elementValuePairs().get("value");
+    if (val == null) {
+      return null;
+    }
     switch (val.kind()) {
       case CLASS:
         String className = ((ConstTurbineClassValue) val).className();

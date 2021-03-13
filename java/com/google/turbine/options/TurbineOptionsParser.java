@@ -203,7 +203,7 @@ public final class TurbineOptionsParser {
   /** Returns the value of an option, or {@code null}. */
   @Nullable
   private static String readOne(Deque<String> argumentDeque) {
-    if (argumentDeque.isEmpty() || argumentDeque.peekFirst().startsWith("-")) {
+    if (argumentDeque.isEmpty() || argumentDeque.getFirst().startsWith("-")) {
       return null;
     }
     return argumentDeque.pollFirst();
@@ -212,7 +212,7 @@ public final class TurbineOptionsParser {
   /** Returns a list of option values. */
   private static ImmutableList<String> readList(Deque<String> argumentDeque) {
     ImmutableList.Builder<String> result = ImmutableList.builder();
-    while (!argumentDeque.isEmpty() && !argumentDeque.peekFirst().startsWith("--")) {
+    while (!argumentDeque.isEmpty() && !argumentDeque.getFirst().startsWith("--")) {
       result.add(argumentDeque.pollFirst());
     }
     return result.build();
@@ -225,7 +225,7 @@ public final class TurbineOptionsParser {
   private static ImmutableList<String> readJavacopts(Deque<String> argumentDeque) {
     ImmutableList.Builder<String> result = ImmutableList.builder();
     while (!argumentDeque.isEmpty()) {
-      String arg = argumentDeque.pollFirst();
+      String arg = argumentDeque.removeFirst();
       if (arg.equals("--")) {
         return result.build();
       }

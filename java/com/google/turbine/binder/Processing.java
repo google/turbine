@@ -58,7 +58,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -139,10 +138,8 @@ public class Processing {
       }
     }
 
-    Map<Processor, SupportedAnnotationTypes> wanted = new HashMap<>();
-    for (Processor processor : processorInfo.processors()) {
-      wanted.put(processor, SupportedAnnotationTypes.create(processor));
-    }
+    ImmutableMap<Processor, SupportedAnnotationTypes> wanted =
+        initializeSupportedAnnotationTypes(processorInfo);
 
     Set<ClassSymbol> allSymbols = new HashSet<>();
 
@@ -162,9 +159,10 @@ public class Processing {
       }
       ImmutableSetMultimap<ClassSymbol, Symbol> allAnnotations = getAllAnnotations(env, syms);
       TurbineRoundEnvironment roundEnv = null;
-      for (Processor processor : processorInfo.processors()) {
+      for (Map.Entry<Processor, SupportedAnnotationTypes> e : wanted.entrySet()) {
+        Processor processor = e.getKey();
+        SupportedAnnotationTypes supportedAnnotationTypes = e.getValue();
         Set<TypeElement> annotations = new HashSet<>();
-        SupportedAnnotationTypes supportedAnnotationTypes = wanted.get(processor);
         boolean run = supportedAnnotationTypes.everything() || toRun.contains(processor);
         for (ClassSymbol a : allAnnotations.keys()) {
           if (supportedAnnotationTypes.everything()
@@ -269,6 +267,15 @@ public class Processing {
         result.withStatistics(Statistics.create(timers.build(), ImmutableMap.copyOf(statistics)));
 
     return result;
+  }
+
+  private static ImmutableMap<Processor, SupportedAnnotationTypes>
+      initializeSupportedAnnotationTypes(ProcessorInfo processorInfo) {
+    ImmutableMap.Builder<Processor, SupportedAnnotationTypes> result = ImmutableMap.builder();
+    for (Processor processor : processorInfo.processors()) {
+      result.put(processor, SupportedAnnotationTypes.create(processor));
+    }
+    return result.build();
   }
 
   @AutoValue
