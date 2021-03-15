@@ -58,7 +58,7 @@ import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 import java.util.function.Function;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * A bound class backed by a class file.
@@ -73,13 +73,13 @@ public class BytecodeBoundClass implements TypeBoundClass {
   private final ClassSymbol sym;
   private final Env<ClassSymbol, BytecodeBoundClass> env;
   private final Supplier<ClassFile> classFile;
-  private final String jarFile;
+  private final @Nullable String jarFile;
 
   public BytecodeBoundClass(
       ClassSymbol sym,
       Supplier<byte[]> bytes,
       Env<ClassSymbol, BytecodeBoundClass> env,
-      String jarFile) {
+      @Nullable String jarFile) {
     this.sym = sym;
     this.env = env;
     this.jarFile = jarFile;
@@ -123,11 +123,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return kind.get();
   }
 
-  private final Supplier<ClassSymbol> owner =
+  private final Supplier<@Nullable ClassSymbol> owner =
       Suppliers.memoize(
-          new Supplier<ClassSymbol>() {
+          new Supplier<@Nullable ClassSymbol>() {
             @Override
-            public ClassSymbol get() {
+            public @Nullable ClassSymbol get() {
               for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
                 if (sym.binaryName().equals(inner.innerClass())) {
                   return new ClassSymbol(inner.outerClass());
@@ -187,11 +187,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return access.get();
   }
 
-  private final Supplier<ClassSig> sig =
+  private final Supplier<@Nullable ClassSig> sig =
       Suppliers.memoize(
-          new Supplier<ClassSig>() {
+          new Supplier<@Nullable ClassSig>() {
             @Override
-            public ClassSig get() {
+            public @Nullable ClassSig get() {
               String signature = classFile.get().signature();
               if (signature == null) {
                 return null;
@@ -222,11 +222,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return tyParams.get();
   }
 
-  private final Supplier<ClassSymbol> superclass =
+  private final Supplier<@Nullable ClassSymbol> superclass =
       Suppliers.memoize(
-          new Supplier<ClassSymbol>() {
+          new Supplier<@Nullable ClassSymbol>() {
             @Override
-            public ClassSymbol get() {
+            public @Nullable ClassSymbol get() {
               String superclass = classFile.get().superName();
               if (superclass == null) {
                 return null;
@@ -236,7 +236,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
           });
 
   @Override
-  public ClassSymbol superclass() {
+  public @Nullable ClassSymbol superclass() {
     return superclass.get();
   }
 
@@ -258,11 +258,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return interfaces.get();
   }
 
-  private final Supplier<ClassTy> superClassType =
+  private final Supplier<@Nullable ClassTy> superClassType =
       Suppliers.memoize(
-          new Supplier<ClassTy>() {
+          new Supplier<@Nullable ClassTy>() {
             @Override
-            public ClassTy get() {
+            public @Nullable ClassTy get() {
               if (superclass() == null) {
                 return null;
               }
@@ -275,7 +275,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
           });
 
   @Override
-  public ClassTy superClassType() {
+  public @Nullable ClassTy superClassType() {
     return superClassType.get();
   }
 
@@ -481,11 +481,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return methods.get();
   }
 
-  private final Supplier<AnnotationMetadata> annotationMetadata =
+  private final Supplier<@Nullable AnnotationMetadata> annotationMetadata =
       Suppliers.memoize(
-          new Supplier<AnnotationMetadata>() {
+          new Supplier<@Nullable AnnotationMetadata>() {
             @Override
-            public AnnotationMetadata get() {
+            public @Nullable AnnotationMetadata get() {
               if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
                 return null;
               }
@@ -511,7 +511,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
             }
           });
 
-  private static RetentionPolicy bindRetention(AnnotationInfo annotation) {
+  private static @Nullable RetentionPolicy bindRetention(AnnotationInfo annotation) {
     ElementValue val = annotation.elementValuePairs().get("value");
     if (val == null) {
       return null;
@@ -554,7 +554,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
     }
   }
 
-  private static ClassSymbol bindRepeatable(AnnotationInfo annotation) {
+  private static @Nullable ClassSymbol bindRepeatable(AnnotationInfo annotation) {
     ElementValue val = annotation.elementValuePairs().get("value");
     if (val == null) {
       return null;
@@ -570,7 +570,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public AnnotationMetadata annotationMetadata() {
+  public @Nullable AnnotationMetadata annotationMetadata() {
     return annotationMetadata.get();
   }
 
@@ -621,7 +621,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
   }
 
   /** The jar file the symbol was loaded from. */
-  public String jarFile() {
+  public @Nullable String jarFile() {
     return jarFile;
   }
 
