@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-@org.jspecify.nullness.NullMarked
+
 package com.google.turbine.binder.bytecode;
