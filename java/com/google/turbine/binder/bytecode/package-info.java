@@ -14,5 +14,4 @@
  * limitations under the License.
  */
 
-
 package com.google.turbine.binder.bytecode;
