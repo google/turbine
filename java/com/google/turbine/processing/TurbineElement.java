@@ -46,7 +46,6 @@ import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
-import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.TyDecl;
@@ -796,13 +795,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Set<Modifier> getModifiers() {
-      int access = info().access();
-      if (factory.getSymbol(info().sym().owner()).kind() == TurbineTyKind.INTERFACE) {
-        if ((access & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_STATIC)) == 0) {
-          access |= TurbineFlag.ACC_DEFAULT;
-        }
-      }
-      return asModifierSet(ModifierOwner.METHOD, access);
+      return asModifierSet(ModifierOwner.METHOD, info().access());
     }
 
     @Override

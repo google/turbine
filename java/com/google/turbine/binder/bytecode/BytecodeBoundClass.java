@@ -379,18 +379,19 @@ public class BytecodeBoundClass implements TypeBoundClass {
             public ImmutableList<MethodInfo> get() {
               ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
               int idx = 0;
-              for (ClassFile.MethodInfo m : classFile.get().methods()) {
+              ClassFile cf = classFile.get();
+              for (ClassFile.MethodInfo m : cf.methods()) {
                 if (m.name().equals("<clinit>")) {
                   // Don't bother reading class initializers, which we don't need
                   continue;
                 }
-                methods.add(bindMethod(idx++, m));
+                methods.add(bindMethod(cf, idx++, m));
               }
               return methods.build();
             }
           });
 
-  private MethodInfo bindMethod(int methodIdx, ClassFile.MethodInfo m) {
+  private MethodInfo bindMethod(ClassFile classFile, int methodIdx, ClassFile.MethodInfo m) {
     MethodSymbol methodSymbol = new MethodSymbol(methodIdx, sym, m.name());
     Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
 
@@ -463,13 +464,19 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
     ImmutableList<AnnoInfo> annotations = BytecodeBinder.bindAnnotations(m.annotations());
 
+    int access = m.access();
+    if (((classFile.access() & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE)
+        && (access & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_STATIC)) == 0) {
+      access |= TurbineFlag.ACC_DEFAULT;
+    }
+
     return new MethodInfo(
         methodSymbol,
         tyParamTypes,
         ret,
         formals.build(),
         exceptions.build(),
-        m.access(),
+        access,
         defaultValue,
         /* decl= */ null,
         annotations,

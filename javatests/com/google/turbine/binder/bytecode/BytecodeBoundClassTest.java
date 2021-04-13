@@ -17,6 +17,7 @@
 package com.google.turbine.binder.bytecode;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
@@ -31,6 +32,7 @@ import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import java.io.IOException;
@@ -173,6 +175,19 @@ public class BytecodeBoundClassTest {
   @Test
   public void genericBridges() {
     assertThat(getBytecodeBoundClass(C.class, B.class, A.class).methods()).hasSize(1);
+  }
+
+  interface D {
+    default void f() {}
+  }
+
+  @Test
+  public void defaultMethods() {
+    assertThat(
+            (getOnlyElement(getBytecodeBoundClass(D.class).methods()).access()
+                    & TurbineFlag.ACC_DEFAULT)
+                == TurbineFlag.ACC_DEFAULT)
+        .isTrue();
   }
 
   private static byte[] toByteArrayOrDie(InputStream is) {
