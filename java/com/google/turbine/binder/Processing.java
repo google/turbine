@@ -425,26 +425,29 @@ public class Processing {
     if (processorPath.isEmpty()) {
       return Processing.class.getClassLoader();
     }
-    return new URLClassLoader(
-        toUrls(processorPath),
-        new ClassLoader(getPlatformClassLoader()) {
-          @Override
-          protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.startsWith("com.sun.source.")
-                || name.startsWith("com.sun.tools.")
-                || name.startsWith("com.google.common.collect.")
-                || name.startsWith("com.google.common.base.")
-                || name.startsWith("com.google.common.graph.")
-                || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
-                || name.startsWith("dagger.model.")
-                || name.startsWith("dagger.spi.")
-                || name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
-                || builtinProcessors.contains(name)) {
-              return Class.forName(name);
+    ClassLoader parent = getPlatformClassLoader();
+    if (!builtinProcessors.isEmpty()) {
+      parent =
+          new ClassLoader(parent) {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+              if (name.startsWith("com.sun.source.")
+                  || name.startsWith("com.sun.tools.")
+                  || name.startsWith("com.google.common.collect.")
+                  || name.startsWith("com.google.common.base.")
+                  || name.startsWith("com.google.common.graph.")
+                  || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
+                  || name.startsWith("dagger.model.")
+                  || name.startsWith("dagger.spi.")
+                  || name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
+                  || builtinProcessors.contains(name)) {
+                return Class.forName(name);
+              }
+              throw new ClassNotFoundException(name);
             }
-            throw new ClassNotFoundException(name);
-          }
-        });
+          };
+    }
+    return new URLClassLoader(toUrls(processorPath), parent);
   }
 
   @VisibleForTesting
