@@ -20,7 +20,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Header compilation options. */
 @AutoValue
@@ -69,17 +68,6 @@ public abstract class TurbineOptions {
 
   /** The output jar. */
   public abstract Optional<String> output();
-
-  /**
-   * The output jar.
-   *
-   * @deprecated use {@link #output} instead.
-   */
-  @Deprecated
-  @Nullable
-  public String outputFile() {
-    return output().orElse(null);
-  }
 
   /** Paths to annotation processor artifacts. */
   public abstract ImmutableList<String> processorPath();
@@ -160,21 +148,9 @@ public abstract class TurbineOptions {
   public abstract static class Builder {
     public abstract Builder setOutput(String output);
 
-    /** @deprecated use {@link #setClassPath(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addClassPathEntries(Iterable<String> sources) {
-      return setClassPath(ImmutableList.copyOf(sources));
-    }
-
     public abstract Builder setClassPath(ImmutableList<String> classPath);
 
     public abstract Builder setBootClassPath(ImmutableList<String> bootClassPath);
-
-    /** @deprecated use {@link #setBootClassPath(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addBootClassPathEntries(Iterable<String> sources) {
-      return setBootClassPath(ImmutableList.copyOf(sources));
-    }
 
     public abstract Builder setRelease(String release);
 
@@ -182,33 +158,9 @@ public abstract class TurbineOptions {
 
     public abstract Builder setSources(ImmutableList<String> sources);
 
-    /** @deprecated use {@link #setSources(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addSources(Iterable<String> sources) {
-      return setSources(ImmutableList.copyOf(sources));
-    }
-
-    /** @deprecated use {@link #setProcessorPath(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addProcessorPathEntries(Iterable<String> processorPath) {
-      return setProcessorPath(ImmutableList.copyOf(processorPath));
-    }
-
     public abstract Builder setProcessorPath(ImmutableList<String> processorPath);
 
-    /** @deprecated use {@link #setProcessors(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addProcessors(Iterable<String> processors) {
-      return setProcessors(ImmutableList.copyOf(processors));
-    }
-
     public abstract Builder setProcessors(ImmutableList<String> processors);
-
-    /** @deprecated use {@link #setBuiltinProcessors(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addBuiltinProcessors(Iterable<String> builtinProcessors) {
-      return setBuiltinProcessors(ImmutableList.copyOf(builtinProcessors));
-    }
 
     public abstract Builder setBuiltinProcessors(ImmutableList<String> builtinProcessors);
 
@@ -222,12 +174,6 @@ public abstract class TurbineOptions {
 
     public abstract Builder setInjectingRuleKind(String injectingRuleKind);
 
-    /** @deprecated use {@link #setDepsArtifacts(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addAllDepsArtifacts(Iterable<String> depsArtifacts) {
-      return setDepsArtifacts(ImmutableList.copyOf(depsArtifacts));
-    }
-
     public abstract Builder setDepsArtifacts(ImmutableList<String> depsArtifacts);
 
     public abstract Builder setHelp(boolean help);
@@ -240,12 +186,6 @@ public abstract class TurbineOptions {
     }
 
     public abstract Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode);
-
-    /** @deprecated use {@link #setDirectJars(ImmutableList)} instead. */
-    @Deprecated
-    public Builder addDirectJars(Iterable<String> directJars) {
-      return setDirectJars(ImmutableList.copyOf(directJars));
-    }
 
     public abstract Builder setDirectJars(ImmutableList<String> jars);
 
