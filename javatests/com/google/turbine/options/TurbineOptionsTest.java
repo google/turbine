@@ -18,6 +18,7 @@ package com.google.turbine.options;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
@@ -395,5 +396,16 @@ public class TurbineOptionsTest {
                     "ignored")));
     assertThat(options.outputDeps()).hasValue("output_deps.proto");
     assertThat(options.gensrcOutput()).hasValue("generated_sources.jar");
+  }
+
+  @Test
+  public void requiredValue() throws Exception {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TurbineOptionsParser.parse(
+                    Iterables.concat(BASE_ARGS, ImmutableList.of("--output", "--system"))));
+    assertThat(e).hasMessageThat().contains("missing required argument for: --output");
   }
 }

@@ -20,6 +20,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Header compilation options. */
 @AutoValue
@@ -201,4 +202,11 @@ public abstract class TurbineOptions {
 
     public abstract TurbineOptions build();
   }
+
+  // TODO(b/188833569): remove when AutoValue adds @Nullable to Object if its on the classpath
+  @Override
+  public abstract boolean equals(@Nullable Object other);
+
+  @Override
+  public abstract int hashCode();
 }
