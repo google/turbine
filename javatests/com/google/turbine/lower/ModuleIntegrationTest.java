@@ -18,12 +18,11 @@ package com.google.turbine.lower;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.CtSymClassBinder;
 import com.google.turbine.binder.JimageClassBinder;
 import java.nio.file.Files;
@@ -68,10 +67,7 @@ public class ModuleIntegrationTest {
     }
 
     IntegrationTestSupport.TestInput input =
-        IntegrationTestSupport.TestInput.parse(
-            new String(
-                ByteStreams.toByteArray(getClass().getResourceAsStream("moduletestdata/" + test)),
-                UTF_8));
+        IntegrationTestSupport.TestInput.parse(getResource(getClass(), "moduletestdata/" + test));
 
     ImmutableList<Path> classpathJar = ImmutableList.of();
     if (!input.classes.isEmpty()) {

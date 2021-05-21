@@ -17,12 +17,11 @@
 package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.io.ByteStreams;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -345,10 +344,7 @@ public class LowerIntegrationTest {
   public void test() throws Exception {
 
     IntegrationTestSupport.TestInput input =
-        IntegrationTestSupport.TestInput.parse(
-            new String(
-                ByteStreams.toByteArray(getClass().getResourceAsStream("testdata/" + test)),
-                UTF_8));
+        IntegrationTestSupport.TestInput.parse(getResource(getClass(), "testdata/" + test));
 
     ImmutableList<Path> classpathJar = ImmutableList.of();
     if (!input.classes.isEmpty()) {

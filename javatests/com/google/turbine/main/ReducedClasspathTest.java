@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -106,7 +107,7 @@ public class ReducedClasspathTest {
     try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
       for (String className : classNames) {
         jos.putNextEntry(new JarEntry(className + ".class"));
-        jos.write(compiled.get(className));
+        jos.write(requireNonNull(compiled.get(className), className));
       }
     }
     return lib;

@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
@@ -207,8 +208,8 @@ public class MainTest {
         assertThat(entries.map(JarEntry::getName))
             .containsAtLeast("META-INF/", "META-INF/MANIFEST.MF");
       }
-      Manifest manifest = jarFile.getManifest();
-      Attributes attributes = manifest.getMainAttributes();
+      Manifest manifest = requireNonNull(jarFile.getManifest());
+      Attributes attributes = requireNonNull(manifest.getMainAttributes());
       ImmutableMap<String, ?> entries =
           attributes.entrySet().stream()
               .collect(toImmutableMap(e -> e.getKey().toString(), Map.Entry::getValue));
@@ -218,12 +219,15 @@ public class MainTest {
               "Manifest-Version", "1.0",
               "Target-Label", "//foo:foo",
               "Injecting-Rule-Kind", "foo_library");
-      assertThat(jarFile.getEntry(JarFile.MANIFEST_NAME).getLastModifiedTime().toInstant())
+      assertThat(
+              requireNonNull(jarFile.getEntry(JarFile.MANIFEST_NAME))
+                  .getLastModifiedTime()
+                  .toInstant())
           .isEqualTo(
               LocalDateTime.of(2010, 1, 1, 0, 0, 0).atZone(ZoneId.systemDefault()).toInstant());
     }
     try (JarFile jarFile = new JarFile(gensrcOutput.toFile())) {
-      Manifest manifest = jarFile.getManifest();
+      Manifest manifest = requireNonNull(jarFile.getManifest());
       Attributes attributes = manifest.getMainAttributes();
       ImmutableMap<String, ?> entries =
           attributes.entrySet().stream()

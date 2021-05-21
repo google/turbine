@@ -17,8 +17,10 @@
 package com.google.turbine.lower;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.io.MoreFiles.getFileExtension;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
@@ -417,13 +419,14 @@ public final class IntegrationTestSupport {
 
               @Override
               public void visitInnerClassType(String name) {
-                pieces.peek().add(name);
+                pieces.element().add(name);
               }
 
               @Override
               public void visitClassType(String name) {
-                pieces.push(new ArrayList<>());
-                pieces.peek().add(name);
+                List<String> classType = new ArrayList<>();
+                classType.add(name);
+                pieces.push(classType);
               }
 
               @Override
@@ -510,7 +513,7 @@ public final class IntegrationTestSupport {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
               throws IOException {
-            if (path.getFileName().toString().endsWith(".class")) {
+            if (getFileExtension(path).equals("class")) {
               classes.add(path);
             }
             return FileVisitResult.CONTINUE;
@@ -551,7 +554,9 @@ public final class IntegrationTestSupport {
     fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, ImmutableList.of(out));
     fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
     fileManager.setLocationFromPaths(StandardLocation.locationFor("MODULE_PATH"), classpath);
-    if (inputs.stream().filter(i -> i.getFileName().toString().equals("module-info.java")).count()
+    if (inputs.stream()
+            .filter(i -> requireNonNull(i.getFileName()).toString().equals("module-info.java"))
+            .count()
         > 1) {
       // multi-module mode
       fileManager.setLocationFromPaths(

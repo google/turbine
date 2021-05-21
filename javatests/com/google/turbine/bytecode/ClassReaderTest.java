@@ -18,6 +18,7 @@ package com.google.turbine.bytecode;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
@@ -136,7 +137,7 @@ public class ClassReaderTest {
     assertThat(annotation.typeName()).isEqualTo("Ljava/lang/annotation/Retention;");
     assertThat(annotation.elementValuePairs()).hasSize(1);
     assertThat(annotation.elementValuePairs()).containsKey("value");
-    ElementValue value = annotation.elementValuePairs().get("value");
+    ElementValue value = requireNonNull(annotation.elementValuePairs().get("value"));
     assertThat(value.kind()).isEqualTo(ElementValue.Kind.ENUM);
     ElementValue.EnumConstValue enumValue = (ElementValue.EnumConstValue) value;
     assertThat(enumValue.typeName()).isEqualTo("Ljava/lang/annotation/RetentionPolicy;");

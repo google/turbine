@@ -19,6 +19,7 @@ package com.google.turbine.binder;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -259,7 +260,7 @@ public class BinderTest {
     try (OutputStream os = Files.newOutputStream(libJar);
         JarOutputStream jos = new JarOutputStream(os)) {
       jos.putNextEntry(new JarEntry("B.class"));
-      jos.write(lib.get("B"));
+      jos.write(requireNonNull(lib.get("B")));
     }
 
     ImmutableList<Tree.CompUnit> units =

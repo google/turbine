@@ -18,13 +18,13 @@ package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.turbine.testing.TestResources.getResource;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -234,17 +234,9 @@ public class LowerTest {
             .bytes();
 
     assertThat(AsmUtils.textify(bytes.get("test/Test"), /* skipDebug= */ false))
-        .isEqualTo(
-            new String(
-                ByteStreams.toByteArray(
-                    LowerTest.class.getResourceAsStream("testdata/golden/outer.txt")),
-                UTF_8));
+        .isEqualTo(getResource(LowerTest.class, "testdata/golden/outer.txt"));
     assertThat(AsmUtils.textify(bytes.get("test/Test$Inner"), /* skipDebug= */ false))
-        .isEqualTo(
-            new String(
-                ByteStreams.toByteArray(
-                    LowerTest.class.getResourceAsStream("testdata/golden/inner.txt")),
-                UTF_8));
+        .isEqualTo(getResource(LowerTest.class, "testdata/golden/inner.txt"));
   }
 
   @Test
@@ -285,10 +277,7 @@ public class LowerTest {
   public void wildArrayElement() throws Exception {
     IntegrationTestSupport.TestInput input =
         IntegrationTestSupport.TestInput.parse(
-            new String(
-                ByteStreams.toByteArray(
-                    getClass().getResourceAsStream("testdata/canon_array.test")),
-                UTF_8));
+            getResource(getClass(), "testdata/canon_array.test"));
 
     Map<String, byte[]> actual =
         IntegrationTestSupport.runTurbine(input.sources, ImmutableList.of());
@@ -522,16 +511,11 @@ public class LowerTest {
     Path libJar = temporaryFolder.newFile("lib.jar").toPath();
     try (OutputStream os = Files.newOutputStream(libJar);
         JarOutputStream jos = new JarOutputStream(os)) {
-      jos.putNextEntry(new JarEntry("A$M.class"));
-      jos.write(lib.get("A$M"));
-      jos.putNextEntry(new JarEntry("A$M$I.class"));
-      jos.write(lib.get("A$M$I"));
-      jos.putNextEntry(new JarEntry("B.class"));
-      jos.write(lib.get("B"));
-      jos.putNextEntry(new JarEntry("B$BM.class"));
-      jos.write(lib.get("B$BM"));
-      jos.putNextEntry(new JarEntry("B$BM$BI.class"));
-      jos.write(lib.get("B$BM$BI"));
+      write(jos, lib, "A$M");
+      write(jos, lib, "A$M$I");
+      write(jos, lib, "B");
+      write(jos, lib, "B$BM");
+      write(jos, lib, "B$BM$BI");
     }
 
     ImmutableMap<String, String> sources =
@@ -579,16 +563,11 @@ public class LowerTest {
     Path libJar = temporaryFolder.newFile("lib.jar").toPath();
     try (OutputStream os = Files.newOutputStream(libJar);
         JarOutputStream jos = new JarOutputStream(os)) {
-      jos.putNextEntry(new JarEntry("A$M.class"));
-      jos.write(lib.get("A$M"));
-      jos.putNextEntry(new JarEntry("A$M$I.class"));
-      jos.write(lib.get("A$M$I"));
-      jos.putNextEntry(new JarEntry("B.class"));
-      jos.write(lib.get("B"));
-      jos.putNextEntry(new JarEntry("B$BM.class"));
-      jos.write(lib.get("B$BM"));
-      jos.putNextEntry(new JarEntry("B$BM$BI.class"));
-      jos.write(lib.get("B$BM$BI"));
+      write(jos, lib, "A$M");
+      write(jos, lib, "A$M$I");
+      write(jos, lib, "B");
+      write(jos, lib, "B$BM");
+      write(jos, lib, "B$BM$BI");
     }
 
     ImmutableMap<String, String> sources =
@@ -648,5 +627,10 @@ public class LowerTest {
 
   static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
+  }
+
+  static void write(JarOutputStream jos, Map<String, byte[]> lib, String name) throws IOException {
+    jos.putNextEntry(new JarEntry(name + ".class"));
+    jos.write(requireNonNull(lib.get(name)));
   }
 }

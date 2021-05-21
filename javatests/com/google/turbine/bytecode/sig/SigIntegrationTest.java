@@ -17,6 +17,7 @@
 package com.google.turbine.bytecode.sig;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.io.MoreFiles.getFileExtension;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Splitter;
@@ -70,7 +71,7 @@ public class SigIntegrationTest {
             Stream<Path> stream = Files.walk(jarfs.getPath("/"))) {
           stream
               .filter(Files::isRegularFile)
-              .filter(p -> p.getFileName().toString().endsWith(".class"))
+              .filter(p -> getFileExtension(p).equals("class"))
               .forEachOrdered(consumer);
         }
       }
@@ -80,7 +81,7 @@ public class SigIntegrationTest {
       Map<String, ?> env = new HashMap<>();
       try (FileSystem fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), env);
           Stream<Path> stream = Files.walk(fileSystem.getPath("/modules"))) {
-        stream.filter(p -> p.getFileName().toString().endsWith(".class")).forEachOrdered(consumer);
+        stream.filter(p -> getFileExtension(p).equals("class")).forEachOrdered(consumer);
       }
     }
   }

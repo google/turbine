@@ -23,6 +23,7 @@ import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
+import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
 import static org.junit.Assert.fail;
@@ -30,7 +31,6 @@ import static org.junit.Assert.fail;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -47,7 +47,6 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type.ClassTy;
-import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -195,18 +194,12 @@ public class ClassPathBinderTest {
 
   @Test
   public void byteCodeBoundClassName() {
+    Env<ClassSymbol, BytecodeBoundClass> env = classPath.env();
     BytecodeBoundClass c =
         new BytecodeBoundClass(
             new ClassSymbol("java/util/List"),
-            () -> {
-              try {
-                return ByteStreams.toByteArray(
-                    getClass().getClassLoader().getResourceAsStream("java/util/ArrayList.class"));
-              } catch (IOException e) {
-                throw new IOError(e);
-              }
-            },
-            null,
+            () -> getResourceBytes(getClass(), "/java/util/ArrayList.class"),
+            env,
             null);
     try {
       c.owner();

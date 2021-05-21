@@ -42,6 +42,7 @@ import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -83,9 +84,11 @@ public class BytecodeBoundClassTest {
         .isEqualTo(new ClassSymbol("java/lang/String"));
   }
 
+  @SuppressWarnings({"deprecation", "TypeNameShadowing", "InlineMeSuggester"})
   static class HasMethod {
     @Deprecated
-    <X, Y extends X, Z extends Throwable> X foo(@Deprecated X bar, Y baz) throws IOException, Z {
+    <X, Y extends X, Z extends Throwable> @Nullable X foo(@Deprecated X bar, Y baz)
+        throws IOException, Z {
       return null;
     }
 
@@ -216,7 +219,7 @@ public class BytecodeBoundClassTest {
             .append(
                 new Env<ClassSymbol, BytecodeBoundClass>() {
                   @Override
-                  public BytecodeBoundClass get(ClassSymbol sym) {
+                  public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
                     return map.get(sym);
                   }
                 });
