@@ -18,7 +18,7 @@ package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -826,17 +826,18 @@ public class BinderErrorTest {
 
   @Test
   public void test() throws Exception {
-    try {
-      Binder.bind(
-              ImmutableList.of(parseLines(source)),
-              ClassPathBinder.bindClasspath(ImmutableList.of()),
-              TURBINE_BOOTCLASSPATH,
-              /* moduleVersion=*/ Optional.empty())
-          .units();
-      fail(Joiner.on('\n').join(source));
-    } catch (TurbineError e) {
-      assertThat(e).hasMessageThat().isEqualTo(lines(expected));
-    }
+    TurbineError e =
+        assertThrows(
+            Joiner.on('\n').join(source),
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                        ImmutableList.of(parseLines(source)),
+                        ClassPathBinder.bindClasspath(ImmutableList.of()),
+                        TURBINE_BOOTCLASSPATH,
+                        /* moduleVersion=*/ Optional.empty())
+                    .units());
+    assertThat(e).hasMessageThat().isEqualTo(lines(expected));
   }
 
   @SupportedAnnotationTypes("*")
@@ -856,22 +857,23 @@ public class BinderErrorTest {
   // exercise error reporting with annotation enabled, which should be identical
   @Test
   public void testWithProcessors() throws Exception {
-    try {
-      Binder.bind(
-              ImmutableList.of(parseLines(source)),
-              ClassPathBinder.bindClasspath(ImmutableList.of()),
-              ProcessorInfo.create(
-                  ImmutableList.of(new HelloWorldProcessor()),
-                  /* loader= */ getClass().getClassLoader(),
-                  /* options= */ ImmutableMap.of(),
-                  SourceVersion.latestSupported()),
-              TURBINE_BOOTCLASSPATH,
-              /* moduleVersion=*/ Optional.empty())
-          .units();
-      fail(Joiner.on('\n').join(source));
-    } catch (TurbineError e) {
-      assertThat(e).hasMessageThat().isEqualTo(lines(expected));
-    }
+    TurbineError e =
+        assertThrows(
+            Joiner.on('\n').join(source),
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                        ImmutableList.of(parseLines(source)),
+                        ClassPathBinder.bindClasspath(ImmutableList.of()),
+                        ProcessorInfo.create(
+                            ImmutableList.of(new HelloWorldProcessor()),
+                            /* loader= */ getClass().getClassLoader(),
+                            /* options= */ ImmutableMap.of(),
+                            SourceVersion.latestSupported()),
+                        TURBINE_BOOTCLASSPATH,
+                        /* moduleVersion=*/ Optional.empty())
+                    .units());
+    assertThat(e).hasMessageThat().isEqualTo(lines(expected));
   }
 
   private static CompUnit parseLines(String... lines) {

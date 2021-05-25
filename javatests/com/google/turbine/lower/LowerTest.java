@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.Objects.requireNonNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -528,14 +528,13 @@ public class LowerTest {
                     "}"))
             .build();
 
-    try {
-      IntegrationTestSupport.runTurbine(sources, ImmutableList.of(libJar));
-      fail();
-    } catch (TurbineError error) {
-      assertThat(error)
-          .hasMessageThat()
-          .contains("Test.java: error: could not locate class file for A");
-    }
+    TurbineError error =
+        assertThrows(
+            TurbineError.class,
+            () -> IntegrationTestSupport.runTurbine(sources, ImmutableList.of(libJar)));
+    assertThat(error)
+        .hasMessageThat()
+        .contains("Test.java: error: could not locate class file for A");
   }
 
   @Test
@@ -582,18 +581,15 @@ public class LowerTest {
                     "}"))
             .build();
 
-    try {
-      IntegrationTestSupport.runTurbine(sources, ImmutableList.of(libJar));
-      fail();
-    } catch (TurbineError error) {
-      assertThat(error)
-          .hasMessageThat()
-          .contains(
-              lines(
-                  "Test.java:3: error: could not locate class file for A",
-                  "     I i;",
-                  "       ^"));
-    }
+    TurbineError error =
+        assertThrows(
+            TurbineError.class,
+            () -> IntegrationTestSupport.runTurbine(sources, ImmutableList.of(libJar)));
+    assertThat(error)
+        .hasMessageThat()
+        .contains(
+            lines(
+                "Test.java:3: error: could not locate class file for A", "     I i;", "       ^"));
   }
 
   // If an element incorrectly has multiple visibility modifiers, pick one, and rely on javac to

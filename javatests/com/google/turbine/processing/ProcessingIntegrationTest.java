@@ -22,7 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -84,25 +84,25 @@ public class ProcessingIntegrationTest {
             "@Deprecated",
             "class Test extends NoSuch {",
             "}");
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          Processing.ProcessorInfo.create(
-              ImmutableList.of(new CrashingProcessor()),
-              getClass().getClassLoader(),
-              ImmutableMap.of(),
-              SourceVersion.latestSupported()),
-          TestClassPaths.TURBINE_BOOTCLASSPATH,
-          Optional.empty());
-      fail();
-    } catch (TurbineError e) {
-      ImmutableList<String> messages =
-          e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new CrashingProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    ImmutableList<String> messages =
+        e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
       assertThat(messages).hasSize(2);
       assertThat(messages.get(0)).contains("could not resolve NoSuch");
       assertThat(messages.get(1)).contains("crash!");
-    }
   }
 
   @SupportedAnnotationTypes("*")
@@ -144,25 +144,25 @@ public class ProcessingIntegrationTest {
             "@Deprecated",
             "class Test {",
             "}");
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          Processing.ProcessorInfo.create(
-              ImmutableList.of(new WarningProcessor()),
-              getClass().getClassLoader(),
-              ImmutableMap.of(),
-              SourceVersion.latestSupported()),
-          TestClassPaths.TURBINE_BOOTCLASSPATH,
-          Optional.empty());
-      fail();
-    } catch (TurbineError e) {
-      ImmutableList<String> diags =
-          e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new WarningProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    ImmutableList<String> diags =
+        e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
       assertThat(diags).hasSize(2);
       assertThat(diags.get(0)).contains("proc warning");
       assertThat(diags.get(1)).contains("proc error");
-    }
   }
 
   @SupportedAnnotationTypes("*")
@@ -386,28 +386,28 @@ public class ProcessingIntegrationTest {
             "@Deprecated",
             "class Test {",
             "}");
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          Processing.ProcessorInfo.create(
-              ImmutableList.of(new ErrorProcessor(), new FinalRoundErrorProcessor()),
-              getClass().getClassLoader(),
-              ImmutableMap.of(),
-              SourceVersion.latestSupported()),
-          TestClassPaths.TURBINE_BOOTCLASSPATH,
-          Optional.empty());
-      fail();
-    } catch (TurbineError e) {
-      ImmutableList<String> diags =
-          e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new ErrorProcessor(), new FinalRoundErrorProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    ImmutableList<String> diags =
+        e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
       assertThat(diags)
           .containsExactly(
               "1: ErrorProcessor {errorRaised=false, processingOver=false}",
               "2: ErrorProcessor {errorRaised=true, processingOver=true}",
               "2: FinalRoundErrorProcessor {errorRaised=true, processingOver=true}")
           .inOrder();
-    }
   }
 
   @SupportedAnnotationTypes("*")
@@ -439,23 +439,23 @@ public class ProcessingIntegrationTest {
             "@Deprecated",
             "class T extends S {",
             "}");
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          Processing.ProcessorInfo.create(
-              ImmutableList.of(new SuperTypeProcessor()),
-              getClass().getClassLoader(),
-              ImmutableMap.of(),
-              SourceVersion.latestSupported()),
-          TestClassPaths.TURBINE_BOOTCLASSPATH,
-          Optional.empty());
-      fail();
-    } catch (TurbineError e) {
-      ImmutableList<String> diags =
-          e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new SuperTypeProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    ImmutableList<String> diags =
+        e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
       assertThat(diags).containsExactly("could not resolve S", "S [S]").inOrder();
-    }
   }
 
   @SupportedAnnotationTypes("*")
@@ -534,25 +534,25 @@ public class ProcessingIntegrationTest {
             "=== T.java ===", //
             "class T extends G.I {",
             "}");
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          ProcessorInfo.create(
-              ImmutableList.of(new GenerateQualifiedProcessor()),
-              getClass().getClassLoader(),
-              ImmutableMap.of(),
-              SourceVersion.latestSupported()),
-          TestClassPaths.TURBINE_BOOTCLASSPATH,
-          Optional.empty());
-      fail();
-    } catch (TurbineError e) {
-      assertThat(
-              e.diagnostics().stream()
-                  .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
-                  .map(d -> d.message()))
-          .containsExactly("G.I");
-    }
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ProcessorInfo.create(
+                        ImmutableList.of(new GenerateQualifiedProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
+                .map(d -> d.message()))
+        .containsExactly("G.I");
   }
 
   private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {

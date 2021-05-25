@@ -18,7 +18,7 @@ package com.google.turbine.parse;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
@@ -57,19 +57,11 @@ public class UnicodeEscapePreprocessorTest {
 
   @Test
   public void abruptEnd() {
-    try {
-      readAll("\\u00");
-      fail();
-    } catch (TurbineError e) {
-      assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.UNEXPECTED_EOF);
-    }
+    TurbineError e = assertThrows(TurbineError.class, () -> readAll("\\u00"));
+    assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.UNEXPECTED_EOF);
 
-    try {
-      readAll("\\u");
-      fail();
-    } catch (TurbineError e) {
-      assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.UNEXPECTED_EOF);
-    }
+    e = assertThrows(TurbineError.class, () -> readAll("\\u"));
+    assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.UNEXPECTED_EOF);
   }
 
   @Test
@@ -79,12 +71,8 @@ public class UnicodeEscapePreprocessorTest {
 
   @Test
   public void invalidEscape() {
-    try {
-      readAll("\\uUUUU");
-      fail();
-    } catch (TurbineError e) {
-      assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.INVALID_UNICODE);
-    }
+    TurbineError e = assertThrows(TurbineError.class, () -> readAll("\\uUUUU"));
+    assertThat(getOnlyElement(e.diagnostics()).kind()).isEqualTo(ErrorKind.INVALID_UNICODE);
   }
 
   private List<Character> readAll(String input) {

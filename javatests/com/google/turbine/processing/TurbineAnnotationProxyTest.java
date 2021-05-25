@@ -19,7 +19,7 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -160,17 +160,13 @@ public class TurbineAnnotationProxyTest {
 
     assertThat(a.b().value()).isEqualTo(-1);
     assertThat(a.e()).isEqualTo(ElementType.PACKAGE);
-    try {
-      a.c();
-      fail();
-    } catch (MirroredTypeException e) {
+    {
+      MirroredTypeException e = assertThrows(MirroredTypeException.class, () -> a.c());
       assertThat(e.getTypeMirror().getKind()).isEqualTo(TypeKind.DECLARED);
       assertThat(getQualifiedName(e.getTypeMirror())).contains("java.lang.String");
     }
-    try {
-      a.cx();
-      fail();
-    } catch (MirroredTypesException e) {
+    {
+      MirroredTypesException e = assertThrows(MirroredTypesException.class, () -> a.cx());
       assertThat(
               e.getTypeMirrors().stream().map(m -> getQualifiedName(m)).collect(toImmutableList()))
           .containsExactly("java.lang.Integer", "java.lang.Long");

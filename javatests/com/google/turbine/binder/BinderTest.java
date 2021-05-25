@@ -20,7 +20,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -183,16 +183,16 @@ public class BinderTest {
                 "  class Inner {}",
                 "}"));
 
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          TURBINE_BOOTCLASSPATH,
-          /* moduleVersion=*/ Optional.empty());
-      fail();
-    } catch (TurbineError e) {
-      assertThat(e).hasMessageThat().contains("cycle in class hierarchy: a.A -> b.B -> a.A");
-    }
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    TURBINE_BOOTCLASSPATH,
+                    /* moduleVersion=*/ Optional.empty()));
+    assertThat(e).hasMessageThat().contains("cycle in class hierarchy: a.A -> b.B -> a.A");
   }
 
   @Test

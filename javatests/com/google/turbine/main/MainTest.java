@@ -24,7 +24,7 @@ import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -92,16 +92,16 @@ public class MainTest {
     }
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    try {
-      Main.compile(
-          optionsWithBootclasspath()
-              .setSourceJars(ImmutableList.of(sourcesa.toString(), sourcesb.toString()))
-              .setOutput(output.toString())
-              .build());
-      fail();
-    } catch (TurbineError e) {
-      assertThat(e).hasMessageThat().contains("error: duplicate declaration of Test");
-    }
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Main.compile(
+                    optionsWithBootclasspath()
+                        .setSourceJars(ImmutableList.of(sourcesa.toString(), sourcesb.toString()))
+                        .setOutput(output.toString())
+                        .build()));
+    assertThat(e).hasMessageThat().contains("error: duplicate declaration of Test");
   }
 
   @Test
@@ -264,16 +264,16 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    try {
-      Main.compile(
-          TurbineOptions.builder()
-              .setSources(ImmutableList.of(src.toString()))
-              .setOutput(output.toString())
-              .build());
-      fail();
-    } catch (IllegalArgumentException expected) {
-      assertThat(expected).hasMessageThat().contains("java.lang");
-    }
+    IllegalArgumentException expected =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Main.compile(
+                    TurbineOptions.builder()
+                        .setSources(ImmutableList.of(src.toString()))
+                        .setOutput(output.toString())
+                        .build()));
+    assertThat(expected).hasMessageThat().contains("java.lang");
   }
 
   @Test
@@ -281,14 +281,17 @@ public class MainTest {
     Path src = temporaryFolder.newFile("Test.java").toPath();
     MoreFiles.asCharSink(src, UTF_8).write("public class Test {}");
 
-    try {
-      Main.compile(optionsWithBootclasspath().setSources(ImmutableList.of(src.toString())).build());
-      fail();
-    } catch (UsageException expected) {
-      assertThat(expected)
-          .hasMessageThat()
-          .contains("at least one of --output, --gensrc_output, or --resource_output is required");
-    }
+    UsageException expected =
+        assertThrows(
+            UsageException.class,
+            () ->
+                Main.compile(
+                    optionsWithBootclasspath()
+                        .setSources(ImmutableList.of(src.toString()))
+                        .build()));
+    assertThat(expected)
+        .hasMessageThat()
+        .contains("at least one of --output, --gensrc_output, or --resource_output is required");
   }
 
   @Test

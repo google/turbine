@@ -26,7 +26,7 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableCollection;
@@ -201,14 +201,10 @@ public class ClassPathBinderTest {
             () -> getResourceBytes(getClass(), "/java/util/ArrayList.class"),
             env,
             null);
-    try {
-      c.owner();
-      fail();
-    } catch (VerifyException e) {
-      assertThat(e)
-          .hasMessageThat()
-          .contains("expected class data for java/util/List, saw java/util/ArrayList instead");
-    }
+    VerifyException e = assertThrows(VerifyException.class, () -> c.owner());
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expected class data for java/util/List, saw java/util/ArrayList instead");
   }
 
   @Test
@@ -216,12 +212,9 @@ public class ClassPathBinderTest {
     Path lib = temporaryFolder.newFile("NOT_A_JAR").toPath();
     MoreFiles.asCharSink(lib, UTF_8).write("hello");
 
-    try {
-      ClassPathBinder.bindClasspath(ImmutableList.of(lib));
-      fail();
-    } catch (IOException e) {
-      assertThat(e).hasMessageThat().contains("NOT_A_JAR");
-    }
+    IOException e =
+        assertThrows(IOException.class, () -> ClassPathBinder.bindClasspath(ImmutableList.of(lib)));
+    assertThat(e).hasMessageThat().contains("NOT_A_JAR");
   }
 
   @Test

@@ -284,23 +284,23 @@ public class TurbineOptionsTest {
 
   @Test
   public void unknownOption() throws Exception {
-    try {
-      TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList("--nosuch")));
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessageThat().contains("unknown option");
-    }
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList("--nosuch"))));
+    assertThat(e).hasMessageThat().contains("unknown option");
   }
 
   @Test
   public void unterminatedJavacopts() throws Exception {
-    try {
-      TurbineOptionsParser.parse(
-          Iterables.concat(BASE_ARGS, Arrays.asList("--javacopts", "--release", "8")));
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessageThat().contains("javacopts should be terminated by `--`");
-    }
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TurbineOptionsParser.parse(
+                    Iterables.concat(BASE_ARGS, Arrays.asList("--javacopts", "--release", "8"))));
+    assertThat(e).hasMessageThat().contains("javacopts should be terminated by `--`");
   }
 
   @Test
@@ -349,11 +349,9 @@ public class TurbineOptionsTest {
   @Test
   public void invalidUnescape() throws Exception {
     String[] lines = {"--sources", "'Foo$Bar.java"};
-    try {
-      TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines))));
   }
 
   @Test

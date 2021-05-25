@@ -17,7 +17,7 @@
 package com.google.turbine.processing;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -83,11 +83,7 @@ public class TurbineTypesFactoryTest {
         PrimitiveType type = turbineTypes.getPrimitiveType(kind);
         assertThat(type.getKind()).isEqualTo(kind);
       } else {
-        try {
-          turbineTypes.getPrimitiveType(kind);
-          fail();
-        } catch (IllegalArgumentException expected) {
-        }
+        assertThrows(IllegalArgumentException.class, () -> turbineTypes.getPrimitiveType(kind));
       }
     }
   }
@@ -167,11 +163,7 @@ public class TurbineTypesFactoryTest {
   public void noType() {
     assertThat(turbineTypes.getNoType(TypeKind.VOID).getKind()).isEqualTo(TypeKind.VOID);
     assertThat(turbineTypes.getNoType(TypeKind.NONE).getKind()).isEqualTo(TypeKind.NONE);
-    try {
-      turbineTypes.getNoType(TypeKind.DECLARED);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> turbineTypes.getNoType(TypeKind.DECLARED));
   }
 
   @Test
