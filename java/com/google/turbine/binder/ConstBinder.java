@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -211,7 +213,8 @@ public class ConstBinder {
 
   private static ImmutableSet<TurbineElementType> bindTarget(AnnoInfo annotation) {
     ImmutableSet.Builder<TurbineElementType> result = ImmutableSet.builder();
-    Const val = annotation.values().get("value");
+    // requireNonNull is safe because java.lang.annotation.Target declares `value`.
+    Const val = requireNonNull(annotation.values().get("value"));
     switch (val.kind()) {
       case ARRAY:
         for (Const element : ((ArrayInitValue) val).elements()) {
@@ -230,7 +233,8 @@ public class ConstBinder {
   }
 
   private static ClassSymbol bindRepeatable(AnnoInfo annotation) {
-    Const value = annotation.values().get("value");
+    // requireNonNull is safe because java.lang.annotation.Repeatable declares `value`.
+    Const value = requireNonNull(annotation.values().get("value"));
     if (value.kind() != Kind.CLASS_LITERAL) {
       return null;
     }

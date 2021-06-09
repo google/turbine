@@ -85,17 +85,16 @@ public class BinderTest {
             new ClassSymbol("a/A$Inner2"),
             new ClassSymbol("b/B"));
 
-    SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
+    SourceTypeBoundClass a = getBoundClass(bound, "a/A");
     assertThat(a.superclass()).isEqualTo(new ClassSymbol("java/lang/Object"));
     assertThat(a.interfaces()).isEmpty();
 
-    assertThat(bound.get(new ClassSymbol("a/A$Inner1")).superclass())
-        .isEqualTo(new ClassSymbol("b/B"));
+    assertThat(getBoundClass(bound, "a/A$Inner1").superclass()).isEqualTo(new ClassSymbol("b/B"));
 
-    assertThat(bound.get(new ClassSymbol("a/A$Inner2")).superclass())
+    assertThat(getBoundClass(bound, "a/A$Inner2").superclass())
         .isEqualTo(new ClassSymbol("a/A$Inner1"));
 
-    SourceTypeBoundClass b = bound.get(new ClassSymbol("b/B"));
+    SourceTypeBoundClass b = getBoundClass(bound, "b/B");
     assertThat(b.superclass()).isEqualTo(new ClassSymbol("a/A"));
   }
 
@@ -130,12 +129,12 @@ public class BinderTest {
             new ClassSymbol("b/B"),
             new ClassSymbol("b/B$BInner"));
 
-    assertThat(bound.get(new ClassSymbol("b/B")).interfaces())
+    assertThat(getBoundClass(bound, "b/B").interfaces())
         .containsExactly(new ClassSymbol("com/i/I"));
 
-    assertThat(bound.get(new ClassSymbol("b/B$BInner")).superclass())
+    assertThat(getBoundClass(bound, "b/B$BInner").superclass())
         .isEqualTo(new ClassSymbol("com/i/I$IInner"));
-    assertThat(bound.get(new ClassSymbol("b/B$BInner")).interfaces()).isEmpty();
+    assertThat(getBoundClass(bound, "b/B$BInner").interfaces()).isEmpty();
   }
 
   @Test
@@ -162,7 +161,7 @@ public class BinderTest {
                 /* moduleVersion=*/ Optional.empty())
             .units();
 
-    assertThat(bound.get(new ClassSymbol("other/Foo")).superclass())
+    assertThat(getBoundClass(bound, "other/Foo").superclass())
         .isEqualTo(new ClassSymbol("com/test/Test$Inner"));
   }
 
@@ -212,7 +211,7 @@ public class BinderTest {
                 /* moduleVersion=*/ Optional.empty())
             .units();
 
-    SourceTypeBoundClass a = bound.get(new ClassSymbol("com/test/Annotation"));
+    SourceTypeBoundClass a = getBoundClass(bound, "com/test/Annotation");
     assertThat(a.access())
         .isEqualTo(
             TurbineFlag.ACC_PUBLIC
@@ -241,7 +240,7 @@ public class BinderTest {
                 /* moduleVersion=*/ Optional.empty())
             .units();
 
-    SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
+    SourceTypeBoundClass a = getBoundClass(bound, "a/A");
     assertThat(a.interfaces()).containsExactly(new ClassSymbol("java/util/Map$Entry"));
   }
 
@@ -281,7 +280,7 @@ public class BinderTest {
                 /* moduleVersion=*/ Optional.empty())
             .units();
 
-    SourceTypeBoundClass a = bound.get(new ClassSymbol("C$A"));
+    SourceTypeBoundClass a = getBoundClass(bound, "C$A");
     assertThat(a.annotationMetadata().target()).containsExactly(TurbineElementType.TYPE_USE);
   }
 
@@ -307,7 +306,7 @@ public class BinderTest {
 
     assertThat(bound.keySet()).containsExactly(new ClassSymbol("a/A"));
 
-    SourceTypeBoundClass a = bound.get(new ClassSymbol("a/A"));
+    SourceTypeBoundClass a = getBoundClass(bound, "a/A");
     FieldInfo f = getOnlyElement(a.fields());
     assertThat(f.name()).isEqualTo("b");
     assertThat(f.value()).isNull();
@@ -315,5 +314,11 @@ public class BinderTest {
 
   private Tree.CompUnit parseLines(String... lines) {
     return Parser.parse(Joiner.on('\n').join(lines));
+  }
+
+  private static SourceTypeBoundClass getBoundClass(
+      Map<ClassSymbol, SourceTypeBoundClass> bound, String name) {
+    // requireNonNull is safe as long as we call this method with classes that exist in our sources.
+    return requireNonNull(bound.get(new ClassSymbol(name)));
   }
 }

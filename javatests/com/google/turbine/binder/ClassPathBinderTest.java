@@ -26,6 +26,7 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.VerifyException;
@@ -187,7 +188,8 @@ public class ClassPathBinderTest {
             .filter(a -> a.sym().equals(new ClassSymbol("java/lang/annotation/Retention")))
             .collect(onlyElement());
     assertThat(anno.values().keySet()).containsExactly("value");
-    assertThat(((EnumConstantValue) anno.values().get("value")).sym())
+    // requireNonNull is safe because we checked that the keySet contains `"value"`.
+    assertThat(((EnumConstantValue) requireNonNull(anno.values().get("value"))).sym())
         .isEqualTo(
             new FieldSymbol(new ClassSymbol("java/lang/annotation/RetentionPolicy"), "RUNTIME"));
   }

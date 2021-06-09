@@ -158,7 +158,8 @@ public abstract class TurbineElement implements Element {
         continue;
       }
       if (anno.sym().equals(metadata.repeatable())) {
-        ArrayInitValue arrayValue = (ArrayInitValue) anno.values().get("value");
+        // requireNonNull is safe because java.lang.annotation.Repeatable declares `value`.
+        ArrayInitValue arrayValue = (ArrayInitValue) requireNonNull(anno.values().get("value"));
         for (Const element : arrayValue.elements()) {
           result.add(
               TurbineAnnotationProxy.create(

@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getLast;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
@@ -115,8 +116,10 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
                 ImmutableMap.Builder<ExecutableElement, AnnotationValue> result =
                     ImmutableMap.builder();
                 for (Map.Entry<String, Const> value : anno.values().entrySet()) {
+                  // requireNonNull is safe because `elements` contains an entry for every method.
+                  MethodInfo methodInfo = requireNonNull(elements.get().get(value.getKey()));
                   result.put(
-                      factory.executableElement(elements.get().get(value.getKey()).sym()),
+                      factory.executableElement(methodInfo.sym()),
                       annotationValue(factory, value.getValue()));
                 }
                 return result.build();

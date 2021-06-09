@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Joiner;
@@ -409,8 +410,11 @@ class AbstractTurbineTypesTest {
 
       ListMultimap<String, TypeMirror> turbineInputs =
           MultimapBuilder.linkedHashKeys().arrayListValues().build();
-      turbineElements
-          .get(name)
+      /*
+       * requireNonNull is safe because `name` is from `javacElements`, which we checked has the
+       * same keys as `turbineElements`.
+       */
+      requireNonNull(turbineElements.get(name))
           .getEnclosedElements()
           .forEach(e -> getTypes(turbineTypes, e, turbineInputs));
 

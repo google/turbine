@@ -21,6 +21,7 @@ import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
 
@@ -228,9 +229,10 @@ public class ProcessingIntegrationTest {
     assertThat(bound.generatedSources().keySet()).containsExactly("Gen.java", "source.txt");
     assertThat(bound.generatedClasses().keySet()).containsExactly("class.txt");
 
-    assertThat(bound.generatedSources().get("source.txt").source())
+    // The requireNonNull calls are safe because of the keySet checks above.
+    assertThat(requireNonNull(bound.generatedSources().get("source.txt")).source())
         .isEqualTo("hello source output");
-    assertThat(new String(bound.generatedClasses().get("class.txt"), UTF_8))
+    assertThat(new String(requireNonNull(bound.generatedClasses().get("class.txt")), UTF_8))
         .isEqualTo("hello class output");
   }
 

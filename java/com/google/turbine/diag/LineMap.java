@@ -17,6 +17,7 @@
 package com.google.turbine.diag;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.Range;
@@ -64,19 +65,22 @@ public class LineMap {
   /** The zero-indexed column number of the given source position. */
   public int column(int position) {
     checkArgument(0 <= position && position < source.length(), "%s", position);
-    return position - lines.getEntry(position).getKey().lowerEndpoint();
+    // requireNonNull is safe because `lines` covers the whole file length.
+    return position - requireNonNull(lines.getEntry(position)).getKey().lowerEndpoint();
   }
 
   /** The one-indexed line number of the given source position. */
   public int lineNumber(int position) {
     checkArgument(0 <= position && position < source.length(), "%s", position);
-    return lines.get(position);
+    // requireNonNull is safe because `lines` covers the whole file length.
+    return requireNonNull(lines.get(position));
   }
 
   /** The one-indexed line of the given source position. */
   public String line(int position) {
     checkArgument(0 <= position && position < source.length(), "%s", position);
-    Range<Integer> range = lines.getEntry(position).getKey();
+    // requireNonNull is safe because `lines` covers the whole file length.
+    Range<Integer> range = requireNonNull(lines.getEntry(position)).getKey();
     return source.substring(range.lowerEndpoint(), range.upperEndpoint());
   }
 }
