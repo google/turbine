@@ -117,6 +117,9 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
                     ImmutableMap.builder();
                 for (Map.Entry<String, Const> value : anno.values().entrySet()) {
                   // requireNonNull is safe because `elements` contains an entry for every method.
+                  // Any element values pairs without a corresponding method in the annotation
+                  // definition are weeded out in ConstEvaluator.evaluateAnnotation, and don't
+                  // appear in the AnnoInfo.
                   MethodInfo methodInfo = requireNonNull(elements.get().get(value.getKey()));
                   result.put(
                       factory.executableElement(methodInfo.sym()),

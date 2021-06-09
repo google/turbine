@@ -52,6 +52,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -101,9 +102,9 @@ public class ProcessingIntegrationTest {
                     Optional.empty()));
     ImmutableList<String> messages =
         e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
-      assertThat(messages).hasSize(2);
-      assertThat(messages.get(0)).contains("could not resolve NoSuch");
-      assertThat(messages.get(1)).contains("crash!");
+    assertThat(messages).hasSize(2);
+    assertThat(messages.get(0)).contains("could not resolve NoSuch");
+    assertThat(messages.get(1)).contains("crash!");
   }
 
   @SupportedAnnotationTypes("*")
@@ -161,9 +162,9 @@ public class ProcessingIntegrationTest {
                     Optional.empty()));
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
-      assertThat(diags).hasSize(2);
-      assertThat(diags.get(0)).contains("proc warning");
-      assertThat(diags.get(1)).contains("proc error");
+    assertThat(diags).hasSize(2);
+    assertThat(diags.get(0)).contains("proc warning");
+    assertThat(diags.get(1)).contains("proc error");
   }
 
   @SupportedAnnotationTypes("*")
@@ -404,12 +405,12 @@ public class ProcessingIntegrationTest {
                     Optional.empty()));
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
-      assertThat(diags)
-          .containsExactly(
-              "1: ErrorProcessor {errorRaised=false, processingOver=false}",
-              "2: ErrorProcessor {errorRaised=true, processingOver=true}",
-              "2: FinalRoundErrorProcessor {errorRaised=true, processingOver=true}")
-          .inOrder();
+    assertThat(diags)
+        .containsExactly(
+            "1: ErrorProcessor {errorRaised=false, processingOver=false}",
+            "2: ErrorProcessor {errorRaised=true, processingOver=true}",
+            "2: FinalRoundErrorProcessor {errorRaised=true, processingOver=true}")
+        .inOrder();
   }
 
   @SupportedAnnotationTypes("*")
@@ -457,7 +458,7 @@ public class ProcessingIntegrationTest {
                     Optional.empty()));
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
-      assertThat(diags).containsExactly("could not resolve S", "S [S]").inOrder();
+    assertThat(diags).containsExactly("could not resolve S", "S [S]").inOrder();
   }
 
   @SupportedAnnotationTypes("*")
@@ -555,6 +556,62 @@ public class ProcessingIntegrationTest {
                 .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
                 .map(d -> d.message()))
         .containsExactly("G.I");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class ElementValueInspector extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      TypeElement element = processingEnv.getElementUtils().getTypeElement("T");
+      for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.NOTE,
+                String.format("@Deprecated(%s)", annotationMirror.getElementValues()),
+                element,
+                annotationMirror);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void badElementValue() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            "@Deprecated(noSuch = 42) class T {}");
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ProcessorInfo.create(
+                        ImmutableList.of(new ElementValueInspector()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly("could not resolve element noSuch() in java.lang.Deprecated");
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
+                .map(d -> d.message()))
+        .containsExactly("@Deprecated({})");
   }
 
   private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {
