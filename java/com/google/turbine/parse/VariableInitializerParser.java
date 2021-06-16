@@ -40,10 +40,10 @@ import java.util.List;
  * <p>That handles everything except multi-variable declarations (int x = 1, y = 2;), which in
  * hindsight were probably a mistake. Multi-variable declarations contain a list of name and
  * initializer pairs separated by commas. The initializer expressions may also contain commas, so
- * it's non-trivial to split on initializer boundaries. For example, consider `int x = a < b, c =
- * d;`. We can't tell looking at the prefix `a < b, c` whether that's a less-than expression
- * followed by another initializer, or the start of a generic type: `a<b, c>.foo()`. Distinguishing
- * between these cases requires arbitrary lookahead.
+ * it's non-trivial to split on initializer boundaries. For example, consider {@code int x = a < b,
+ * c = d;}. We can't tell looking at the prefix {@code a < b, c} whether that's a less-than
+ * expression followed by another initializer, or the start of a generic type: {@code a<b, c>.foo(}.
+ * Distinguishing between these cases requires arbitrary lookahead.
  *
  * <p>The preprocessor seems to be operationally correct. It's possible there are edge cases that it
  * doesn't handle, but it's extremely rare for compile-time constant multi-variable declarations to

@@ -27,17 +27,17 @@ import java.util.Map;
  * An env that permits an analysis pass to access information about symbols from the current pass,
  * recursively. Cycles are detected, and result in an {@link LazyBindingError} being thrown.
  *
- * <p>This is used primarily for resolving the supertype hierarchy in {@link HierarchyBinder}. The
- * supertype hierarchy forms a directed acyclic graph, and {@link HierarchyBinder} needs to process
+ * <p>This is used primarily for resolving the supertype hierarchy in {@code HierarchyBinder}. The
+ * supertype hierarchy forms a directed acyclic graph, and {@code HierarchyBinder} needs to process
  * classes in a topological sort order of that graph. Unfortuntately, we can't produce a suitable
  * sort order until the graph exists.
  *
  * @param <T> the interface type of the bound node {@link V}, shared by any underlying environments.
- * @param <V> a specific implementation of {@code T}. For example, during hierarchy binding {@link
+ * @param <V> a specific implementation of {@code T}. For example, during hierarchy binding {@code
  *     SourceHeaderBoundClass} nodes are being completed from the sources being compiled, and the
- *     analysis of a given symbol may require looking up {@link HeaderBoundClass} nodes that will
- *     either be backed by other {@link SourceHeaderBoundClass} nodes or {@link BytecodeBoundClass}
- *     nodes. So the phase uses an {@link LazyEnv<HeaderBoundClass, SourceHeaderBoundClass>}.
+ *     analysis of a given symbol may require looking up {@code HeaderBoundClass} nodes that will
+ *     either be backed by other {@code SourceHeaderBoundClass} nodes or {@code BytecodeBoundClass}
+ *     nodes. So the phase uses an {@code LazyEnv<HeaderBoundClass, SourceHeaderBoundClass>}.
  */
 public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
 

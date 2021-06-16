@@ -26,7 +26,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-/** Turbine's {@link ProcessingEnvironment). */
+/** Turbine's {@link ProcessingEnvironment}. */
 public class TurbineProcessingEnvironment implements ProcessingEnvironment {
 
   private final Filer filer;

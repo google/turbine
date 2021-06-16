@@ -51,7 +51,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
   ImmutableList<MethodInfo> methods();
 
   /**
-   * Annotation metadata, e.g. from {@link @java.lang.annotation.Target}, {@link
+   * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link
    * java.lang.annotation.Retention}, and {@link java.lang.annotation.Repeatable}.
    */
   AnnotationMetadata annotationMetadata();

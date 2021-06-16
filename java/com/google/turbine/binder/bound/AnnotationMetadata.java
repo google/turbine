@@ -25,7 +25,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.EnumSet;
 
 /**
- * Annotation metadata, e.g. from {@link @java.lang.annotation.Target}, {@link
+ * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link
  * java.lang.annotation.Retention}, and {@link java.lang.annotation.Repeatable}.
  */
 public class AnnotationMetadata {

@@ -20,10 +20,10 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 
 /**
- * An environment that maps {@link Symbols} {@code S} to bound nodes {@code V}.
+ * An environment that maps {@link Symbol}s {@code S} to bound nodes {@code V}.
  *
- * <p>For example, {@link BoundClass} represents superclasses as a {@link ClassSymbol}, which only
- * contains the binary name of the type. To get the {@link BoundClass} for that supertype, an {@code
+ * <p>For example, {@code BoundClass} represents superclasses as a {@link ClassSymbol}, which only
+ * contains the binary name of the type. To get the {@code BoundClass} for that supertype, an {@code
  * Env<BoundClass>} is used.
  *
  * <p>The indirection through env makes it possible to represent a graph with cycles using immutable

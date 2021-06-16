@@ -69,3 +69,6 @@ jobs:
       - name: 'Test'
         shell: bash
         run: mvn test -B
+      - name: 'Javadoc'
+        shell: bash
+        run: mvn javadoc:aggregate
