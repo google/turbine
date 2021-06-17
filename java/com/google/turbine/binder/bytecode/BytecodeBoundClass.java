@@ -629,6 +629,10 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   /** The jar file the symbol was loaded from. */
   public @Nullable String jarFile() {
+    String transitiveJar = classFile.get().transitiveJar();
+    if (transitiveJar != null) {
+      return transitiveJar;
+    }
     return jarFile;
   }
 

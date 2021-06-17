@@ -42,6 +42,7 @@ public class ClassFile {
   private final List<InnerClass> innerClasses;
   private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
   @Nullable private final ModuleInfo module;
+  @Nullable private final String transitiveJar;
 
   public ClassFile(
       int access,
@@ -54,7 +55,8 @@ public class ClassFile {
       List<AnnotationInfo> annotations,
       List<InnerClass> innerClasses,
       ImmutableList<TypeAnnotationInfo> typeAnnotations,
-      @Nullable ModuleInfo module) {
+      @Nullable ModuleInfo module,
+      @Nullable String transitiveJar) {
     this.access = access;
     this.name = name;
     this.signature = signature;
@@ -66,6 +68,7 @@ public class ClassFile {
     this.innerClasses = innerClasses;
     this.typeAnnotations = typeAnnotations;
     this.module = module;
+    this.transitiveJar = transitiveJar;
   }
 
   /** Class access and property flags. */
@@ -122,6 +125,12 @@ public class ClassFile {
   @Nullable
   public ModuleInfo module() {
     return module;
+  }
+
+  /** The original jar of a repackaged transitive class. */
+  @Nullable
+  public String transitiveJar() {
+    return transitiveJar;
   }
 
   /** The contents of a JVMS §4.5 field_info structure. */

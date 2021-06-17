@@ -45,6 +45,9 @@ public final class LowerAttributes {
     if (classfile.module() != null) {
       attributes.add(new Attribute.Module(classfile.module()));
     }
+    if (classfile.transitiveJar() != null) {
+      attributes.add(new Attribute.TurbineTransitiveJar(classfile.transitiveJar()));
+    }
     return attributes;
   }
 

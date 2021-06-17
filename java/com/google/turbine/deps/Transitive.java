@@ -33,6 +33,7 @@ import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.model.TurbineFlag;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Collects the minimal compile-time API for symbols in the supertype closure of compiled classes.
@@ -54,7 +55,8 @@ public final class Transitive {
         // don't export symbols loaded from the bootclasspath
         continue;
       }
-      transitive.put(sym.binaryName(), ClassWriter.writeClass(trimClass(info.classFile())));
+      transitive.put(
+          sym.binaryName(), ClassWriter.writeClass(trimClass(info.classFile(), info.jarFile())));
     }
     return transitive.build();
   }
@@ -62,7 +64,7 @@ public final class Transitive {
   /**
    * Removes information from repackaged classes that will not be needed by upstream compilations.
    */
-  public static ClassFile trimClass(ClassFile cf) {
+  public static ClassFile trimClass(ClassFile cf, @Nullable String jarFile) {
     // drop non-constant fields
     ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : cf.fields()) {
@@ -80,6 +82,12 @@ public final class Transitive {
         innerClasses.add(i);
       }
     }
+    // Include the original jar file name when repackaging transitive deps. If the same transitive
+    // dep is repackaged more than once, keep the original name.
+    String transitiveJar = cf.transitiveJar();
+    if (transitiveJar == null) {
+      transitiveJar = jarFile;
+    }
     return new ClassFile(
         cf.access(),
         cf.name(),
@@ -96,7 +104,8 @@ public final class Transitive {
         cf.annotations(),
         innerClasses.build(),
         cf.typeAnnotations(),
-        /* module= */ null);
+        /* module= */ null,
+        /* transitiveJar = */ transitiveJar);
   }
 
   private static Set<ClassSymbol> superClosure(BindingResult bound) {

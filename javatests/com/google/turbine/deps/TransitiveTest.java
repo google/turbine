@@ -17,19 +17,26 @@
 package com.google.turbine.deps;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.optionsWithBootclasspath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
+import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.InnerClass;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.main.Main;
+import com.google.turbine.proto.DepsProto;
+import com.google.turbine.proto.DepsProto.Dependency.Kind;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,7 +81,7 @@ public class TransitiveTest {
     }
   }
 
-  private Map<String, byte[]> readJar(Path libb) throws IOException {
+  private static Map<String, byte[]> readJar(Path libb) throws IOException {
     Map<String, byte[]> jarEntries = new LinkedHashMap<>();
     try (JarFile jf = new JarFile(libb.toFile())) {
       Enumeration<JarEntry> entries = jf.entries();
@@ -137,11 +144,19 @@ public class TransitiveTest {
                 .methods())
         .hasSize(1);
 
+    // When a.A is repackaged as a transitive class in libb, its 'transitive jar' attribute
+    // should record the path to the original liba jar.
+    assertThat(a.transitiveJar()).isEqualTo(liba.toString());
+    // The transitive jar attribute is only set for transitive classes, not e.g. b.B in libb:
+    ClassFile b = ClassReader.read(null, readJar(libb).get("b/B.class"));
+    assertThat(b.transitiveJar()).isNull();
+
     // A class that references members of the transitive supertype A by simple name
     // compiles cleanly against the repackaged version of A.
     // Explicitly use turbine; javac-turbine doesn't support direct-classpath compilations.
 
     Path libc = temporaryFolder.newFolder().toPath().resolve("out.jar");
+    Path libcDeps = temporaryFolder.newFolder().toPath().resolve("out.jdeps");
     ImmutableList<String> sources =
         new SourceBuilder()
                 .addSourceLines(
@@ -161,6 +176,7 @@ public class TransitiveTest {
             .setClassPath(
                 ImmutableList.of(libb).stream().map(Path::toString).collect(toImmutableList()))
             .setOutput(libc.toString())
+            .setOutputDeps(libcDeps.toString())
             .build());
 
     assertThat(readJar(libc).keySet())
@@ -170,6 +186,20 @@ public class TransitiveTest {
             "META-INF/TRANSITIVE/a/A.class",
             "META-INF/TRANSITIVE/a/A$Anno.class",
             "META-INF/TRANSITIVE/a/A$Inner.class");
+
+    // liba is recorded as an explicit dep, even thought it's only present as a transitive class
+    // repackaged in lib
+    assertThat(readDeps(libcDeps))
+        .containsExactly(liba.toString(), Kind.EXPLICIT, libb.toString(), Kind.EXPLICIT);
+  }
+
+  private static ImmutableMap<String, Kind> readDeps(Path libcDeps) throws IOException {
+    DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(libcDeps))) {
+      deps.mergeFrom(is, ExtensionRegistry.getEmptyRegistry());
+    }
+    return deps.getDependencyList().stream()
+        .collect(toImmutableMap(d -> d.getPath(), d -> d.getKind()));
   }
 
   @Test

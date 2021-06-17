@@ -24,6 +24,7 @@ import com.google.turbine.bytecode.Attribute.ExceptionsAttribute;
 import com.google.turbine.bytecode.Attribute.InnerClasses;
 import com.google.turbine.bytecode.Attribute.MethodParameters;
 import com.google.turbine.bytecode.Attribute.Signature;
+import com.google.turbine.bytecode.Attribute.TurbineTransitiveJar;
 import com.google.turbine.bytecode.Attribute.TypeAnnotations;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
@@ -86,6 +87,9 @@ public class AttributeWriter {
         break;
       case MODULE:
         writeModule((Attribute.Module) attribute);
+        break;
+      case TURBINE_TRANSITIVE_JAR:
+        writeTurbineTransitiveJar((Attribute.TurbineTransitiveJar) attribute);
         break;
     }
   }
@@ -265,5 +269,11 @@ public class AttributeWriter {
     output.writeShort(pool.utf8(attribute.kind().signature()));
     output.writeInt(data.length);
     output.write(data);
+  }
+
+  private void writeTurbineTransitiveJar(TurbineTransitiveJar attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(2);
+    output.writeShort(pool.utf8(attribute.transitiveJar));
   }
 }
