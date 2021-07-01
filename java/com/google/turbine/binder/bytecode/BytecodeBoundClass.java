@@ -318,7 +318,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
               ImmutableMap.Builder<TyVarSymbol, TyVarInfo> tparams = ImmutableMap.builder();
               Function<String, TyVarSymbol> scope = makeScope(env, sym, typeParameters());
               for (Sig.TyParamSig p : sig.get().tyParams()) {
-                tparams.put(typeParameters().get(p.name()), bindTyParam(p, scope));
+                // typeParameters() is constructed to guarantee the requireNonNull call is safe.
+                tparams.put(requireNonNull(typeParameters().get(p.name())), bindTyParam(p, scope));
               }
               return tparams.build();
             }
@@ -409,7 +410,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
       ImmutableMap.Builder<TyVarSymbol, TyVarInfo> tparams = ImmutableMap.builder();
       Function<String, TyVarSymbol> scope = makeScope(env, sym, tyParams);
       for (Sig.TyParamSig p : sig.tyParams()) {
-        tparams.put(tyParams.get(p.name()), bindTyParam(p, scope));
+        // tyParams is constructed to guarantee the requireNonNull call is safe.
+        tparams.put(requireNonNull(tyParams.get(p.name())), bindTyParam(p, scope));
       }
       tyParamTypes = tparams.build();
     }

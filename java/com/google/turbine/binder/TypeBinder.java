@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -395,7 +397,8 @@ public class TypeBinder {
       ImmutableList<Tree.TyParam> trees, CompoundScope scope, Map<String, TyVarSymbol> symbols) {
     ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
     for (Tree.TyParam tree : trees) {
-      TyVarSymbol sym = symbols.get(tree.name().value());
+      // `symbols` is constructed to guarantee the requireNonNull call is safe.
+      TyVarSymbol sym = requireNonNull(symbols.get(tree.name().value()));
       ImmutableList.Builder<Type> bounds = ImmutableList.builder();
       for (Tree bound : tree.bounds()) {
         bounds.add(bindTy(scope, bound));

@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
@@ -604,7 +606,8 @@ public class Processing {
     ImmutableMap<String, Duration> build() {
       ImmutableMap.Builder<String, Duration> result = ImmutableMap.builder();
       for (Map.Entry<Class<?>, Stopwatch> e : processorTimers.entrySet()) {
-        result.put(e.getKey().getCanonicalName(), e.getValue().elapsed());
+        // requireNonNull is safe, barring bizarre processor implementations (e.g., anonymous class)
+        result.put(requireNonNull(e.getKey().getCanonicalName()), e.getValue().elapsed());
       }
       return result.build();
     }
