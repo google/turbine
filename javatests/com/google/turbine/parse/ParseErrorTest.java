@@ -258,6 +258,42 @@ public class ParseErrorTest {
                 "                     ^"));
   }
 
+  @Test
+  public void unpairedSurrogate() {
+    String input = "import pkg\uD800.PackageTest;";
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:1: error: unpaired surrogate 0xd800",
+                "import pkg\uD800.PackageTest;",
+                "           ^"));
+  }
+
+  @Test
+  public void abruptSurrogate() {
+    String input = "import pkg\uD800";
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines("<>:1: error: unpaired surrogate 0xd800", "import pkg\uD800", "          ^"));
+  }
+
+  @Test
+  public void unexpectedSurrogate() {
+    String input = "..\uD800\uDC00";
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:1: error: unexpected input: U+10000", //
+                "..\uD800\uDC00",
+                "   ^"));
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

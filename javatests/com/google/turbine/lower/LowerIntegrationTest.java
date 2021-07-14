@@ -298,6 +298,7 @@ public class LowerIntegrationTest {
       "unary.test",
       "underscore_literal.test",
       "unicode.test",
+      "unicode_pkg.test",
       "useextend.test",
       "vanillaexception.test",
       "varargs.test",

@@ -26,11 +26,12 @@ public class TurbineError extends Error {
 
   /** A diagnostic kind. */
   public enum ErrorKind {
-    UNEXPECTED_INPUT("unexpected input: %c"),
+    UNEXPECTED_INPUT("unexpected input: %s"),
     UNEXPECTED_IDENTIFIER("unexpected identifier '%s'"),
     UNEXPECTED_EOF("unexpected end of input"),
     UNTERMINATED_STRING("unterminated string literal"),
     UNTERMINATED_CHARACTER_LITERAL("unterminated char literal"),
+    UNPAIRED_SURROGATE("unpaired surrogate 0x%x"),
     UNTERMINATED_EXPRESSION("unterminated expression, expected ';' not found"),
     INVALID_UNICODE("illegal unicode escape"),
     EMPTY_CHARACTER_LITERAL("empty char literal"),

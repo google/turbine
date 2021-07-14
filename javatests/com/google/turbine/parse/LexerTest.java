@@ -328,6 +328,11 @@ public class LexerTest {
     lexerComparisonTest("foo /*/*/ bar");
   }
 
+  @Test
+  public void unicode() {
+    lexerComparisonTest("import pkg\uD800\uDC00.test;");
+  }
+
   private void lexerComparisonTest(String s) {
     assertThat(lex(s)).containsExactlyElementsIn(JavacLexer.javacLex(s));
   }

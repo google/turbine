@@ -78,8 +78,9 @@ public class UnicodeEscapePreprocessorTest {
   private List<Character> readAll(String input) {
     UnicodeEscapePreprocessor reader = new UnicodeEscapePreprocessor(new SourceFile(null, input));
     List<Character> result = new ArrayList<>();
-    for (char ch = reader.next(); ch != UnicodeEscapePreprocessor.ASCII_SUB; ch = reader.next()) {
-      result.add(ch);
+    for (int ch = reader.next(); ch != UnicodeEscapePreprocessor.ASCII_SUB; ch = reader.next()) {
+      assertThat(Character.isBmpCodePoint(ch)).isTrue();
+      result.add((char) ch);
     }
     return result;
   }

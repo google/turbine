@@ -1,0 +1,4 @@
+=== Test.java ===
+package pkg𐀀.test;
+
+class Test {}
