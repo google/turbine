@@ -31,6 +31,7 @@ import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.HashMap;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A scope that provides entries for the single-type imports in a compilation unit.
@@ -59,7 +60,7 @@ public class ImportIndex implements ImportScope {
       CanonicalSymbolResolver resolve,
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
-    Map<String, Supplier<ImportScope>> thunks = new HashMap<>();
+    Map<String, Supplier<@Nullable ImportScope>> thunks = new HashMap<>();
     for (final Tree.ImportDecl i : imports) {
       if (i.stat() || i.wild()) {
         continue;
@@ -67,9 +68,9 @@ public class ImportIndex implements ImportScope {
       thunks.put(
           getLast(i.type()).value(),
           Suppliers.memoize(
-              new Supplier<ImportScope>() {
+              new Supplier<@Nullable ImportScope>() {
                 @Override
-                public ImportScope get() {
+                public @Nullable ImportScope get() {
                   return namedImport(log, cpi, i, resolve);
                 }
               }));
@@ -84,9 +85,9 @@ public class ImportIndex implements ImportScope {
       thunks.putIfAbsent(
           last,
           Suppliers.memoize(
-              new Supplier<ImportScope>() {
+              new Supplier<@Nullable ImportScope>() {
                 @Override
-                public ImportScope get() {
+                public @Nullable ImportScope get() {
                   return staticNamedImport(log, cpi, i);
                 }
               }));
@@ -95,7 +96,7 @@ public class ImportIndex implements ImportScope {
   }
 
   /** Fully resolve the canonical name of a non-static named import. */
-  private static ImportScope namedImport(
+  private static @Nullable ImportScope namedImport(
       TurbineLogWithSource log, TopLevelIndex cpi, ImportDecl i, CanonicalSymbolResolver resolve) {
     LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
@@ -119,7 +120,7 @@ public class ImportIndex implements ImportScope {
     };
   }
 
-  private static ClassSymbol resolveNext(
+  private static @Nullable ClassSymbol resolveNext(
       TurbineLogWithSource log, CanonicalSymbolResolver resolve, ClassSymbol sym, Ident bit) {
     ClassSymbol next = resolve.resolveOne(sym, bit);
     if (next == null) {
@@ -138,7 +139,7 @@ public class ImportIndex implements ImportScope {
    * hierarchy analysis is complete, so for now we resolve the base {@code java.util.HashMap} and
    * defer the rest.
    */
-  private static ImportScope staticNamedImport(
+  private static @Nullable ImportScope staticNamedImport(
       TurbineLogWithSource log, TopLevelIndex cpi, ImportDecl i) {
     LookupResult base = cpi.scope().lookup(new LookupKey(i.type()));
     if (base == null) {
@@ -148,7 +149,7 @@ public class ImportIndex implements ImportScope {
     }
     return new ImportScope() {
       @Override
-      public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+      public @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
         ClassSymbol sym = (ClassSymbol) base.sym();
         for (Tree.Ident bit : base.remaining()) {
           sym = resolve.resolveOne(sym, bit);
@@ -164,7 +165,7 @@ public class ImportIndex implements ImportScope {
   }
 
   @Override
-  public LookupResult lookup(LookupKey lookup, ResolveFunction resolve) {
+  public @Nullable LookupResult lookup(LookupKey lookup, ResolveFunction resolve) {
     Supplier<ImportScope> thunk = thunks.get(lookup.first().value());
     if (thunk == null) {
       return null;

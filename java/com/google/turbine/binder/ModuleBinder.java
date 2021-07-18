@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder;
 
-import static com.google.common.base.Verify.verifyNotNull;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -140,8 +138,7 @@ public class ModuleBinder {
     }
     if (!requiresJavaBase) {
       // everything requires java.base, either explicitly or implicitly
-      ModuleInfo javaBaseModule = moduleEnv.get(ModuleSymbol.JAVA_BASE);
-      verifyNotNull(javaBaseModule, ModuleSymbol.JAVA_BASE.name());
+      ModuleInfo javaBaseModule = moduleEnv.getNonNull(ModuleSymbol.JAVA_BASE);
       requires =
           ImmutableList.<RequireInfo>builder()
               .add(

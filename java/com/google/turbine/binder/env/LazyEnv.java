@@ -22,6 +22,7 @@ import com.google.turbine.binder.sym.Symbol;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An env that permits an analysis pass to access information about symbols from the current pass,
@@ -48,7 +49,7 @@ public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
   private final ImmutableMap<S, Completer<S, T, V>> completers;
 
   /** Values that have already been computed. */
-  private final Map<S, V> cache = new LinkedHashMap<>();
+  private final Map<S, @Nullable V> cache = new LinkedHashMap<>();
 
   /** An underlying env of already-computed {@code T}s that can be queried during completion. */
   private final Env<S, T> rec;
@@ -59,7 +60,7 @@ public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
   }
 
   @Override
-  public V get(S sym) {
+  public @Nullable V get(S sym) {
     V v = cache.get(sym);
     if (v != null) {
       return v;
@@ -80,6 +81,7 @@ public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
   /** A lazy value provider which is given access to the current environment. */
   public interface Completer<S extends Symbol, T, V extends T> {
     /** Provides the value for the given symbol in the current environment. */
+    @Nullable
     V complete(Env<S, T> env, S k);
   }
 

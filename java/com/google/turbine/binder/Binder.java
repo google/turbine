@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -67,12 +69,13 @@ import com.google.turbine.type.Type;
 import java.time.Duration;
 import java.util.Optional;
 import javax.annotation.processing.Processor;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** The entry point for analysis. */
 public final class Binder {
 
   /** Binds symbols and types to the given compilation units. */
-  public static BindingResult bind(
+  public static @Nullable BindingResult bind(
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
@@ -81,7 +84,7 @@ public final class Binder {
   }
 
   /** Binds symbols and types to the given compilation units. */
-  public static BindingResult bind(
+  public static @Nullable BindingResult bind(
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ProcessorInfo processorInfo,
@@ -179,7 +182,7 @@ public final class Binder {
 
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
-      result.put(sym, tenv.get(sym));
+      result.put(sym, tenv.getNonNull(sym));
     }
 
     return new BindingResult(
@@ -240,7 +243,7 @@ public final class Binder {
     for (PreprocessedCompUnit unit : units) {
       ImmutableList<String> packagename =
           ImmutableList.copyOf(Splitter.on('/').omitEmptyStrings().split(unit.packageName()));
-      Scope packageScope = tli.lookupPackage(packagename);
+      Scope packageScope = requireNonNull(tli.lookupPackage(packagename));
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(
               unit.packageName(),
@@ -284,7 +287,7 @@ public final class Binder {
             @Override
             public SourceHeaderBoundClass complete(
                 Env<ClassSymbol, HeaderBoundClass> henv, ClassSymbol sym) {
-              PackageSourceBoundClass base = psenv.get(sym);
+              PackageSourceBoundClass base = psenv.getNonNull(sym);
               return HierarchyBinder.bind(log.withSource(base.source()), sym, base, henv);
             }
           });
@@ -299,7 +302,7 @@ public final class Binder {
       Env<ClassSymbol, HeaderBoundClass> henv) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      SourceHeaderBoundClass base = shenv.get(sym);
+      SourceHeaderBoundClass base = shenv.getNonNull(sym);
       builder.put(sym, TypeBinder.bind(log.withSource(base.source()), henv, sym, base));
     }
     return builder.build();
@@ -311,7 +314,8 @@ public final class Binder {
       Env<ClassSymbol, TypeBoundClass> tenv) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.put(sym, CanonicalTypeBinder.bind(sym, stenv.get(sym), tenv));
+      SourceTypeBoundClass base = stenv.getNonNull(sym);
+      builder.put(sym, CanonicalTypeBinder.bind(sym, base, tenv));
     }
     return builder.build();
   }
@@ -328,7 +332,7 @@ public final class Binder {
         moduleEnv.append(
             new Env<ModuleSymbol, ModuleInfo>() {
               @Override
-              public ModuleInfo get(ModuleSymbol sym) {
+              public @Nullable ModuleInfo get(ModuleSymbol sym) {
                 PackageSourceBoundModule info = modules.get(sym);
                 if (info != null) {
                   return new ModuleInfo(
@@ -366,7 +370,7 @@ public final class Binder {
     ImmutableMap.Builder<FieldSymbol, LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>>
         completers = ImmutableMap.builder();
     for (ClassSymbol sym : syms) {
-      SourceTypeBoundClass info = env.get(sym);
+      SourceTypeBoundClass info = env.getNonNull(sym);
       for (FieldInfo field : info.fields()) {
         if (!isConst(field)) {
           continue;
@@ -375,7 +379,8 @@ public final class Binder {
             field.sym(),
             new LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>() {
               @Override
-              public Const.Value complete(Env<FieldSymbol, Const.Value> env1, FieldSymbol k) {
+              public Const.@Nullable Value complete(
+                  Env<FieldSymbol, Const.Value> env1, FieldSymbol k) {
                 try {
                   return new ConstEvaluator(
                           sym,
@@ -386,7 +391,9 @@ public final class Binder {
                           env1,
                           baseEnv,
                           log.withSource(info.source()))
-                      .evalFieldInitializer(field.decl().init().get(), field.type());
+                      .evalFieldInitializer(
+                          // we're processing fields bound from sources in the compilation
+                          requireNonNull(field.decl()).init().get(), field.type());
                 } catch (LazyEnv.LazyBindingError e) {
                   // fields initializers are allowed to reference the field being initialized,
                   // but if they do they aren't constants
@@ -405,7 +412,7 @@ public final class Binder {
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      SourceTypeBoundClass base = env.get(sym);
+      SourceTypeBoundClass base = env.getNonNull(sym);
       builder.put(
           sym, new ConstBinder(constenv, sym, baseEnv, base, log.withSource(base.source())).bind());
     }
@@ -447,7 +454,8 @@ public final class Binder {
       Env<ClassSymbol, TypeBoundClass> tenv) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
-      builder.put(sym, DisambiguateTypeAnnotations.bind(stenv.get(sym), tenv));
+      SourceTypeBoundClass base = stenv.getNonNull(sym);
+      builder.put(sym, DisambiguateTypeAnnotations.bind(base, tenv));
     }
     return builder.build();
   }

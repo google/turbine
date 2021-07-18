@@ -17,6 +17,7 @@
 package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A class symbol.
@@ -68,7 +69,7 @@ public class ClassSymbol implements Symbol {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     return o instanceof ClassSymbol && className.equals(((ClassSymbol) o).className);
   }
 

@@ -23,6 +23,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link BoundClass} with shared lookup scopes for the current compilation unit and package. */
 public class PackageSourceBoundClass implements BoundClass {
@@ -52,7 +53,7 @@ public class PackageSourceBoundClass implements BoundClass {
   }
 
   @Override
-  public ClassSymbol owner() {
+  public @Nullable ClassSymbol owner() {
     return base.owner();
   }
 

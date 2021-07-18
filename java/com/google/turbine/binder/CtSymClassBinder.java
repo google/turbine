@@ -60,7 +60,7 @@ public final class CtSymClassBinder {
     Env<ClassSymbol, BytecodeBoundClass> benv =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
-          public BytecodeBoundClass get(ClassSymbol sym) {
+          public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
             return map.get(sym);
           }
         };
@@ -118,7 +118,7 @@ public final class CtSymClassBinder {
       }
 
       @Override
-      public Supplier<byte[]> resource(String input) {
+      public @Nullable Supplier<byte[]> resource(String input) {
         return null;
       }
     };

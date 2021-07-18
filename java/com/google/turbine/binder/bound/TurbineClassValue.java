@@ -19,6 +19,7 @@ package com.google.turbine.binder.bound;
 import com.google.turbine.model.Const;
 import com.google.turbine.type.Type;
 import java.util.Objects;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A class literal constant. */
 public class TurbineClassValue extends Const {
@@ -50,7 +51,7 @@ public class TurbineClassValue extends Const {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return obj instanceof TurbineClassValue && type().equals(((TurbineClassValue) obj).type());
   }
 }

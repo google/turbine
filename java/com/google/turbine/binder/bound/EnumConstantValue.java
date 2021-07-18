@@ -18,6 +18,7 @@ package com.google.turbine.binder.bound;
 
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An enum constant. */
 public class EnumConstantValue extends Const {
@@ -43,7 +44,7 @@ public class EnumConstantValue extends Const {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return obj instanceof EnumConstantValue && sym().equals(((EnumConstantValue) obj).sym());
   }
 

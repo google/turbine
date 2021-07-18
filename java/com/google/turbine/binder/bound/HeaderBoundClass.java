@@ -20,10 +20,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A bound node that augments {@link BoundClass} with superclasses and interfaces. */
 public interface HeaderBoundClass extends BoundClass {
   /** The superclass of the declaration. */
+  @Nullable
   ClassSymbol superclass();
 
   /** The interfaces of the declaration. */

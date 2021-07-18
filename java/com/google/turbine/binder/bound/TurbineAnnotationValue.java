@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.type.AnnoInfo;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An annotation literal constant. */
 public class TurbineAnnotationValue extends Const {
@@ -56,7 +57,7 @@ public class TurbineAnnotationValue extends Const {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return obj instanceof TurbineAnnotationValue
         && info().equals(((TurbineAnnotationValue) obj).info());
   }

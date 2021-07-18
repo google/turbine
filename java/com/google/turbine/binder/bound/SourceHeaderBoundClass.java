@@ -25,18 +25,19 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link HeaderBoundClass} that corresponds to a source file being compiled. */
 public class SourceHeaderBoundClass implements HeaderBoundClass {
 
   private final PackageSourceBoundClass base;
-  private final ClassSymbol superclass;
+  private final @Nullable ClassSymbol superclass;
   private final ImmutableList<ClassSymbol> interfaces;
   private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
   public SourceHeaderBoundClass(
       PackageSourceBoundClass base,
-      ClassSymbol superclass,
+      @Nullable ClassSymbol superclass,
       ImmutableList<ClassSymbol> interfaces,
       ImmutableMap<String, TyVarSymbol> typeParameters) {
     this.base = base;
@@ -46,7 +47,7 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   }
 
   @Override
-  public ClassSymbol superclass() {
+  public @Nullable ClassSymbol superclass() {
     return superclass;
   }
 
@@ -66,7 +67,7 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
   }
 
   @Override
-  public ClassSymbol owner() {
+  public @Nullable ClassSymbol owner() {
     return base.owner();
   }
 

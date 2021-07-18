@@ -97,9 +97,9 @@ public class ModuleInfo {
 
     private final String moduleName;
     private final int flags;
-    private final String version;
+    private final @Nullable String version;
 
-    public RequireInfo(String moduleName, int flags, String version) {
+    public RequireInfo(String moduleName, int flags, @Nullable String version) {
       this.moduleName = moduleName;
       this.flags = flags;
       this.version = version;
@@ -113,7 +113,7 @@ public class ModuleInfo {
       return flags;
     }
 
-    public String version() {
+    public @Nullable String version() {
       return version;
     }
   }

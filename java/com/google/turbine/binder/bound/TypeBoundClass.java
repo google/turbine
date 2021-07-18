@@ -37,6 +37,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public interface TypeBoundClass extends HeaderBoundClass {
 
   /** The super-class type. */
+  @Nullable
   Type superClassType();
 
   /** Implemented interface types. */
@@ -54,6 +55,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
    * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link
    * java.lang.annotation.Retention}, and {@link java.lang.annotation.Repeatable}.
    */
+  @Nullable
   AnnotationMetadata annotationMetadata();
 
   /** Declaration annotations. */
@@ -99,16 +101,16 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final int access;
     private final ImmutableList<AnnoInfo> annotations;
 
-    private final Tree.VarDecl decl;
-    private final Const.Value value;
+    private final Tree.@Nullable VarDecl decl;
+    private final Const.@Nullable Value value;
 
     public FieldInfo(
         FieldSymbol sym,
         Type type,
         int access,
         ImmutableList<AnnoInfo> annotations,
-        Tree.VarDecl decl,
-        Const.Value value) {
+        Tree.@Nullable VarDecl decl,
+        Const.@Nullable Value value) {
       this.sym = sym;
       this.type = type;
       this.access = access;
@@ -138,12 +140,12 @@ public interface TypeBoundClass extends HeaderBoundClass {
     }
 
     /** The field's declaration. */
-    public Tree.VarDecl decl() {
+    public Tree.@Nullable VarDecl decl() {
       return decl;
     }
 
     /** The constant field value. */
-    public Const.Value value() {
+    public Const.@Nullable Value value() {
       return value;
     }
 
@@ -161,8 +163,8 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final ImmutableList<ParamInfo> parameters;
     private final ImmutableList<Type> exceptions;
     private final int access;
-    private final Const defaultValue;
-    private final MethDecl decl;
+    private final @Nullable Const defaultValue;
+    private final @Nullable MethDecl decl;
     private final ImmutableList<AnnoInfo> annotations;
     private final @Nullable ParamInfo receiver;
 
@@ -173,8 +175,8 @@ public interface TypeBoundClass extends HeaderBoundClass {
         ImmutableList<ParamInfo> parameters,
         ImmutableList<Type> exceptions,
         int access,
-        Const defaultValue,
-        MethDecl decl,
+        @Nullable Const defaultValue,
+        @Nullable MethDecl decl,
         ImmutableList<AnnoInfo> annotations,
         @Nullable ParamInfo receiver) {
       this.sym = sym;
@@ -225,7 +227,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     }
 
     /** The default value of an annotation interface method. */
-    public Const defaultValue() {
+    public @Nullable Const defaultValue() {
       return defaultValue;
     }
 
@@ -238,7 +240,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     }
 
     /** The declaration. */
-    public MethDecl decl() {
+    public @Nullable MethDecl decl() {
       return decl;
     }
 

@@ -18,6 +18,7 @@ package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
 import java.util.Objects;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A type variable symbol. */
 @Immutable
@@ -52,7 +53,7 @@ public class TyVarSymbol implements Symbol {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (!(obj instanceof TyVarSymbol)) {
       return false;
     }

@@ -160,7 +160,7 @@ public class LowerSignature {
 
   private boolean needsMethodSig(
       ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env, TypeBoundClass.MethodInfo m) {
-    if ((env.get(sym).access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM
+    if ((env.getNonNull(sym).access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM
         && m.name().equals("<init>")) {
       // JDK-8024694: javac always expects signature attribute for enum constructors
       return true;
@@ -295,7 +295,7 @@ public class LowerSignature {
 
   private boolean isInterface(Type type, Env<ClassSymbol, TypeBoundClass> env) {
     return type.tyKind() == TyKind.CLASS_TY
-        && env.get(((ClassTy) type).sym()).kind() == TurbineTyKind.INTERFACE;
+        && env.getNonNull(((ClassTy) type).sym()).kind() == TurbineTyKind.INTERFACE;
   }
 
   public String descriptor(ClassSymbol sym) {

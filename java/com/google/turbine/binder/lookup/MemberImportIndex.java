@@ -30,21 +30,22 @@ import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An index for statically imported members, in particular constant variables. */
 public class MemberImportIndex {
 
   /** A cache of resolved static imports, keyed by the simple name of the member. */
-  private final Map<String, Supplier<ClassSymbol>> cache = new LinkedHashMap<>();
+  private final Map<String, Supplier<@Nullable ClassSymbol>> cache = new LinkedHashMap<>();
 
-  private final ImmutableList<Supplier<ClassSymbol>> classes;
+  private final ImmutableList<Supplier<@Nullable ClassSymbol>> classes;
 
   public MemberImportIndex(
       SourceFile source,
       CanonicalSymbolResolver resolve,
       TopLevelIndex tli,
       ImmutableList<ImportDecl> imports) {
-    ImmutableList.Builder<Supplier<ClassSymbol>> packageScopes = ImmutableList.builder();
+    ImmutableList.Builder<Supplier<@Nullable ClassSymbol>> packageScopes = ImmutableList.builder();
     for (ImportDecl i : imports) {
       if (!i.stat()) {
         continue;
@@ -52,9 +53,9 @@ public class MemberImportIndex {
       if (i.wild()) {
         packageScopes.add(
             Suppliers.memoize(
-                new Supplier<ClassSymbol>() {
+                new Supplier<@Nullable ClassSymbol>() {
                   @Override
-                  public ClassSymbol get() {
+                  public @Nullable ClassSymbol get() {
                     LookupResult result = tli.scope().lookup(new LookupKey(i.type()));
                     if (result == null) {
                       return null;
@@ -70,15 +71,18 @@ public class MemberImportIndex {
         cache.put(
             getLast(i.type()).value(),
             Suppliers.memoize(
-                new Supplier<ClassSymbol>() {
+                new Supplier<@Nullable ClassSymbol>() {
                   @Override
-                  public ClassSymbol get() {
+                  public @Nullable ClassSymbol get() {
                     LookupResult result = tli.scope().lookup(new LookupKey(i.type()));
                     if (result == null) {
                       return null;
                     }
                     ClassSymbol sym = (ClassSymbol) result.sym();
                     for (int i = 0; i < result.remaining().size() - 1; i++) {
+                      if (sym == null) {
+                        return null;
+                      }
                       sym = resolve.resolveOne(sym, result.remaining().get(i));
                     }
                     return sym;
@@ -107,8 +111,8 @@ public class MemberImportIndex {
   }
 
   /** Resolves the owner of a single-member static import of the given simple name. */
-  public ClassSymbol singleMemberImport(String simpleName) {
-    Supplier<ClassSymbol> cachedResult = cache.get(simpleName);
+  public @Nullable ClassSymbol singleMemberImport(String simpleName) {
+    Supplier<@Nullable ClassSymbol> cachedResult = cache.get(simpleName);
     return cachedResult != null ? cachedResult.get() : null;
   }
 

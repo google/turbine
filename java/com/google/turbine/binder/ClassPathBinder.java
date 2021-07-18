@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Sets up an environment for symbols on the classpath. */
 public final class ClassPathBinder {
@@ -57,7 +58,7 @@ public final class ClassPathBinder {
     Env<ClassSymbol, BytecodeBoundClass> benv =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
-          public BytecodeBoundClass get(ClassSymbol sym) {
+          public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
             return map.get(sym);
           }
         };
@@ -92,7 +93,7 @@ public final class ClassPathBinder {
       }
 
       @Override
-      public Supplier<byte[]> resource(String path) {
+      public @Nullable Supplier<byte[]> resource(String path) {
         return resources.get(path);
       }
     };

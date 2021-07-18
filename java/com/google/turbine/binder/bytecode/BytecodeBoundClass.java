@@ -418,10 +418,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
     Function<String, TyVarSymbol> scope = makeScope(env, sym, tyParams);
 
-    Type ret = null;
-    if (sig.returnType() != null) {
-      ret = BytecodeBinder.bindTy(sig.returnType(), scope);
-    }
+    Type ret = BytecodeBinder.bindTy(sig.returnType(), scope);
 
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
     int idx = 0;

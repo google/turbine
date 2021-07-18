@@ -57,6 +57,7 @@ import com.google.turbine.type.Type.WildUnboundedTy;
 import com.google.turbine.type.Type.WildUpperBoundedTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Binding pass to evaluate constant expressions. */
 public class ConstBinder {
@@ -166,7 +167,7 @@ public class ConstBinder {
     return new ParamInfo(base.sym(), bindType(base.type()), annos, base.access());
   }
 
-  static AnnotationMetadata bindAnnotationMetadata(
+  static @Nullable AnnotationMetadata bindAnnotationMetadata(
       TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
     if (kind != TurbineTyKind.ANNOTATION) {
       return null;
@@ -196,7 +197,7 @@ public class ConstBinder {
     return new AnnotationMetadata(retention, target, repeatable);
   }
 
-  private static RetentionPolicy bindRetention(AnnoInfo annotation) {
+  private static @Nullable RetentionPolicy bindRetention(AnnoInfo annotation) {
     Const value = annotation.values().get("value");
     if (value == null) {
       return null;
@@ -232,7 +233,7 @@ public class ConstBinder {
     return result.build();
   }
 
-  private static ClassSymbol bindRepeatable(AnnoInfo annotation) {
+  private static @Nullable ClassSymbol bindRepeatable(AnnoInfo annotation) {
     // requireNonNull is safe because java.lang.annotation.Repeatable declares `value`.
     Const value = requireNonNull(annotation.values().get("value"));
     if (value.kind() != Kind.CLASS_LITERAL) {
@@ -268,7 +269,7 @@ public class ConstBinder {
     return result.build();
   }
 
-  private Value fieldValue(TypeBoundClass.FieldInfo base) {
+  private @Nullable Value fieldValue(TypeBoundClass.FieldInfo base) {
     if (base.decl() == null || !base.decl().init().isPresent()) {
       return null;
     }

@@ -99,10 +99,9 @@ public class Processing {
     TurbineFiler filer =
         new TurbineFiler(
             seen,
-            new Function<String, Supplier<byte[]>>() {
-              @Nullable
+            new Function<String, @Nullable Supplier<byte[]>>() {
               @Override
-              public Supplier<byte[]> apply(@Nullable String input) {
+              public @Nullable Supplier<byte[]> apply(String input) {
                 // TODO(cushon): should annotation processors be allowed to generate code with
                 // dependencies between source and bytecode, or vice versa?
                 // Currently generated classes are not available on the classpath when compiling
@@ -316,7 +315,7 @@ public class Processing {
       Env<ClassSymbol, TypeBoundClass> env, Iterable<ClassSymbol> syms) {
     ImmutableSetMultimap.Builder<ClassSymbol, Symbol> result = ImmutableSetMultimap.builder();
     for (ClassSymbol sym : syms) {
-      TypeBoundClass info = env.get(sym);
+      TypeBoundClass info = env.getNonNull(sym);
       for (AnnoInfo annoInfo : info.annotations()) {
         if (sym.simpleName().equals("package-info")) {
           addAnno(result, annoInfo, sym.owner());
@@ -349,7 +348,7 @@ public class Processing {
 
   // TODO(cushon): consider memoizing this (or isAnnotationInherited) if they show up in profiles
   private static ImmutableSet<ClassSymbol> inheritedAnnotations(
-      Set<ClassSymbol> seen, ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env) {
+      Set<ClassSymbol> seen, @Nullable ClassSymbol sym, Env<ClassSymbol, TypeBoundClass> env) {
     ImmutableSet.Builder<ClassSymbol> result = ImmutableSet.builder();
     ClassSymbol curr = sym;
     while (curr != null && seen.add(curr)) {
@@ -476,7 +475,7 @@ public class Processing {
   private static SourceVersion parseSourceVersion(String value) {
     boolean hasPrefix = value.startsWith("1.");
     Integer version = Ints.tryParse(hasPrefix ? value.substring("1.".length()) : value);
-    if (!isValidSourceVersion(version, hasPrefix)) {
+    if (version == null || !isValidSourceVersion(version, hasPrefix)) {
       throw new IllegalArgumentException("invalid -source version: " + value);
     }
     try {
@@ -486,10 +485,7 @@ public class Processing {
     }
   }
 
-  private static boolean isValidSourceVersion(Integer version, boolean hasPrefix) {
-    if (version == null) {
-      return false;
-    }
+  private static boolean isValidSourceVersion(int version, boolean hasPrefix) {
     if (version < 5) {
       // the earliest source version supported by JDK 8 is Java 5
       return false;
@@ -510,7 +506,7 @@ public class Processing {
     return urls;
   }
 
-  public static ClassLoader getPlatformClassLoader() {
+  public static @Nullable ClassLoader getPlatformClassLoader() {
     try {
       return (ClassLoader) ClassLoader.class.getMethod("getPlatformClassLoader").invoke(null);
     } catch (ReflectiveOperationException e) {

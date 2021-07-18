@@ -18,11 +18,13 @@ package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Canonical type resolution. Breaks a circular dependency between binding and import handling. */
 public interface CanonicalSymbolResolver extends ImportScope.ResolveFunction {
   /** Resolves a single member type of the given symbol by canonical name. */
   @Override
+  @Nullable
   ClassSymbol resolveOne(ClassSymbol sym, Tree.Ident bit);
 
   /** Returns true if the given symbol is visible from the current package. */

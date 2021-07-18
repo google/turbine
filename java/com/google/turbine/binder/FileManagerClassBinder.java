@@ -54,7 +54,7 @@ public final class FileManagerClassBinder {
     Env<ClassSymbol, BytecodeBoundClass> env =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
-          public BytecodeBoundClass get(ClassSymbol sym) {
+          public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
             return packageLookup.getPackage(this, sym.packageName()).get(sym);
           }
         };
@@ -77,7 +77,7 @@ public final class FileManagerClassBinder {
       }
 
       @Override
-      public Supplier<byte[]> resource(String path) {
+      public @Nullable Supplier<byte[]> resource(String path) {
         return packageLookup.resource(path);
       }
     };
@@ -138,7 +138,7 @@ public final class FileManagerClassBinder {
           });
     }
 
-    public Supplier<byte[]> resource(String resource) {
+    public @Nullable Supplier<byte[]> resource(String resource) {
       String dir;
       String name;
       int idx = resource.lastIndexOf('/');
@@ -203,7 +203,7 @@ public final class FileManagerClassBinder {
     }
 
     @Override
-    public PackageScope lookupPackage(Iterable<String> names) {
+    public @Nullable PackageScope lookupPackage(Iterable<String> names) {
       String packageName = Joiner.on('/').join(names);
       Map<ClassSymbol, BytecodeBoundClass> pkg = packageLookup.getPackage(env, packageName);
       if (pkg.isEmpty()) {

@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -199,35 +200,33 @@ public class TurbineMessagerTest {
             .map(TurbineMessagerTest::formatDiagnostic)
             .collect(toImmutableList());
 
-    ImmutableList<String> turbineDiagnostics;
     ImmutableList<Tree.CompUnit> units =
         SOURCES.sources.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());
-    try {
-      Binder.bind(
-          units,
-          ClassPathBinder.bindClasspath(ImmutableList.of()),
-          Processing.ProcessorInfo.create(
-              ImmutableList.of(new DiagnosticTesterProcessor()),
-              getClass().getClassLoader(),
-              ImmutableMap.of(),
-              SourceVersion.latestSupported()),
-          TestClassPaths.TURBINE_BOOTCLASSPATH,
-          Optional.empty());
-      throw new AssertionError();
-    } catch (TurbineError e) {
-      turbineDiagnostics =
-          e.diagnostics().stream()
-              .sorted(
-                  comparing(TurbineDiagnostic::path)
-                      .thenComparing(TurbineDiagnostic::line)
-                      .thenComparing(TurbineDiagnostic::column))
-              .map(TurbineMessagerTest::formatDiagnostic)
-              .collect(toImmutableList());
-    }
-
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new DiagnosticTesterProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    ImmutableList<String> turbineDiagnostics =
+        e.diagnostics().stream()
+            .sorted(
+                comparing(TurbineDiagnostic::path)
+                    .thenComparing(TurbineDiagnostic::line)
+                    .thenComparing(TurbineDiagnostic::column))
+            .map(TurbineMessagerTest::formatDiagnostic)
+            .collect(toImmutableList());
     assertThat(turbineDiagnostics).containsExactlyElementsIn(javacDiagnostics).inOrder();
   }
 

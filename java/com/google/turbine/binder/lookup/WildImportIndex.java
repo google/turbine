@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ImportDecl;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A scope that provides best-effort lookup for on-demand imported types in a compilation unit.
@@ -45,14 +46,14 @@ public class WildImportIndex implements ImportScope {
       CanonicalSymbolResolver importResolver,
       final TopLevelIndex cpi,
       ImmutableList<ImportDecl> imports) {
-    ImmutableList.Builder<Supplier<ImportScope>> packageScopes = ImmutableList.builder();
+    ImmutableList.Builder<Supplier<@Nullable ImportScope>> packageScopes = ImmutableList.builder();
     for (final ImportDecl i : imports) {
       if (i.wild()) {
         packageScopes.add(
             Suppliers.memoize(
-                new Supplier<ImportScope>() {
+                new Supplier<@Nullable ImportScope>() {
                   @Override
-                  public ImportScope get() {
+                  public @Nullable ImportScope get() {
                     if (i.stat()) {
                       return staticOnDemandImport(cpi, i, importResolver);
                     } else {
@@ -66,7 +67,7 @@ public class WildImportIndex implements ImportScope {
   }
 
   /** Full resolve the type for a non-static on-demand import. */
-  private static ImportScope onDemandImport(
+  private static @Nullable ImportScope onDemandImport(
       TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
     ImmutableList.Builder<String> flatNames = ImmutableList.builder();
     for (Tree.Ident ident : i.type()) {
@@ -77,7 +78,7 @@ public class WildImportIndex implements ImportScope {
       // a wildcard import of a package
       return new ImportScope() {
         @Override
-        public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+        public @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
           return packageIndex.lookup(lookupKey);
         }
       };
@@ -92,7 +93,7 @@ public class WildImportIndex implements ImportScope {
     }
     return new ImportScope() {
       @Override
-      public LookupResult lookup(LookupKey lookupKey, ResolveFunction unused) {
+      public @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction unused) {
         return resolveMember(member, importResolver, importResolver, lookupKey);
       }
     };
@@ -103,7 +104,7 @@ public class WildImportIndex implements ImportScope {
    * ImportScope#staticNamedImport} for an explanation of why the possibly non-canonical part is
    * deferred).
    */
-  private static ImportScope staticOnDemandImport(
+  private static @Nullable ImportScope staticOnDemandImport(
       TopLevelIndex cpi, ImportDecl i, final CanonicalSymbolResolver importResolver) {
     LookupResult result = cpi.scope().lookup(new LookupKey(i.type()));
     if (result == null) {
@@ -111,7 +112,7 @@ public class WildImportIndex implements ImportScope {
     }
     return new ImportScope() {
       @Override
-      public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+      public @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
         ClassSymbol member = resolveImportBase(result, resolve, importResolver);
         if (member == null) {
           return null;
@@ -121,7 +122,7 @@ public class WildImportIndex implements ImportScope {
     };
   }
 
-  private static LookupResult resolveMember(
+  private static @Nullable LookupResult resolveMember(
       ClassSymbol base,
       ResolveFunction resolve,
       CanonicalSymbolResolver importResolver,
@@ -136,7 +137,7 @@ public class WildImportIndex implements ImportScope {
     return new LookupResult(member, lookupKey);
   }
 
-  static ClassSymbol resolveImportBase(
+  static @Nullable ClassSymbol resolveImportBase(
       LookupResult result, ResolveFunction resolve, CanonicalSymbolResolver importResolver) {
     ClassSymbol member = (ClassSymbol) result.sym();
     for (Tree.Ident bit : result.remaining()) {
@@ -152,7 +153,7 @@ public class WildImportIndex implements ImportScope {
   }
 
   @Override
-  public LookupResult lookup(LookupKey lookup, ResolveFunction resolve) {
+  public @Nullable LookupResult lookup(LookupKey lookup, ResolveFunction resolve) {
     for (Supplier<ImportScope> packageScope : packages) {
       ImportScope scope = packageScope.get();
       if (scope == null) {

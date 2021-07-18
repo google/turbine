@@ -24,7 +24,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /** An {@link Env} that chains two existing envs together. */
 public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {
 
-  private final Env<S, ? extends V> base;
+  private final @Nullable Env<S, ? extends V> base;
   private final Env<S, ? extends V> env;
 
   private CompoundEnv(@Nullable Env<S, ? extends V> base, Env<S, ? extends V> env) {
@@ -33,7 +33,7 @@ public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {
   }
 
   @Override
-  public V get(S sym) {
+  public @Nullable V get(S sym) {
     V result = env.get(sym);
     if (result != null) {
       return result;

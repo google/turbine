@@ -18,6 +18,7 @@ package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A scope for imports. Non-canonical imports depend on hierarchy analysis, so to break the cycle we
@@ -32,17 +33,19 @@ public interface ImportScope {
    */
   @FunctionalInterface
   interface ResolveFunction {
+    @Nullable
     ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name);
   }
 
   /** See {@link Scope#lookup(LookupKey)}. */
+  @Nullable
   LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve);
 
   /** Adds a scope to the chain, in the manner of {@link CompoundScope#append(Scope)}. */
   default ImportScope append(ImportScope next) {
     return new ImportScope() {
       @Override
-      public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+      public @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
         LookupResult result = next.lookup(lookupKey, resolve);
         if (result != null) {
           return result;
@@ -60,7 +63,7 @@ public interface ImportScope {
   static ImportScope fromScope(Scope scope) {
     return new ImportScope() {
       @Override
-      public LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
+      public @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve) {
         return scope.lookup(lookupKey);
       }
     };
@@ -71,7 +74,7 @@ public interface ImportScope {
     return CompoundScope.base(
         new Scope() {
           @Override
-          public LookupResult lookup(LookupKey lookupKey) {
+          public @Nullable LookupResult lookup(LookupKey lookupKey) {
             return ImportScope.this.lookup(lookupKey, resolve);
           }
         });

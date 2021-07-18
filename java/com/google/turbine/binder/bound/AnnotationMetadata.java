@@ -23,6 +23,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineElementType;
 import java.lang.annotation.RetentionPolicy;
 import java.util.EnumSet;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link
@@ -41,12 +42,12 @@ public class AnnotationMetadata {
 
   private final RetentionPolicy retention;
   private final ImmutableSet<TurbineElementType> target;
-  private final ClassSymbol repeatable;
+  private final @Nullable ClassSymbol repeatable;
 
   public AnnotationMetadata(
-      RetentionPolicy retention,
-      ImmutableSet<TurbineElementType> annotationTarget,
-      ClassSymbol repeatable) {
+      @Nullable RetentionPolicy retention,
+      @Nullable ImmutableSet<TurbineElementType> annotationTarget,
+      @Nullable ClassSymbol repeatable) {
     this.retention = firstNonNull(retention, RetentionPolicy.CLASS);
     this.target = firstNonNull(annotationTarget, DEFAULT_TARGETS);
     this.repeatable = repeatable;
@@ -63,7 +64,7 @@ public class AnnotationMetadata {
   }
 
   /** The container annotation for {@code @Repeated} annotations. */
-  public ClassSymbol repeatable() {
+  public @Nullable ClassSymbol repeatable() {
     return repeatable;
   }
 }

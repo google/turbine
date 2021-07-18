@@ -23,6 +23,7 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A compilation classpath, e.g. the user or platform class path. May be backed by a search path of
@@ -38,5 +39,6 @@ public interface ClassPath {
   /** The classpath's top level index. */
   TopLevelIndex index();
 
+  @Nullable
   Supplier<byte[]> resource(String path);
 }

@@ -35,40 +35,40 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public class SourceTypeBoundClass implements TypeBoundClass {
 
   private final TurbineTyKind kind;
-  private final ClassSymbol owner;
+  private final @Nullable ClassSymbol owner;
   private final ImmutableMap<String, ClassSymbol> children;
 
   private final int access;
   private final ImmutableMap<String, TyVarSymbol> typeParameters;
 
   private final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes;
-  private final Type superClassType;
+  private final @Nullable Type superClassType;
   private final ImmutableList<Type> interfaceTypes;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
   private final CompoundScope enclosingScope;
   private final CompoundScope scope;
   private final MemberImportIndex memberImports;
-  private final AnnotationMetadata annotationMetadata;
+  private final @Nullable AnnotationMetadata annotationMetadata;
   private final ImmutableList<AnnoInfo> annotations;
   private final Tree.TyDecl decl;
   private final SourceFile source;
 
   public SourceTypeBoundClass(
       ImmutableList<Type> interfaceTypes,
-      Type superClassType,
+      @Nullable Type superClassType,
       ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes,
       int access,
       ImmutableList<MethodInfo> methods,
       ImmutableList<FieldInfo> fields,
-      ClassSymbol owner,
+      @Nullable ClassSymbol owner,
       TurbineTyKind kind,
       ImmutableMap<String, ClassSymbol> children,
       ImmutableMap<String, TyVarSymbol> typeParameters,
       CompoundScope enclosingScope,
       CompoundScope scope,
       MemberImportIndex memberImports,
-      AnnotationMetadata annotationMetadata,
+      @Nullable AnnotationMetadata annotationMetadata,
       ImmutableList<AnnoInfo> annotations,
       SourceFile source,
       Tree.TyDecl decl) {
@@ -92,7 +92,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public ClassSymbol superclass() {
+  public @Nullable ClassSymbol superclass() {
     if (superClassType == null) {
       return null;
     }
@@ -123,9 +123,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return kind;
   }
 
-  @Nullable
   @Override
-  public ClassSymbol owner() {
+  public @Nullable ClassSymbol owner() {
     return owner;
   }
 
@@ -146,7 +145,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
 
   /** The super-class type. */
   @Override
-  public Type superClassType() {
+  public @Nullable Type superClassType() {
     return superClassType;
   }
 
@@ -157,7 +156,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public AnnotationMetadata annotationMetadata() {
+  public @Nullable AnnotationMetadata annotationMetadata() {
     return annotationMetadata;
   }
 

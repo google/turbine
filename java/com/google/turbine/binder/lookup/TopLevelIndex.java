@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder.lookup;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An index of canonical type names.
@@ -35,5 +36,6 @@ public interface TopLevelIndex {
   Scope scope();
 
   /** Returns a scope to look up members of the given package. */
+  @Nullable
   PackageScope lookupPackage(Iterable<String> packagename);
 }

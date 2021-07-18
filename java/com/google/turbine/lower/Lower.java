@@ -18,6 +18,7 @@ package com.google.turbine.lower;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeated;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -421,7 +422,7 @@ public class Lower {
     if (info == null) {
       throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
     }
-    ClassSymbol owner = env.get(sym).owner();
+    ClassSymbol owner = env.getNonNull(sym).owner();
     if (owner != null) {
       addEnclosing(source, env, all, owner);
       all.add(sym);
@@ -434,15 +435,16 @@ public class Lower {
    */
   private ClassFile.InnerClass innerClass(
       Env<ClassSymbol, TypeBoundClass> env, ClassSymbol innerSym) {
-    TypeBoundClass inner = env.get(innerSym);
+    TypeBoundClass inner = env.getNonNull(innerSym);
+    // this inner class is known to have an owner
+    ClassSymbol owner = requireNonNull(inner.owner());
 
-    String innerName = innerSym.binaryName().substring(inner.owner().binaryName().length() + 1);
+    String innerName = innerSym.binaryName().substring(owner.binaryName().length() + 1);
 
     int access = inner.access();
     access &= ~(TurbineFlag.ACC_SUPER | TurbineFlag.ACC_STRICT);
 
-    return new ClassFile.InnerClass(
-        innerSym.binaryName(), inner.owner().binaryName(), innerName, access);
+    return new ClassFile.InnerClass(innerSym.binaryName(), owner.binaryName(), innerName, access);
   }
 
   /** Updates visibility, and unsets access bits that can only be set in InnerClass. */
@@ -486,7 +488,7 @@ public class Lower {
       // anything that lexically encloses the class being lowered
       // must be in the same compilation unit, so we have source
       // information for it
-      TypeBoundClass owner = env.get((ClassSymbol) ownerSym);
+      TypeBoundClass owner = env.getNonNull((ClassSymbol) ownerSym);
       return owner.typeParameterTypes().get(sym);
     }
   }
@@ -518,7 +520,8 @@ public class Lower {
    */
   @Nullable
   private Boolean isVisible(ClassSymbol sym) {
-    RetentionPolicy retention = env.get(sym).annotationMetadata().retention();
+    RetentionPolicy retention =
+        requireNonNull(env.getNonNull(sym).annotationMetadata()).retention();
     switch (retention) {
       case CLASS:
         return false;
@@ -691,7 +694,7 @@ public class Lower {
 
   private boolean isInterface(Type type, Env<ClassSymbol, TypeBoundClass> env) {
     return type.tyKind() == TyKind.CLASS_TY
-        && env.get(((ClassTy) type).sym()).kind() == TurbineTyKind.INTERFACE;
+        && env.getNonNull(((ClassTy) type).sym()).kind() == TurbineTyKind.INTERFACE;
   }
 
   private void lowerTypeAnnotations(

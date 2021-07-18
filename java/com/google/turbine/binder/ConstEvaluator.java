@@ -43,6 +43,7 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.ConstCastError;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineConstantTypeKind;
@@ -66,6 +67,7 @@ import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Constant expression evaluation.
@@ -75,10 +77,10 @@ import java.util.Map;
 public strictfp class ConstEvaluator {
 
   /** The symbol of the originating class, for visibility checks. */
-  private final ClassSymbol origin;
+  private final @Nullable ClassSymbol origin;
 
   /** The symbol of the enclosing class, for lexical field lookups. */
-  private final ClassSymbol owner;
+  private final @Nullable ClassSymbol owner;
 
   /** Member imports of the enclosing compilation unit. */
   private final MemberImportIndex memberImports;
@@ -87,7 +89,7 @@ public strictfp class ConstEvaluator {
   private final SourceFile source;
 
   /** The constant variable environment. */
-  private final Env<FieldSymbol, Const.Value> values;
+  private final Env<FieldSymbol, Value> values;
 
   /** The class environment. */
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
@@ -97,8 +99,8 @@ public strictfp class ConstEvaluator {
   private final TurbineLogWithSource log;
 
   public ConstEvaluator(
-      ClassSymbol origin,
-      ClassSymbol owner,
+      @Nullable ClassSymbol origin,
+      @Nullable ClassSymbol owner,
       MemberImportIndex memberImports,
       SourceFile source,
       Scope scope,
@@ -117,11 +119,11 @@ public strictfp class ConstEvaluator {
   }
 
   /** Evaluates the given expression's value. */
-  public Const eval(Tree t) {
+  public @Nullable Const eval(Tree t) {
     switch (t.kind()) {
       case LITERAL:
         {
-          Const.Value a = (Const.Value) ((Tree.Literal) t).value();
+          Value a = (Value) ((Tree.Literal) t).value();
           if (a == null) {
             return null;
           }
@@ -200,11 +202,11 @@ public strictfp class ConstEvaluator {
     }
     LookupResult result = scope.lookup(new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
-      log.error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.peekFirst());
+      log.error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.getFirst());
       return Type.ErrorTy.create(flat);
     }
     if (result.sym().symKind() != Symbol.Kind.CLASS) {
-      throw error(classTy.position(), ErrorKind.UNEXPECTED_TYPE_PARAMETER, flat.peekFirst());
+      throw error(classTy.position(), ErrorKind.UNEXPECTED_TYPE_PARAMETER, flat.getFirst());
     }
     ClassSymbol classSym = (ClassSymbol) result.sym();
     for (Ident bit : result.remaining()) {
@@ -223,6 +225,7 @@ public strictfp class ConstEvaluator {
   }
 
   /** Evaluates a reference to another constant variable. */
+  @Nullable
   Const evalConstVar(ConstVarName t) {
     FieldInfo field = resolveField(t);
     if (field == null) {
@@ -273,7 +276,7 @@ public strictfp class ConstEvaluator {
         String.format("field %s", Iterables.getLast(t.name())));
   }
 
-  private FieldInfo resolveQualifiedField(ConstVarName t) {
+  private @Nullable FieldInfo resolveQualifiedField(ConstVarName t) {
     if (t.name().size() <= 1) {
       return null;
     }
@@ -296,10 +299,10 @@ public strictfp class ConstEvaluator {
   }
 
   /** Search for constant variables in lexically enclosing scopes. */
-  private FieldInfo lexicalField(
-      Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym, Ident name) {
+  private @Nullable FieldInfo lexicalField(
+      Env<ClassSymbol, TypeBoundClass> env, @Nullable ClassSymbol sym, Ident name) {
     while (sym != null) {
-      TypeBoundClass info = env.get(sym);
+      TypeBoundClass info = env.getNonNull(sym);
       FieldInfo field = Resolve.resolveField(env, origin, sym, name);
       if (field != null) {
         return field;
@@ -320,14 +323,14 @@ public strictfp class ConstEvaluator {
         if (!value.kind().equals(Const.Kind.PRIMITIVE)) {
           throw error(position, ErrorKind.EXPRESSION_ERROR);
         }
-        return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
+        return coerce((Value) value, ((Type.PrimTy) ty).primkind());
       default:
         throw new AssertionError(ty.tyKind());
     }
   }
 
   /** Casts the constant value to the given type. */
-  static Const.Value coerce(Const.Value value, TurbineConstantTypeKind kind) {
+  static Value coerce(Value value, TurbineConstantTypeKind kind) {
     switch (kind) {
       case BOOLEAN:
         return value.asBoolean();
@@ -352,23 +355,23 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value evalValue(Expression tree) {
+  private @Nullable Value evalValue(Expression tree) {
     Const result = eval(tree);
     // TODO(cushon): consider distinguishing between constant field and annotation values,
     // and only allowing class literals / enum constants in the latter
-    return (result instanceof Const.Value) ? (Const.Value) result : null;
+    return (result instanceof Value) ? (Value) result : null;
   }
 
-  private Const.Value evalConditional(Conditional t) {
-    Const.Value condition = evalValue(t.cond());
+  private @Nullable Value evalConditional(Conditional t) {
+    Value condition = evalValue(t.cond());
     if (condition == null) {
       return null;
     }
     return condition.asBoolean().value() ? evalValue(t.iftrue()) : evalValue(t.iffalse());
   }
 
-  private Const.Value evalUnary(Unary t) {
-    Const.Value expr = evalValue(t.expr());
+  private @Nullable Value evalUnary(Unary t) {
+    Value expr = evalValue(t.expr());
     if (expr == null) {
       return null;
     }
@@ -386,7 +389,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value unaryNegate(int position, Value expr) {
+  private @Nullable Value unaryNegate(int position, Value expr) {
     switch (expr.constantTypeKind()) {
       case BOOLEAN:
         return new Const.BooleanValue(!expr.asBoolean().value());
@@ -395,7 +398,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value bitwiseComp(int position, Value expr) {
+  private @Nullable Value bitwiseComp(int position, Value expr) {
     expr = promoteUnary(position, expr);
     switch (expr.constantTypeKind()) {
       case INT:
@@ -407,7 +410,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value unaryPlus(int position, Value expr) {
+  private @Nullable Value unaryPlus(int position, Value expr) {
     expr = promoteUnary(position, expr);
     switch (expr.constantTypeKind()) {
       case INT:
@@ -423,7 +426,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Value unaryMinus(int position, Value expr) {
+  private @Nullable Value unaryMinus(int position, Value expr) {
     expr = promoteUnary(position, expr);
     switch (expr.constantTypeKind()) {
       case INT:
@@ -439,8 +442,8 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value evalCast(TypeCast t) {
-    Const.Value expr = evalValue(t.expr());
+  private @Nullable Value evalCast(TypeCast t) {
+    Value expr = evalValue(t.expr());
     if (expr == null) {
       return null;
     }
@@ -462,7 +465,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value add(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value add(int position, Value a, Value b) {
     if (a.constantTypeKind() == TurbineConstantTypeKind.STRING
         || b.constantTypeKind() == TurbineConstantTypeKind.STRING) {
       return new Const.StringValue(a.asString().value() + b.asString().value());
@@ -484,7 +487,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value subtract(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value subtract(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -502,7 +505,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value mult(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value mult(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -520,7 +523,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value divide(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value divide(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -538,7 +541,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value mod(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value mod(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -560,7 +563,7 @@ public strictfp class ConstEvaluator {
 
   private static final int LONG_SHIFT_MASK = 0b111111;
 
-  private Const.Value shiftLeft(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value shiftLeft(int position, Value a, Value b) {
     a = promoteUnary(position, a);
     b = promoteUnary(position, b);
     switch (a.constantTypeKind()) {
@@ -574,7 +577,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value shiftRight(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value shiftRight(int position, Value a, Value b) {
     a = promoteUnary(position, a);
     b = promoteUnary(position, b);
     switch (a.constantTypeKind()) {
@@ -588,7 +591,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value unsignedShiftRight(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value unsignedShiftRight(int position, Value a, Value b) {
     a = promoteUnary(position, a);
     b = promoteUnary(position, b);
     switch (a.constantTypeKind()) {
@@ -603,7 +606,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value lessThan(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value lessThan(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -621,7 +624,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value lessThanEqual(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value lessThanEqual(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -639,7 +642,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value greaterThan(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value greaterThan(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -657,7 +660,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value greaterThanEqual(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value greaterThanEqual(int position, Value a, Value b) {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(a, type);
     b = coerce(b, type);
@@ -675,7 +678,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value equal(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value equal(int position, Value a, Value b) {
     switch (a.constantTypeKind()) {
       case STRING:
         return new Const.BooleanValue(a.asString().value().equals(b.asString().value()));
@@ -701,7 +704,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value notEqual(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value notEqual(int position, Value a, Value b) {
     switch (a.constantTypeKind()) {
       case STRING:
         return new Const.BooleanValue(!a.asString().value().equals(b.asString().value()));
@@ -727,7 +730,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value bitwiseAnd(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value bitwiseAnd(int position, Value a, Value b) {
     switch (a.constantTypeKind()) {
       case BOOLEAN:
         return new Const.BooleanValue(a.asBoolean().value() & b.asBoolean().value());
@@ -747,7 +750,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value bitwiseOr(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value bitwiseOr(int position, Value a, Value b) {
     switch (a.constantTypeKind()) {
       case BOOLEAN:
         return new Const.BooleanValue(a.asBoolean().value() | b.asBoolean().value());
@@ -767,7 +770,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value bitwiseXor(int position, Const.Value a, Const.Value b) {
+  private @Nullable Value bitwiseXor(int position, Value a, Value b) {
     switch (a.constantTypeKind()) {
       case BOOLEAN:
         return new Const.BooleanValue(a.asBoolean().value() ^ b.asBoolean().value());
@@ -787,9 +790,9 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value evalBinary(Binary t) {
-    Const.Value lhs = evalValue(t.lhs());
-    Const.Value rhs = evalValue(t.rhs());
+  private @Nullable Value evalBinary(Binary t) {
+    Value lhs = evalValue(t.lhs());
+    Value rhs = evalValue(t.rhs());
     if (lhs == null || rhs == null) {
       return null;
     }
@@ -837,7 +840,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private Const.Value promoteUnary(int position, Value v) {
+  private Value promoteUnary(int position, Value v) {
     switch (v.constantTypeKind()) {
       case CHAR:
       case SHORT:
@@ -853,7 +856,7 @@ public strictfp class ConstEvaluator {
     }
   }
 
-  private TurbineConstantTypeKind promoteBinary(int position, Const.Value a, Const.Value b) {
+  private TurbineConstantTypeKind promoteBinary(int position, Value a, Value b) {
     a = promoteUnary(position, a);
     b = promoteUnary(position, b);
     switch (a.constantTypeKind()) {
@@ -921,7 +924,7 @@ public strictfp class ConstEvaluator {
     if (info.sym() == null) {
       return info;
     }
-    TypeBoundClass annoClass = env.get(info.sym());
+    TypeBoundClass annoClass = env.getNonNull(info.sym());
     if (annoClass.kind() != TurbineTyKind.ANNOTATION) {
       // we've already reported an error for non-annotation symbols used as annotations,
       // skip error handling for annotation arguments
@@ -974,7 +977,7 @@ public strictfp class ConstEvaluator {
     return info.withValues(ImmutableMap.copyOf(values));
   }
 
-  private TurbineAnnotationValue evalAnno(Tree.Anno t) {
+  private @Nullable TurbineAnnotationValue evalAnno(Tree.Anno t) {
     LookupResult result = scope.lookup(new LookupKey(t.name()));
     if (result == null) {
       log.error(
@@ -991,14 +994,14 @@ public strictfp class ConstEvaluator {
     if (sym == null) {
       return null;
     }
-    if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
+    if (env.getNonNull(sym).kind() != TurbineTyKind.ANNOTATION) {
       log.error(t.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
     }
     AnnoInfo annoInfo = evaluateAnnotation(new AnnoInfo(source, sym, t, ImmutableMap.of()));
     return new TurbineAnnotationValue(annoInfo);
   }
 
-  private Const.ArrayInitValue evalArrayInit(ArrayInit t) {
+  private @Nullable ArrayInitValue evalArrayInit(ArrayInit t) {
     ImmutableList.Builder<Const> elements = ImmutableList.builder();
     for (Expression e : t.exprs()) {
       Const arg = eval(e);
@@ -1010,6 +1013,7 @@ public strictfp class ConstEvaluator {
     return new Const.ArrayInitValue(elements.build());
   }
 
+  @Nullable
   Const evalAnnotationValue(Tree tree, Type ty) {
     if (ty == null) {
       throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
@@ -1021,10 +1025,10 @@ public strictfp class ConstEvaluator {
     }
     switch (ty.tyKind()) {
       case PRIM_TY:
-        if (!(value instanceof Const.Value)) {
+        if (!(value instanceof Value)) {
           throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
         }
-        return coerce((Const.Value) value, ((Type.PrimTy) ty).primkind());
+        return coerce((Value) value, ((Type.PrimTy) ty).primkind());
       case CLASS_TY:
       case TY_VAR:
         return value;
@@ -1050,13 +1054,13 @@ public strictfp class ConstEvaluator {
     return TurbineError.format(source, position, kind, args);
   }
 
-  public Const.Value evalFieldInitializer(Expression expression, Type type) {
+  public @Nullable Value evalFieldInitializer(Expression expression, Type type) {
     try {
       Const value = eval(expression);
       if (value == null || value.kind() != Const.Kind.PRIMITIVE) {
         return null;
       }
-      return (Const.Value) cast(expression.position(), type, value);
+      return (Value) cast(expression.position(), type, value);
     } catch (TurbineError error) {
       for (TurbineDiagnostic diagnostic : error.diagnostics()) {
         switch (diagnostic.kind()) {

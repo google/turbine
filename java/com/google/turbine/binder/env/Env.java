@@ -18,6 +18,7 @@ package com.google.turbine.binder.env;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An environment that maps {@link Symbol}s {@code S} to bound nodes {@code V}.
@@ -34,5 +35,14 @@ import com.google.turbine.binder.sym.Symbol;
  */
 public interface Env<S extends Symbol, V> {
   /** Returns the information associated with the given symbol in this environment. */
+  @Nullable
   V get(S sym);
+
+  default V getNonNull(S sym) {
+    V result = get(sym);
+    if (result == null) {
+      throw new NullPointerException(sym.toString());
+    }
+    return result;
+  }
 }

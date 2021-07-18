@@ -17,6 +17,7 @@
 package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A package symbol. */
 @Immutable
@@ -34,7 +35,7 @@ public class PackageSymbol implements Symbol {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return obj instanceof PackageSymbol && binaryName.equals(((PackageSymbol) obj).binaryName);
   }
 

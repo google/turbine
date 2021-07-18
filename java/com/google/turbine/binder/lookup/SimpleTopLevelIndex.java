@@ -36,7 +36,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
   /** A class symbol or package. */
   public static class Node {
 
-    public Node lookup(String bit) {
+    public @Nullable Node lookup(String bit) {
       return children.get(bit);
     }
 
@@ -46,7 +46,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
     // to use a denser representation where appropriate.
     private final Map<String, Node> children = new HashMap<>();
 
-    Node(ClassSymbol sym) {
+    Node(@Nullable ClassSymbol sym) {
       this.sym = sym;
     }
 
@@ -56,7 +56,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
      *
      * @return {@code null} if an existing symbol with the same name has already been inserted.
      */
-    private Node insert(String name, ClassSymbol sym) {
+    private @Nullable Node insert(String name, @Nullable ClassSymbol sym) {
       Node child = children.get(name);
       if (child != null) {
         if (child.sym != null) {
@@ -83,7 +83,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
     final Node root = new Node(null);
 
     /** Inserts a {@link ClassSymbol} into the index, creating any needed packages. */
-    public boolean insert(ClassSymbol sym) {
+    public void insert(ClassSymbol sym) {
       String binaryName = sym.binaryName();
       int start = 0;
       int end = binaryName.indexOf('/');
@@ -95,7 +95,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
         // symbol), bail out. When inserting elements from the classpath, this results in the
         // expected first-match-wins semantics.
         if (curr == null) {
-          return false;
+          return;
         }
         start = end + 1;
         end = binaryName.indexOf('/', start);
@@ -103,9 +103,9 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
       String simpleName = binaryName.substring(start);
       curr = curr.insert(simpleName, sym);
       if (curr == null || !Objects.equals(curr.sym, sym)) {
-        return false;
+        return;
       }
-      return true;
+      return;
     }
   }
 
@@ -159,7 +159,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
 
   /** Returns a {@link Scope} that performs lookups in the given qualified package name. */
   @Override
-  public PackageScope lookupPackage(Iterable<String> packagename) {
+  public @Nullable PackageScope lookupPackage(Iterable<String> packagename) {
     Node curr = root;
     for (String bit : packagename) {
       curr = curr.lookup(bit);
@@ -179,7 +179,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
     }
 
     @Override
-    public LookupResult lookup(LookupKey lookupKey) {
+    public @Nullable LookupResult lookup(LookupKey lookupKey) {
       Node result = node.lookup(lookupKey.first().value());
       if (result != null && result.sym != null) {
         return new LookupResult(result.sym, lookupKey);

@@ -26,13 +26,13 @@ public class CompoundScope implements Scope {
   private final Scope scope;
   @Nullable private final Scope base;
 
-  private CompoundScope(Scope scope, Scope base) {
+  private CompoundScope(Scope scope, @Nullable Scope base) {
     this.scope = checkNotNull(scope);
     this.base = base;
   }
 
   @Override
-  public LookupResult lookup(LookupKey key) {
+  public @Nullable LookupResult lookup(LookupKey key) {
     LookupResult result = scope.lookup(key);
     if (result != null) {
       return result;

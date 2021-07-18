@@ -92,7 +92,7 @@ public final class Dependencies {
             .append(bound.classPathEnv());
     Set<ClassSymbol> closure = new LinkedHashSet<>(lowered.symbols());
     for (ClassSymbol sym : lowered.symbols()) {
-      TypeBoundClass info = env.get(sym);
+      TypeBoundClass info = env.getNonNull(sym);
       addAnnotations(closure, info.annotations());
       for (MethodInfo method : info.methods()) {
         addAnnotations(closure, method.annotations());

@@ -63,6 +63,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Type binding. */
 public class TypeBinder {
@@ -79,7 +80,7 @@ public class TypeBinder {
     }
 
     @Override
-    public LookupResult lookup(LookupKey lookup) {
+    public @Nullable LookupResult lookup(LookupKey lookup) {
       if (name.equals(lookup.first().value())) {
         return new LookupResult(sym, lookup);
       }
@@ -96,7 +97,7 @@ public class TypeBinder {
     }
 
     @Override
-    public LookupResult lookup(LookupKey lookupKey) {
+    public @Nullable LookupResult lookup(LookupKey lookupKey) {
       Symbol sym = tps.get(lookupKey.first().value());
       return sym != null ? new LookupResult(sym, lookupKey) : null;
     }
@@ -116,14 +117,14 @@ public class TypeBinder {
     }
 
     @Override
-    public LookupResult lookup(LookupKey lookup) {
+    public @Nullable LookupResult lookup(LookupKey lookup) {
       ClassSymbol curr = sym;
       while (curr != null) {
-        HeaderBoundClass info = env.get(curr);
         Symbol result = Resolve.resolve(env, sym, curr, lookup.first());
         if (result != null) {
           return new LookupResult(result, lookup);
         }
+        HeaderBoundClass info = env.getNonNull(curr);
         result = info.typeParameters().get(lookup.first().value());
         if (result != null) {
           return new LookupResult(result, lookup);
@@ -168,8 +169,10 @@ public class TypeBinder {
     CompoundScope enclosingScope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
-            .append(new SingletonScope(base.decl().name().value(), owner))
-            .append(new ClassMemberScope(base.owner(), env));
+            .append(new SingletonScope(base.decl().name().value(), owner));
+    if (base.owner() != null) {
+      enclosingScope = enclosingScope.append(new ClassMemberScope(base.owner(), env));
+    }
 
     ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
 
@@ -307,7 +310,7 @@ public class TypeBinder {
     }
     int enclosingInstances = 0;
     for (ClassSymbol sym = base.owner(); sym != null; ) {
-      HeaderBoundClass info = env.get(sym);
+      HeaderBoundClass info = env.getNonNull(sym);
       if (((info.access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC)
           || info.owner() == null) {
         break;
@@ -582,8 +585,8 @@ public class TypeBinder {
     return result.build();
   }
 
-  private ClassSymbol resolveAnnoSymbol(
-      Anno tree, ImmutableList<Ident> name, LookupResult lookupResult) {
+  private @Nullable ClassSymbol resolveAnnoSymbol(
+      Anno tree, ImmutableList<Ident> name, @Nullable LookupResult lookupResult) {
     if (lookupResult == null) {
       log.error(tree.position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(name));
       return null;
@@ -595,13 +598,13 @@ public class TypeBinder {
         return null;
       }
     }
-    if (env.get(sym).kind() != TurbineTyKind.ANNOTATION) {
+    if (env.getNonNull(sym).kind() != TurbineTyKind.ANNOTATION) {
       log.error(tree.position(), ErrorKind.NOT_AN_ANNOTATION, sym);
     }
     return sym;
   }
 
-  private ClassSymbol resolveNext(ClassSymbol sym, Ident bit) {
+  private @Nullable ClassSymbol resolveNext(ClassSymbol sym, Ident bit) {
     ClassSymbol next = Resolve.resolve(env, owner, sym, bit);
     if (next == null) {
       log.error(
@@ -705,10 +708,11 @@ public class TypeBinder {
             sym, bindTyArgs(scope, flat.get(idx++).tyargs()), annotations));
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
-      sym = resolveNext(sym, curr.name());
-      if (sym == null) {
+      ClassSymbol next = resolveNext(sym, curr.name());
+      if (next == null) {
         return Type.ErrorTy.create(bits);
       }
+      sym = next;
 
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(

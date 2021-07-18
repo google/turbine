@@ -17,9 +17,11 @@
 package com.google.turbine.binder.env;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.sym.Symbol;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A simple {@link ImmutableMap}-backed {@link Env}. */
 public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
@@ -42,7 +44,9 @@ public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
   public static class Builder<K extends Symbol, V> {
     private final Map<K, V> map = new LinkedHashMap<>();
 
-    public V put(K sym, V v) {
+    // TODO(cushon): audit the cases where this return value is being ignored
+    @CanIgnoreReturnValue
+    public @Nullable V put(K sym, V v) {
       return map.put(sym, v);
     }
 
@@ -52,7 +56,7 @@ public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {
   }
 
   @Override
-  public V get(K sym) {
+  public @Nullable V get(K sym) {
     return map.get(sym);
   }
 }
