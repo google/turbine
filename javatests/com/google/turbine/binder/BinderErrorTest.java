@@ -812,6 +812,21 @@ public class BinderErrorTest {
           "            ^",
         },
       },
+      {
+        {
+          "@interface A {",
+          "  boolean x();",
+          "  boolean value();",
+          "}",
+          "@A(x = true, false)",
+          "class T {}",
+        },
+        {
+          "<>:5: error: expected an annotation value of the form name=value",
+          "@A(x = true, false)",
+          "             ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

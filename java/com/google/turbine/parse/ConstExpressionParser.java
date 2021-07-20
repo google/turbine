@@ -107,13 +107,19 @@ public class ConstExpressionParser {
       case FLOAT_LITERAL:
         return finishLiteral(TurbineConstantTypeKind.FLOAT, negate);
       case TRUE:
-        eat();
-        return new Tree.Literal(
-            position, TurbineConstantTypeKind.BOOLEAN, new Const.BooleanValue(true));
+        {
+          int pos = position;
+          eat();
+          return new Tree.Literal(
+              pos, TurbineConstantTypeKind.BOOLEAN, new Const.BooleanValue(true));
+        }
       case FALSE:
-        eat();
-        return new Tree.Literal(
-            position, TurbineConstantTypeKind.BOOLEAN, new Const.BooleanValue(false));
+        {
+          int pos = position;
+          eat();
+          return new Tree.Literal(
+              pos, TurbineConstantTypeKind.BOOLEAN, new Const.BooleanValue(false));
+        }
       case CHAR_LITERAL:
         return finishLiteral(TurbineConstantTypeKind.CHAR, negate);
       case STRING_LITERAL:

@@ -50,6 +50,7 @@ public class TurbineError extends Error {
     OPERAND_TYPE("bad operand type %s"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),
+    ANNOTATION_VALUE_NAME("expected an annotation value of the form name=value"),
     NONREPEATABLE_ANNOTATION("%s is not @Repeatable"),
     DUPLICATE_DECLARATION("duplicate declaration of %s"),
     BAD_MODULE_INFO("unexpected declaration found in module-info"),

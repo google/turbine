@@ -946,6 +946,9 @@ public strictfp class ConstEvaluator {
         key = assign.name().value();
         expr = assign.expr();
       } else {
+        if (info.args().size() != 1) {
+          throw error(arg.position(), ErrorKind.ANNOTATION_VALUE_NAME);
+        }
         // expand the implicit 'value' name; `@Foo(42)` is sugar for `@Foo(value=42)`
         key = "value";
         expr = arg;
