@@ -146,7 +146,8 @@ public class ExpressionParserTest {
   @Test
   public void test() {
     StreamLexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
-    Tree.Expression expression = new ConstExpressionParser(lexer, lexer.next()).expression();
+    Tree.Expression expression =
+        new ConstExpressionParser(lexer, lexer.next(), lexer.position()).expression();
     if (expected == null) {
       assertThat(expression).isNull();
     } else {

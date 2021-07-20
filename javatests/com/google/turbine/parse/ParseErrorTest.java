@@ -35,7 +35,7 @@ public class ParseErrorTest {
     StreamLexer lexer =
         new StreamLexer(
             new UnicodeEscapePreprocessor(new SourceFile("<>", String.valueOf("2147483648"))));
-    ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next());
+    ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next(), lexer.position());
     TurbineError e = assertThrows(TurbineError.class, () -> parser.expression());
     assertThat(e).hasMessageThat().contains("invalid literal");
   }
@@ -45,7 +45,7 @@ public class ParseErrorTest {
     StreamLexer lexer =
         new StreamLexer(
             new UnicodeEscapePreprocessor(new SourceFile("<>", String.valueOf("0x100000000"))));
-    ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next());
+    ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next(), lexer.position());
     TurbineError e = assertThrows(TurbineError.class, () -> parser.expression());
     assertThat(e).hasMessageThat().contains("invalid literal");
   }

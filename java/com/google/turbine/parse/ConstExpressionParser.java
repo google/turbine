@@ -40,10 +40,10 @@ public class ConstExpressionParser {
   private int position;
   private final Lexer lexer;
 
-  public ConstExpressionParser(Lexer lexer, Token token) {
+  public ConstExpressionParser(Lexer lexer, Token token, int position) {
     this.lexer = lexer;
     this.token = token;
-    this.position = lexer.position();
+    this.position = position;
   }
 
   private static TurbineOperatorKind operator(Token token) {

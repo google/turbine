@@ -850,7 +850,8 @@ public class Parser {
       Type ty = baseTy;
       ty = parser.extraDims(ty);
       // TODO(cushon): skip more fields that are definitely non-const
-      ConstExpressionParser constExpressionParser = new ConstExpressionParser(lexer, lexer.next());
+      ConstExpressionParser constExpressionParser =
+          new ConstExpressionParser(lexer, lexer.next(), lexer.position());
       expressionStart = lexer.position();
       Expression init = constExpressionParser.expression();
       if (init != null && init.kind() == Tree.Kind.ARRAY_INIT) {
@@ -895,7 +896,8 @@ public class Parser {
         break;
       case DEFAULT:
         {
-          ConstExpressionParser cparser = new ConstExpressionParser(lexer, lexer.next());
+          ConstExpressionParser cparser =
+              new ConstExpressionParser(lexer, lexer.next(), lexer.position());
           Tree expr = cparser.expression();
           token = cparser.token;
           if (expr == null && token == Token.AT) {
@@ -1369,7 +1371,7 @@ public class Parser {
     if (token == Token.LPAREN) {
       eat(LPAREN);
       while (token != RPAREN) {
-        ConstExpressionParser cparser = new ConstExpressionParser(lexer, token);
+        ConstExpressionParser cparser = new ConstExpressionParser(lexer, token, position);
         Expression arg = cparser.expression();
         if (arg == null) {
           throw error(ErrorKind.INVALID_ANNOTATION_ARGUMENT);
