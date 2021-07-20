@@ -293,7 +293,9 @@ public class ConstBinder {
       return null;
     }
     if (type.tyKind().equals(TyKind.PRIM_TY)) {
-      value = ConstEvaluator.coerce(value, ((Type.PrimTy) type).primkind());
+      value =
+          constEvaluator.coerce(
+              base.decl().init().get().position(), value, ((Type.PrimTy) type).primkind());
     }
     return value;
   }

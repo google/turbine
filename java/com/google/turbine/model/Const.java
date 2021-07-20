@@ -64,42 +64,6 @@ public abstract class Const {
     public Kind kind() {
       return Kind.PRIMITIVE;
     }
-
-    public IntValue asInteger() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.INT);
-    }
-
-    public FloatValue asFloat() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.FLOAT);
-    }
-
-    public DoubleValue asDouble() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.DOUBLE);
-    }
-
-    public LongValue asLong() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.LONG);
-    }
-
-    public BooleanValue asBoolean() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.BOOLEAN);
-    }
-
-    public StringValue asString() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.STRING);
-    }
-
-    public CharValue asChar() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.CHAR);
-    }
-
-    public ShortValue asShort() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.SHORT);
-    }
-
-    public ByteValue asByte() {
-      throw new ConstCastError(constantTypeKind(), TurbineConstantTypeKind.BYTE);
-    }
   }
 
   /** A boolean literal value. */
@@ -132,16 +96,6 @@ public abstract class Const {
     @Override
     public Object getValue() {
       return value;
-    }
-
-    @Override
-    public BooleanValue asBoolean() {
-      return this;
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
     }
 
     @Override
@@ -189,46 +143,6 @@ public abstract class Const {
     }
 
     @Override
-    public IntValue asInteger() {
-      return this;
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return new ByteValue((byte) value);
-    }
-
-    @Override
-    public LongValue asLong() {
-      return new LongValue((long) value);
-    }
-
-    @Override
-    public CharValue asChar() {
-      return new CharValue((char) value);
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return new ShortValue((short) value);
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return new DoubleValue((double) value);
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return new FloatValue((float) value);
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
-    }
-
-    @Override
     public int hashCode() {
       return Integer.hashCode(value);
     }
@@ -269,46 +183,6 @@ public abstract class Const {
     @Override
     public Object getValue() {
       return value;
-    }
-
-    @Override
-    public IntValue asInteger() {
-      return new IntValue((int) value);
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return new ByteValue((byte) value);
-    }
-
-    @Override
-    public LongValue asLong() {
-      return this;
-    }
-
-    @Override
-    public CharValue asChar() {
-      return new CharValue((char) value);
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return new ShortValue((short) value);
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return new DoubleValue((double) value);
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return new FloatValue((float) value);
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
     }
 
     @Override
@@ -355,46 +229,6 @@ public abstract class Const {
     }
 
     @Override
-    public IntValue asInteger() {
-      return new IntValue((int) value);
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return new ByteValue((byte) value);
-    }
-
-    @Override
-    public LongValue asLong() {
-      return new LongValue((long) value);
-    }
-
-    @Override
-    public CharValue asChar() {
-      return this;
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return new ShortValue((short) value);
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return new DoubleValue((double) value);
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return new FloatValue((float) value);
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
-    }
-
-    @Override
     public int hashCode() {
       return Character.hashCode(value);
     }
@@ -438,46 +272,6 @@ public abstract class Const {
     @Override
     public Object getValue() {
       return value;
-    }
-
-    @Override
-    public IntValue asInteger() {
-      return new IntValue((int) value);
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return new ByteValue((byte) value);
-    }
-
-    @Override
-    public LongValue asLong() {
-      return new LongValue((long) value);
-    }
-
-    @Override
-    public CharValue asChar() {
-      return new CharValue((char) value);
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return new ShortValue((short) value);
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return new DoubleValue((double) value);
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return this;
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
     }
 
     @Override
@@ -533,46 +327,6 @@ public abstract class Const {
     }
 
     @Override
-    public IntValue asInteger() {
-      return new IntValue((int) value);
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return new ByteValue((byte) value);
-    }
-
-    @Override
-    public LongValue asLong() {
-      return new LongValue((long) value);
-    }
-
-    @Override
-    public CharValue asChar() {
-      return new CharValue((char) value);
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return new ShortValue((short) value);
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return this;
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return new FloatValue((float) value);
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
-    }
-
-    @Override
     public int hashCode() {
       return Double.hashCode(value);
     }
@@ -613,11 +367,6 @@ public abstract class Const {
     @Override
     public Object getValue() {
       return value;
-    }
-
-    @Override
-    public StringValue asString() {
-      return this;
     }
 
     @Override
@@ -664,46 +413,6 @@ public abstract class Const {
     }
 
     @Override
-    public IntValue asInteger() {
-      return new IntValue((int) value);
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return new ByteValue((byte) value);
-    }
-
-    @Override
-    public LongValue asLong() {
-      return new LongValue((long) value);
-    }
-
-    @Override
-    public CharValue asChar() {
-      return new CharValue((char) value);
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return this;
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return new DoubleValue((double) value);
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return new FloatValue((float) value);
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
-    }
-
-    @Override
     public int hashCode() {
       return Short.hashCode(value);
     }
@@ -735,46 +444,6 @@ public abstract class Const {
     @Override
     public Object getValue() {
       return value;
-    }
-
-    @Override
-    public IntValue asInteger() {
-      return new IntValue((int) value);
-    }
-
-    @Override
-    public ByteValue asByte() {
-      return this;
-    }
-
-    @Override
-    public LongValue asLong() {
-      return new LongValue((long) value);
-    }
-
-    @Override
-    public CharValue asChar() {
-      return new CharValue((char) value);
-    }
-
-    @Override
-    public ShortValue asShort() {
-      return new ShortValue((short) value);
-    }
-
-    @Override
-    public DoubleValue asDouble() {
-      return new DoubleValue((double) value);
-    }
-
-    @Override
-    public FloatValue asFloat() {
-      return new FloatValue((float) value);
-    }
-
-    @Override
-    public StringValue asString() {
-      return new StringValue(String.valueOf(value));
     }
 
     @Override

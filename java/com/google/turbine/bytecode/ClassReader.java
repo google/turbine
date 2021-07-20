@@ -334,11 +334,11 @@ public class ClassReader {
     int tag = reader.u1();
     switch (tag) {
       case 'B':
-        return new ConstValue(readConst(constantPool).asByte());
+        return new ConstValue(new Const.ByteValue((byte) readInt(constantPool)));
       case 'C':
-        return new ConstValue(readConst(constantPool).asChar());
+        return new ConstValue(new Const.CharValue((char) readInt(constantPool)));
       case 'S':
-        return new ConstValue(readConst(constantPool).asShort());
+        return new ConstValue(new Const.ShortValue((short) readInt(constantPool)));
       case 'D':
       case 'F':
       case 'I':
@@ -346,11 +346,8 @@ public class ClassReader {
       case 's':
         return new ConstValue(readConst(constantPool));
       case 'Z':
-        {
-          Const.Value value = readConst(constantPool);
-          // boolean constants are encoded as integers
-          return new ConstValue(new Const.BooleanValue(value.asInteger().value() != 0));
-        }
+        // boolean constants are encoded as integers
+        return new ConstValue(new Const.BooleanValue(readInt(constantPool) != 0));
       case 'e':
         {
           int typeNameIndex = reader.u2();
@@ -379,6 +376,10 @@ public class ClassReader {
       default: // fall out
     }
     throw new AssertionError(String.format("bad tag value %c", tag));
+  }
+
+  private int readInt(ConstantPoolReader constantPool) {
+    return ((Const.IntValue) readConst(constantPool)).value();
   }
 
   private Const.Value readConst(ConstantPoolReader constantPool) {

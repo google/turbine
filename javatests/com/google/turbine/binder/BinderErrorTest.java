@@ -827,6 +827,119 @@ public class BinderErrorTest {
           "             ^",
         },
       },
+      {
+        {
+          "@interface A {",
+          "  boolean value();",
+          "}",
+          "class B {",
+          "  static final String X = \"hello\";",
+          "}",
+          "@A(B.X)",
+          "class T {}",
+        },
+        {
+          "<>:7: error: value \"hello\" of type String cannot be converted to boolean",
+          "@A(B.X)",
+          "   ^",
+        },
+      },
+      {
+        {
+          "class T {", //
+          "  public static final boolean b = true == 42;",
+          "}",
+        },
+        {
+          "<>:2: error: value 42 of type int cannot be converted to boolean",
+          "  public static final boolean b = true == 42;",
+          "                                          ^",
+        },
+      },
+      {
+        {
+          "class T {", //
+          "  public static final byte b = (byte) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to byte",
+          "  public static final byte b = (byte) \"hello\";",
+          "                                      ^",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  public static final char c = (char) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to char",
+          "  public static final char c = (char) \"hello\";",
+          "                                      ^",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  public static final short s = (short) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to short",
+          "  public static final short s = (short) \"hello\";",
+          "                                        ^",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  public static final int i = (int) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to int",
+          "  public static final int i = (int) \"hello\";",
+          "                                    ^",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  public static final long l = (long) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to long",
+          "  public static final long l = (long) \"hello\";",
+          "                                      ^",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  public static final float f = (float) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to float",
+          "  public static final float f = (float) \"hello\";",
+          "                                        ^",
+        }
+      },
+      {
+        {
+          "class T {", //
+          "  public static final double d = (double) \"hello\";",
+          "}",
+        },
+        {
+          "<>:2: error: value \"hello\" of type String cannot be converted to double",
+          "  public static final double d = (double) \"hello\";",
+          "                                          ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

@@ -127,25 +127,31 @@ public class AttributeWriter {
     Const.Value value = attribute.value;
     switch (value.constantTypeKind()) {
       case INT:
+        output.writeShort(pool.integer(((Const.IntValue) value).value()));
+        break;
       case CHAR:
+        output.writeShort(pool.integer(((Const.CharValue) value).value()));
+        break;
       case SHORT:
+        output.writeShort(pool.integer(((Const.ShortValue) value).value()));
+        break;
       case BYTE:
-        output.writeShort(pool.integer(value.asInteger().value()));
+        output.writeShort(pool.integer(((Const.ByteValue) value).value()));
         break;
       case LONG:
-        output.writeShort(pool.longInfo(value.asLong().value()));
+        output.writeShort(pool.longInfo(((Const.LongValue) value).value()));
         break;
       case DOUBLE:
-        output.writeShort(pool.doubleInfo(value.asDouble().value()));
+        output.writeShort(pool.doubleInfo(((Const.DoubleValue) value).value()));
         break;
       case FLOAT:
-        output.writeShort(pool.floatInfo(value.asFloat().value()));
+        output.writeShort(pool.floatInfo(((Const.FloatValue) value).value()));
         break;
       case BOOLEAN:
-        output.writeShort(pool.integer(value.asBoolean().value() ? 1 : 0));
+        output.writeShort(pool.integer(((Const.BooleanValue) value).value() ? 1 : 0));
         break;
       case STRING:
-        output.writeShort(pool.string(value.asString().value()));
+        output.writeShort(pool.string(((Const.StringValue) value).value()));
         break;
       default:
         throw new AssertionError(value.constantTypeKind());

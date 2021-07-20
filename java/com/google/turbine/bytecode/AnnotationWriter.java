@@ -33,6 +33,7 @@ import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.ThrowsTarget;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypeParameterBoundTarget;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypeParameterTarget;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypePath;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.Value;
 import java.util.Map;
 
@@ -79,31 +80,31 @@ public class AnnotationWriter {
   private void writeConstElementValue(Value value) {
     switch (value.constantTypeKind()) {
       case BYTE:
-        writeConst('B', pool.integer(value.asInteger().value()));
+        writeConst('B', pool.integer(((Const.ByteValue) value).value()));
         break;
       case CHAR:
-        writeConst('C', pool.integer(value.asInteger().value()));
+        writeConst('C', pool.integer(((Const.CharValue) value).value()));
         break;
       case SHORT:
-        writeConst('S', pool.integer(value.asInteger().value()));
+        writeConst('S', pool.integer(((Const.ShortValue) value).value()));
         break;
       case DOUBLE:
-        writeConst('D', pool.doubleInfo(value.asDouble().value()));
+        writeConst('D', pool.doubleInfo(((Const.DoubleValue) value).value()));
         break;
       case FLOAT:
-        writeConst('F', pool.floatInfo(value.asFloat().value()));
+        writeConst('F', pool.floatInfo(((Const.FloatValue) value).value()));
         break;
       case INT:
-        writeConst('I', pool.integer(value.asInteger().value()));
+        writeConst('I', pool.integer(((Const.IntValue) value).value()));
         break;
       case LONG:
-        writeConst('J', pool.longInfo(value.asLong().value()));
+        writeConst('J', pool.longInfo(((Const.LongValue) value).value()));
         break;
       case STRING:
-        writeConst('s', pool.utf8(value.asString().value()));
+        writeConst('s', pool.utf8(((Const.StringValue) value).value()));
         break;
       case BOOLEAN:
-        writeConst('Z', pool.integer(value.asBoolean().value() ? 1 : 0));
+        writeConst('Z', pool.integer(((Const.BooleanValue) value).value() ? 1 : 0));
         break;
       default:
         throw new AssertionError(value.constantTypeKind());

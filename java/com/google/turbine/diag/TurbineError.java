@@ -48,6 +48,7 @@ public class TurbineError extends Error {
     CANNOT_RESOLVE("could not resolve %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
     OPERAND_TYPE("bad operand type %s"),
+    TYPE_CONVERSION("value %s of type %s cannot be converted to %s"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),
     ANNOTATION_VALUE_NAME("expected an annotation value of the form name=value"),
