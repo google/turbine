@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.google.common.io.MoreFiles;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
@@ -126,10 +127,12 @@ public final class Main {
     }
   }
 
-  public static void compile(String[] args) throws IOException {
-    compile(TurbineOptionsParser.parse(Arrays.asList(args)));
+  @CanIgnoreReturnValue
+  public static Result compile(String[] args) throws IOException {
+    return compile(TurbineOptionsParser.parse(Arrays.asList(args)));
   }
 
+  @CanIgnoreReturnValue
   public static Result compile(TurbineOptions options) throws IOException {
     usage(options);
 

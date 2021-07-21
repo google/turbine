@@ -27,7 +27,7 @@ import static com.google.turbine.tree.TurbineModifier.VARARGS;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -1407,6 +1407,7 @@ public class Parser {
     next();
   }
 
+  @CanIgnoreReturnValue
   private boolean maybe(Token kind) {
     if (token == kind) {
       next();
@@ -1415,7 +1416,6 @@ public class Parser {
     return false;
   }
 
-  @CheckReturnValue
   TurbineError error(Token token) {
     switch (token) {
       case IDENT:
@@ -1427,7 +1427,6 @@ public class Parser {
     }
   }
 
-  @CheckReturnValue
   private TurbineError error(ErrorKind kind, Object... args) {
     return TurbineError.format(
         lexer.source(),

@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassLiteral;
 import com.google.turbine.tree.Tree.Ident;
@@ -60,6 +61,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     newLine = true;
   }
 
+  @CanIgnoreReturnValue
   Pretty append(char c) {
     if (c == '\n') {
       newLine = true;
@@ -71,6 +73,7 @@ public class Pretty implements Tree.Visitor<Void, Void> {
     return this;
   }
 
+  @CanIgnoreReturnValue
   Pretty append(String s) {
     if (newLine) {
       sb.append(Strings.repeat(" ", indent * 2));
