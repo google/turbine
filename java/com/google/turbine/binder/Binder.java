@@ -243,7 +243,7 @@ public final class Binder {
     for (PreprocessedCompUnit unit : units) {
       ImmutableList<String> packagename =
           ImmutableList.copyOf(Splitter.on('/').omitEmptyStrings().split(unit.packageName()));
-      Scope packageScope = requireNonNull(tli.lookupPackage(packagename));
+      Scope packageScope = tli.lookupPackage(packagename);
       CanonicalSymbolResolver importResolver =
           new CanonicalResolver(
               unit.packageName(),
@@ -253,11 +253,12 @@ public final class Binder {
       ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
       MemberImportIndex memberImports =
           new MemberImportIndex(unit.source(), importResolver, tli, unit.imports());
-      ImportScope scope =
-          ImportScope.fromScope(topLevel)
-              .append(wildImportScope)
-              .append(ImportScope.fromScope(packageScope))
-              .append(importScope);
+      ImportScope scope = ImportScope.fromScope(topLevel).append(wildImportScope);
+      // Can be null if we're compiling a package-info.java for an empty package
+      if (packageScope != null) {
+        scope = scope.append(ImportScope.fromScope(packageScope));
+      }
+      scope = scope.append(importScope);
       if (unit.module().isPresent()) {
         ModDecl module = unit.module().get();
         modules.put(

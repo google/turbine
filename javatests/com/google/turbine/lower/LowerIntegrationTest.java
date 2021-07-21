@@ -138,6 +138,7 @@ public class LowerIntegrationTest {
       "default_simple.test",
       "deficient_types_classfile.test",
       "dollar.test",
+      "empty_package_info.test",
       "enum1.test",
       "enum_abstract.test",
       "enum_final.test",
