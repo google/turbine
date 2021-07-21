@@ -16,6 +16,8 @@
 
 package com.google.turbine.bytecode;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -173,6 +175,7 @@ public class ClassReader {
       String innerName = innerNameIndex != 0 ? constantPool.utf8(innerNameIndex) : null;
       int innerClassAccessFlags = reader.u2();
       if (innerName != null && (thisClass.equals(innerClass) || thisClass.equals(outerClass))) {
+        requireNonNull(outerClass);
         innerclasses.add(
             new ClassFile.InnerClass(innerClass, outerClass, innerName, innerClassAccessFlags));
       }

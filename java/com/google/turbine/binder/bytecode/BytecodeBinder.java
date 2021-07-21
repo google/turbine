@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder.bytecode;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.EnumConstantValue;
@@ -206,6 +208,7 @@ public final class BytecodeBinder {
   public static ModuleInfo bindModuleInfo(String path, Supplier<byte[]> bytes) {
     ClassFile classFile = ClassReader.read(path, bytes.get());
     ClassFile.ModuleInfo module = classFile.module();
+    requireNonNull(module, path);
     return new ModuleInfo(
         module.name(),
         module.version(),

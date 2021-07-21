@@ -59,18 +59,18 @@ public final class Sig {
   public static class TyParamSig {
 
     private final String name;
-    @Nullable private final TySig classBound;
+    private final @Nullable TySig classBound;
     private final ImmutableList<TySig> interfaceBounds;
 
-    public TyParamSig(String name, TySig classBound, ImmutableList<TySig> interfaceBounds) {
+    public TyParamSig(
+        String name, @Nullable TySig classBound, ImmutableList<TySig> interfaceBounds) {
       this.name = name;
       this.classBound = classBound;
       this.interfaceBounds = interfaceBounds;
     }
 
     /** A single class upper-bound, or {@code null}. */
-    @Nullable
-    public TySig classBound() {
+    public @Nullable TySig classBound() {
       return classBound;
     }
 
