@@ -1,0 +1,7 @@
+=== T.java ===
+
+class T {
+  public static final String A = "" + 42;
+  public static final boolean B = "1" == "2";
+  public static final boolean C = "1" != "2";
+}

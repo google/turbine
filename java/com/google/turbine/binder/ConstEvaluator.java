@@ -369,6 +369,13 @@ public strictfp class ConstEvaluator {
   }
 
   private Const.StringValue asString(int position, Value value) {
+    if (!value.constantTypeKind().equals(TurbineConstantTypeKind.STRING)) {
+      throw typeError(position, value, TurbineConstantTypeKind.STRING);
+    }
+    return (Const.StringValue) value;
+  }
+
+  private Const.StringValue toString(int position, Value value) {
     String result;
     switch (value.constantTypeKind()) {
       case CHAR:
@@ -711,7 +718,7 @@ public strictfp class ConstEvaluator {
             // Explicit boxing cases (e.g. `(Boolean) false`) are legal, but not const exprs.
             return null;
           }
-          return asString(t.expr().position(), expr);
+          return toString(t.expr().position(), expr);
         }
       default:
         throw new AssertionError(t.ty().kind());
@@ -721,7 +728,7 @@ public strictfp class ConstEvaluator {
   private @Nullable Value add(int position, Value a, Value b) {
     if (a.constantTypeKind() == TurbineConstantTypeKind.STRING
         || b.constantTypeKind() == TurbineConstantTypeKind.STRING) {
-      return new Const.StringValue(asString(position, a).value() + asString(position, b).value());
+      return new Const.StringValue(toString(position, a).value() + toString(position, b).value());
     }
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(position, a, type);

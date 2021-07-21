@@ -940,6 +940,30 @@ public class BinderErrorTest {
           "                                          ^",
         },
       },
+      {
+        {
+          "class T {", //
+          "  public static final boolean X = \"1\" == 2;",
+          "}",
+        },
+        {
+          "<>:2: error: value 2 of type int cannot be converted to String",
+          "  public static final boolean X = \"1\" == 2;",
+          "                                         ^",
+        },
+      },
+      {
+        {
+          "class T {", //
+          "  public static final boolean X = \"1\" != 2;",
+          "}",
+        },
+        {
+          "<>:2: error: value 2 of type int cannot be converted to String",
+          "  public static final boolean X = \"1\" != 2;",
+          "                                         ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

@@ -271,6 +271,7 @@ public class LowerIntegrationTest {
       "static_type_import.test",
       "strictfp.test",
       "string.test",
+      "string_const.test",
       "superabstract.test",
       "supplierfunction.test",
       "tbound.test",
