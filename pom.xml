@@ -26,9 +26,8 @@
   <version>HEAD-SNAPSHOT</version>
 
   <name>turbine</name>
-  <description>
-    turbine is a header compiler for Java
-  </description>
+  <description>turbine is a header compiler for Java</description>
+  <url>https://github.com/google/turbine</url>
 
   <properties>
     <asm.version>9.1</asm.version>
@@ -39,6 +38,17 @@
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <organization>
+    <name>Google Inc.</name>
+    <url>http://www.google.com/</url>
+  </organization>
+
+  <developers>
+    <developer>
+      <name>Liam Miller-Cushon</name>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
