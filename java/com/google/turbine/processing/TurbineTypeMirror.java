@@ -58,6 +58,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.type.WildcardType;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A {@link TypeMirror} implementation backed by a {@link Type}. */
 public abstract class TurbineTypeMirror implements TypeMirror {
@@ -165,7 +166,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineDeclaredType && type.equals(((TurbineDeclaredType) obj).type);
     }
 
@@ -377,7 +378,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(@Nullable Object other) {
       return other instanceof TurbinePackageType
           && symbol.equals(((TurbinePackageType) other).symbol);
     }
@@ -421,7 +422,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(@Nullable Object other) {
       return other instanceof TurbineNoType;
     }
 
@@ -473,7 +474,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineTypeVariable && type.equals(((TurbineTypeVariable) obj).type);
     }
 
@@ -566,7 +567,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineWildcardType && type.equals(((TurbineWildcardType) obj).type);
     }
 
@@ -607,7 +608,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineIntersectionType
           && type.equals(((TurbineIntersectionType) obj).type);
     }
@@ -670,7 +671,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof NullType;
     }
 
@@ -711,7 +712,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineExecutableType
           && type.equals(((TurbineExecutableType) obj).type);
     }

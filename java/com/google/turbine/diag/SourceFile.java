@@ -19,6 +19,7 @@ package com.google.turbine.diag;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Objects;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** A source file. */
 public class SourceFile {
@@ -55,7 +56,7 @@ public class SourceFile {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (!(obj instanceof SourceFile)) {
       return false;
     }

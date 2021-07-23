@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.escape.SourceCodeEscapers;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Compile-time constant expressions, including literals of primitive or String type, class
@@ -32,7 +33,7 @@ public abstract class Const {
   public abstract int hashCode();
 
   @Override
-  public abstract boolean equals(Object obj);
+  public abstract boolean equals(@Nullable Object obj);
 
   @Override
   public abstract String toString();
@@ -104,7 +105,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof BooleanValue && value == ((BooleanValue) obj).value();
     }
   }
@@ -148,7 +149,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof IntValue && value == ((IntValue) obj).value;
     }
   }
@@ -191,7 +192,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof LongValue && value == ((LongValue) obj).value;
     }
   }
@@ -234,7 +235,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof CharValue && value == ((CharValue) obj).value;
     }
   }
@@ -280,7 +281,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof FloatValue && value == ((FloatValue) obj).value;
     }
   }
@@ -332,7 +333,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof DoubleValue && value == ((DoubleValue) obj).value;
     }
   }
@@ -375,7 +376,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof StringValue && value.equals(((StringValue) obj).value);
     }
   }
@@ -418,7 +419,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof ShortValue && value == ((ShortValue) obj).value;
     }
   }
@@ -452,7 +453,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof ByteValue && value == ((ByteValue) obj).value;
     }
 
@@ -491,7 +492,7 @@ public abstract class Const {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof ArrayInitValue && elements.equals(((ArrayInitValue) obj).elements);
     }
 

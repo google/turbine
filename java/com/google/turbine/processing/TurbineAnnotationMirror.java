@@ -45,6 +45,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An implementation of {@link AnnotationMirror} and {@link AnnotationValue} backed by {@link
@@ -156,7 +157,7 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     return obj instanceof TurbineAnnotationMirror
         && anno.equals(((TurbineAnnotationMirror) obj).anno);
   }
@@ -342,7 +343,7 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbinePrimitiveConstant
           && value.equals(((TurbinePrimitiveConstant) obj).value);
     }

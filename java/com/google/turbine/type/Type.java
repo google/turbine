@@ -194,7 +194,7 @@ public interface Type {
     }
 
     @Override
-    public final boolean equals(Object obj) {
+    public final boolean equals(@Nullable Object obj) {
       if (!(obj instanceof ClassTy)) {
         return false;
       }
@@ -577,7 +577,7 @@ public interface Type {
     }
 
     @Override
-    public final boolean equals(Object other) {
+    public final boolean equals(@Nullable Object other) {
       // The name associated with an error type is context for use in diagnostics or by annotations
       // processors. Two error types with the same name don't necessarily represent the same type.
 

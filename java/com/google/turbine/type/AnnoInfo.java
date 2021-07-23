@@ -29,6 +29,7 @@ import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.Expression;
 import java.util.Map;
 import java.util.Objects;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An annotation use. */
 public class AnnoInfo {
@@ -84,7 +85,7 @@ public class AnnoInfo {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (!(obj instanceof AnnoInfo)) {
       return false;
     }

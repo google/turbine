@@ -92,7 +92,7 @@ public abstract class TurbineElement implements Element {
   public abstract int hashCode();
 
   @Override
-  public abstract boolean equals(Object obj);
+  public abstract boolean equals(@Nullable Object obj);
 
   protected final ModelFactory factory;
   private final Supplier<ImmutableList<AnnotationMirror>> annotationMirrors;
@@ -464,7 +464,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineTypeElement && sym.equals(((TurbineTypeElement) obj).sym);
     }
 
@@ -552,7 +552,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineTypeParameterElement
           && sym.equals(((TurbineTypeParameterElement) obj).sym);
     }
@@ -686,7 +686,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineExecutableElement
           && sym.equals(((TurbineExecutableElement) obj).sym);
     }
@@ -834,7 +834,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineFieldElement && sym.equals(((TurbineFieldElement) obj).sym);
     }
 
@@ -1068,7 +1068,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbinePackageElement && sym.equals(((TurbinePackageElement) obj).sym);
     }
 
@@ -1113,7 +1113,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
       return obj instanceof TurbineParameterElement
           && sym.equals(((TurbineParameterElement) obj).sym);
     }
