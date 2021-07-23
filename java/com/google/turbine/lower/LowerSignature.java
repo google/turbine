@@ -46,6 +46,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Translator from {@link Type}s to {@link Sig}natures. */
 public class LowerSignature {
@@ -127,6 +128,7 @@ public class LowerSignature {
    * Produces a method signature attribute for a generic method, or {@code null} if the signature is
    * unnecessary.
    */
+  @Nullable
   public String methodSignature(
       Env<ClassSymbol, TypeBoundClass> env, TypeBoundClass.MethodInfo method, ClassSymbol sym) {
     if (!needsMethodSig(sym, env, method)) {
@@ -194,6 +196,7 @@ public class LowerSignature {
    * Produces a class signature attribute for a generic class, or {@code null} if the signature is
    * unnecessary.
    */
+  @Nullable
   public String classSignature(SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env) {
     if (!classNeedsSig(info)) {
       return null;
@@ -211,6 +214,7 @@ public class LowerSignature {
   /**
    * A field signature, or {@code null} if the descriptor provides all necessary type information.
    */
+  @Nullable
   public String fieldSignature(Type type) {
     return needsSig(type) ? SigWriter.type(signature(type)) : null;
   }

@@ -505,6 +505,7 @@ public class Lower {
     return lowered.build();
   }
 
+  @Nullable
   private AnnotationInfo lowerAnnotation(AnnoInfo annotation) {
     Boolean visible = isVisible(annotation.sym());
     if (visible == null) {

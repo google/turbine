@@ -284,6 +284,7 @@ public class Canonicalize {
   }
 
   /** Instantiates a type argument using the given mapping. */
+  @Nullable
   private static Type instantiate(Map<TyVarSymbol, Type> mapping, Type type) {
     if (type == null) {
       return null;

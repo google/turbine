@@ -25,6 +25,7 @@ import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.AnnoExpr;
 import com.google.turbine.tree.Tree.ClassLiteral;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Expression;
@@ -46,6 +47,7 @@ public class ConstExpressionParser {
     this.position = position;
   }
 
+  @Nullable
   private static TurbineOperatorKind operator(Token token) {
     switch (token) {
       case ASSIGN:
@@ -96,7 +98,7 @@ public class ConstExpressionParser {
     }
   }
 
-  private Tree.@Nullable Expression primary(boolean negate) {
+  private @Nullable Expression primary(boolean negate) {
     switch (token) {
       case INT_LITERAL:
         return finishLiteral(TurbineConstantTypeKind.INT, negate);
@@ -175,7 +177,7 @@ public class ConstExpressionParser {
     return finishClassLiteral(position, new Tree.PrimTy(position, ImmutableList.of(), type));
   }
 
-  private Tree.Expression maybeCast() {
+  private Expression maybeCast() {
     eat();
     switch (token) {
       case BOOLEAN:
@@ -207,8 +209,9 @@ public class ConstExpressionParser {
     }
   }
 
-  private Tree.Expression notCast() {
-    Tree.Expression expr = expression(null);
+  @Nullable
+  private Expression notCast() {
+    Expression expr = expression(null);
     if (expr == null) {
       return null;
     }
@@ -251,7 +254,8 @@ public class ConstExpressionParser {
     position = lexer.position();
   }
 
-  private Tree.Expression arrayInitializer(int pos) {
+  @Nullable
+  private Expression arrayInitializer(int pos) {
     if (token == Token.RBRACE) {
       eat();
       return new Tree.ArrayInit(pos, ImmutableList.<Tree.Expression>of());
@@ -264,7 +268,7 @@ public class ConstExpressionParser {
         eat();
         break OUTER;
       }
-      Tree.Expression item = expression(null);
+      Expression item = expression(null);
       if (item == null) {
         return null;
       }
@@ -284,7 +288,7 @@ public class ConstExpressionParser {
   }
 
   /** Finish hex, decimal, octal, and binary integer literals (see JLS 3.10.1). */
-  private Tree.Expression finishLiteral(TurbineConstantTypeKind kind, boolean negate) {
+  private Expression finishLiteral(TurbineConstantTypeKind kind, boolean negate) {
     int pos = position;
     String text = ident().value();
     Const.Value value;
@@ -408,9 +412,10 @@ public class ConstExpressionParser {
     return r;
   }
 
-  private Tree.Expression unaryRest(TurbineOperatorKind op) {
+  @Nullable
+  private Expression unaryRest(TurbineOperatorKind op) {
     boolean negate = op == TurbineOperatorKind.NEG;
-    Tree.Expression expr = primary(negate);
+    Expression expr = primary(negate);
     if (expr == null) {
       return null;
     }
@@ -427,7 +432,7 @@ public class ConstExpressionParser {
     return new Tree.Unary(position, expr, op);
   }
 
-  private Tree.@Nullable Expression qualIdent() {
+  private @Nullable Expression qualIdent() {
     int pos = position;
     ImmutableList.Builder<Ident> bits = ImmutableList.builder();
     bits.add(ident());
@@ -457,6 +462,7 @@ public class ConstExpressionParser {
     return new Ident(lexer.position(), lexer.stringValue());
   }
 
+  @Nullable
   private Expression finishClassLiteral(int pos, Tree.Type type) {
     while (token == Token.LBRACK) {
       eat();
@@ -477,8 +483,9 @@ public class ConstExpressionParser {
     return new ClassLiteral(pos, type);
   }
 
-  public Tree.Expression expression() {
-    Tree.Expression result = expression(null);
+  @Nullable
+  public Expression expression() {
+    Expression result = expression(null);
     switch (token) {
       case EOF:
       case SEMI:
@@ -491,15 +498,17 @@ public class ConstExpressionParser {
     }
   }
 
-  private Tree.Expression expression(TurbineOperatorKind.Precedence prec) {
-    Tree.Expression term1 = primary(false);
+  @Nullable
+  private Expression expression(TurbineOperatorKind.Precedence prec) {
+    Expression term1 = primary(false);
     if (term1 == null) {
       return null;
     }
     return expression(term1, prec);
   }
 
-  private Tree.Expression expression(Tree.Expression term1, TurbineOperatorKind.Precedence prec) {
+  @Nullable
+  private Expression expression(Expression term1, TurbineOperatorKind.Precedence prec) {
     while (true) {
       if (token == Token.EOF) {
         return term1;
@@ -528,7 +537,8 @@ public class ConstExpressionParser {
     }
   }
 
-  private Tree.Expression assign(Tree.Expression term1, TurbineOperatorKind op) {
+  @Nullable
+  private Expression assign(Expression term1, TurbineOperatorKind op) {
     if (!(term1 instanceof Tree.ConstVarName)) {
       return null;
     }
@@ -537,15 +547,16 @@ public class ConstExpressionParser {
       return null;
     }
     Ident name = getOnlyElement(names);
-    Tree.Expression rhs = expression(op.prec());
+    Expression rhs = expression(op.prec());
     if (rhs == null) {
       return null;
     }
     return new Tree.Assign(term1.position(), name, rhs);
   }
 
-  private Tree.Expression ternary(Tree.Expression term1) {
-    Tree.Expression thenExpr = expression(TurbineOperatorKind.Precedence.TERNARY);
+  @Nullable
+  private Expression ternary(Expression term1) {
+    Expression thenExpr = expression(TurbineOperatorKind.Precedence.TERNARY);
     if (thenExpr == null) {
       return null;
     }
@@ -553,26 +564,27 @@ public class ConstExpressionParser {
       return null;
     }
     eat();
-    Tree.Expression elseExpr = expression();
+    Expression elseExpr = expression();
     if (elseExpr == null) {
       return null;
     }
     return new Tree.Conditional(position, term1, thenExpr, elseExpr);
   }
 
-  private Tree.Expression castTail(TurbineConstantTypeKind ty) {
+  @Nullable
+  private Expression castTail(TurbineConstantTypeKind ty) {
     if (token != Token.RPAREN) {
       return null;
     }
     eat();
-    Tree.Expression rhs = primary(false);
+    Expression rhs = primary(false);
     if (rhs == null) {
       return null;
     }
     return new Tree.TypeCast(position, new Tree.PrimTy(position, ImmutableList.of(), ty), rhs);
   }
 
-  private Tree.@Nullable AnnoExpr annotation() {
+  private @Nullable AnnoExpr annotation() {
     if (token != Token.AT) {
       throw new AssertionError();
     }
@@ -588,7 +600,7 @@ public class ConstExpressionParser {
       eat();
       while (token != Token.RPAREN) {
         int argPos = position;
-        Tree.Expression expression = expression();
+        Expression expression = expression();
         if (expression == null) {
           throw TurbineError.format(lexer.source(), argPos, ErrorKind.INVALID_ANNOTATION_ARGUMENT);
         }
