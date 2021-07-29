@@ -17,6 +17,7 @@
 package com.google.turbine.parse;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -231,8 +232,9 @@ public class ConstExpressionParser {
         case NOT:
         case TILDE:
         case IDENT:
+          // primary returns non-null for these token kinds
           return new Tree.TypeCast(
-              position, asClassTy(cvar.position(), cvar.name()), primary(false));
+              position, asClassTy(cvar.position(), cvar.name()), requireNonNull(primary(false)));
         default:
           return expr;
       }
@@ -529,7 +531,12 @@ public class ConstExpressionParser {
           term1 = assign(term1, op);
           break;
         default:
-          term1 = new Tree.Binary(position, term1, expression(op.prec()), op);
+          int pos = position;
+          Expression term2 = expression(op.prec());
+          if (term2 == null) {
+            return null;
+          }
+          term1 = new Tree.Binary(pos, term1, term2, op);
       }
       if (term1 == null) {
         return null;

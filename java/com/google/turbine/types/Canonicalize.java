@@ -332,7 +332,8 @@ public class Canonicalize {
     for (SimpleClassTy simple : type.classes()) {
       ImmutableList.Builder<Type> args = ImmutableList.builder();
       for (Type arg : simple.targs()) {
-        args.add(instantiate(mapping, arg));
+        // result is non-null if arg is
+        args.add(requireNonNull(instantiate(mapping, arg)));
       }
       simples.add(SimpleClassTy.create(simple.sym(), args.build(), simple.annos()));
     }
