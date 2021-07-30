@@ -71,6 +71,7 @@ import javax.lang.model.util.Types;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An implementation of {@link Types} backed by turbine's {@link TypeMirror}. */
+@SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.
 public class TurbineTypes implements Types {
 
   private final ModelFactory factory;
@@ -520,11 +521,12 @@ public class TurbineTypes implements Types {
   }
 
   /**
-   * Given two parameterizations of the same {@link SimpleClassTy}, {@code a} and {@code b}, teturns
+   * Given two parameterizations of the same {@link SimpleClassTy}, {@code a} and {@code b}, returns
    * true if the type arguments of {@code a} are pairwise contained by the type arguments of {@code
    * b}.
    *
-   * @see {@link #contains} and JLS 4.5.1.
+   * @see #contains
+   * @see "JLS 4.5.1"
    */
   private boolean tyArgsContains(SimpleClassTy a, SimpleClassTy b, boolean strict) {
     verify(a.sym().equals(b.sym()));

@@ -82,6 +82,7 @@ import javax.lang.model.type.TypeMirror;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** An {@link Element} implementation backed by a {@link Symbol}. */
+@SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.
 public abstract class TurbineElement implements Element {
 
   public abstract Symbol sym();

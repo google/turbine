@@ -54,6 +54,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
 /** An implementation of {@link Elements} backed by turbine's {@link Element}. */
+@SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.
 public class TurbineElements implements Elements {
 
   private final ModelFactory factory;
