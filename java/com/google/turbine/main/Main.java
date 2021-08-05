@@ -198,9 +198,9 @@ public final class Main {
       if (options.outputDeps().isPresent()) {
         DepsProto.Dependencies deps =
             Dependencies.collectDeps(options.targetLabel(), bootclasspath, bound, lowered);
-        try (OutputStream os =
-            new BufferedOutputStream(
-                Files.newOutputStream(Paths.get(options.outputDeps().get())))) {
+        Path path = Paths.get(options.outputDeps().get());
+        Files.createDirectories(path.getParent());
+        try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(path))) {
           deps.writeTo(os);
         }
       }
