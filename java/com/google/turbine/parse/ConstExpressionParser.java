@@ -393,7 +393,8 @@ public class ConstExpressionParser {
     if (neg) {
       text = text.substring(1);
     }
-    for (char c : text.toCharArray()) {
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
       int digit;
       if ('0' <= c && c <= '9') {
         digit = c - '0';
