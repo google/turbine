@@ -22,6 +22,8 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
+import com.google.auto.common.AnnotationMirrors;
+import com.google.auto.common.AnnotationValues;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -135,7 +137,13 @@ public class TurbineMessagerTest {
                 processingEnv
                     .getMessager()
                     .printMessage(
-                        Diagnostic.Kind.ERROR, String.format("%s %s %s", e, a, av), e, a, av);
+                        Diagnostic.Kind.ERROR,
+                        String.format(
+                            "%s %s %s",
+                            e, AnnotationMirrors.toString(a), AnnotationValues.toString(av)),
+                        e,
+                        a,
+                        av);
                 av.accept(
                     new SimpleAnnotationValueVisitor8<Void, Void>() {
                       @Override
