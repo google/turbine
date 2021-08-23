@@ -17,7 +17,6 @@
 package com.google.turbine.parse;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -232,9 +231,11 @@ public class ConstExpressionParser {
         case NOT:
         case TILDE:
         case IDENT:
-          // primary returns non-null for these token kinds
-          return new Tree.TypeCast(
-              position, asClassTy(cvar.position(), cvar.name()), requireNonNull(primary(false)));
+          Expression expression = primary(false);
+          if (expression == null) {
+            throw error(ErrorKind.EXPRESSION_ERROR);
+          }
+          return new Tree.TypeCast(position, asClassTy(cvar.position(), cvar.name()), expression);
         default:
           return expr;
       }

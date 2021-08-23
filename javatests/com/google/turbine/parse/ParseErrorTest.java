@@ -294,6 +294,19 @@ public class ParseErrorTest {
                 "   ^"));
   }
 
+  @Test
+  public void notCast() {
+    String input = "@j(@truetugt^(oflur)!%t";
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:1: error: could not evaluate constant expression",
+                "@j(@truetugt^(oflur)!%t",
+                "                     ^"));
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
