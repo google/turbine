@@ -437,8 +437,8 @@ public final class IntegrationTestSupport {
             });
   }
 
-  static Map<String, byte[]> runTurbine(Map<String, String> input, ImmutableList<Path> classpath)
-      throws IOException {
+  public static Map<String, byte[]> runTurbine(
+      Map<String, String> input, ImmutableList<Path> classpath) throws IOException {
     return runTurbine(
         input, classpath, TURBINE_BOOTCLASSPATH, /* moduleVersion= */ Optional.empty());
   }

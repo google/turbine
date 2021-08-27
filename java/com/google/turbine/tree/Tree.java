@@ -25,6 +25,8 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Optional;
 import java.util.Set;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -422,12 +424,24 @@ public abstract class Tree {
       return visitor.visitBinary(this, input);
     }
 
-    public Expression lhs() {
-      return lhs;
-    }
-
-    public Expression rhs() {
-      return rhs;
+    public Iterable<Expression> children() {
+      ImmutableList.Builder<Expression> children = ImmutableList.builder();
+      Deque<Expression> stack = new ArrayDeque<>();
+      stack.addFirst(rhs);
+      stack.addFirst(lhs);
+      while (!stack.isEmpty()) {
+        Expression curr = stack.removeFirst();
+        if (curr.kind().equals(Kind.BINARY)) {
+          Binary b = ((Binary) curr);
+          if (b.op().equals(op())) {
+            stack.addFirst(b.rhs);
+            stack.addFirst(b.lhs);
+            continue;
+          }
+        }
+        children.add(curr);
+      }
+      return children.build();
     }
 
     public TurbineOperatorKind op() {

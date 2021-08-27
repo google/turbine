@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -65,6 +66,7 @@ import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
+import com.google.turbine.tree.TurbineOperatorKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.util.ArrayDeque;
@@ -1066,54 +1068,67 @@ public strictfp class ConstEvaluator {
   }
 
   private @Nullable Value evalBinary(Binary t) {
-    Value lhs = evalValue(t.lhs());
-    Value rhs = evalValue(t.rhs());
-    if (lhs == null || rhs == null) {
-      return null;
+    Value result = null;
+    boolean first = true;
+    for (Expression child : t.children()) {
+      Value value = evalValue(child);
+      if (value == null) {
+        return null;
+      }
+      if (first) {
+        result = value;
+      } else {
+        result = evalBinary(child.position(), t.op(), requireNonNull(result), value);
+      }
+      first = false;
     }
-    switch (t.op()) {
+    return result;
+  }
+
+  private @Nullable Value evalBinary(int position, TurbineOperatorKind op, Value lhs, Value rhs) {
+    switch (op) {
       case PLUS:
-        return add(t.position(), lhs, rhs);
+        return add(position, lhs, rhs);
       case MINUS:
-        return subtract(t.position(), lhs, rhs);
+        return subtract(position, lhs, rhs);
       case MULT:
-        return mult(t.position(), lhs, rhs);
+        return mult(position, lhs, rhs);
       case DIVIDE:
-        return divide(t.position(), lhs, rhs);
+        return divide(position, lhs, rhs);
       case MODULO:
-        return mod(t.position(), lhs, rhs);
+        return mod(position, lhs, rhs);
       case SHIFT_LEFT:
-        return shiftLeft(t.position(), lhs, rhs);
+        return shiftLeft(position, lhs, rhs);
       case SHIFT_RIGHT:
-        return shiftRight(t.position(), lhs, rhs);
+        return shiftRight(position, lhs, rhs);
       case UNSIGNED_SHIFT_RIGHT:
-        return unsignedShiftRight(t.position(), lhs, rhs);
+        return unsignedShiftRight(position, lhs, rhs);
       case LESS_THAN:
-        return lessThan(t.position(), lhs, rhs);
+        return lessThan(position, lhs, rhs);
       case GREATER_THAN:
-        return greaterThan(t.position(), lhs, rhs);
+        return greaterThan(position, lhs, rhs);
       case LESS_THAN_EQ:
-        return lessThanEqual(t.position(), lhs, rhs);
+        return lessThanEqual(position, lhs, rhs);
       case GREATER_THAN_EQ:
-        return greaterThanEqual(t.position(), lhs, rhs);
+        return greaterThanEqual(position, lhs, rhs);
       case EQUAL:
-        return equal(t.position(), lhs, rhs);
+        return equal(position, lhs, rhs);
       case NOT_EQUAL:
-        return notEqual(t.position(), lhs, rhs);
+        return notEqual(position, lhs, rhs);
       case AND:
         return new Const.BooleanValue(
-            asBoolean(t.position(), lhs).value() && asBoolean(t.position(), rhs).value());
+            asBoolean(position, lhs).value() && asBoolean(position, rhs).value());
       case OR:
         return new Const.BooleanValue(
-            asBoolean(t.position(), lhs).value() || asBoolean(t.position(), rhs).value());
+            asBoolean(position, lhs).value() || asBoolean(position, rhs).value());
       case BITWISE_AND:
-        return bitwiseAnd(t.position(), lhs, rhs);
+        return bitwiseAnd(position, lhs, rhs);
       case BITWISE_XOR:
-        return bitwiseXor(t.position(), lhs, rhs);
+        return bitwiseXor(position, lhs, rhs);
       case BITWISE_OR:
-        return bitwiseOr(t.position(), lhs, rhs);
+        return bitwiseOr(position, lhs, rhs);
       default:
-        throw new AssertionError(t.op());
+        throw new AssertionError(op);
     }
   }
 

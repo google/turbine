@@ -192,9 +192,14 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
   @Override
   public @Nullable Void visitBinary(Tree.Binary binary, @Nullable Void input) {
     append('(');
-    binary.lhs().accept(this, null);
-    append(" " + binary.op() + " ");
-    binary.rhs().accept(this, null);
+    boolean first = true;
+    for (Tree child : binary.children()) {
+      if (!first) {
+        append(" ").append(binary.op().toString()).append(" ");
+      }
+      child.accept(this, null);
+      first = false;
+    }
     append(')');
     return null;
   }
