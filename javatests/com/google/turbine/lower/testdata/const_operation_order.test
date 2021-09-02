@@ -1,0 +1,13 @@
+=== test/A.java ===
+package test;
+
+public class A {
+  public static final double D1 = 1.0 / (2 / 3);
+  public static final double D2 = 1.0 / 2 / 3;
+  public static final double M1 = 1.0 + (2 + 3);
+  public static final double M2 = 1.0 + 2 + 3;
+  public static final double A1 = 1.0 + (2 + 3);
+  public static final double A2 = 1.0 + 2 + 3;
+  public static final double S1 = 1.0 - (2 - 3);
+  public static final double S2 = 1.0 - 2 - 3;
+}

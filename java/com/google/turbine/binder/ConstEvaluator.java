@@ -63,6 +63,7 @@ import com.google.turbine.tree.Tree.Conditional;
 import com.google.turbine.tree.Tree.ConstVarName;
 import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.Tree.Ident;
+import com.google.turbine.tree.Tree.Paren;
 import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.Tree.TypeCast;
 import com.google.turbine.tree.Tree.Unary;
@@ -156,6 +157,8 @@ public strictfp class ConstEvaluator {
         return evalClassLiteral((ClassLiteral) t);
       case BINARY:
         return evalBinary((Binary) t);
+      case PAREN:
+        return eval(((Paren) t).expr());
       case TYPE_CAST:
         return evalCast((TypeCast) t);
       case UNARY:

@@ -125,6 +125,7 @@ public class LowerIntegrationTest {
       "const_multi.test",
       "const_nonfinal.test",
       "const_octal_underscore.test",
+      "const_operation_order.test",
       "const_types.test",
       "const_underscore.test",
       "constlevel.test",

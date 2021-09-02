@@ -158,6 +158,12 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
   }
 
   @Override
+  public @Nullable Void visitParen(Tree.Paren paren, @Nullable Void input) {
+    paren.expr().accept(this, null);
+    return null;
+  }
+
+  @Override
   public @Nullable Void visitTypeCast(Tree.TypeCast typeCast, @Nullable Void input) {
     append('(');
     typeCast.ty().accept(this, null);

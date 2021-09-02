@@ -237,10 +237,10 @@ public class ConstExpressionParser {
           }
           return new Tree.TypeCast(position, asClassTy(cvar.position(), cvar.name()), expression);
         default:
-          return expr;
+          return new Tree.Paren(position, expr);
       }
     } else {
-      return expr;
+      return new Tree.Paren(position, expr);
     }
   }
 

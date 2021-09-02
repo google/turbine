@@ -63,6 +63,7 @@ public abstract class Tree {
     VOID_TY,
     CLASS_TY,
     LITERAL,
+    PAREN,
     TYPE_CAST,
     UNARY,
     BINARY,
@@ -335,6 +336,31 @@ public abstract class Tree {
 
     public Const value() {
       return value;
+    }
+  }
+
+  /** A JLS 15.8.5 parenthesized expression. */
+  public static class Paren extends Expression {
+    private final Expression expr;
+
+    public Paren(int position, Expression expr) {
+      super(position);
+      this.expr = expr;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.PAREN;
+    }
+
+    @Override
+    public <I extends @Nullable Object, O extends @Nullable Object> O accept(
+        Visitor<I, O> visitor, I input) {
+      return visitor.visitParen(this, input);
+    }
+
+    public Expression expr() {
+      return expr;
     }
   }
 
@@ -1320,6 +1346,8 @@ public abstract class Tree {
     O visitClassTy(ClassTy visitor, I input);
 
     O visitLiteral(Literal literal, I input);
+
+    O visitParen(Paren unary, I input);
 
     O visitTypeCast(TypeCast typeCast, I input);
 
