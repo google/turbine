@@ -24,7 +24,7 @@ import org.jspecify.nullness.Nullable;
 public class CompoundScope implements Scope {
 
   private final Scope scope;
-  @Nullable private final Scope base;
+  private final @Nullable Scope base;
 
   private CompoundScope(Scope scope, @Nullable Scope base) {
     this.scope = checkNotNull(scope);

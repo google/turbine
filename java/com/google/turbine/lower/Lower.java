@@ -505,8 +505,7 @@ public class Lower {
     return lowered.build();
   }
 
-  @Nullable
-  private AnnotationInfo lowerAnnotation(AnnoInfo annotation) {
+  private @Nullable AnnotationInfo lowerAnnotation(AnnoInfo annotation) {
     Boolean visible = isVisible(annotation.sym());
     if (visible == null) {
       return null;
@@ -519,8 +518,7 @@ public class Lower {
    * Returns true if the annotation is visible at runtime, false if it is not visible at runtime,
    * and {@code null} if it should not be retained in bytecode.
    */
-  @Nullable
-  private Boolean isVisible(ClassSymbol sym) {
+  private @Nullable Boolean isVisible(ClassSymbol sym) {
     RetentionPolicy retention =
         requireNonNull(env.getNonNull(sym).annotationMetadata()).retention();
     switch (retention) {

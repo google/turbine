@@ -56,9 +56,8 @@ public class TurbineFilerTest {
   public void setup() {
     Function<String, Supplier<byte[]>> classpath =
         new Function<String, Supplier<byte[]>>() {
-          @Nullable
           @Override
-          public Supplier<byte[]> apply(String input) {
+          public @Nullable Supplier<byte[]> apply(String input) {
             return null;
           }
         };

@@ -574,8 +574,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
-    @Nullable
-    private TyVarInfo info() {
+    private @Nullable TyVarInfo info() {
       return info.get();
     }
 

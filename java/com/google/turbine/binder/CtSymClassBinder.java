@@ -47,8 +47,7 @@ import org.jspecify.nullness.Nullable;
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
 public final class CtSymClassBinder {
 
-  @Nullable
-  public static ClassPath bind(String version) throws IOException {
+  public static @Nullable ClassPath bind(String version) throws IOException {
     String javaHome = JAVA_HOME.value();
     requireNonNull(javaHome, "attempted to use --release, but JAVA_HOME is not set");
     Path ctSym = Paths.get(javaHome).resolve("lib/ct.sym");

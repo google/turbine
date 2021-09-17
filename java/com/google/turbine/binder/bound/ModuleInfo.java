@@ -25,7 +25,7 @@ import org.jspecify.nullness.Nullable;
 public class ModuleInfo {
 
   private final String name;
-  @Nullable private final String version;
+  private final @Nullable String version;
   private final int flags;
   private final ImmutableList<AnnoInfo> annos;
   private final ImmutableList<RequireInfo> requires;
@@ -59,8 +59,7 @@ public class ModuleInfo {
     return name;
   }
 
-  @Nullable
-  public String version() {
+  public @Nullable String version() {
     return version;
   }
 

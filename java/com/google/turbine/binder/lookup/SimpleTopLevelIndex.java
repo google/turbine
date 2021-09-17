@@ -40,7 +40,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
       return children.get(bit);
     }
 
-    @Nullable private final ClassSymbol sym;
+    private final @Nullable ClassSymbol sym;
 
     // TODO(cushon): the set of children is typically going to be small, consider optimizing this
     // to use a denser representation where appropriate.
@@ -133,8 +133,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
   final Scope scope =
       new Scope() {
         @Override
-        @Nullable
-        public LookupResult lookup(LookupKey lookupKey) {
+        public @Nullable LookupResult lookup(LookupKey lookupKey) {
           Node curr = root;
           while (true) {
             curr = curr.lookup(lookupKey.first().value());

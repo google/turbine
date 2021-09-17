@@ -64,7 +64,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
   /** A type parameter declaration. */
   class TyVarInfo {
     private final IntersectionTy upperBound;
-    @Nullable private final Type lowerBound;
+    private final @Nullable Type lowerBound;
     private final ImmutableList<AnnoInfo> annotations;
 
     public TyVarInfo(
@@ -83,8 +83,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     }
 
     /** The lower bound. */
-    @Nullable
-    public Type lowerBound() {
+    public @Nullable Type lowerBound() {
       return lowerBound;
     }
 

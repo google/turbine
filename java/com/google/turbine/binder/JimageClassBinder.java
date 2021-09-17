@@ -185,9 +185,8 @@ public class JimageClassBinder {
 
     final Scope topLevelScope =
         new Scope() {
-          @Nullable
           @Override
-          public LookupResult lookup(LookupKey lookupKey) {
+          public @Nullable LookupResult lookup(LookupKey lookupKey) {
             // Find the longest prefix of the key that corresponds to a package name.
             // TODO(cushon): SimpleTopLevelIndex uses a prefix map for this, does it matter?
             Scope scope = null;
@@ -223,9 +222,8 @@ public class JimageClassBinder {
         return null;
       }
       return new PackageScope() {
-        @Nullable
         @Override
-        public LookupResult lookup(LookupKey lookupKey) {
+        public @Nullable LookupResult lookup(LookupKey lookupKey) {
           ClassSymbol sym = packageClassesBySimpleName.get(packageName, lookupKey.first().value());
           return sym != null ? new LookupResult(sym, lookupKey) : null;
         }

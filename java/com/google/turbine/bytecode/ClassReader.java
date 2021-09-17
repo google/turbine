@@ -55,7 +55,7 @@ public class ClassReader {
     return new ClassReader(path, bytes).read();
   }
 
-  @Nullable private final String path;
+  private final @Nullable String path;
   private final ByteReader reader;
 
   private ClassReader(@Nullable String path, byte[] bytes) {

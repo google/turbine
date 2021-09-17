@@ -137,9 +137,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
             }
           });
 
-  @Nullable
   @Override
-  public ClassSymbol owner() {
+  public @Nullable ClassSymbol owner() {
     return owner.get();
   }
 

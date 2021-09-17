@@ -103,8 +103,7 @@ public class TurbineMessager implements Messager {
    * Returns the {@link SourceFile} that contains the declaration of the given {@link Symbol}, or
    * {@code null} if the symbol was not compiled from source.
    */
-  @Nullable
-  private SourceFile getSource(Symbol sym) {
+  private @Nullable SourceFile getSource(Symbol sym) {
     ClassSymbol encl = ModelFactory.enclosingClass(sym);
     TypeBoundClass info = factory.getSymbol(encl);
     if (!(info instanceof SourceTypeBoundClass)) {

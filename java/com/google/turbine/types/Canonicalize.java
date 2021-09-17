@@ -284,8 +284,7 @@ public class Canonicalize {
   }
 
   /** Instantiates a type argument using the given mapping. */
-  @Nullable
-  private static Type instantiate(Map<TyVarSymbol, Type> mapping, Type type) {
+  private static @Nullable Type instantiate(Map<TyVarSymbol, Type> mapping, Type type) {
     if (type == null) {
       return null;
     }
@@ -344,8 +343,7 @@ public class Canonicalize {
    * Returns the type variable symbol for a concrete type argument whose type is a type variable
    * reference, or else {@code null}.
    */
-  @Nullable
-  private static TyVarSymbol tyVarSym(Type type) {
+  private static @Nullable TyVarSymbol tyVarSym(Type type) {
     if (type.tyKind() == TyKind.TY_VAR) {
       return ((TyVar) type).sym();
     }

@@ -122,14 +122,12 @@ public class ClassFile {
   }
 
   /** A module attribute. */
-  @Nullable
-  public ModuleInfo module() {
+  public @Nullable ModuleInfo module() {
     return module;
   }
 
   /** The original jar of a repackaged transitive class. */
-  @Nullable
-  public String transitiveJar() {
+  public @Nullable String transitiveJar() {
     return transitiveJar;
   }
 
@@ -177,8 +175,7 @@ public class ClassFile {
     }
 
     /** The value of Signature attribute. */
-    @Nullable
-    public String signature() {
+    public @Nullable String signature() {
       return signature;
     }
 
@@ -240,7 +237,7 @@ public class ClassFile {
     private final int access;
     private final String name;
     private final String descriptor;
-    @Nullable private final String signature;
+    private final @Nullable String signature;
     private final List<String> exceptions;
     private final AnnotationInfo.@Nullable ElementValue defaultValue;
     private final List<AnnotationInfo> annotations;
@@ -287,8 +284,7 @@ public class ClassFile {
     }
 
     /** The value of Signature attribute. */
-    @Nullable
-    public String signature() {
+    public @Nullable String signature() {
       return signature;
     }
 

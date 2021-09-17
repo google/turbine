@@ -79,8 +79,7 @@ import org.jspecify.nullness.Nullable;
 /** Top level annotation processing logic, see also {@link Binder}. */
 public class Processing {
 
-  @Nullable
-  static BindingResult process(
+  static @Nullable BindingResult process(
       TurbineLog log,
       final ImmutableList<CompUnit> initialSources,
       final ClassPath classpath,
@@ -546,8 +545,7 @@ public class Processing {
      * The classloader to use for annotation processor implementations, and any annotations they
      * access reflectively.
      */
-    @Nullable
-    abstract ClassLoader loader();
+    abstract @Nullable ClassLoader loader();
 
     /** Command line annotation processing options, passed to javac with {@code -Akey=value}. */
     abstract ImmutableMap<String, String> options();

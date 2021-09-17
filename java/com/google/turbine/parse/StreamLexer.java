@@ -65,9 +65,8 @@ public class StreamLexer implements Lexer {
     ch = reader.next();
   }
 
-  @Nullable
   @Override
-  public String javadoc() {
+  public @Nullable String javadoc() {
     String result = javadoc;
     javadoc = null;
     if (result == null) {

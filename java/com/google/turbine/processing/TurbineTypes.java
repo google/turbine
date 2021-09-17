@@ -626,8 +626,7 @@ public class TurbineTypes implements Types {
    * Returns a mapping that can be used to adapt the signature 'b' to the type parameters of 'a', or
    * {@code null} if no such mapping exists.
    */
-  @Nullable
-  private static ImmutableMap<TyVarSymbol, Type> getMapping(MethodTy a, MethodTy b) {
+  private static @Nullable ImmutableMap<TyVarSymbol, Type> getMapping(MethodTy a, MethodTy b) {
     if (a.tyParams().size() != b.tyParams().size()) {
       return null;
     }
@@ -646,8 +645,7 @@ public class TurbineTypes implements Types {
    * Returns a map from formal type parameters to their arguments for a given class type, or an
    * empty map for non-parameterized types, or {@code null} for raw types.
    */
-  @Nullable
-  private ImmutableMap<TyVarSymbol, Type> getMapping(ClassTy ty) {
+  private @Nullable ImmutableMap<TyVarSymbol, Type> getMapping(ClassTy ty) {
     ImmutableMap.Builder<TyVarSymbol, Type> mapping = ImmutableMap.builder();
     for (SimpleClassTy s : ty.classes()) {
       TypeBoundClass info = factory.getSymbol(s.sym());

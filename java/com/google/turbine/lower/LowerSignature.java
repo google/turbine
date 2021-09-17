@@ -128,8 +128,7 @@ public class LowerSignature {
    * Produces a method signature attribute for a generic method, or {@code null} if the signature is
    * unnecessary.
    */
-  @Nullable
-  public String methodSignature(
+  public @Nullable String methodSignature(
       Env<ClassSymbol, TypeBoundClass> env, TypeBoundClass.MethodInfo method, ClassSymbol sym) {
     if (!needsMethodSig(sym, env, method)) {
       return null;
@@ -196,8 +195,8 @@ public class LowerSignature {
    * Produces a class signature attribute for a generic class, or {@code null} if the signature is
    * unnecessary.
    */
-  @Nullable
-  public String classSignature(SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env) {
+  public @Nullable String classSignature(
+      SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env) {
     if (!classNeedsSig(info)) {
       return null;
     }
@@ -214,8 +213,7 @@ public class LowerSignature {
   /**
    * A field signature, or {@code null} if the descriptor provides all necessary type information.
    */
-  @Nullable
-  public String fieldSignature(Type type) {
+  public @Nullable String fieldSignature(Type type) {
     return needsSig(type) ? SigWriter.type(signature(type)) : null;
   }
 

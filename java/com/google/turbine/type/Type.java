@@ -491,8 +491,7 @@ public interface Type {
     public abstract Type returnType();
 
     /** The type of the receiver parameter (see JLS 8.4.1). */
-    @Nullable
-    public abstract Type receiverType();
+    public abstract @Nullable Type receiverType();
 
     public abstract ImmutableList<Type> parameters();
 

@@ -42,9 +42,8 @@ public class CompoundTopLevelIndex implements TopLevelIndex {
 
   private final Scope scope =
       new Scope() {
-        @Nullable
         @Override
-        public LookupResult lookup(LookupKey lookupKey) {
+        public @Nullable LookupResult lookup(LookupKey lookupKey) {
           // Return the first matching symbol.
           for (TopLevelIndex index : indexes) {
             LookupResult result = index.scope().lookup(lookupKey);
