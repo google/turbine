@@ -45,24 +45,22 @@ public final class CanonicalTypeBinder {
   static SourceTypeBoundClass bind(
       ClassSymbol sym, SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
     Type superClassType = base.superClassType();
+    int pos = base.decl().position();
     if (superClassType != null && superClassType.tyKind() == TyKind.CLASS_TY) {
       superClassType =
           Canonicalize.canonicalizeClassTy(
-              base.source(), base.decl().position(), env, base.owner(), (ClassTy) superClassType);
+              base.source(), pos, env, base.owner(), (ClassTy) superClassType);
     }
     ImmutableList.Builder<Type> interfaceTypes = ImmutableList.builder();
     for (Type i : base.interfaceTypes()) {
       if (i.tyKind() == TyKind.CLASS_TY) {
-        i =
-            Canonicalize.canonicalizeClassTy(
-                base.source(), base.decl().position(), env, base.owner(), (ClassTy) i);
+        i = Canonicalize.canonicalizeClassTy(base.source(), pos, env, base.owner(), (ClassTy) i);
       }
       interfaceTypes.add(i);
     }
     ImmutableMap<TyVarSymbol, TyVarInfo> typParamTypes =
-        typeParameters(base.source(), base.decl().position(), env, sym, base.typeParameterTypes());
-    ImmutableList<MethodInfo> methods =
-        methods(base.source(), base.decl().position(), env, sym, base.methods());
+        typeParameters(base.source(), pos, env, sym, base.typeParameterTypes());
+    ImmutableList<MethodInfo> methods = methods(base.source(), pos, env, sym, base.methods());
     ImmutableList<FieldInfo> fields = fields(base.source(), env, sym, base.fields());
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
