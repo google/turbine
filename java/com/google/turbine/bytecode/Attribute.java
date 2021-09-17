@@ -42,6 +42,9 @@ interface Attribute {
     RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations"),
     METHOD_PARAMETERS("MethodParameters"),
     MODULE("Module"),
+    NEST_HOST("NestHost"),
+    NEST_MEMBERS("NestMembers"),
+    RECORD("Record"),
     TURBINE_TRANSITIVE_JAR("TurbineTransitiveJar");
 
     private final String signature;
@@ -308,6 +311,88 @@ interface Attribute {
 
     public ModuleInfo module() {
       return module;
+    }
+  }
+
+  /** A JVMS §4.7.28 NestHost attribute. */
+  class NestHost implements Attribute {
+
+    private final String hostClass;
+
+    public NestHost(String hostClass) {
+      this.hostClass = hostClass;
+    }
+
+    String hostClass() {
+      return hostClass;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.NEST_HOST;
+    }
+  }
+
+  /** A JVMS §4.7.29 NestHost attribute. */
+  class NestMembers implements Attribute {
+
+    private final ImmutableList<String> classes;
+
+    public NestMembers(ImmutableList<String> classes) {
+      this.classes = classes;
+    }
+
+    ImmutableList<String> classes() {
+      return classes;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.NEST_MEMBERS;
+    }
+  }
+
+  /** A JVMS §4.7.30 Record attribute. */
+  class Record implements Attribute {
+
+    private final ImmutableList<Component> components;
+
+    public Record(ImmutableList<Component> components) {
+      this.components = components;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.RECORD;
+    }
+
+    ImmutableList<Component> components() {
+      return components;
+    }
+
+    /** A JVMS §4.7.30 Record component info. */
+    static class Component {
+      private final String name;
+      private final String descriptor;
+      private final List<Attribute> attributes;
+
+      Component(String name, String descriptor, List<Attribute> attributes) {
+        this.name = name;
+        this.descriptor = descriptor;
+        this.attributes = attributes;
+      }
+
+      String name() {
+        return name;
+      }
+
+      String descriptor() {
+        return descriptor;
+      }
+
+      List<Attribute> attributes() {
+        return attributes;
+      }
     }
   }
 

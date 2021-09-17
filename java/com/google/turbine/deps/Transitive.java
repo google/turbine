@@ -105,6 +105,9 @@ public final class Transitive {
         innerClasses.build(),
         cf.typeAnnotations(),
         /* module= */ null,
+        /* nestHost= */ null,
+        /* nestMembers= */ ImmutableList.of(),
+        /* record= */ null,
         /* transitiveJar = */ transitiveJar);
   }
 

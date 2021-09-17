@@ -42,6 +42,9 @@ public class ClassFile {
   private final List<InnerClass> innerClasses;
   private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
   private final @Nullable ModuleInfo module;
+  private final @Nullable String nestHost;
+  private final ImmutableList<String> nestMembers;
+  private final @Nullable RecordInfo record;
   private final @Nullable String transitiveJar;
 
   public ClassFile(
@@ -56,6 +59,9 @@ public class ClassFile {
       List<InnerClass> innerClasses,
       ImmutableList<TypeAnnotationInfo> typeAnnotations,
       @Nullable ModuleInfo module,
+      @Nullable String nestHost,
+      ImmutableList<String> nestMembers,
+      @Nullable RecordInfo record,
       @Nullable String transitiveJar) {
     this.access = access;
     this.name = name;
@@ -68,6 +74,9 @@ public class ClassFile {
     this.innerClasses = innerClasses;
     this.typeAnnotations = typeAnnotations;
     this.module = module;
+    this.nestHost = nestHost;
+    this.nestMembers = nestMembers;
+    this.record = record;
     this.transitiveJar = transitiveJar;
   }
 
@@ -124,6 +133,18 @@ public class ClassFile {
   /** A module attribute. */
   public @Nullable ModuleInfo module() {
     return module;
+  }
+
+  public @Nullable String nestHost() {
+    return nestHost;
+  }
+
+  public ImmutableList<String> nestMembers() {
+    return nestMembers;
+  }
+
+  public @Nullable RecordInfo record() {
+    return record;
   }
 
   /** The original jar of a repackaged transitive class. */
@@ -935,6 +956,63 @@ public class ClassFile {
       public ImmutableList<String> implDescriptors() {
         return implDescriptors;
       }
+    }
+  }
+
+  /** A JVMS §4.7.30 Record attribute. */
+  public static class RecordInfo {
+
+    /** A JVMS §4.7.30 Record component attribute. */
+    public static class RecordComponentInfo {
+
+      private final String name;
+      private final String descriptor;
+      private final @Nullable String signature;
+      private final ImmutableList<AnnotationInfo> annotations;
+      private final ImmutableList<TypeAnnotationInfo> typeAnnotations;
+
+      public RecordComponentInfo(
+          String name,
+          String descriptor,
+          @Nullable String signature,
+          ImmutableList<AnnotationInfo> annotations,
+          ImmutableList<TypeAnnotationInfo> typeAnnotations) {
+        this.name = name;
+        this.descriptor = descriptor;
+        this.signature = signature;
+        this.annotations = annotations;
+        this.typeAnnotations = typeAnnotations;
+      }
+
+      public String name() {
+        return name;
+      }
+
+      public String descriptor() {
+        return descriptor;
+      }
+
+      public @Nullable String signature() {
+        return signature;
+      }
+
+      public ImmutableList<AnnotationInfo> annotations() {
+        return annotations;
+      }
+
+      public ImmutableList<TypeAnnotationInfo> typeAnnotations() {
+        return typeAnnotations;
+      }
+    }
+
+    public RecordInfo(ImmutableList<RecordComponentInfo> recordComponents) {
+      this.recordComponents = recordComponents;
+    }
+
+    private final ImmutableList<RecordComponentInfo> recordComponents;
+
+    public ImmutableList<RecordComponentInfo> recordComponents() {
+      return recordComponents;
     }
   }
 }

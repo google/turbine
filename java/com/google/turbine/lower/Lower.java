@@ -187,6 +187,9 @@ public class Lower {
             innerClasses.build(),
             /* typeAnnotations= */ ImmutableList.of(),
             moduleInfo,
+            /* nestHost= */ null,
+            /* nestMembers= */ ImmutableList.of(),
+            /* record= */ null,
             /* transitiveJar= */ null);
     symbols.addAll(sig.classes);
     return ClassWriter.writeClass(classfile);
@@ -282,6 +285,9 @@ public class Lower {
             inners,
             typeAnnotations,
             /* module= */ null,
+            /* nestHost= */ null,
+            /* nestMembers= */ ImmutableList.of(),
+            /* record= */ null,
             /* transitiveJar= */ null);
 
     symbols.addAll(sig.classes);

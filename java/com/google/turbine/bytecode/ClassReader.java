@@ -148,6 +148,9 @@ public class ClassReader {
         innerclasses,
         ImmutableList.of(),
         module,
+        /* nestHost= */ null,
+        /* nestMembers= */ ImmutableList.of(),
+        /* record= */ null,
         transitiveJar);
   }
 

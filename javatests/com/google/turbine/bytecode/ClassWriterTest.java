@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.jimfs.Configuration;
@@ -46,6 +47,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.objectweb.asm.ModuleVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.RecordComponentVisitor;
 
 @RunWith(JUnit4.class)
 public class ClassWriterTest {
@@ -153,5 +155,103 @@ public class ClassWriterTest {
     outputBytes = ClassWriter.writeClass(ClassReader.read("module-info", outputBytes));
     assertThat(AsmUtils.textify(inputBytes, /* skipDebug= */ true))
         .isEqualTo(AsmUtils.textify(outputBytes, /* skipDebug= */ true));
+  }
+
+  @Test
+  public void record() {
+
+    org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(0);
+
+    cw.visit(
+        Opcodes.V16,
+        Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_RECORD,
+        "R",
+        /* signature= */ null,
+        "java/lang/Record",
+        /* interfaces= */ null);
+
+    RecordComponentVisitor rv =
+        cw.visitRecordComponent("x", "Ljava/util/List;", "Ljava/util/List<Ljava/lang/Integer;>;");
+    rv.visitAnnotation("LA;", true);
+    rv.visitTypeAnnotation(318767104, null, "LA;", true);
+    cw.visitRecordComponent("y", "I", null);
+
+    byte[] expectedBytes = cw.toByteArray();
+
+    ClassFile classFile =
+        new ClassFile(
+            /* access= */ Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_RECORD,
+            /* name= */ "R",
+            /* signature= */ null,
+            /* superClass= */ "java/lang/Record",
+            /* interfaces= */ ImmutableList.of(),
+            /* methods= */ ImmutableList.of(),
+            /* fields= */ ImmutableList.of(),
+            /* annotations= */ ImmutableList.of(),
+            /* innerClasses= */ ImmutableList.of(),
+            /* typeAnnotations= */ ImmutableList.of(),
+            /* module= */ null,
+            /* nestHost= */ null,
+            /* nestMembers= */ ImmutableList.of(),
+            /* record= */ new ClassFile.RecordInfo(
+                ImmutableList.of(
+                    new ClassFile.RecordInfo.RecordComponentInfo(
+                        "x",
+                        "Ljava/util/List;",
+                        "Ljava/util/List<Ljava/lang/Integer;>;",
+                        ImmutableList.of(
+                            new ClassFile.AnnotationInfo("LA;", true, ImmutableMap.of())),
+                        ImmutableList.of(
+                            new ClassFile.TypeAnnotationInfo(
+                                ClassFile.TypeAnnotationInfo.TargetType.FIELD,
+                                ClassFile.TypeAnnotationInfo.EMPTY_TARGET,
+                                ClassFile.TypeAnnotationInfo.TypePath.root(),
+                                new ClassFile.AnnotationInfo("LA;", true, ImmutableMap.of())))),
+                    new ClassFile.RecordInfo.RecordComponentInfo(
+                        "y", "I", null, ImmutableList.of(), ImmutableList.of()))),
+            /* transitiveJar= */ null);
+
+    byte[] actualBytes = ClassWriter.writeClass(classFile);
+
+    assertThat(AsmUtils.textify(actualBytes, /* skipDebug= */ true))
+        .isEqualTo(AsmUtils.textify(expectedBytes, /* skipDebug= */ true));
+  }
+
+  @Test
+  public void nestHost() {
+
+    org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(0);
+
+    cw.visit(Opcodes.V16, Opcodes.ACC_SUPER, "N", null, null, null);
+
+    cw.visitNestHost("H");
+    cw.visitNestMember("A");
+    cw.visitNestMember("B");
+    cw.visitNestMember("C");
+
+    byte[] expectedBytes = cw.toByteArray();
+
+    ClassFile classFile =
+        new ClassFile(
+            /* access= */ Opcodes.ACC_SUPER,
+            /* name= */ "N",
+            /* signature= */ null,
+            /* superClass= */ null,
+            /* interfaces= */ ImmutableList.of(),
+            /* methods= */ ImmutableList.of(),
+            /* fields= */ ImmutableList.of(),
+            /* annotations= */ ImmutableList.of(),
+            /* innerClasses= */ ImmutableList.of(),
+            /* typeAnnotations= */ ImmutableList.of(),
+            /* module= */ null,
+            /* nestHost= */ "H",
+            /* nestMembers= */ ImmutableList.of("A", "B", "C"),
+            /* record= */ null,
+            /* transitiveJar= */ null);
+
+    byte[] actualBytes = ClassWriter.writeClass(classFile);
+
+    assertThat(AsmUtils.textify(actualBytes, /* skipDebug= */ true))
+        .isEqualTo(AsmUtils.textify(expectedBytes, /* skipDebug= */ true));
   }
 }
