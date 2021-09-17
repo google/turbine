@@ -218,7 +218,7 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
 
   @Override
   public @Nullable Void visitClassLiteral(ClassLiteral classLiteral, @Nullable Void input) {
-    classLiteral.accept(this, input);
+    classLiteral.type().accept(this, input);
     append(".class");
     return null;
   }

@@ -132,6 +132,9 @@ public class ExpressionParserTest {
           {
             "A ? B : C ? D : E;", "(A ? B : (C ? D : E))",
           },
+          {
+            "Foo.class", "Foo.class",
+          },
         });
   }
 
