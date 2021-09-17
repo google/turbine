@@ -22,7 +22,7 @@ import static com.google.turbine.parse.UnicodeEscapePreprocessor.ASCII_SUB;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A {@link Lexer} that streams input from a {@link UnicodeEscapePreprocessor}. */
 public class StreamLexer implements Lexer {

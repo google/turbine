@@ -17,7 +17,7 @@
 package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A package symbol. */
 @Immutable

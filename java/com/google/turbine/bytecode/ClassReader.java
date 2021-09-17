@@ -39,7 +39,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
 import java.util.List;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A JVMS §4 class file reader. */
 public class ClassReader {

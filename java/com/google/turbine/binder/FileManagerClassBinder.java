@@ -40,7 +40,7 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * Binds a {@link StandardJavaFileManager} to an {@link ClassPath}. This can be used to share a

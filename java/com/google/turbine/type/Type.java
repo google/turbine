@@ -32,7 +32,7 @@ import com.google.turbine.tree.Tree;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** JLS 4 types. */
 public interface Type {

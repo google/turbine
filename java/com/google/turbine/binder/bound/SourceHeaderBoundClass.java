@@ -25,7 +25,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A {@link HeaderBoundClass} that corresponds to a source file being compiled. */
 public class SourceHeaderBoundClass implements HeaderBoundClass {

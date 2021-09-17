@@ -21,7 +21,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.sym.Symbol;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A simple {@link ImmutableMap}-backed {@link Env}. */
 public class SimpleEnv<K extends Symbol, V> implements Env<K, V> {

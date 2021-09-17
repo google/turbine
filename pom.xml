@@ -62,9 +62,9 @@
       <version>${errorprone.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker-qual</artifactId>
-      <version>3.9.1</version>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+      <version>0.2.0</version>
       <optional>true</optional>
     </dependency>
     <dependency>

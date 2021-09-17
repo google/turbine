@@ -18,7 +18,7 @@ package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * A scope for imports. Non-canonical imports depend on hierarchy analysis, so to break the cycle we

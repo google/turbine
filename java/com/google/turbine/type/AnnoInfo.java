@@ -29,7 +29,7 @@ import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.Expression;
 import java.util.Map;
 import java.util.Objects;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** An annotation use. */
 public class AnnoInfo {

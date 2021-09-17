@@ -18,7 +18,7 @@ package com.google.turbine.binder.env;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * An environment that maps {@link Symbol}s {@code S} to bound nodes {@code V}.

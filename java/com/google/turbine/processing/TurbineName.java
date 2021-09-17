@@ -19,7 +19,7 @@ package com.google.turbine.processing;
 import static java.util.Objects.requireNonNull;
 
 import javax.lang.model.element.Name;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** An implementation of {@link Name} backed by a {@link CharSequence}. */
 public class TurbineName implements Name {

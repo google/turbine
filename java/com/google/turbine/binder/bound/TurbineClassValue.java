@@ -19,7 +19,7 @@ package com.google.turbine.binder.bound;
 import com.google.turbine.model.Const;
 import com.google.turbine.type.Type;
 import java.util.Objects;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A class literal constant. */
 public class TurbineClassValue extends Const {

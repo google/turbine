@@ -24,7 +24,7 @@ import com.google.turbine.binder.bound.ModuleInfo.RequireInfo;
 import com.google.turbine.binder.bound.ModuleInfo.UseInfo;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.type.AnnoInfo;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A {@link ModuleInfo} that corresponds to a source file being compiled. */
 public class SourceModuleInfo extends ModuleInfo {

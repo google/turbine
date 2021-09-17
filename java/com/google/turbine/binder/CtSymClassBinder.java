@@ -42,7 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
 public final class CtSymClassBinder {

@@ -58,7 +58,7 @@ import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 import java.util.function.Function;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * A bound class backed by a class file.

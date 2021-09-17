@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.type.AnnoInfo;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** An annotation literal constant. */
 public class TurbineAnnotationValue extends Const {

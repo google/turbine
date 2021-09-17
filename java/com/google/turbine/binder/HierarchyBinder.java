@@ -34,7 +34,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
 import java.util.ArrayDeque;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** Type hierarchy binding. */
 public class HierarchyBinder {

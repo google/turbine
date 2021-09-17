@@ -31,7 +31,7 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
 public interface TypeBoundClass extends HeaderBoundClass {

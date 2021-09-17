@@ -57,7 +57,7 @@ import com.google.turbine.type.Type.WildUnboundedTy;
 import com.google.turbine.type.Type.WildUpperBoundedTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** Binding pass to evaluate constant expressions. */
 public class ConstBinder {
