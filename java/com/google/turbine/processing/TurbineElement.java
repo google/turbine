@@ -280,6 +280,8 @@ public abstract class TurbineElement implements Element {
                   case INTERFACE:
                   case ANNOTATION:
                     return factory.noType();
+                  case RECORD:
+                    // TODO(b/200222393): add support for records
                 }
                 throw new AssertionError(info.kind());
               }
@@ -376,6 +378,8 @@ public abstract class TurbineElement implements Element {
           return ElementKind.ENUM;
         case ANNOTATION:
           return ElementKind.ANNOTATION_TYPE;
+        case RECORD:
+          // TODO(b/200222393): add support for records
       }
       throw new AssertionError(info.kind());
     }

@@ -175,6 +175,9 @@ public final class CompUnitPreprocessor {
       case ANNOTATION:
         access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION;
         break;
+      case RECORD:
+        // TODO(b/200222393): add support for records
+        throw new AssertionError(tykind);
     }
     return access;
   }
@@ -201,6 +204,10 @@ public final class CompUnitPreprocessor {
         if ((enclosing & (TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION)) != 0) {
           access |= TurbineFlag.ACC_STATIC;
         }
+        break;
+      case RECORD:
+        // TODO(b/200222393): add support for records
+        throw new AssertionError(decl.tykind());
     }
 
     // propagate strictfp to nested types
@@ -217,6 +224,7 @@ public final class CompUnitPreprocessor {
         new Ident(pkgDecl.position(), "package-info"),
         ImmutableList.of(),
         Optional.empty(),
+        ImmutableList.of(),
         ImmutableList.of(),
         ImmutableList.of(),
         TurbineTyKind.INTERFACE,

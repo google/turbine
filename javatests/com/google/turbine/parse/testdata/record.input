@@ -1,0 +1,53 @@
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import java.util.List;
+
+private record R() {
+}
+
+class Records {
+  record R1() {
+  }
+
+  private record R2() {
+  }
+
+  @Deprecated
+  private record R3() {
+  }
+
+  record R4<T>() {
+  }
+
+  record R5<T>(int x) {
+  }
+
+  record R6<T>(@Deprecated int x) {
+  }
+
+  record R7<T>(@Deprecated int x, int[] y) {
+  }
+
+  record R8<T>() implements Comparable<R8<T>> {
+    @Override
+    public int compareTo(R8<T> other) {}
+  }
+
+  record R9(int x) {
+  }
+
+  @Target(ElementType.TYPE_USE)
+  @interface A {
+  }
+
+  @Target(ElementType.RECORD_COMPONENT)
+  @interface B {
+  }
+
+  @Target({ElementType.TYPE_USE, ElementType.RECORD_COMPONENT})
+  @interface C {
+  }
+
+  record R10<T>(@A List<@A T> x, @B int y, @C int z) {
+  }
+}

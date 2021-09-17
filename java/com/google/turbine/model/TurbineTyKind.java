@@ -21,5 +21,6 @@ public enum TurbineTyKind {
   CLASS,
   INTERFACE,
   ENUM,
-  ANNOTATION
+  ANNOTATION,
+  RECORD
 }

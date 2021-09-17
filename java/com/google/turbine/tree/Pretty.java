@@ -21,6 +21,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassLiteral;
 import com.google.turbine.tree.Tree.Ident;
@@ -414,6 +415,9 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
       case ANNOTATION:
         append("@interface");
         break;
+      case RECORD:
+        append("record");
+        break;
     }
     append(' ').append(tyDecl.name().value());
     if (!tyDecl.typarams().isEmpty()) {
@@ -427,6 +431,18 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
         first = false;
       }
       append('>');
+    }
+    if (tyDecl.tykind().equals(TurbineTyKind.RECORD)) {
+      append("(");
+      boolean first = true;
+      for (Tree.VarDecl c : tyDecl.components()) {
+        if (!first) {
+          append(", ");
+        }
+        printVarDecl(c);
+        first = false;
+      }
+      append(")");
     }
     if (tyDecl.xtnds().isPresent()) {
       append(" extends ");

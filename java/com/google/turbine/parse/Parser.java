@@ -186,6 +186,13 @@ public class Parser {
         case IDENT:
           {
             Ident ident = ident();
+            if (ident.value().equals("record")) {
+              ident = eatIdent();
+              decls.add(recordDeclaration(access, annos.build()));
+              access = EnumSet.noneOf(TurbineModifier.class);
+              annos = ImmutableList.builder();
+              break;
+            }
             if (access.isEmpty()
                 && (ident.value().equals("module") || ident.value().equals("open"))) {
               boolean open = false;
@@ -212,6 +219,46 @@ public class Parser {
   private void next() {
     token = lexer.next();
     position = lexer.position();
+  }
+
+  private TyDecl recordDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
+    String javadoc = lexer.javadoc();
+    int pos = position;
+    Ident name = eatIdent();
+    ImmutableList<TyParam> typarams;
+    if (token == Token.LT) {
+      typarams = typarams();
+    } else {
+      typarams = ImmutableList.of();
+    }
+    ImmutableList.Builder<VarDecl> formals = ImmutableList.builder();
+    if (token == Token.LPAREN) {
+      next();
+      formalParams(formals, EnumSet.noneOf(TurbineModifier.class));
+      eat(Token.RPAREN);
+    }
+    ImmutableList.Builder<ClassTy> interfaces = ImmutableList.builder();
+    if (token == Token.IMPLEMENTS) {
+      next();
+      do {
+        interfaces.add(classty());
+      } while (maybe(Token.COMMA));
+    }
+    eat(Token.LBRACE);
+    ImmutableList<Tree> members = classMembers();
+    eat(Token.RBRACE);
+    return new TyDecl(
+        pos,
+        access,
+        annos,
+        name,
+        typarams,
+        Optional.<ClassTy>empty(),
+        interfaces.build(),
+        members,
+        formals.build(),
+        TurbineTyKind.RECORD,
+        javadoc);
   }
 
   private TyDecl interfaceDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
@@ -244,6 +291,7 @@ public class Parser {
         Optional.<ClassTy>empty(),
         interfaces.build(),
         members,
+        ImmutableList.of(),
         TurbineTyKind.INTERFACE,
         javadoc);
   }
@@ -265,6 +313,7 @@ public class Parser {
         Optional.<ClassTy>empty(),
         ImmutableList.<ClassTy>of(),
         members,
+        ImmutableList.of(),
         TurbineTyKind.ANNOTATION,
         javadoc);
   }
@@ -294,6 +343,7 @@ public class Parser {
         Optional.<ClassTy>empty(),
         interfaces.build(),
         members,
+        ImmutableList.of(),
         TurbineTyKind.ENUM,
         javadoc);
   }
@@ -539,6 +589,7 @@ public class Parser {
         Optional.ofNullable(xtnds),
         interfaces.build(),
         members,
+        ImmutableList.of(),
         TurbineTyKind.CLASS,
         javadoc);
   }
@@ -699,6 +750,9 @@ public class Parser {
         {
           int pos = position;
           Ident ident = eatIdent();
+          if (ident.value().equals("record")) {
+            return ImmutableList.of(recordDeclaration(access, annos));
+          }
           switch (token) {
             case LPAREN:
               {

@@ -935,6 +935,7 @@ public abstract class Tree {
     private final Optional<ClassTy> xtnds;
     private final ImmutableList<ClassTy> impls;
     private final ImmutableList<Tree> members;
+    private final ImmutableList<VarDecl> components;
     private final TurbineTyKind tykind;
     private final @Nullable String javadoc;
 
@@ -947,6 +948,7 @@ public abstract class Tree {
         Optional<ClassTy> xtnds,
         ImmutableList<ClassTy> impls,
         ImmutableList<Tree> members,
+        ImmutableList<VarDecl> components,
         TurbineTyKind tykind,
         @Nullable String javadoc) {
       super(position);
@@ -957,6 +959,7 @@ public abstract class Tree {
       this.xtnds = xtnds;
       this.impls = impls;
       this.members = members;
+      this.components = components;
       this.tykind = tykind;
       this.javadoc = javadoc;
     }
@@ -998,6 +1001,10 @@ public abstract class Tree {
 
     public ImmutableList<Tree> members() {
       return members;
+    }
+
+    public ImmutableList<VarDecl> components() {
+      return components;
     }
 
     public TurbineTyKind tykind() {
