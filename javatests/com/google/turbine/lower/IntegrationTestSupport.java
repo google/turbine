@@ -24,6 +24,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
@@ -81,6 +82,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.RecordComponentNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
 /** Support for bytecode diffing-integration tests. */
@@ -245,6 +247,19 @@ public final class IntegrationTestSupport {
       sortTypeAnnotations(f.visibleTypeAnnotations);
       sortTypeAnnotations(f.invisibleTypeAnnotations);
     }
+
+    if (n.recordComponents != null) {
+      for (RecordComponentNode r : n.recordComponents) {
+        sortAnnotations(r.visibleAnnotations);
+        sortAnnotations(r.invisibleAnnotations);
+        sortTypeAnnotations(r.visibleTypeAnnotations);
+        sortTypeAnnotations(r.invisibleTypeAnnotations);
+      }
+    }
+
+    if (n.nestMembers != null) {
+      Collections.sort(n.nestMembers);
+    }
   }
 
   private static void sortParameterAnnotations(List<AnnotationNode>[] parameters) {
@@ -320,6 +335,26 @@ public final class IntegrationTestSupport {
       addTypesInTypeAnnotations(types, f.visibleTypeAnnotations);
       addTypesInTypeAnnotations(types, f.invisibleTypeAnnotations);
     }
+    if (n.recordComponents != null) {
+      for (RecordComponentNode r : n.recordComponents) {
+        collectTypesFromSignature(types, r.descriptor);
+        collectTypesFromSignature(types, r.signature);
+
+        addTypesInAnnotations(types, r.visibleAnnotations);
+        addTypesInAnnotations(types, r.invisibleAnnotations);
+        addTypesInTypeAnnotations(types, r.visibleTypeAnnotations);
+        addTypesInTypeAnnotations(types, r.invisibleTypeAnnotations);
+      }
+    }
+
+    if (n.nestMembers != null) {
+      for (String member : n.nestMembers) {
+        InnerClassNode i = infos.get(member);
+        if (i.outerName != null) {
+          types.add(member);
+        }
+      }
+    }
 
     List<InnerClassNode> used = new ArrayList<>();
     for (InnerClassNode i : n.innerClasses) {
@@ -333,6 +368,11 @@ public final class IntegrationTestSupport {
     }
     addInnerChain(infos, used, n.name);
     n.innerClasses = used;
+
+    if (n.nestMembers != null) {
+      Set<String> members = used.stream().map(i -> i.name).collect(toSet());
+      n.nestMembers = n.nestMembers.stream().filter(members::contains).collect(toList());
+    }
   }
 
   private static void addTypesFromParameterAnnotations(
