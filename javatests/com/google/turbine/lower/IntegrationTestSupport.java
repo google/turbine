@@ -242,9 +242,6 @@ public final class IntegrationTestSupport {
     for (FieldNode f : n.fields) {
       sortAnnotations(f.visibleAnnotations);
       sortAnnotations(f.invisibleAnnotations);
-
-      sortAnnotations(f.visibleAnnotations);
-      sortAnnotations(f.invisibleAnnotations);
       sortTypeAnnotations(f.visibleTypeAnnotations);
       sortTypeAnnotations(f.invisibleTypeAnnotations);
     }
