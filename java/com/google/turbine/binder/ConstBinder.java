@@ -104,6 +104,7 @@ public class ConstBinder {
                 env,
                 log)
             .evaluateAnnotations(base.annotations());
+    ImmutableList<TypeBoundClass.ParamInfo> components = bindParameters(base.components());
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());
     return new SourceTypeBoundClass(
@@ -111,6 +112,7 @@ public class ConstBinder {
         base.superClassType() != null ? bindType(base.superClassType()) : null,
         bindTypeParameters(base.typeParameterTypes()),
         base.access(),
+        components,
         methods,
         fields,
         base.owner(),

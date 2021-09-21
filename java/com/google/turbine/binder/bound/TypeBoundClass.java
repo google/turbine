@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder.bound;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.FieldSymbol;
@@ -50,6 +49,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
   /** Declared methods. */
   ImmutableList<MethodInfo> methods();
+
+  /** Record components. */
+  ImmutableList<ParamInfo> components();
 
   /**
    * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link

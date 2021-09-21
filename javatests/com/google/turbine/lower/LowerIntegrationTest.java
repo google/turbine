@@ -16,14 +16,19 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
+import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import java.io.IOError;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +45,9 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class LowerIntegrationTest {
+
+  private static final ImmutableMap<String, Integer> SOURCE_VERSION =
+      ImmutableMap.of("record.test", 16);
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
@@ -256,6 +264,7 @@ public class LowerIntegrationTest {
       "rawcanon.test",
       "rawfbound.test",
       "receiver_param.test",
+      "record.test",
       "rek.test",
       "samepkg.test",
       "self.test",
@@ -366,11 +375,34 @@ public class LowerIntegrationTest {
       classpathJar = ImmutableList.of(lib);
     }
 
-    Map<String, byte[]> expected = IntegrationTestSupport.runJavac(input.sources, classpathJar);
+    int version = SOURCE_VERSION.getOrDefault(test, 8);
+    assumeTrue(version <= getMajor());
+    ImmutableList<String> javacopts =
+        ImmutableList.of("-source", String.valueOf(version), "-target", String.valueOf(version));
 
-    Map<String, byte[]> actual = IntegrationTestSupport.runTurbine(input.sources, classpathJar);
+    Map<String, byte[]> expected =
+        IntegrationTestSupport.runJavac(input.sources, classpathJar, javacopts);
+
+    Map<String, byte[]> actual =
+        IntegrationTestSupport.runTurbine(input.sources, classpathJar, javacopts);
 
     assertThat(IntegrationTestSupport.dump(IntegrationTestSupport.sortMembers(actual)))
         .isEqualTo(IntegrationTestSupport.dump(IntegrationTestSupport.canonicalize(expected)));
+  }
+
+  private static int getMajor() {
+    try {
+      Method versionMethod = Runtime.class.getMethod("version");
+      Object version = versionMethod.invoke(null);
+      return (int) version.getClass().getMethod("major").invoke(version);
+    } catch (ReflectiveOperationException e) {
+      // continue below
+    }
+
+    int version = (int) Double.parseDouble(JAVA_CLASS_VERSION.value());
+    if (49 <= version && version <= 52) {
+      return version - (49 - 5);
+    }
+    throw new IllegalStateException("Unknown Java version: " + JAVA_SPECIFICATION_VERSION.value());
   }
 }

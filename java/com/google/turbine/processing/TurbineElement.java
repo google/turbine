@@ -379,7 +379,7 @@ public abstract class TurbineElement implements Element {
         case ANNOTATION:
           return ElementKind.ANNOTATION_TYPE;
         case RECORD:
-          // TODO(b/200222393): add support for records
+          return ElementKind.valueOf("RECORD");
       }
       throw new AssertionError(info.kind());
     }

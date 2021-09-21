@@ -33,6 +33,7 @@ public class ClassSymbol implements Symbol {
   public static final ClassSymbol OBJECT = new ClassSymbol("java/lang/Object");
   public static final ClassSymbol STRING = new ClassSymbol("java/lang/String");
   public static final ClassSymbol ENUM = new ClassSymbol("java/lang/Enum");
+  public static final ClassSymbol RECORD = new ClassSymbol("java/lang/Record");
   public static final ClassSymbol ANNOTATION = new ClassSymbol("java/lang/annotation/Annotation");
   public static final ClassSymbol INHERITED = new ClassSymbol("java/lang/annotation/Inherited");
   public static final ClassSymbol CLONEABLE = new ClassSymbol("java/lang/Cloneable");
