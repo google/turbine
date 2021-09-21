@@ -119,23 +119,33 @@ public final class CanonicalTypeBinder {
       ImmutableMap<TyVarSymbol, TyVarInfo> tps =
           typeParameters(source, pos, env, sym, base.tyParams());
       Type ret = Canonicalize.canonicalize(source, pos, env, sym, base.returnType());
-      ImmutableList.Builder<ParamInfo> parameters = ImmutableList.builder();
-      for (ParamInfo parameter : base.parameters()) {
-        parameters.add(param(source, pos, env, sym, parameter));
-      }
+      ImmutableList<ParamInfo> parameters = parameters(source, env, sym, pos, base.parameters());
       ImmutableList<Type> exceptions = canonicalizeList(source, pos, env, sym, base.exceptions());
       result.add(
           new MethodInfo(
               base.sym(),
               tps,
               ret,
-              parameters.build(),
+              parameters,
               exceptions,
               base.access(),
               base.defaultValue(),
               base.decl(),
               base.annotations(),
               base.receiver() != null ? param(source, pos, env, sym, base.receiver()) : null));
+    }
+    return result.build();
+  }
+
+  private static ImmutableList<ParamInfo> parameters(
+      SourceFile source,
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol sym,
+      int pos,
+      ImmutableList<ParamInfo> parameters) {
+    ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
+    for (ParamInfo parameter : parameters) {
+      result.add(param(source, pos, env, sym, parameter));
     }
     return result.build();
   }
