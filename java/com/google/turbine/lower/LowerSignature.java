@@ -166,9 +166,6 @@ public class LowerSignature {
       // JDK-8024694: javac always expects signature attribute for enum constructors
       return true;
     }
-    if ((m.access() & TurbineFlag.ACC_SYNTH_CTOR) == TurbineFlag.ACC_SYNTH_CTOR) {
-      return false;
-    }
     if (!m.tyParams().isEmpty()) {
       return true;
     }
