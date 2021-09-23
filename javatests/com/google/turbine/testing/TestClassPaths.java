@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.JimageClassBinder;
+import com.google.turbine.options.LanguageVersion;
 import com.google.turbine.options.TurbineOptions;
 import java.io.File;
 import java.io.IOException;
@@ -68,7 +69,7 @@ public final class TestClassPaths {
       options.setBootClassPath(
           BOOTCLASSPATH.stream().map(Path::toString).collect(toImmutableList()));
     } else {
-      options.setRelease("8");
+      options.setLanguageVersion(LanguageVersion.fromJavacopts(ImmutableList.of("--release", "8")));
     }
     return options;
   }

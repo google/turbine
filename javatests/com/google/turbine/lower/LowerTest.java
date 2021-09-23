@@ -41,6 +41,7 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.options.LanguageVersion;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.type.Type;
@@ -227,6 +228,7 @@ public class LowerTest {
 
     Map<String, byte[]> bytes =
         Lower.lowerAll(
+                LanguageVersion.createDefault(),
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
                 ImmutableList.of(),
@@ -256,7 +258,12 @@ public class LowerTest {
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion=*/ Optional.empty());
     Map<String, byte[]> lowered =
-        Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
+        Lower.lowerAll(
+                LanguageVersion.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
     List<String> attributes = new ArrayList<>();
     new ClassReader(lowered.get("Test$Inner$InnerMost"))
         .accept(
@@ -331,7 +338,12 @@ public class LowerTest {
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion=*/ Optional.empty());
     Map<String, byte[]> lowered =
-        Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
+        Lower.lowerAll(
+                LanguageVersion.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
     TypePath[] path = new TypePath[1];
     new ClassReader(lowered.get("Test"))
         .accept(
@@ -409,7 +421,12 @@ public class LowerTest {
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion=*/ Optional.empty());
     Map<String, byte[]> lowered =
-        Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
+        Lower.lowerAll(
+                LanguageVersion.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
     int[] acc = {0};
     new ClassReader(lowered.get("Test"))
         .accept(

@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.Ints;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBinder;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -47,7 +46,7 @@ import org.jspecify.nullness.Nullable;
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
 public final class CtSymClassBinder {
 
-  public static @Nullable ClassPath bind(String version) throws IOException {
+  public static @Nullable ClassPath bind(int version) throws IOException {
     String javaHome = JAVA_HOME.value();
     requireNonNull(javaHome, "attempted to use --release, but JAVA_HOME is not set");
     Path ctSym = Paths.get(javaHome).resolve("lib/ct.sym");
@@ -134,10 +133,9 @@ public final class CtSymClassBinder {
   }
 
   @VisibleForTesting
-  static String formatReleaseVersion(String version) {
-    Integer n = Ints.tryParse(version);
-    if (n == null || n <= 4 || n >= 36) {
-      throw new IllegalArgumentException("invalid release version: " + version);
+  static String formatReleaseVersion(int n) {
+    if (n <= 4 || n >= 36) {
+      throw new IllegalArgumentException("invalid release version: " + n);
     }
     return toUpperCase(Integer.toString(n, 36));
   }

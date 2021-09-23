@@ -96,8 +96,9 @@ public class ModuleIntegrationTest {
             classpathJar,
             Double.parseDouble(JAVA_CLASS_VERSION.value()) < 54
                 ? JimageClassBinder.bindDefault()
-                : CtSymClassBinder.bind("9"),
-            Optional.of("42"));
+                : CtSymClassBinder.bind(9),
+            Optional.of("42"),
+            /* javacopts= */ ImmutableList.of());
 
     assertEquals(dump(expected), dump(actual));
   }

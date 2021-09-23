@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Iterator;
 
 /** A command line options parser for {@link TurbineOptions}. */
 public final class TurbineOptionsParser {
@@ -83,19 +82,14 @@ public final class TurbineOptionsParser {
         case "--bootclasspath":
           builder.setBootClassPath(readList(argumentDeque));
           break;
-        case "--release":
-          builder.setRelease(readOne(next, argumentDeque));
-          break;
         case "--system":
           builder.setSystem(readOne(next, argumentDeque));
           break;
         case "--javacopts":
-          {
-            ImmutableList<String> javacopts = readJavacopts(argumentDeque);
-            setReleaseFromJavacopts(builder, javacopts);
-            builder.addAllJavacOpts(javacopts);
-            break;
-          }
+          ImmutableList<String> javacOpts = readJavacopts(argumentDeque);
+          builder.setLanguageVersion(LanguageVersion.fromJavacopts(javacOpts));
+          builder.addAllJavacOpts(javacOpts);
+          break;
         case "--sources":
           builder.setSources(readList(argumentDeque));
           break;
@@ -235,20 +229,6 @@ public final class TurbineOptionsParser {
       result.add(arg);
     }
     throw new IllegalArgumentException("javacopts should be terminated by `--`");
-  }
-
-  /**
-   * Parses the given javacopts for {@code --release}, and if found sets turbine's {@code --release}
-   * flag.
-   */
-  private static void setReleaseFromJavacopts(
-      TurbineOptions.Builder builder, ImmutableList<String> javacopts) {
-    Iterator<String> it = javacopts.iterator();
-    while (it.hasNext()) {
-      if (it.next().equals("--release") && it.hasNext()) {
-        builder.setRelease(it.next());
-      }
-    }
   }
 
   private TurbineOptionsParser() {}

@@ -61,8 +61,8 @@ public abstract class TurbineOptions {
   /** Paths to compilation bootclasspath artifacts. */
   public abstract ImmutableSet<String> bootClassPath();
 
-  /** The target platform version. */
-  public abstract Optional<String> release();
+  /** The language version. */
+  public abstract LanguageVersion languageVersion();
 
   /** The target platform's system modules. */
   public abstract Optional<String> system();
@@ -138,6 +138,7 @@ public abstract class TurbineOptions {
         .setDirectJars(ImmutableList.of())
         .setDepsArtifacts(ImmutableList.of())
         .addAllJavacOpts(ImmutableList.of())
+        .setLanguageVersion(LanguageVersion.createDefault())
         .setReducedClasspathMode(ReducedClasspathMode.NONE)
         .setHelp(false)
         .setFullClasspathLength(0)
@@ -153,7 +154,7 @@ public abstract class TurbineOptions {
 
     public abstract Builder setBootClassPath(ImmutableList<String> bootClassPath);
 
-    public abstract Builder setRelease(String release);
+    public abstract Builder setLanguageVersion(LanguageVersion languageVersion);
 
     public abstract Builder setSystem(String system);
 

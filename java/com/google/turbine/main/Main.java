@@ -63,6 +63,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -193,7 +194,9 @@ public final class Main {
         || options.output().isPresent()
         || options.outputManifest().isPresent()) {
       // TODO(cushon): parallelize
-      Lowered lowered = Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv());
+      Lowered lowered =
+          Lower.lowerAll(
+              options.languageVersion(), bound.units(), bound.modules(), bound.classPathEnv());
 
       if (options.outputDeps().isPresent()) {
         DepsProto.Dependencies deps =
@@ -258,6 +261,7 @@ public final class Main {
         units,
         ClassPathBinder.bindClasspath(toPaths(classpath)),
         Processing.initializeProcessors(
+            /* sourceVersion= */ options.languageVersion().sourceVersion(),
             /* javacopts= */ options.javacOpts(),
             /* processorNames= */ options.processors(),
             Processing.processorLoader(
@@ -281,18 +285,18 @@ public final class Main {
 
   private static ClassPath bootclasspath(TurbineOptions options) throws IOException {
     // if both --release and --bootclasspath are specified, --release wins
-    if (options.release().isPresent() && options.system().isPresent()) {
+    OptionalInt release = options.languageVersion().release();
+    if (release.isPresent() && options.system().isPresent()) {
       throw new UsageException("expected at most one of --release and --system");
     }
 
-    if (options.release().isPresent()) {
-      String release = options.release().get();
-      if (release.equals(JAVA_SPECIFICATION_VERSION.value())) {
+    if (release.isPresent()) {
+      if (release.getAsInt() == Integer.parseInt(JAVA_SPECIFICATION_VERSION.value())) {
         // if --release matches the host JDK, use its jimage instead of ct.sym
         return JimageClassBinder.bindDefault();
       }
       // ... otherwise, search ct.sym for a matching release
-      ClassPath bootclasspath = CtSymClassBinder.bind(release);
+      ClassPath bootclasspath = CtSymClassBinder.bind(release.getAsInt());
       if (bootclasspath == null) {
         throw new UsageException("not a supported release: " + release);
       }

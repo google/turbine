@@ -38,6 +38,7 @@ import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.options.LanguageVersion;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.tree.Tree.CompUnit;
@@ -476,18 +477,30 @@ public final class IntegrationTestSupport {
 
   public static Map<String, byte[]> runTurbine(
       Map<String, String> input, ImmutableList<Path> classpath) throws IOException {
+    return runTurbine(input, classpath, ImmutableList.of());
+  }
+
+  public static Map<String, byte[]> runTurbine(
+      Map<String, String> input, ImmutableList<Path> classpath, ImmutableList<String> javacopts)
+      throws IOException {
     return runTurbine(
-        input, classpath, TURBINE_BOOTCLASSPATH, /* moduleVersion= */ Optional.empty());
+        input, classpath, TURBINE_BOOTCLASSPATH, /* moduleVersion= */ Optional.empty(), javacopts);
   }
 
   static Map<String, byte[]> runTurbine(
       Map<String, String> input,
       ImmutableList<Path> classpath,
       ClassPath bootClassPath,
-      Optional<String> moduleVersion)
+      Optional<String> moduleVersion,
+      ImmutableList<String> javacopts)
       throws IOException {
     BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
-    return Lower.lowerAll(bound.units(), bound.modules(), bound.classPathEnv()).bytes();
+    return Lower.lowerAll(
+            LanguageVersion.fromJavacopts(javacopts),
+            bound.units(),
+            bound.modules(),
+            bound.classPathEnv())
+        .bytes();
   }
 
   public static BindingResult turbineAnalysis(

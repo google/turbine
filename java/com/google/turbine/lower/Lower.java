@@ -67,6 +67,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.model.TurbineVisibility;
+import com.google.turbine.options.LanguageVersion;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -112,6 +113,7 @@ public class Lower {
 
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
+      LanguageVersion languageVersion,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       ImmutableList<SourceModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> classpath) {
@@ -119,17 +121,20 @@ public class Lower {
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
+    int majorVersion = languageVersion.majorVersion();
     for (ClassSymbol sym : units.keySet()) {
-      result.put(sym.binaryName(), lower(units.get(sym), env, sym, symbols));
+      result.put(sym.binaryName(), lower(units.get(sym), env, sym, symbols, majorVersion));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
-      result.put("module-info", lower(getOnlyElement(modules), env, symbols));
+      result.put("module-info", lower(getOnlyElement(modules), env, symbols, majorVersion));
     } else {
       // multi-module mode: the output module-info.class are in a directory corresponding to their
       // package
       for (SourceModuleInfo module : modules) {
-        result.put(module.name().replace('.', '/') + "/module-info", lower(module, env, symbols));
+        result.put(
+            module.name().replace('.', '/') + "/module-info",
+            lower(module, env, symbols, majorVersion));
       }
     }
     return new Lowered(result.build(), ImmutableSet.copyOf(symbols));
@@ -140,15 +145,17 @@ public class Lower {
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
-      Set<ClassSymbol> symbols) {
-    return new Lower(env).lower(info, sym, symbols);
+      Set<ClassSymbol> symbols,
+      int majorVersion) {
+    return new Lower(env).lower(info, sym, symbols, majorVersion);
   }
 
   private static byte[] lower(
       SourceModuleInfo module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
-      Set<ClassSymbol> symbols) {
-    return new Lower(env).lower(module, symbols);
+      Set<ClassSymbol> symbols,
+      int majorVersion) {
+    return new Lower(env).lower(module, symbols, majorVersion);
   }
 
   private final LowerSignature sig = new LowerSignature();
@@ -158,7 +165,7 @@ public class Lower {
     this.env = env;
   }
 
-  private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols) {
+  private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols, int majorVersion) {
     String name = "module-info";
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(module.annos());
     ClassFile.ModuleInfo moduleInfo = lowerModule(module);
@@ -177,6 +184,7 @@ public class Lower {
     ClassFile classfile =
         new ClassFile(
             /* access= */ TurbineFlag.ACC_MODULE,
+            majorVersion,
             name,
             /* signature= */ null,
             /* superClass= */ null,
@@ -238,7 +246,8 @@ public class Lower {
         provides.build());
   }
 
-  private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
+  private byte[] lower(
+      SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols, int majorVersion) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info, env);
@@ -275,6 +284,7 @@ public class Lower {
     ClassFile classfile =
         new ClassFile(
             access,
+            majorVersion,
             name,
             signature,
             superName,

@@ -32,6 +32,7 @@ import org.jspecify.nullness.Nullable;
 public class ClassFile {
 
   private final int access;
+  private final int majorVersion;
   private final String name;
   private final @Nullable String signature;
   private final @Nullable String superClass;
@@ -49,6 +50,7 @@ public class ClassFile {
 
   public ClassFile(
       int access,
+      int majorVersion,
       String name,
       @Nullable String signature,
       @Nullable String superClass,
@@ -64,6 +66,7 @@ public class ClassFile {
       @Nullable RecordInfo record,
       @Nullable String transitiveJar) {
     this.access = access;
+    this.majorVersion = majorVersion;
     this.name = name;
     this.signature = signature;
     this.superClass = superClass;
@@ -83,6 +86,11 @@ public class ClassFile {
   /** Class access and property flags. */
   public int access() {
     return access;
+  }
+
+  /** Class file major version. */
+  public int majorVersion() {
+    return majorVersion;
   }
 
   /** The name of the class or interface. */

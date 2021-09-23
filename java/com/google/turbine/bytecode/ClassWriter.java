@@ -115,24 +115,10 @@ public final class ClassWriter {
     ByteArrayDataOutput result = ByteStreams.newDataOutput();
     result.writeInt(MAGIC);
     result.writeShort(MINOR_VERSION);
-    result.writeShort(majorVersion(classfile));
+    result.writeShort(classfile.majorVersion());
     writeConstantPool(pool, result);
     result.write(body.toByteArray());
     return result.toByteArray();
-  }
-
-  // use the lowest classfile version possible given the class file features
-  // TODO(cushon): is there a reason to support --release?
-  private static int majorVersion(ClassFile classfile) {
-    if (classfile.nestHost() != null
-        || !classfile.nestMembers().isEmpty()
-        || classfile.record() != null) {
-      return 60;
-    }
-    if (classfile.module() != null) {
-      return 53;
-    }
-    return 52;
   }
 
   private ClassWriter() {}

@@ -19,7 +19,6 @@ package com.google.turbine.binder;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
@@ -30,7 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.Ints;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -61,7 +59,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -392,6 +389,7 @@ public class Processing {
   }
 
   public static ProcessorInfo initializeProcessors(
+      SourceVersion sourceVersion,
       ImmutableList<String> javacopts,
       ImmutableSet<String> processorNames,
       ClassLoader processorLoader) {
@@ -400,7 +398,6 @@ public class Processing {
     }
     ImmutableList<Processor> processors = instantiateProcessors(processorNames, processorLoader);
     ImmutableMap<String, String> processorOptions = processorOptions(javacopts);
-    SourceVersion sourceVersion = parseSourceVersion(javacopts);
     return ProcessorInfo.create(processors, processorLoader, processorOptions, sourceVersion);
   }
 
@@ -449,51 +446,6 @@ public class Processing {
             throw new ClassNotFoundException(name);
           }
         });
-  }
-
-  @VisibleForTesting
-  static SourceVersion parseSourceVersion(ImmutableList<String> javacopts) {
-    SourceVersion sourceVersion = SourceVersion.latestSupported();
-    Iterator<String> it = javacopts.iterator();
-    while (it.hasNext()) {
-      String option = it.next();
-      switch (option) {
-        case "-source":
-          if (!it.hasNext()) {
-            throw new IllegalArgumentException("-source requires an argument");
-          }
-          sourceVersion = parseSourceVersion(it.next());
-          break;
-        default:
-          break;
-      }
-    }
-    return sourceVersion;
-  }
-
-  private static SourceVersion parseSourceVersion(String value) {
-    boolean hasPrefix = value.startsWith("1.");
-    Integer version = Ints.tryParse(hasPrefix ? value.substring("1.".length()) : value);
-    if (version == null || !isValidSourceVersion(version, hasPrefix)) {
-      throw new IllegalArgumentException("invalid -source version: " + value);
-    }
-    try {
-      return SourceVersion.valueOf("RELEASE_" + version);
-    } catch (IllegalArgumentException unused) {
-      throw new IllegalArgumentException("invalid -source version: " + value);
-    }
-  }
-
-  private static boolean isValidSourceVersion(int version, boolean hasPrefix) {
-    if (version < 5) {
-      // the earliest source version supported by JDK 8 is Java 5
-      return false;
-    }
-    if (hasPrefix && version > 10) {
-      // javac supports legacy `1.*` version numbers for source versions up to Java 10
-      return false;
-    }
-    return true;
   }
 
   private static URL[] toUrls(ImmutableList<String> processorPath) throws MalformedURLException {

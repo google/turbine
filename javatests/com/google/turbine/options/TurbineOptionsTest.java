@@ -304,28 +304,6 @@ public class TurbineOptionsTest {
   }
 
   @Test
-  public void releaseJavacopts() throws Exception {
-    TurbineOptions options =
-        TurbineOptionsParser.parse(
-            Iterables.concat(
-                BASE_ARGS,
-                Arrays.asList(
-                    "--release",
-                    "9",
-                    "--javacopts",
-                    "--release",
-                    "8",
-                    "--release",
-                    "7",
-                    "--release",
-                    "--")));
-    assertThat(options.release()).hasValue("7");
-    assertThat(options.javacOpts())
-        .containsExactly("--release", "8", "--release", "7", "--release")
-        .inOrder();
-  }
-
-  @Test
   public void miscOutputs() throws Exception {
     TurbineOptions options =
         TurbineOptionsParser.parse(

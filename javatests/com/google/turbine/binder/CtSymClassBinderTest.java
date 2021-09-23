@@ -29,19 +29,20 @@ import org.junit.runners.JUnit4;
 public class CtSymClassBinderTest {
   @Test
   public void formatReleaseVersion() {
-    ImmutableList.of("5", "6", "7", "8", "9")
-        .forEach(x -> assertThat(CtSymClassBinder.formatReleaseVersion(x)).isEqualTo(x));
+    ImmutableList.of(5, 6, 7, 8, 9)
+        .forEach(
+            x -> assertThat(CtSymClassBinder.formatReleaseVersion(x)).isEqualTo(String.valueOf(x)));
     ImmutableMap.of(
-            "10", "A",
-            "11", "B",
-            "12", "C",
-            "35", "Z")
+            10, "A",
+            11, "B",
+            12, "C",
+            35, "Z")
         .forEach((k, v) -> assertThat(CtSymClassBinder.formatReleaseVersion(k)).isEqualTo(v));
-    ImmutableList.of("4", "36")
+    ImmutableList.of(4, 36)
         .forEach(
             x ->
                 assertThrows(
-                    x,
+                    Integer.toString(x),
                     IllegalArgumentException.class,
                     () -> CtSymClassBinder.formatReleaseVersion(x)));
   }

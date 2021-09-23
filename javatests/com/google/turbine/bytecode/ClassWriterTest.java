@@ -181,6 +181,7 @@ public class ClassWriterTest {
     ClassFile classFile =
         new ClassFile(
             /* access= */ Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_RECORD,
+            /* majorVersion= */ 60,
             /* name= */ "R",
             /* signature= */ null,
             /* superClass= */ "java/lang/Record",
@@ -234,6 +235,7 @@ public class ClassWriterTest {
     ClassFile classFile =
         new ClassFile(
             /* access= */ Opcodes.ACC_SUPER,
+            /* majorVersion= */ 60,
             /* name= */ "N",
             /* signature= */ null,
             /* superClass= */ null,
