@@ -33,7 +33,7 @@
     <asm.version>9.1</asm.version>
     <javac.version>9+181-r4173-1</javac.version>
     <guava.version>30.0-jre</guava.version>
-    <errorprone.version>2.7.1</errorprone.version>
+    <errorprone.version>2.9.0</errorprone.version>
     <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
