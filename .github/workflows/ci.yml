@@ -29,19 +29,19 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        java: [ 16, 11, 8 ]
+        java: [ 17, 11, 8 ]
         experimental: [ false ]
         include:
           # Only test on macos and windows with a single recent JDK to avoid a
           # combinatorial explosion of test configurations.
           - os: macos-latest
-            java: 16
+            java: 17
             experimental: false
           - os: windows-latest
-            java: 16
+            java: 17
             experimental: false
           - os: ubuntu-latest
-            java: 17-ea
+            java: 18-ea
             experimental: true
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
@@ -56,7 +56,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
+          distribution: 'zulu'
           cache: 'maven'
       - name: 'Install'
         shell: bash
