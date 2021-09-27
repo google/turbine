@@ -638,6 +638,40 @@ public class LowerTest {
     assertThat((testAccess[0] & TurbineFlag.ACC_PROTECTED)).isNotEqualTo(TurbineFlag.ACC_PROTECTED);
   }
 
+  @Test
+  public void minClassVersion() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(Parser.parse("class Test {}")),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion=*/ Optional.empty());
+    Map<String, byte[]> lowered =
+        Lower.lowerAll(
+                LanguageVersion.fromJavacopts(ImmutableList.of("-source", "7", "-target", "7")),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    int[] major = {0};
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public void visit(
+                  int version,
+                  int access,
+                  String name,
+                  String signature,
+                  String superName,
+                  String[] interfaces) {
+                major[0] = version;
+              }
+            },
+            0);
+    assertThat(major[0]).isEqualTo(Opcodes.V1_8);
+  }
+
   static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

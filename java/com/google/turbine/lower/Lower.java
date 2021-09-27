@@ -18,6 +18,7 @@ package com.google.turbine.lower;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeated;
+import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Function;
@@ -121,7 +122,8 @@ public class Lower {
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    int majorVersion = languageVersion.majorVersion();
+    // Output Java 8 bytecode at minimum, for type annotations
+    int majorVersion = max(languageVersion.majorVersion(), 52);
     for (ClassSymbol sym : units.keySet()) {
       result.put(sym.binaryName(), lower(units.get(sym), env, sym, symbols, majorVersion));
     }
