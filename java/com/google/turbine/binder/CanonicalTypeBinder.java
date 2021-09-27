@@ -60,6 +60,8 @@ public final class CanonicalTypeBinder {
     }
     ImmutableMap<TyVarSymbol, TyVarInfo> typParamTypes =
         typeParameters(base.source(), pos, env, sym, base.typeParameterTypes());
+    ImmutableList<ParamInfo> components =
+        parameters(base.source(), env, sym, pos, base.components());
     ImmutableList<MethodInfo> methods = methods(base.source(), pos, env, sym, base.methods());
     ImmutableList<FieldInfo> fields = fields(base.source(), env, sym, base.fields());
     return new SourceTypeBoundClass(
@@ -67,6 +69,7 @@ public final class CanonicalTypeBinder {
         superClassType,
         typParamTypes,
         base.access(),
+        components,
         methods,
         fields,
         base.owner(),

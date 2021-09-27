@@ -259,6 +259,16 @@ public class Lower {
       interfaces.add(sig.descriptor(i));
     }
 
+    ClassFile.RecordInfo record = null;
+    if (info.kind().equals(TurbineTyKind.RECORD)) {
+      ImmutableList.Builder<ClassFile.RecordInfo.RecordComponentInfo> components =
+          ImmutableList.builder();
+      for (ParamInfo component : info.components()) {
+        components.add(lowerComponent(info, component));
+      }
+      record = new ClassFile.RecordInfo(components.build());
+    }
+
     List<ClassFile.MethodInfo> methods = new ArrayList<>();
     for (MethodInfo m : info.methods()) {
       if (TurbineVisibility.fromAccess(m.access()) == TurbineVisibility.PRIVATE) {
@@ -281,6 +291,14 @@ public class Lower {
 
     ImmutableList<TypeAnnotationInfo> typeAnnotations = classTypeAnnotations(info);
 
+    String nestHost = null;
+    ImmutableList<String> nestMembers = ImmutableList.of();
+    // nests were added in Java 11, i.e. major version 55
+    if (majorVersion >= 55) {
+      nestHost = collectNestHost(info.source(), info.owner());
+      nestMembers = nestHost == null ? collectNestMembers(info.source(), info) : ImmutableList.of();
+    }
+
     ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(info.source(), sym, info);
 
     ClassFile classfile =
@@ -297,14 +315,26 @@ public class Lower {
             inners,
             typeAnnotations,
             /* module= */ null,
-            /* nestHost= */ null,
-            /* nestMembers= */ ImmutableList.of(),
-            /* record= */ null,
+            nestHost,
+            nestMembers,
+            record,
             /* transitiveJar= */ null);
 
     symbols.addAll(sig.classes);
 
     return ClassWriter.writeClass(classfile);
+  }
+
+  private ClassFile.RecordInfo.RecordComponentInfo lowerComponent(
+      SourceTypeBoundClass info, ParamInfo c) {
+    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(info.typeParameterTypes());
+    String desc = SigWriter.type(sig.signature(Erasure.erase(c.type(), tenv)));
+    String signature = sig.fieldSignature(c.type());
+    ImmutableList.Builder<TypeAnnotationInfo> typeAnnotations = ImmutableList.builder();
+    lowerTypeAnnotations(
+        typeAnnotations, c.type(), TargetType.FIELD, TypeAnnotationInfo.EMPTY_TARGET);
+    return new ClassFile.RecordInfo.RecordComponentInfo(
+        c.name(), desc, signature, lowerAnnotations(c.annotations()), typeAnnotations.build());
   }
 
   private ClassFile.MethodInfo lowerMethod(final MethodInfo m, final ClassSymbol sym) {
@@ -440,10 +470,55 @@ public class Lower {
     if (info == null) {
       throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
     }
-    ClassSymbol owner = env.getNonNull(sym).owner();
+    ClassSymbol owner = info.owner();
     if (owner != null) {
       addEnclosing(source, env, all, owner);
       all.add(sym);
+    }
+  }
+
+  private @Nullable String collectNestHost(SourceFile source, @Nullable ClassSymbol sym) {
+    if (sym == null) {
+      return null;
+    }
+    while (true) {
+      TypeBoundClass info = env.get(sym);
+      if (info == null) {
+        throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
+      }
+      if (info.owner() == null) {
+        return sig.descriptor(sym);
+      }
+      sym = info.owner();
+    }
+  }
+
+  private ImmutableList<String> collectNestMembers(SourceFile source, SourceTypeBoundClass info) {
+    Set<ClassSymbol> nestMembers = new LinkedHashSet<>();
+    for (ClassSymbol child : info.children().values()) {
+      addNestMembers(source, env, nestMembers, child);
+    }
+    ImmutableList.Builder<String> result = ImmutableList.builder();
+    for (ClassSymbol nestMember : nestMembers) {
+      result.add(sig.descriptor(nestMember));
+    }
+    return result.build();
+  }
+
+  private static void addNestMembers(
+      SourceFile source,
+      Env<ClassSymbol, TypeBoundClass> env,
+      Set<ClassSymbol> nestMembers,
+      ClassSymbol sym) {
+    if (!nestMembers.add(sym)) {
+      return;
+    }
+    TypeBoundClass info = env.get(sym);
+    if (info == null) {
+      throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
+    }
+    for (ClassSymbol child : info.children().values()) {
+      addNestMembers(source, env, nestMembers, child);
     }
   }
 

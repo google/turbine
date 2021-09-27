@@ -486,6 +486,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return methods.get();
   }
 
+  @Override
+  public ImmutableList<ParamInfo> components() {
+    return ImmutableList.of();
+  }
+
   private final Supplier<@Nullable AnnotationMetadata> annotationMetadata =
       Suppliers.memoize(
           new Supplier<@Nullable AnnotationMetadata>() {

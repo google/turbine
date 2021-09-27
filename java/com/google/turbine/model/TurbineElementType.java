@@ -28,5 +28,6 @@ public enum TurbineElementType {
   PARAMETER,
   TYPE,
   TYPE_PARAMETER,
-  TYPE_USE
+  TYPE_USE,
+  RECORD_COMPONENT
 }

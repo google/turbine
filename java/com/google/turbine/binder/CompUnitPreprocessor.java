@@ -176,8 +176,8 @@ public final class CompUnitPreprocessor {
         access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION;
         break;
       case RECORD:
-        // TODO(b/200222393): add support for records
-        throw new AssertionError(tykind);
+        access |= TurbineFlag.ACC_SUPER | TurbineFlag.ACC_FINAL;
+        break;
     }
     return access;
   }
@@ -198,6 +198,7 @@ public final class CompUnitPreprocessor {
       case INTERFACE:
       case ENUM:
       case ANNOTATION:
+      case RECORD:
         access |= TurbineFlag.ACC_STATIC;
         break;
       case CLASS:
@@ -205,9 +206,6 @@ public final class CompUnitPreprocessor {
           access |= TurbineFlag.ACC_STATIC;
         }
         break;
-      case RECORD:
-        // TODO(b/200222393): add support for records
-        throw new AssertionError(decl.tykind());
     }
 
     // propagate strictfp to nested types

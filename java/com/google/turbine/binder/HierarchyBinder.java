@@ -83,6 +83,9 @@ public class HierarchyBinder {
         case CLASS:
           superclass = !origin.equals(ClassSymbol.OBJECT) ? ClassSymbol.OBJECT : null;
           break;
+        case RECORD:
+          superclass = ClassSymbol.RECORD;
+          break;
         default:
           throw new AssertionError(decl.tykind());
       }

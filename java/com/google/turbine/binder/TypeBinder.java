@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.Iterables.getLast;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
@@ -215,6 +216,9 @@ public class TypeBinder {
         }
         superClassType = Type.ClassTy.OBJECT;
         break;
+      case RECORD:
+        superClassType = Type.ClassTy.asNonParametricClassTy(ClassSymbol.RECORD);
+        break;
       default:
         throw new AssertionError(base.decl().tykind());
     }
@@ -229,11 +233,18 @@ public class TypeBinder {
             .append(new SingletonScope(base.decl().name().value(), owner))
             .append(new ClassMemberScope(owner, env));
 
-    List<MethodInfo> methods =
+    SyntheticMethods syntheticMethods = new SyntheticMethods();
+
+    ImmutableList<ParamInfo> components =
+        bindComponents(scope, syntheticMethods, base.decl().components());
+
+    ImmutableList.Builder<MethodInfo> methods =
         ImmutableList.<MethodInfo>builder()
-            .addAll(syntheticMethods())
-            .addAll(bindMethods(scope, base.decl().members()))
-            .build();
+            .addAll(syntheticMethods(syntheticMethods, components))
+            .addAll(bindMethods(scope, base.decl().members()));
+    if (base.kind().equals(TurbineTyKind.RECORD)) {
+      methods.addAll(syntheticRecordMethods(syntheticMethods, components));
+    }
 
     ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
 
@@ -242,7 +253,8 @@ public class TypeBinder {
         superClassType,
         typeParameterTypes,
         base.access(),
-        ImmutableList.copyOf(methods),
+        components,
+        methods.build(),
         fields,
         base.owner(),
         base.kind(),
@@ -257,23 +269,73 @@ public class TypeBinder {
         base.decl());
   }
 
+  /**
+   * A generated for synthetic {@link MethodSymbol}s.
+   *
+   * <p>Each {@link MethodSymbol} contains an index into its enclosing class, to enable comparing
+   * the symbols for equality. For synthetic methods we use an arbitrary unique negative index.
+   */
+  private static class SyntheticMethods {
+
+    private int idx = -1;
+
+    MethodSymbol create(ClassSymbol owner, String name) {
+      return new MethodSymbol(idx--, owner, name);
+    }
+  }
+
+  private ImmutableList<ParamInfo> bindComponents(
+      CompoundScope scope,
+      SyntheticMethods syntheticMethods,
+      ImmutableList<Tree.VarDecl> components) {
+    ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
+    for (Tree.VarDecl p : components) {
+      int access = 0;
+      for (TurbineModifier m : p.mods()) {
+        access |= m.flag();
+      }
+      MethodSymbol msym = syntheticMethods.create(owner, "");
+      ParamInfo param =
+          new ParamInfo(
+              new ParamSymbol(msym, p.name().value()),
+              bindTy(scope, p.ty()),
+              bindAnnotations(scope, p.annos()),
+              access);
+      result.add(param);
+    }
+    return result.build();
+  }
+
   /** Collect synthetic and implicit methods, including default constructors and enum methods. */
-  ImmutableList<MethodInfo> syntheticMethods() {
+  ImmutableList<MethodInfo> syntheticMethods(
+      SyntheticMethods syntheticMethods, ImmutableList<ParamInfo> components) {
     switch (base.kind()) {
       case CLASS:
-        return maybeDefaultConstructor();
+        return maybeDefaultConstructor(syntheticMethods);
+      case RECORD:
+        return maybeDefaultRecordConstructor(syntheticMethods, components);
       case ENUM:
-        return syntheticEnumMethods();
+        return syntheticEnumMethods(syntheticMethods);
       default:
         return ImmutableList.of();
     }
   }
 
-  private ImmutableList<MethodInfo> maybeDefaultConstructor() {
+  private ImmutableList<MethodInfo> maybeDefaultRecordConstructor(
+      SyntheticMethods syntheticMethods, ImmutableList<ParamInfo> components) {
     if (hasConstructor()) {
       return ImmutableList.of();
     }
-    MethodSymbol symbol = new MethodSymbol(-1, owner, "<init>");
+    MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
+    return ImmutableList.of(
+        syntheticConstructor(symbol, components, TurbineVisibility.fromAccess(base.access())));
+  }
+
+  private ImmutableList<MethodInfo> maybeDefaultConstructor(SyntheticMethods syntheticMethods) {
+    if (hasConstructor()) {
+      return ImmutableList.of();
+    }
+    MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
     ImmutableList<ParamInfo> formals;
     if (hasEnclosingInstance(base)) {
       formals = ImmutableList.of(enclosingInstanceParameter(symbol));
@@ -288,6 +350,10 @@ public class TypeBinder {
       MethodSymbol symbol, ImmutableList<ParamInfo> formals, TurbineVisibility visibility) {
     int access = visibility.flag();
     access |= (base.access() & TurbineFlag.ACC_STRICT);
+    if (!formals.isEmpty()
+        && (getLast(formals).access() & TurbineFlag.ACC_VARARGS) == TurbineFlag.ACC_VARARGS) {
+      access |= TurbineFlag.ACC_VARARGS;
+    }
     return new MethodInfo(
         symbol,
         ImmutableMap.of(),
@@ -341,15 +407,15 @@ public class TypeBinder {
             TurbineFlag.ACC_SYNTHETIC));
   }
 
-  private ImmutableList<MethodInfo> syntheticEnumMethods() {
+  private ImmutableList<MethodInfo> syntheticEnumMethods(SyntheticMethods syntheticMethods) {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
     int access = 0;
     access |= (base.access() & TurbineFlag.ACC_STRICT);
     if (!hasConstructor()) {
-      MethodSymbol symbol = new MethodSymbol(-1, owner, "<init>");
+      MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
       methods.add(syntheticConstructor(symbol, enumCtorParams(symbol), TurbineVisibility.PRIVATE));
     }
-    MethodSymbol valuesMethod = new MethodSymbol(-2, owner, "values");
+    MethodSymbol valuesMethod = syntheticMethods.create(owner, "values");
     methods.add(
         new MethodInfo(
             valuesMethod,
@@ -362,7 +428,7 @@ public class TypeBinder {
             null,
             ImmutableList.of(),
             null));
-    MethodSymbol valueOfMethod = new MethodSymbol(-3, owner, "valueOf");
+    MethodSymbol valueOfMethod = syntheticMethods.create(owner, "valueOf");
     methods.add(
         new MethodInfo(
             valueOfMethod,
@@ -380,6 +446,71 @@ public class TypeBinder {
             null,
             ImmutableList.of(),
             null));
+    return methods.build();
+  }
+
+  private ImmutableList<MethodInfo> syntheticRecordMethods(
+      SyntheticMethods syntheticMethods, ImmutableList<ParamInfo> components) {
+    ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
+    MethodSymbol toStringMethod = syntheticMethods.create(owner, "toString");
+    methods.add(
+        new MethodInfo(
+            toStringMethod,
+            ImmutableMap.of(),
+            Type.ClassTy.STRING,
+            ImmutableList.of(),
+            ImmutableList.of(),
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
+            null,
+            null,
+            ImmutableList.of(),
+            null));
+    MethodSymbol hashCodeMethod = syntheticMethods.create(owner, "hashCode");
+    methods.add(
+        new MethodInfo(
+            hashCodeMethod,
+            ImmutableMap.of(),
+            Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
+            ImmutableList.of(),
+            ImmutableList.of(),
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
+            null,
+            null,
+            ImmutableList.of(),
+            null));
+    MethodSymbol equalsMethod = syntheticMethods.create(owner, "equals");
+    methods.add(
+        new MethodInfo(
+            equalsMethod,
+            ImmutableMap.of(),
+            Type.PrimTy.create(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
+            ImmutableList.of(
+                new ParamInfo(
+                    new ParamSymbol(equalsMethod, "other"),
+                    Type.ClassTy.OBJECT,
+                    ImmutableList.of(),
+                    TurbineFlag.ACC_MANDATED)),
+            ImmutableList.of(),
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
+            null,
+            null,
+            ImmutableList.of(),
+            null));
+    for (ParamInfo c : components) {
+      MethodSymbol componentMethod = syntheticMethods.create(owner, c.name());
+      methods.add(
+          new MethodInfo(
+              componentMethod,
+              ImmutableMap.of(),
+              c.type(),
+              ImmutableList.of(),
+              ImmutableList.of(),
+              TurbineFlag.ACC_PUBLIC,
+              null,
+              null,
+              c.annotations(),
+              null));
+    }
     return methods.build();
   }
 
