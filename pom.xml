@@ -30,7 +30,7 @@
   <url>https://github.com/google/turbine</url>
 
   <properties>
-    <asm.version>9.1</asm.version>
+    <asm.version>9.2</asm.version>
     <javac.version>9+181-r4173-1</javac.version>
     <guava.version>30.0-jre</guava.version>
     <errorprone.version>2.9.0</errorprone.version>
