@@ -29,6 +29,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
@@ -1131,6 +1132,8 @@ public class TurbineTypes implements Types {
         return ((FieldSymbol) symbol).owner();
       case PARAMETER:
         return ((ParamSymbol) symbol).owner().owner();
+      case RECORD_COMPONENT:
+        return ((RecordComponentSymbol) symbol).owner();
       case MODULE:
       case PACKAGE:
         throw new IllegalArgumentException(symbol.symKind().toString());

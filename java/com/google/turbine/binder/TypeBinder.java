@@ -28,6 +28,7 @@ import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.CompoundScope;
@@ -38,6 +39,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -235,8 +237,7 @@ public class TypeBinder {
 
     SyntheticMethods syntheticMethods = new SyntheticMethods();
 
-    ImmutableList<ParamInfo> components =
-        bindComponents(scope, syntheticMethods, base.decl().components());
+    ImmutableList<RecordComponentInfo> components = bindComponents(scope, base.decl().components());
 
     ImmutableList.Builder<MethodInfo> methods =
         ImmutableList.<MethodInfo>builder()
@@ -284,20 +285,17 @@ public class TypeBinder {
     }
   }
 
-  private ImmutableList<ParamInfo> bindComponents(
-      CompoundScope scope,
-      SyntheticMethods syntheticMethods,
-      ImmutableList<Tree.VarDecl> components) {
-    ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
+  private ImmutableList<RecordComponentInfo> bindComponents(
+      CompoundScope scope, ImmutableList<Tree.VarDecl> components) {
+    ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
     for (Tree.VarDecl p : components) {
       int access = 0;
       for (TurbineModifier m : p.mods()) {
         access |= m.flag();
       }
-      MethodSymbol msym = syntheticMethods.create(owner, "");
-      ParamInfo param =
-          new ParamInfo(
-              new ParamSymbol(msym, p.name().value()),
+      RecordComponentInfo param =
+          new RecordComponentInfo(
+              new RecordComponentSymbol(owner, p.name().value()),
               bindTy(scope, p.ty()),
               bindAnnotations(scope, p.annos()),
               access);
@@ -308,7 +306,7 @@ public class TypeBinder {
 
   /** Collect synthetic and implicit methods, including default constructors and enum methods. */
   ImmutableList<MethodInfo> syntheticMethods(
-      SyntheticMethods syntheticMethods, ImmutableList<ParamInfo> components) {
+      SyntheticMethods syntheticMethods, ImmutableList<RecordComponentInfo> components) {
     switch (base.kind()) {
       case CLASS:
         return maybeDefaultConstructor(syntheticMethods);
@@ -322,13 +320,22 @@ public class TypeBinder {
   }
 
   private ImmutableList<MethodInfo> maybeDefaultRecordConstructor(
-      SyntheticMethods syntheticMethods, ImmutableList<ParamInfo> components) {
+      SyntheticMethods syntheticMethods, ImmutableList<RecordComponentInfo> components) {
     if (hasConstructor()) {
       return ImmutableList.of();
     }
     MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
+    ImmutableList.Builder<ParamInfo> params = ImmutableList.builder();
+    for (RecordComponentInfo component : components) {
+      params.add(
+          new ParamInfo(
+              new ParamSymbol(symbol, component.name()),
+              component.type(),
+              component.annotations(),
+              component.access()));
+    }
     return ImmutableList.of(
-        syntheticConstructor(symbol, components, TurbineVisibility.fromAccess(base.access())));
+        syntheticConstructor(symbol, params.build(), TurbineVisibility.fromAccess(base.access())));
   }
 
   private ImmutableList<MethodInfo> maybeDefaultConstructor(SyntheticMethods syntheticMethods) {
@@ -450,7 +457,7 @@ public class TypeBinder {
   }
 
   private ImmutableList<MethodInfo> syntheticRecordMethods(
-      SyntheticMethods syntheticMethods, ImmutableList<ParamInfo> components) {
+      SyntheticMethods syntheticMethods, ImmutableList<RecordComponentInfo> components) {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
     MethodSymbol toStringMethod = syntheticMethods.create(owner, "toString");
     methods.add(
@@ -496,7 +503,7 @@ public class TypeBinder {
             null,
             ImmutableList.of(),
             null));
-    for (ParamInfo c : components) {
+    for (RecordComponentInfo c : components) {
       MethodSymbol componentMethod = syntheticMethods.create(owner, c.name());
       methods.add(
           new MethodInfo(

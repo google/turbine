@@ -30,6 +30,7 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError;
@@ -73,7 +74,7 @@ public final class DisambiguateTypeAnnotations {
         base.superClassType(),
         base.typeParameterTypes(),
         base.access(),
-        bindParameters(env, base.components(), TurbineElementType.RECORD_COMPONENT),
+        bindComponents(env, base.components(), TurbineElementType.RECORD_COMPONENT),
         bindMethods(env, base.methods()),
         bindFields(env, base.fields()),
         base.owner(),
@@ -142,6 +143,27 @@ public final class DisambiguateTypeAnnotations {
         disambiguate(
             env, declarationTarget, base.type(), base.annotations(), declarationAnnotations);
     return new ParamInfo(base.sym(), type, declarationAnnotations.build(), base.access());
+  }
+
+  private static ImmutableList<RecordComponentInfo> bindComponents(
+      Env<ClassSymbol, TypeBoundClass> env,
+      ImmutableList<RecordComponentInfo> components,
+      TurbineElementType declarationTarget) {
+    ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
+    for (RecordComponentInfo component : components) {
+      ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
+      Type type =
+          disambiguate(
+              env,
+              declarationTarget,
+              component.type(),
+              component.annotations(),
+              declarationAnnotations);
+      result.add(
+          new RecordComponentInfo(
+              component.sym(), type, declarationAnnotations.build(), component.access()));
+    }
+    return result.build();
   }
 
   /**

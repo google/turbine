@@ -16,6 +16,7 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.MoreFiles.getFileExtension;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
@@ -50,6 +51,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -688,6 +690,22 @@ public final class IntegrationTestSupport {
       lines.clear();
       return new TestInput(sources, classes);
     }
+  }
+
+  public static int getMajor() {
+    try {
+      Method versionMethod = Runtime.class.getMethod("version");
+      Object version = versionMethod.invoke(null);
+      return (int) version.getClass().getMethod("major").invoke(version);
+    } catch (ReflectiveOperationException e) {
+      // continue below
+    }
+
+    int version = (int) Double.parseDouble(JAVA_CLASS_VERSION.value());
+    if (49 <= version && version <= 52) {
+      return version - (49 - 5);
+    }
+    throw new IllegalStateException("Unknown Java version: " + JAVA_CLASS_VERSION.value());
   }
 
   private IntegrationTestSupport() {}

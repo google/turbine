@@ -24,6 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -53,6 +54,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -612,6 +614,62 @@ public class ProcessingIntegrationTest {
                 .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
                 .map(d -> d.message()))
         .containsExactly("@Deprecated({})");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class RecordProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      for (Element e : roundEnv.getRootElements()) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getKind() + " " + e);
+        for (Element m : e.getEnclosedElements()) {
+          processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, m.getKind() + " " + m);
+        }
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void recordProcessing() throws IOException {
+    assumeTrue(IntegrationTestSupport.getMajor() >= 15);
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== R.java ===", //
+            "record R<T>(@Deprecated T x, int... y) {}");
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ProcessorInfo.create(
+                        ImmutableList.of(new RecordProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            "RECORD R",
+            "RECORD_COMPONENT x",
+            "RECORD_COMPONENT y",
+            "CONSTRUCTOR R(T,int[])",
+            "METHOD toString()",
+            "METHOD hashCode()",
+            "METHOD equals(java.lang.Object)",
+            "METHOD x()",
+            "METHOD y()");
   }
 
   private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {

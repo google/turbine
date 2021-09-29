@@ -16,8 +16,6 @@
 
 package com.google.turbine.lower;
 
-import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
-import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.stream.Collectors.toList;
@@ -28,7 +26,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import java.io.IOError;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -376,7 +373,7 @@ public class LowerIntegrationTest {
     }
 
     int version = SOURCE_VERSION.getOrDefault(test, 8);
-    assumeTrue(version <= getMajor());
+    assumeTrue(version <= IntegrationTestSupport.getMajor());
     ImmutableList<String> javacopts =
         ImmutableList.of("-source", String.valueOf(version), "-target", String.valueOf(version));
 
@@ -388,21 +385,5 @@ public class LowerIntegrationTest {
 
     assertThat(IntegrationTestSupport.dump(IntegrationTestSupport.sortMembers(actual)))
         .isEqualTo(IntegrationTestSupport.dump(IntegrationTestSupport.canonicalize(expected)));
-  }
-
-  private static int getMajor() {
-    try {
-      Method versionMethod = Runtime.class.getMethod("version");
-      Object version = versionMethod.invoke(null);
-      return (int) version.getClass().getMethod("major").invoke(version);
-    } catch (ReflectiveOperationException e) {
-      // continue below
-    }
-
-    int version = (int) Double.parseDouble(JAVA_CLASS_VERSION.value());
-    if (49 <= version && version <= 52) {
-      return version - (49 - 5);
-    }
-    throw new IllegalStateException("Unknown Java version: " + JAVA_SPECIFICATION_VERSION.value());
   }
 }

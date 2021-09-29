@@ -25,6 +25,7 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -60,8 +61,8 @@ public final class CanonicalTypeBinder {
     }
     ImmutableMap<TyVarSymbol, TyVarInfo> typParamTypes =
         typeParameters(base.source(), pos, env, sym, base.typeParameterTypes());
-    ImmutableList<ParamInfo> components =
-        parameters(base.source(), env, sym, pos, base.components());
+    ImmutableList<RecordComponentInfo> components =
+        components(base.source(), env, sym, pos, base.components());
     ImmutableList<MethodInfo> methods = methods(base.source(), pos, env, sym, base.methods());
     ImmutableList<FieldInfo> fields = fields(base.source(), env, sym, base.fields());
     return new SourceTypeBoundClass(
@@ -164,6 +165,24 @@ public final class CanonicalTypeBinder {
         Canonicalize.canonicalize(source, position, env, sym, base.type()),
         base.annotations(),
         base.access());
+  }
+
+  private static ImmutableList<RecordComponentInfo> components(
+      SourceFile source,
+      Env<ClassSymbol, TypeBoundClass> env,
+      ClassSymbol sym,
+      int pos,
+      ImmutableList<RecordComponentInfo> components) {
+    ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
+    for (RecordComponentInfo component : components) {
+      result.add(
+          new RecordComponentInfo(
+              component.sym(),
+              Canonicalize.canonicalize(source, pos, env, sym, component.type()),
+              component.annotations(),
+              component.access()));
+    }
+    return result.build();
   }
 
   private static ImmutableMap<TyVarSymbol, TyVarInfo> typeParameters(

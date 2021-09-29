@@ -128,6 +128,10 @@ public class TurbineMessager implements Messager {
         return fieldPosition((FieldSymbol) sym);
       case PARAMETER:
         return paramPosition((ParamSymbol) sym);
+      case RECORD_COMPONENT:
+        // javac doesn't seem to provide diagnostic positions for record components, so we don't
+        // either
+        return -1;
       case MODULE:
       case PACKAGE:
         break;

@@ -44,7 +44,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes;
   private final @Nullable Type superClassType;
   private final ImmutableList<Type> interfaceTypes;
-  private final ImmutableList<ParamInfo> components;
+  private final ImmutableList<RecordComponentInfo> components;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
   private final CompoundScope enclosingScope;
@@ -60,7 +60,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       @Nullable Type superClassType,
       ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes,
       int access,
-      ImmutableList<ParamInfo> components,
+      ImmutableList<RecordComponentInfo> components,
       ImmutableList<MethodInfo> methods,
       ImmutableList<FieldInfo> fields,
       @Nullable ClassSymbol owner,
@@ -154,7 +154,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
 
   /** The record components. */
   @Override
-  public ImmutableList<ParamInfo> components() {
+  public ImmutableList<RecordComponentInfo> components() {
     return components;
   }
 

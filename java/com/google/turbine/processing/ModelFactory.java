@@ -29,6 +29,7 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -40,6 +41,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
@@ -48,6 +50,7 @@ import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineNoTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbinePackageElement;
 import com.google.turbine.processing.TurbineElement.TurbineParameterElement;
+import com.google.turbine.processing.TurbineElement.TurbineRecordComponentElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineArrayType;
@@ -110,6 +113,8 @@ public class ModelFactory {
   private final Map<MethodSymbol, TurbineExecutableElement> methodCache = new HashMap<>();
   private final Map<ClassSymbol, TurbineTypeElement> classCache = new HashMap<>();
   private final Map<ParamSymbol, TurbineParameterElement> paramCache = new HashMap<>();
+  private final Map<RecordComponentSymbol, TurbineRecordComponentElement> recordComponentCache =
+      new HashMap<>();
   private final Map<TyVarSymbol, TurbineTypeParameterElement> tyParamCache = new HashMap<>();
   private final Map<PackageSymbol, TurbinePackageElement> packageCache = new HashMap<>();
 
@@ -230,6 +235,8 @@ public class ModelFactory {
         return fieldElement((FieldSymbol) symbol);
       case PARAMETER:
         return parameterElement((ParamSymbol) symbol);
+      case RECORD_COMPONENT:
+        return recordComponentElement((RecordComponentSymbol) symbol);
       case PACKAGE:
         return packageElement((PackageSymbol) symbol);
       case MODULE:
@@ -261,6 +268,11 @@ public class ModelFactory {
 
   VariableElement parameterElement(ParamSymbol sym) {
     return paramCache.computeIfAbsent(sym, k -> new TurbineParameterElement(this, sym));
+  }
+
+  VariableElement recordComponentElement(RecordComponentSymbol sym) {
+    return recordComponentCache.computeIfAbsent(
+        sym, k -> new TurbineRecordComponentElement(this, sym));
   }
 
   TurbineTypeParameterElement typeParameterElement(TyVarSymbol sym) {
@@ -330,6 +342,16 @@ public class ModelFactory {
     return null;
   }
 
+  RecordComponentInfo getRecordComponentInfo(RecordComponentSymbol sym) {
+    TypeBoundClass info = getSymbol(sym.owner());
+    for (RecordComponentInfo component : info.components()) {
+      if (component.sym().equals(sym)) {
+        return component;
+      }
+    }
+    return null;
+  }
+
   FieldInfo getFieldInfo(FieldSymbol symbol) {
     TypeBoundClass info = getSymbol(symbol.owner());
     requireNonNull(info, symbol.owner().toString());
@@ -370,6 +392,8 @@ public class ModelFactory {
         return ((FieldSymbol) sym).owner();
       case PARAMETER:
         return ((ParamSymbol) sym).owner().owner();
+      case RECORD_COMPONENT:
+        return ((RecordComponentSymbol) sym).owner();
       case PACKAGE:
       case MODULE:
         throw new IllegalArgumentException(sym.toString());

@@ -28,6 +28,7 @@ public interface Symbol {
     METHOD,
     FIELD,
     PARAMETER,
+    RECORD_COMPONENT,
     MODULE,
     PACKAGE
   }

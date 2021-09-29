@@ -29,6 +29,7 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -104,7 +105,7 @@ public class ConstBinder {
                 env,
                 log)
             .evaluateAnnotations(base.annotations());
-    ImmutableList<TypeBoundClass.ParamInfo> components = bindParameters(base.components());
+    ImmutableList<RecordComponentInfo> components = bindRecordComponents(base.components());
     ImmutableList<TypeBoundClass.FieldInfo> fields = fields(base.fields());
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());
     return new SourceTypeBoundClass(
@@ -167,6 +168,16 @@ public class ConstBinder {
   private ParamInfo bindParameter(ParamInfo base) {
     ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(base.annotations());
     return new ParamInfo(base.sym(), bindType(base.type()), annos, base.access());
+  }
+
+  private ImmutableList<RecordComponentInfo> bindRecordComponents(
+      ImmutableList<RecordComponentInfo> components) {
+    ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
+    for (RecordComponentInfo base : components) {
+      ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(base.annotations());
+      result.add(new RecordComponentInfo(base.sym(), bindType(base.type()), annos, base.access()));
+    }
+    return result.build();
   }
 
   static @Nullable AnnotationMetadata bindAnnotationMetadata(

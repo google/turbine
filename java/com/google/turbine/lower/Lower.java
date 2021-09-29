@@ -39,6 +39,7 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -263,7 +264,7 @@ public class Lower {
     if (info.kind().equals(TurbineTyKind.RECORD)) {
       ImmutableList.Builder<ClassFile.RecordInfo.RecordComponentInfo> components =
           ImmutableList.builder();
-      for (ParamInfo component : info.components()) {
+      for (RecordComponentInfo component : info.components()) {
         components.add(lowerComponent(info, component));
       }
       record = new ClassFile.RecordInfo(components.build());
@@ -326,7 +327,7 @@ public class Lower {
   }
 
   private ClassFile.RecordInfo.RecordComponentInfo lowerComponent(
-      SourceTypeBoundClass info, ParamInfo c) {
+      SourceTypeBoundClass info, RecordComponentInfo c) {
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(info.typeParameterTypes());
     String desc = SigWriter.type(sig.signature(Erasure.erase(c.type(), tenv)));
     String signature = sig.fieldSignature(c.type());

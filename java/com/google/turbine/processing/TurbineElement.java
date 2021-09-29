@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -32,6 +33,7 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.lookup.PackageScope;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -39,6 +41,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
@@ -379,10 +382,19 @@ public abstract class TurbineElement implements Element {
         case ANNOTATION:
           return ElementKind.ANNOTATION_TYPE;
         case RECORD:
-          return ElementKind.valueOf("RECORD");
+          return RECORD.get();
       }
       throw new AssertionError(info.kind());
     }
+
+    private static final Supplier<ElementKind> RECORD =
+        Suppliers.memoize(
+            new Supplier<ElementKind>() {
+              @Override
+              public ElementKind get() {
+                return ElementKind.valueOf("RECORD");
+              }
+            });
 
     @Override
     public Set<Modifier> getModifiers() {
@@ -431,6 +443,9 @@ public abstract class TurbineElement implements Element {
               public ImmutableList<Element> get() {
                 TypeBoundClass info = infoNonNull();
                 ImmutableList.Builder<Element> result = ImmutableList.builder();
+                for (RecordComponentInfo component : info.components()) {
+                  result.add(factory.recordComponentElement(component.sym()));
+                }
                 for (FieldInfo field : info.fields()) {
                   result.add(factory.fieldElement(field.sym()));
                 }
@@ -1180,6 +1195,120 @@ public abstract class TurbineElement implements Element {
     @Override
     public Element getEnclosingElement() {
       return factory.executableElement(sym.owner());
+    }
+
+    @Override
+    public List<? extends Element> getEnclosedElements() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public <R, P> R accept(ElementVisitor<R, P> v, P p) {
+      return v.visitVariable(this, p);
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(sym.name());
+    }
+
+    @Override
+    protected ImmutableList<AnnoInfo> annos() {
+      return info().annotations();
+    }
+  }
+
+  /** A {@link VariableElement} implementation for a record info. */
+  static class TurbineRecordComponentElement extends TurbineElement implements VariableElement {
+
+    @Override
+    public RecordComponentSymbol sym() {
+      return sym;
+    }
+
+    @Override
+    public String javadoc() {
+      return null;
+    }
+
+    @Override
+    public int hashCode() {
+      return sym.hashCode();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      return obj instanceof TurbineRecordComponentElement
+          && sym.equals(((TurbineRecordComponentElement) obj).sym);
+    }
+
+    private final RecordComponentSymbol sym;
+
+    private final Supplier<RecordComponentInfo> info =
+        memoize(
+            new Supplier<RecordComponentInfo>() {
+              @Override
+              public RecordComponentInfo get() {
+                return factory.getRecordComponentInfo(sym);
+              }
+            });
+
+    @Nullable
+    RecordComponentInfo info() {
+      return info.get();
+    }
+
+    public TurbineRecordComponentElement(ModelFactory factory, RecordComponentSymbol sym) {
+      super(factory);
+      this.sym = sym;
+    }
+
+    @Override
+    public Object getConstantValue() {
+      return null;
+    }
+
+    private final Supplier<TypeMirror> type =
+        memoize(
+            new Supplier<TypeMirror>() {
+              @Override
+              public TypeMirror get() {
+                return factory.asTypeMirror(info().type());
+              }
+            });
+
+    @Override
+    public TypeMirror asType() {
+      return type.get();
+    }
+
+    @Override
+    public ElementKind getKind() {
+      return RECORD_COMPONENT.get();
+    }
+
+    private static final Supplier<ElementKind> RECORD_COMPONENT =
+        Suppliers.memoize(
+            new Supplier<ElementKind>() {
+              @Override
+              public ElementKind get() {
+                return ElementKind.valueOf("RECORD_COMPONENT");
+              }
+            });
+
+    @Override
+    public Set<Modifier> getModifiers() {
+      return asModifierSet(ModifierOwner.PARAMETER, info().access());
+    }
+
+    @Override
+    public Name getSimpleName() {
+      return new TurbineName(sym.name());
+    }
+
+    @Override
+    public Element getEnclosingElement() {
+      return factory.typeElement(sym.owner());
     }
 
     @Override

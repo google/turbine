@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
@@ -51,7 +52,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
   ImmutableList<MethodInfo> methods();
 
   /** Record components. */
-  ImmutableList<ParamInfo> components();
+  ImmutableList<RecordComponentInfo> components();
 
   /**
    * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link
@@ -318,6 +319,47 @@ public interface TypeBoundClass extends HeaderBoundClass {
     }
 
     /** The parameter's modifiers. */
+    public int access() {
+      return access;
+    }
+  }
+
+  /** A record component. */
+  class RecordComponentInfo {
+    private final RecordComponentSymbol sym;
+    private final Type type;
+    private final int access;
+    private final ImmutableList<AnnoInfo> annotations;
+
+    public RecordComponentInfo(
+        RecordComponentSymbol sym, Type type, ImmutableList<AnnoInfo> annotations, int access) {
+      this.sym = sym;
+      this.type = type;
+      this.access = access;
+      this.annotations = annotations;
+    }
+
+    /** The record component's symbol. */
+    public RecordComponentSymbol sym() {
+      return sym;
+    }
+
+    /** The record component type. */
+    public Type type() {
+      return type;
+    }
+
+    /** Record component annotations. */
+    public ImmutableList<AnnoInfo> annotations() {
+      return annotations;
+    }
+
+    /** The Record component's name. */
+    public String name() {
+      return sym.name();
+    }
+
+    /** The Record component's modifiers. */
     public int access() {
       return access;
     }

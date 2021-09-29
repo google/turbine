@@ -487,7 +487,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public ImmutableList<ParamInfo> components() {
+  public ImmutableList<RecordComponentInfo> components() {
     return ImmutableList.of();
   }
 
