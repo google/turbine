@@ -756,90 +756,98 @@ public class Parser {
           return memberRest(pos, access, annos, typaram, result, name);
         }
       case IDENT:
+        int pos = position;
+        Ident ident = eatIdent();
+        return classMemberIdent(access, annos, typaram, pos, ident);
+      default:
+        throw error(token);
+    }
+  }
+
+  private ImmutableList<Tree> classMemberIdent(
+      EnumSet<TurbineModifier> access,
+      ImmutableList<Anno> annos,
+      ImmutableList<TyParam> typaram,
+      int pos,
+      Ident ident) {
+    Type result;
+    Ident name;
+    switch (token) {
+      case LPAREN:
         {
-          int pos = position;
-          Ident ident = eatIdent();
-          switch (token) {
-            case LPAREN:
-              {
-                name = ident;
-                return ImmutableList.of(methodRest(pos, access, annos, typaram, null, name));
-              }
-            case IDENT:
-              {
-                result =
-                    new ClassTy(
-                        position,
-                        Optional.<ClassTy>empty(),
-                        ident,
-                        ImmutableList.<Type>of(),
-                        ImmutableList.of());
-                pos = position;
-                name = eatIdent();
-                return memberRest(pos, access, annos, typaram, result, name);
-              }
-            case AT:
-            case LBRACK:
-              {
-                result =
-                    new ClassTy(
-                        position,
-                        Optional.<ClassTy>empty(),
-                        ident,
-                        ImmutableList.<Type>of(),
-                        ImmutableList.of());
-                result = maybeDims(maybeAnnos(), result);
-                break;
-              }
-            case LT:
-              {
-                result =
-                    new ClassTy(
-                        position, Optional.<ClassTy>empty(), ident, tyargs(), ImmutableList.of());
-                result = maybeDims(maybeAnnos(), result);
-                break;
-              }
-            case DOT:
-              result =
-                  new ClassTy(
-                      position,
-                      Optional.<ClassTy>empty(),
-                      ident,
-                      ImmutableList.<Type>of(),
-                      ImmutableList.of());
-              break;
-            default:
-              throw error(token);
-          }
-          if (result == null) {
-            throw error(token);
-          }
-          if (token == Token.DOT) {
-            next();
-            if (!result.kind().equals(Kind.CLASS_TY)) {
-              throw error(token);
-            }
-            result = classty((ClassTy) result);
-          }
-          result = maybeDims(maybeAnnos(), result);
+          name = ident;
+          return ImmutableList.of(methodRest(pos, access, annos, typaram, null, name));
+        }
+      case IDENT:
+        {
+          result =
+              new ClassTy(
+                  position,
+                  Optional.<ClassTy>empty(),
+                  ident,
+                  ImmutableList.<Type>of(),
+                  ImmutableList.of());
           pos = position;
           name = eatIdent();
-          switch (token) {
-            case LPAREN:
-              return ImmutableList.of(methodRest(pos, access, annos, typaram, result, name));
-            case LBRACK:
-            case SEMI:
-            case ASSIGN:
-            case COMMA:
-              {
-                if (!typaram.isEmpty()) {
-                  throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
-                }
-                return fieldRest(pos, access, annos, result, name);
-              }
-            default:
-              throw error(token);
+          return memberRest(pos, access, annos, typaram, result, name);
+        }
+      case AT:
+      case LBRACK:
+        {
+          result =
+              new ClassTy(
+                  position,
+                  Optional.<ClassTy>empty(),
+                  ident,
+                  ImmutableList.<Type>of(),
+                  ImmutableList.of());
+          result = maybeDims(maybeAnnos(), result);
+          break;
+        }
+      case LT:
+        {
+          result =
+              new ClassTy(position, Optional.<ClassTy>empty(), ident, tyargs(), ImmutableList.of());
+          result = maybeDims(maybeAnnos(), result);
+          break;
+        }
+      case DOT:
+        result =
+            new ClassTy(
+                position,
+                Optional.<ClassTy>empty(),
+                ident,
+                ImmutableList.<Type>of(),
+                ImmutableList.of());
+        break;
+      default:
+        throw error(token);
+    }
+    if (result == null) {
+      throw error(token);
+    }
+    if (token == Token.DOT) {
+      next();
+      if (!result.kind().equals(Kind.CLASS_TY)) {
+        throw error(token);
+      }
+      result = classty((ClassTy) result);
+    }
+    result = maybeDims(maybeAnnos(), result);
+    pos = position;
+    name = eatIdent();
+    switch (token) {
+      case LPAREN:
+        return ImmutableList.of(methodRest(pos, access, annos, typaram, result, name));
+      case LBRACK:
+      case SEMI:
+      case ASSIGN:
+      case COMMA:
+        {
+          if (!typaram.isEmpty()) {
+            throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
           }
+          return fieldRest(pos, access, annos, result, name);
         }
       default:
         throw error(token);
