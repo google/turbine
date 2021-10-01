@@ -1,0 +1,11 @@
+=== Sealed.java ===
+
+sealed class Sealed permits Sealed.Foo, Sealed.Bar {
+  static final class Foo extends Sealed {}
+  static final class Bar extends Sealed {}
+}
+
+sealed interface ISealed permits ISealed.Foo, ISealed.Bar {
+  static final class Foo implements ISealed {}
+  static non-sealed class Bar implements ISealed {}
+}

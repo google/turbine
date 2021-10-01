@@ -1,0 +1,14 @@
+=== Test.java ===
+class Test {
+  static final int non = 42;
+  static final int sealed = 1;
+  // here 'non-sealed' is a binary expression subtracting two identifiers,
+  // not a contextual hyphenated keyword
+  static final int x = non-sealed;
+}
+
+// handle backtracking when we see 'non', but it isn't part of a contextualy
+// hyphenated keyword 'non-sealed'
+class non {
+  non self;
+}

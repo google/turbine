@@ -67,6 +67,7 @@ public final class CanonicalTypeBinder {
     ImmutableList<FieldInfo> fields = fields(base.source(), env, sym, base.fields());
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
+        base.permits(),
         superClassType,
         typParamTypes,
         base.access(),

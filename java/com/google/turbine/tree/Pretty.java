@@ -459,6 +459,17 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
         first = false;
       }
     }
+    if (!tyDecl.permits().isEmpty()) {
+      append(" permits ");
+      boolean first = true;
+      for (Tree.ClassTy t : tyDecl.permits()) {
+        if (!first) {
+          append(", ");
+        }
+        t.accept(this, null);
+        first = false;
+      }
+    }
     append(" {").append('\n');
     indent++;
     switch (tyDecl.tykind()) {
@@ -522,6 +533,8 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
         case TRANSIENT:
         case DEFAULT:
         case TRANSITIVE:
+        case SEALED:
+        case NON_SEALED:
           append(mod.toString()).append(' ');
           break;
         case ACC_SUPER:

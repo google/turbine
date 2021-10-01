@@ -110,6 +110,7 @@ public class ConstBinder {
     ImmutableList<MethodInfo> methods = bindMethods(base.methods());
     return new SourceTypeBoundClass(
         bindTypes(base.interfaceTypes()),
+        base.permits(),
         base.superClassType() != null ? bindType(base.superClassType()) : null,
         bindTypeParameters(base.typeParameterTypes()),
         base.access(),

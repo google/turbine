@@ -934,6 +934,7 @@ public abstract class Tree {
     private final ImmutableList<TyParam> typarams;
     private final Optional<ClassTy> xtnds;
     private final ImmutableList<ClassTy> impls;
+    private final ImmutableList<ClassTy> permits;
     private final ImmutableList<Tree> members;
     private final ImmutableList<VarDecl> components;
     private final TurbineTyKind tykind;
@@ -947,6 +948,7 @@ public abstract class Tree {
         ImmutableList<TyParam> typarams,
         Optional<ClassTy> xtnds,
         ImmutableList<ClassTy> impls,
+        ImmutableList<ClassTy> permits,
         ImmutableList<Tree> members,
         ImmutableList<VarDecl> components,
         TurbineTyKind tykind,
@@ -958,6 +960,7 @@ public abstract class Tree {
       this.typarams = typarams;
       this.xtnds = xtnds;
       this.impls = impls;
+      this.permits = permits;
       this.members = members;
       this.components = components;
       this.tykind = tykind;
@@ -997,6 +1000,10 @@ public abstract class Tree {
 
     public ImmutableList<ClassTy> impls() {
       return impls;
+    }
+
+    public ImmutableList<ClassTy> permits() {
+      return permits;
     }
 
     public ImmutableList<Tree> members() {

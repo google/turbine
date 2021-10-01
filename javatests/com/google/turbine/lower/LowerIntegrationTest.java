@@ -44,7 +44,9 @@ import org.junit.runners.Parameterized.Parameters;
 public class LowerIntegrationTest {
 
   private static final ImmutableMap<String, Integer> SOURCE_VERSION =
-      ImmutableMap.of("record.test", 16);
+      ImmutableMap.of(
+          "record.test", 16,
+          "sealed.test", 17);
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
@@ -60,6 +62,7 @@ public class LowerIntegrationTest {
       "B8148131.test",
       "abstractenum.test",
       "access1.test",
+      "ambiguous_identifier.test",
       "anno_const_coerce.test",
       "anno_const_scope.test",
       "anno_nested.test",
@@ -264,6 +267,7 @@ public class LowerIntegrationTest {
       "record.test",
       "rek.test",
       "samepkg.test",
+      "sealed.test",
       "self.test",
       "semi.test",
       // https://bugs.openjdk.java.net/browse/JDK-8054064 ?

@@ -17,8 +17,10 @@
 package com.google.turbine.parse;
 
 import static com.google.turbine.parse.Token.COMMA;
+import static com.google.turbine.parse.Token.IDENT;
 import static com.google.turbine.parse.Token.INTERFACE;
 import static com.google.turbine.parse.Token.LPAREN;
+import static com.google.turbine.parse.Token.MINUS;
 import static com.google.turbine.parse.Token.RPAREN;
 import static com.google.turbine.parse.Token.SEMI;
 import static com.google.turbine.tree.TurbineModifier.PROTECTED;
@@ -187,10 +189,23 @@ public class Parser {
           {
             Ident ident = ident();
             if (ident.value().equals("record")) {
-              ident = eatIdent();
+              next();
               decls.add(recordDeclaration(access, annos.build()));
               access = EnumSet.noneOf(TurbineModifier.class);
               annos = ImmutableList.builder();
+              break;
+            }
+            if (ident.value().equals("sealed")) {
+              next();
+              access.add(TurbineModifier.SEALED);
+              break;
+            }
+            if (ident.value().equals("non")) {
+              int start = position;
+              next();
+              eatNonSealed(start);
+              next();
+              access.add(TurbineModifier.NON_SEALED);
               break;
             }
             if (access.isEmpty()
@@ -213,6 +228,22 @@ public class Parser {
         default:
           throw error(token);
       }
+    }
+  }
+
+  // Handle the hypenated pseudo-keyword 'non-sealed'.
+  //
+  // This will need to be updated to handle other hyphenated keywords if when/they are introduced.
+  private void eatNonSealed(int start) {
+    eat(Token.MINUS);
+    if (token != IDENT) {
+      throw error(token);
+    }
+    if (!ident().value().equals("sealed")) {
+      throw error(token);
+    }
+    if (position != start + "non-".length()) {
+      throw error(token);
     }
   }
 
@@ -255,6 +286,7 @@ public class Parser {
         typarams,
         Optional.<ClassTy>empty(),
         interfaces.build(),
+        /* permits= */ ImmutableList.of(),
         members,
         formals.build(),
         TurbineTyKind.RECORD,
@@ -279,6 +311,15 @@ public class Parser {
         interfaces.add(classty());
       } while (maybe(Token.COMMA));
     }
+    ImmutableList.Builder<ClassTy> permits = ImmutableList.builder();
+    if (token == Token.IDENT) {
+      if (ident().value().equals("permits")) {
+        eat(Token.IDENT);
+        do {
+          permits.add(classty());
+        } while (maybe(Token.COMMA));
+      }
+    }
     eat(Token.LBRACE);
     ImmutableList<Tree> members = classMembers();
     eat(Token.RBRACE);
@@ -290,6 +331,7 @@ public class Parser {
         typarams,
         Optional.<ClassTy>empty(),
         interfaces.build(),
+        permits.build(),
         members,
         ImmutableList.of(),
         TurbineTyKind.INTERFACE,
@@ -312,6 +354,7 @@ public class Parser {
         ImmutableList.<TyParam>of(),
         Optional.<ClassTy>empty(),
         ImmutableList.<ClassTy>of(),
+        ImmutableList.of(),
         members,
         ImmutableList.of(),
         TurbineTyKind.ANNOTATION,
@@ -342,6 +385,7 @@ public class Parser {
         ImmutableList.<TyParam>of(),
         Optional.<ClassTy>empty(),
         interfaces.build(),
+        ImmutableList.of(),
         members,
         ImmutableList.of(),
         TurbineTyKind.ENUM,
@@ -569,6 +613,15 @@ public class Parser {
         interfaces.add(classty());
       } while (maybe(Token.COMMA));
     }
+    ImmutableList.Builder<ClassTy> permits = ImmutableList.builder();
+    if (token == Token.IDENT) {
+      if (ident().value().equals("permits")) {
+        eat(Token.IDENT);
+        do {
+          permits.add(classty());
+        } while (maybe(Token.COMMA));
+      }
+    }
     switch (token) {
       case LBRACE:
         next();
@@ -588,6 +641,7 @@ public class Parser {
         tyParams,
         Optional.ofNullable(xtnds),
         interfaces.build(),
+        permits.build(),
         members,
         ImmutableList.of(),
         TurbineTyKind.CLASS,
@@ -665,8 +719,22 @@ public class Parser {
 
         case IDENT:
           Ident ident = ident();
+          if (ident.value().equals("non")) {
+            int pos = position;
+            next();
+            if (token != MINUS) {
+              acc.addAll(member(access, annos.build(), ImmutableList.of(), pos, ident));
+              access = EnumSet.noneOf(TurbineModifier.class);
+              annos = ImmutableList.builder();
+            } else {
+              eatNonSealed(pos);
+              next();
+              access.add(TurbineModifier.NON_SEALED);
+            }
+            break;
+          }
           if (ident.value().equals("record")) {
-            eat(Token.IDENT);
+            eat(IDENT);
             acc.add(recordDeclaration(access, annos.build()));
             access = EnumSet.noneOf(TurbineModifier.class);
             annos = ImmutableList.builder();
@@ -758,13 +826,13 @@ public class Parser {
       case IDENT:
         int pos = position;
         Ident ident = eatIdent();
-        return classMemberIdent(access, annos, typaram, pos, ident);
+        return member(access, annos, typaram, pos, ident);
       default:
         throw error(token);
     }
   }
 
-  private ImmutableList<Tree> classMemberIdent(
+  private ImmutableList<Tree> member(
       EnumSet<TurbineModifier> access,
       ImmutableList<Anno> annos,
       ImmutableList<TyParam> typaram,
@@ -820,6 +888,7 @@ public class Parser {
                 ImmutableList.<Type>of(),
                 ImmutableList.of());
         break;
+
       default:
         throw error(token);
     }

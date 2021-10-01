@@ -45,7 +45,9 @@ public enum TurbineModifier {
   ACC_SYNTHETIC(TurbineFlag.ACC_SYNTHETIC),
   ACC_BRIDGE(TurbineFlag.ACC_BRIDGE),
   DEFAULT(TurbineFlag.ACC_DEFAULT),
-  TRANSITIVE(TurbineFlag.ACC_TRANSITIVE);
+  TRANSITIVE(TurbineFlag.ACC_TRANSITIVE),
+  SEALED(TurbineFlag.ACC_SEALED),
+  NON_SEALED(TurbineFlag.ACC_NON_SEALED);
 
   private final int flag;
 
@@ -59,6 +61,6 @@ public enum TurbineModifier {
 
   @Override
   public String toString() {
-    return name().toLowerCase(ENGLISH);
+    return name().replace('_', '-').toLowerCase(ENGLISH);
   }
 }

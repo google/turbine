@@ -185,6 +185,7 @@ public class LowerTest {
     SourceTypeBoundClass c =
         new SourceTypeBoundClass(
             interfaceTypes,
+            ImmutableList.of(),
             xtnds,
             tps,
             access,
@@ -205,6 +206,7 @@ public class LowerTest {
 
     SourceTypeBoundClass i =
         new SourceTypeBoundClass(
+            ImmutableList.of(),
             ImmutableList.of(),
             Type.ClassTy.OBJECT,
             ImmutableMap.of(),

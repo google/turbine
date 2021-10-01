@@ -71,6 +71,7 @@ public final class DisambiguateTypeAnnotations {
       SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
     return new SourceTypeBoundClass(
         base.interfaceTypes(),
+        base.permits(),
         base.superClassType(),
         base.typeParameterTypes(),
         base.access(),

@@ -229,6 +229,15 @@ public class TypeBinder {
       interfaceTypes.add(bindClassTy(bindingScope, i));
     }
 
+    ImmutableList.Builder<ClassSymbol> permits = ImmutableList.builder();
+    for (Tree.ClassTy i : base.decl().permits()) {
+      Type type = bindClassTy(bindingScope, i);
+      if (!type.tyKind().equals(Type.TyKind.CLASS_TY)) {
+        throw new AssertionError(type.tyKind());
+      }
+      permits.add(((Type.ClassTy) type).sym());
+    }
+
     CompoundScope scope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
@@ -251,6 +260,7 @@ public class TypeBinder {
 
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
+        permits.build(),
         superClassType,
         typeParameterTypes,
         base.access(),

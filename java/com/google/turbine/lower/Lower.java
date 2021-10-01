@@ -192,6 +192,7 @@ public class Lower {
             /* signature= */ null,
             /* superClass= */ null,
             /* interfaces= */ ImmutableList.of(),
+            /* permits= */ ImmutableList.of(),
             /* methods= */ ImmutableList.of(),
             /* fields= */ ImmutableList.of(),
             annotations,
@@ -259,6 +260,10 @@ public class Lower {
     for (ClassSymbol i : info.interfaces()) {
       interfaces.add(sig.descriptor(i));
     }
+    List<String> permits = new ArrayList<>();
+    for (ClassSymbol i : info.permits()) {
+      permits.add(sig.descriptor(i));
+    }
 
     ClassFile.RecordInfo record = null;
     if (info.kind().equals(TurbineTyKind.RECORD)) {
@@ -310,6 +315,7 @@ public class Lower {
             signature,
             superName,
             interfaces,
+            permits,
             methods,
             fields.build(),
             annotations,

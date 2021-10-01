@@ -44,6 +44,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes;
   private final @Nullable Type superClassType;
   private final ImmutableList<Type> interfaceTypes;
+  private final ImmutableList<ClassSymbol> permits;
   private final ImmutableList<RecordComponentInfo> components;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
@@ -57,6 +58,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
 
   public SourceTypeBoundClass(
       ImmutableList<Type> interfaceTypes,
+      ImmutableList<ClassSymbol> permits,
       @Nullable Type superClassType,
       ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes,
       int access,
@@ -75,6 +77,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       SourceFile source,
       Tree.TyDecl decl) {
     this.interfaceTypes = interfaceTypes;
+    this.permits = permits;
     this.superClassType = superClassType;
     this.typeParameterTypes = typeParameterTypes;
     this.access = access;
@@ -114,6 +117,11 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       }
     }
     return result.build();
+  }
+
+  @Override
+  public ImmutableList<ClassSymbol> permits() {
+    return permits;
   }
 
   @Override

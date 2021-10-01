@@ -95,6 +95,7 @@ public final class Transitive {
         cf.signature(),
         cf.superName(),
         cf.interfaces(),
+        cf.permits(),
         // drop methods, except for annotations where we need to resolve key/value information
         (cf.access() & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION
             ? cf.methods()

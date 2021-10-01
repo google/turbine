@@ -143,6 +143,7 @@ public class ClassReader {
         signature,
         superClass,
         interfaces,
+        /* permits= */ ImmutableList.of(),
         methodinfos,
         fieldinfos,
         annotations.build(),

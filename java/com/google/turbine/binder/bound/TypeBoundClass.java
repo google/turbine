@@ -18,6 +18,7 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
@@ -42,6 +43,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
 
   /** Implemented interface types. */
   ImmutableList<Type> interfaceTypes();
+
+  /** The permitted direct subclasses. */
+  ImmutableList<ClassSymbol> permits();
 
   ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes();
 

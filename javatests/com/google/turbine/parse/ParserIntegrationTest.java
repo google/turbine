@@ -76,6 +76,7 @@ public class ParserIntegrationTest {
       "type_annotations.input",
       "module-info.input",
       "record.input",
+      "sealed.input",
     };
     return Iterables.transform(
         Arrays.asList(tests),

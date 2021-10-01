@@ -95,6 +95,9 @@ public class AttributeWriter {
       case RECORD:
         writeRecord(output, (Attribute.Record) attribute);
         break;
+      case PERMITTED_SUBCLASSES:
+        writePermittedSubclasses(output, (Attribute.PermittedSubclasses) attribute);
+        break;
       case TURBINE_TRANSITIVE_JAR:
         writeTurbineTransitiveJar(output, (Attribute.TurbineTransitiveJar) attribute);
         break;
@@ -316,6 +319,16 @@ public class AttributeWriter {
     byte[] data = tmp.toByteArray();
     output.writeInt(data.length);
     output.write(data);
+  }
+
+  private void writePermittedSubclasses(
+      ByteArrayDataOutput output, Attribute.PermittedSubclasses attribute) {
+    output.writeShort(pool.utf8(attribute.kind().signature()));
+    output.writeInt(2 + attribute.permits.size() * 2);
+    output.writeShort(attribute.permits.size());
+    for (String permits : attribute.permits) {
+      output.writeShort(pool.classInfo(permits));
+    }
   }
 
   private void writeTurbineTransitiveJar(

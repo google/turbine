@@ -54,6 +54,9 @@ public final class LowerAttributes {
     if (classfile.record() != null) {
       attributes.add(recordAttribute(classfile.record()));
     }
+    if (!classfile.permits().isEmpty()) {
+      attributes.add(new Attribute.PermittedSubclasses(classfile.permits()));
+    }
     if (classfile.transitiveJar() != null) {
       attributes.add(new Attribute.TurbineTransitiveJar(classfile.transitiveJar()));
     }

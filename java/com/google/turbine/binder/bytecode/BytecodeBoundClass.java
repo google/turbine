@@ -306,6 +306,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return interfaceTypes.get();
   }
 
+  @Override
+  public ImmutableList<ClassSymbol> permits() {
+    return ImmutableList.of();
+  }
+
   private final Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>> typeParameterTypes =
       Suppliers.memoize(
           new Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>>() {

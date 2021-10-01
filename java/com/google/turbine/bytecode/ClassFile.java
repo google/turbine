@@ -37,6 +37,7 @@ public class ClassFile {
   private final @Nullable String signature;
   private final @Nullable String superClass;
   private final List<String> interfaces;
+  private final List<String> permits;
   private final List<MethodInfo> methods;
   private final List<FieldInfo> fields;
   private final List<AnnotationInfo> annotations;
@@ -55,6 +56,7 @@ public class ClassFile {
       @Nullable String signature,
       @Nullable String superClass,
       List<String> interfaces,
+      List<String> permits,
       List<MethodInfo> methods,
       List<FieldInfo> fields,
       List<AnnotationInfo> annotations,
@@ -71,6 +73,7 @@ public class ClassFile {
     this.signature = signature;
     this.superClass = superClass;
     this.interfaces = interfaces;
+    this.permits = permits;
     this.methods = methods;
     this.fields = fields;
     this.annotations = annotations;
@@ -111,6 +114,11 @@ public class ClassFile {
   /** The direct superinterfaces. */
   public List<String> interfaces() {
     return interfaces;
+  }
+
+  /** The permitted direct subclasses. */
+  public List<String> permits() {
+    return permits;
   }
 
   /** Methods declared by this class or interfaces type. */

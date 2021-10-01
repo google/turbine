@@ -45,7 +45,8 @@ interface Attribute {
     NEST_HOST("NestHost"),
     NEST_MEMBERS("NestMembers"),
     RECORD("Record"),
-    TURBINE_TRANSITIVE_JAR("TurbineTransitiveJar");
+    TURBINE_TRANSITIVE_JAR("TurbineTransitiveJar"),
+    PERMITTED_SUBCLASSES("PermittedSubclasses");
 
     private final String signature;
 
@@ -393,6 +394,20 @@ interface Attribute {
       List<Attribute> attributes() {
         return attributes;
       }
+    }
+  }
+
+  /** A JVMS §4.7.31 PermittedSubclasses attribute. */
+  class PermittedSubclasses implements Attribute {
+    final List<String> permits;
+
+    public PermittedSubclasses(List<String> permits) {
+      this.permits = permits;
+    }
+
+    @Override
+    public Kind kind() {
+      return Kind.PERMITTED_SUBCLASSES;
     }
   }
 
