@@ -664,6 +664,15 @@ public class Parser {
           }
 
         case IDENT:
+          Ident ident = ident();
+          if (ident.value().equals("record")) {
+            eat(Token.IDENT);
+            acc.add(recordDeclaration(access, annos.build()));
+            access = EnumSet.noneOf(TurbineModifier.class);
+            annos = ImmutableList.builder();
+            break;
+          }
+          // fall through
         case BOOLEAN:
         case BYTE:
         case SHORT:
@@ -750,9 +759,6 @@ public class Parser {
         {
           int pos = position;
           Ident ident = eatIdent();
-          if (ident.value().equals("record")) {
-            return ImmutableList.of(recordDeclaration(access, annos));
-          }
           switch (token) {
             case LPAREN:
               {
