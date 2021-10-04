@@ -263,6 +263,7 @@ public abstract class TurbineElement implements Element {
                 switch (info.kind()) {
                   case CLASS:
                   case ENUM:
+                  case RECORD:
                     if (info.superclass() != null) {
                       return factory.asTypeMirror(info.superClassType());
                     }
@@ -283,8 +284,6 @@ public abstract class TurbineElement implements Element {
                   case INTERFACE:
                   case ANNOTATION:
                     return factory.noType();
-                  case RECORD:
-                    // TODO(b/200222393): add support for records
                 }
                 throw new AssertionError(info.kind());
               }

@@ -626,7 +626,11 @@ public class ProcessingIntegrationTest {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
       for (Element e : roundEnv.getRootElements()) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getKind() + " " + e);
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                e.getKind() + " " + e + " " + ((TypeElement) e).getSuperclass());
         for (Element m : e.getEnclosedElements()) {
           processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, m.getKind() + " " + m);
         }
@@ -661,7 +665,7 @@ public class ProcessingIntegrationTest {
                 .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
                 .map(d -> d.message()))
         .containsExactly(
-            "RECORD R",
+            "RECORD R java.lang.Record",
             "RECORD_COMPONENT x",
             "RECORD_COMPONENT y",
             "CONSTRUCTOR R(T,int[])",
