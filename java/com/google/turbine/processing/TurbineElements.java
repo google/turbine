@@ -29,6 +29,7 @@ import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.model.Const;
+import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
@@ -52,6 +53,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import org.jspecify.nullness.Nullable;
 
 /** An implementation of {@link Elements} backed by turbine's {@link Element}. */
 @SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.
@@ -290,7 +292,89 @@ public class TurbineElements implements Elements {
 
   @Override
   public boolean hides(Element hider, Element hidden) {
-    throw new UnsupportedOperationException();
+    if (!(hider instanceof TurbineElement)) {
+      throw new IllegalArgumentException(hider.toString());
+    }
+    if (!(hidden instanceof TurbineElement)) {
+      throw new IllegalArgumentException(hidden.toString());
+    }
+    return hides((TurbineElement) hider, (TurbineElement) hidden);
+  }
+
+  private boolean hides(TurbineElement hider, TurbineElement hidden) {
+    if (!hider.sym().symKind().equals(hidden.sym().symKind())) {
+      return false;
+    }
+    if (!hider.getSimpleName().equals(hidden.getSimpleName())) {
+      return false;
+    }
+    if (hider.sym().equals(hidden.sym())) {
+      return false;
+    }
+    if (!isVisibleForHiding(hider, hidden)) {
+      return false;
+    }
+    if (hider.sym().symKind().equals(Symbol.Kind.METHOD)) {
+      int access = ((TurbineExecutableElement) hider).info().access();
+      if ((access & TurbineFlag.ACC_STATIC) != TurbineFlag.ACC_STATIC) {
+        return false;
+      }
+      // Static interface methods shouldn't be able to hide static methods in super-interfaces,
+      // but include them anyways for bug-compatibility with javac, see:
+      // https://bugs.openjdk.java.net/browse/JDK-8275746
+      if (!types.isSubsignature(
+          (TurbineExecutableType) hider.asType(), (TurbineExecutableType) hidden.asType())) {
+        return false;
+      }
+    }
+    Element containingHider = containingClass(hider);
+    Element containingHidden = containingClass(hidden);
+    if (containingHider == null || containingHidden == null) {
+      return false;
+    }
+    if (!types.isSubtype(containingHider.asType(), containingHidden.asType())) {
+      return false;
+    }
+    return true;
+  }
+
+  private static @Nullable Element containingClass(TurbineElement element) {
+    Element enclosing = element.getEnclosingElement();
+    if (enclosing == null) {
+      return null;
+    }
+    if (!isClassOrInterface(enclosing.getKind())) {
+      // The immediately enclosing element of a field or method is a class. For classes, annotation
+      // processing only deals with top-level and nested (but not local or anonymous) classes,
+      // so the immediately enclosing element is either an enclosing class or a package symbol.
+      return null;
+    }
+    return enclosing;
+  }
+
+  private static boolean isClassOrInterface(ElementKind kind) {
+    return kind.isClass() || kind.isInterface();
+  }
+
+  private static boolean isVisibleForHiding(TurbineElement hider, TurbineElement hidden) {
+    int access;
+    switch (hidden.sym().symKind()) {
+      case CLASS:
+        access = ((TurbineTypeElement) hidden).info().access();
+        break;
+      case FIELD:
+        access = ((TurbineFieldElement) hidden).info().access();
+        break;
+      case METHOD:
+        access = ((TurbineExecutableElement) hidden).info().access();
+        break;
+      default:
+        return false;
+    }
+    return isVisible(
+        packageSymbol(asSymbol(hider)),
+        packageSymbol(asSymbol(hidden)),
+        TurbineVisibility.fromAccess(access));
   }
 
   @Override
