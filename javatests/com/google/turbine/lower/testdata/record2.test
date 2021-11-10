@@ -1,0 +1,27 @@
+=== Records.java ===
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import java.util.Objects;
+
+class Records {
+  public record R1(String one) {
+    public R1 {
+      Objects.requireNonNull(one);
+    }
+  }
+
+  public record R2(String one) {
+    @Deprecated
+    public R2 {
+      Objects.requireNonNull(one);
+    }
+  }
+
+  public record R3<T>(T x) {
+    @Deprecated
+    public R3 {
+      Objects.requireNonNull(x);
+    }
+  }
+}

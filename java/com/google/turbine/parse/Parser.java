@@ -846,6 +846,25 @@ public class Parser {
           name = ident;
           return ImmutableList.of(methodRest(pos, access, annos, typaram, null, name));
         }
+      case LBRACE:
+        {
+          dropBlocks();
+          name = new Ident(position, CTOR_NAME);
+          String javadoc = lexer.javadoc();
+          access.add(TurbineModifier.COMPACT_CTOR);
+          return ImmutableList.<Tree>of(
+              new MethDecl(
+                  pos,
+                  access,
+                  annos,
+                  typaram,
+                  /* ret= */ Optional.empty(),
+                  name,
+                  /* params= */ ImmutableList.of(),
+                  /* exntys= */ ImmutableList.of(),
+                  /* defaultValue= */ Optional.empty(),
+                  javadoc));
+        }
       case IDENT:
         {
           result =

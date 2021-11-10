@@ -544,6 +544,7 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
         case ACC_ANNOTATION:
         case ACC_SYNTHETIC:
         case ACC_BRIDGE:
+        case COMPACT_CTOR:
           break;
       }
     }

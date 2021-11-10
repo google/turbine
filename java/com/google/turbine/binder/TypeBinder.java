@@ -251,7 +251,7 @@ public class TypeBinder {
     ImmutableList.Builder<MethodInfo> methods =
         ImmutableList.<MethodInfo>builder()
             .addAll(syntheticMethods(syntheticMethods, components))
-            .addAll(bindMethods(scope, base.decl().members()));
+            .addAll(bindMethods(scope, base.decl().members(), components));
     if (base.kind().equals(TurbineTyKind.RECORD)) {
       methods.addAll(syntheticRecordMethods(syntheticMethods, components));
     }
@@ -563,18 +563,22 @@ public class TypeBinder {
     return result.build();
   }
 
-  private List<MethodInfo> bindMethods(CompoundScope scope, ImmutableList<Tree> members) {
+  private List<MethodInfo> bindMethods(
+      CompoundScope scope,
+      ImmutableList<Tree> members,
+      ImmutableList<RecordComponentInfo> components) {
     List<MethodInfo> methods = new ArrayList<>();
     int idx = 0;
     for (Tree member : members) {
       if (member.kind() == Tree.Kind.METH_DECL) {
-        methods.add(bindMethod(idx++, scope, (Tree.MethDecl) member));
+        methods.add(bindMethod(idx++, scope, (MethDecl) member, components));
       }
     }
     return methods;
   }
 
-  private MethodInfo bindMethod(int idx, CompoundScope scope, Tree.MethDecl t) {
+  private MethodInfo bindMethod(
+      int idx, CompoundScope scope, MethDecl t, ImmutableList<RecordComponentInfo> components) {
 
     MethodSymbol sym = new MethodSymbol(idx, owner, t.name().value());
 
@@ -604,8 +608,26 @@ public class TypeBinder {
     if (name.equals("<init>")) {
       if (hasEnclosingInstance(base)) {
         parameters.add(enclosingInstanceParameter(sym));
-      } else if (base.kind() == TurbineTyKind.ENUM && name.equals("<init>")) {
-        parameters.addAll(enumCtorParams(sym));
+      } else {
+        switch (base.kind()) {
+          case ENUM:
+            parameters.addAll(enumCtorParams(sym));
+            break;
+          case RECORD:
+            if (t.mods().contains(TurbineModifier.COMPACT_CTOR)) {
+              for (RecordComponentInfo component : components) {
+                parameters.add(
+                    new ParamInfo(
+                        new ParamSymbol(sym, component.name()),
+                        component.type(),
+                        component.annotations(),
+                        component.access()));
+              }
+            }
+            break;
+          default:
+            break;
+        }
       }
     }
     ParamInfo receiver = null;
