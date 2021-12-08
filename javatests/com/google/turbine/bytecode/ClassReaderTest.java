@@ -39,6 +39,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ByteVector;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.ModuleVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -233,6 +234,18 @@ public class ClassReaderTest {
 
     ClassFile cf = ClassReader.read(null, bytes);
     assertThat(cf.name()).isEqualTo(jumbo);
+  }
+
+  @Test
+  public void condy() {
+    ClassWriter cw = new ClassWriter(0);
+    cw.visit(52, Opcodes.ACC_SUPER, "Test", null, "java/lang/Object", null);
+    cw.newConstantDynamic(
+        "f", "Ljava/lang/String;", new Handle(Opcodes.H_INVOKESTATIC, "A", "f", "()V", false));
+    byte[] bytes = cw.toByteArray();
+
+    ClassFile cf = ClassReader.read(null, bytes);
+    assertThat(cf.name()).isEqualTo("Test");
   }
 
   @Test

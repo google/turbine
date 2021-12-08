@@ -36,6 +36,7 @@ public class ConstantPoolReader {
   static final int CONSTANT_UTF8 = 1;
   static final int CONSTANT_METHOD_HANDLE = 15;
   static final int CONSTANT_METHOD_TYPE = 16;
+  static final int CONSTANT_DYNAMIC = 17;
   static final int CONSTANT_INVOKE_DYNAMIC = 18;
   static final int CONSTANT_MODULE = 19;
   static final int CONSTANT_PACKAGE = 20;
@@ -88,6 +89,7 @@ public class ConstantPoolReader {
       case CONSTANT_INTEGER:
       case CONSTANT_FLOAT:
       case CONSTANT_NAME_AND_TYPE:
+      case CONSTANT_DYNAMIC:
       case CONSTANT_INVOKE_DYNAMIC:
         reader.skip(4);
         return 1;
