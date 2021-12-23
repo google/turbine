@@ -35,7 +35,6 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,6 +44,8 @@ import org.jspecify.nullness.Nullable;
 
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
 public final class CtSymClassBinder {
+
+  private static final int FEATURE_VERSION = Runtime.version().feature();
 
   public static @Nullable ClassPath bind(int version) throws IOException {
     String javaHome = JAVA_HOME.value();
@@ -79,7 +80,7 @@ public final class CtSymClassBinder {
       if (!ze.name().substring(0, idx).contains(releaseString)) {
         continue;
       }
-      if (isAtLeastJDK12()) {
+      if (FEATURE_VERSION >= 12) {
         // JDK >= 12 includes the module name as a prefix
         idx = name.indexOf('/', idx + 1);
       }
@@ -138,19 +139,6 @@ public final class CtSymClassBinder {
       throw new IllegalArgumentException("invalid release version: " + n);
     }
     return toUpperCase(Integer.toString(n, 36));
-  }
-
-  private static boolean isAtLeastJDK12() {
-    int major;
-    try {
-      Method versionMethod = Runtime.class.getMethod("version");
-      Object version = versionMethod.invoke(null);
-      major = (int) version.getClass().getMethod("major").invoke(version);
-    } catch (ReflectiveOperationException e) {
-      // `Runtime.version()` was added in JDK 9
-      return false;
-    }
-    return major >= 12;
   }
 
   private CtSymClassBinder() {}
