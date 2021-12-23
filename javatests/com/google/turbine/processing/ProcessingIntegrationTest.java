@@ -641,7 +641,7 @@ public class ProcessingIntegrationTest {
 
   @Test
   public void recordProcessing() throws IOException {
-    assumeTrue(IntegrationTestSupport.getMajor() >= 15);
+    assumeTrue(Runtime.version().feature() >= 15);
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
             "=== R.java ===", //

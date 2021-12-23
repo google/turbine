@@ -376,7 +376,7 @@ public class LowerIntegrationTest {
     }
 
     int version = SOURCE_VERSION.getOrDefault(test, 8);
-    assumeTrue(version <= IntegrationTestSupport.getMajor());
+    assumeTrue(version <= Runtime.version().feature());
     ImmutableList<String> javacopts =
         ImmutableList.of("-source", String.valueOf(version), "-target", String.valueOf(version));
 

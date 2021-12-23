@@ -162,7 +162,7 @@ public class TurbineElementsHidesTest {
       },
     };
     // https://bugs.openjdk.java.net/browse/JDK-8275746
-    if (IntegrationTestSupport.getMajor() >= 11) {
+    if (Runtime.version().feature() >= 11) {
       inputs =
           ObjectArrays.concat(
               inputs,
