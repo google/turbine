@@ -31,7 +31,6 @@
 
   <properties>
     <asm.version>9.2</asm.version>
-    <javac.version>9+181-r4173-1</javac.version>
     <guava.version>30.0-jre</guava.version>
     <errorprone.version>2.9.0</errorprone.version>
     <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
@@ -88,12 +87,6 @@
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-util</artifactId>
       <version>${asm.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.errorprone</groupId>
-      <artifactId>javac</artifactId>
-      <version>${javac.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -301,37 +294,6 @@
   </distributionManagement>
 
   <profiles>
-    <profile>
-      <id>java-8</id>
-      <activation>
-        <jdk>1.8</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <!-- put javac.jar on bootclasspath when executing tests -->
-              <argLine>-Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</argLine>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <fork>true</fork>
-              <compilerArgs>
-                <arg>-parameters</arg>
-                <arg>-XDcompilePolicy=simple</arg>
-                <arg>-Xplugin:ErrorProne</arg>
-                <arg>-J-Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</arg>
-              </compilerArgs>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>sonatype-oss-release</id>
       <build>
