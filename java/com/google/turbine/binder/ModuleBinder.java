@@ -137,15 +137,16 @@ public class ModuleBinder {
       }
     }
     if (!requiresJavaBase) {
-      // everything requires java.base, either explicitly or implicitly
-      ModuleInfo javaBaseModule = moduleEnv.getNonNull(ModuleSymbol.JAVA_BASE);
+      // Everything requires java.base, either explicitly or implicitly.
+      ModuleInfo javaBaseModule = moduleEnv.get(ModuleSymbol.JAVA_BASE);
+      // Tolerate a missing java.base module, e.g. when compiling a module against a non-modular
+      // bootclasspath, and just omit the version below.
+      String javaBaseVersion = javaBaseModule != null ? javaBaseModule.version() : null;
       requires =
           ImmutableList.<RequireInfo>builder()
               .add(
                   new RequireInfo(
-                      ModuleSymbol.JAVA_BASE.name(),
-                      TurbineFlag.ACC_MANDATED,
-                      javaBaseModule.version()))
+                      ModuleSymbol.JAVA_BASE.name(), TurbineFlag.ACC_MANDATED, javaBaseVersion))
               .addAll(requires.build());
     }
 
