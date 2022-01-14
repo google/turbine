@@ -128,7 +128,7 @@
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
-      <version>1.7.4</version>
+      <version>1.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -189,7 +189,7 @@
       <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
-        <version>0.5.0</version>
+        <version>0.6.1</version>
         <configuration>
           <protoSourceRoot>proto</protoSourceRoot>
           <protocArtifact>com.google.protobuf:protoc:3.1.0:exe:${os.detected.classifier}</protocArtifact>
