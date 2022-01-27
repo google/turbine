@@ -159,7 +159,7 @@ public class ZipTest {
       createEntry(zos, "hello", "world".getBytes(UTF_8));
       zos.setComment("this is a comment");
     }
-    Files.write(path, "trailing garbage".getBytes(UTF_8), StandardOpenOption.APPEND);
+    Files.writeString(path, "trailing garbage", StandardOpenOption.APPEND);
 
     ZipException e = assertThrows(ZipException.class, () -> actual(path));
     assertThat(e).hasMessageThat().isEqualTo("zip file comment length was 33, expected 17");

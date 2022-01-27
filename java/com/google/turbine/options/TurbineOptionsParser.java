@@ -17,7 +17,6 @@
 package com.google.turbine.options;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -187,8 +186,7 @@ public final class TurbineOptionsParser {
         if (!Files.exists(paramsPath)) {
           throw new AssertionError("params file does not exist: " + paramsPath);
         }
-        expandParamsFiles(
-            argumentDeque, ARG_SPLITTER.split(new String(Files.readAllBytes(paramsPath), UTF_8)));
+        expandParamsFiles(argumentDeque, ARG_SPLITTER.split(Files.readString(paramsPath)));
       } else {
         argumentDeque.addLast(arg);
       }

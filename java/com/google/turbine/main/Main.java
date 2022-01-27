@@ -344,7 +344,7 @@ public final class Main {
       for (SourceFile source : generatedSources.values()) {
         Path to = path.resolve(source.path());
         Files.createDirectories(to.getParent());
-        Files.write(to, source.source().getBytes(UTF_8));
+        Files.writeString(to, source.source());
       }
       return;
     }
