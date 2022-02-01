@@ -272,7 +272,7 @@ public class Processing {
     for (Processor processor : processorInfo.processors()) {
       result.put(processor, SupportedAnnotationTypes.create(processor));
     }
-    return result.build();
+    return result.buildOrThrow();
   }
 
   @AutoValue
@@ -555,7 +555,7 @@ public class Processing {
         // requireNonNull is safe, barring bizarre processor implementations (e.g., anonymous class)
         result.put(requireNonNull(e.getKey().getCanonicalName()), e.getValue().elapsed());
       }
-      return result.build();
+      return result.buildOrThrow();
     }
   }
 

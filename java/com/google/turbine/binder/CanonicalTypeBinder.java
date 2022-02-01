@@ -199,7 +199,7 @@ public final class CanonicalTypeBinder {
           (IntersectionTy) Canonicalize.canonicalize(source, position, env, sym, info.upperBound());
       result.put(e.getKey(), new TyVarInfo(upperBound, /* lowerBound= */ null, info.annotations()));
     }
-    return result.build();
+    return result.buildOrThrow();
   }
 
   private static ImmutableList<Type> canonicalizeList(

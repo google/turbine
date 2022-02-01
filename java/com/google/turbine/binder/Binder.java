@@ -186,7 +186,7 @@ public final class Binder {
     }
 
     return new BindingResult(
-        result.build(),
+        result.buildOrThrow(),
         boundModules,
         classPathEnv,
         tli,
@@ -293,7 +293,7 @@ public final class Binder {
             }
           });
     }
-    return new LazyEnv<>(completers.build(), classPathEnv);
+    return new LazyEnv<>(completers.buildOrThrow(), classPathEnv);
   }
 
   private static Env<ClassSymbol, SourceTypeBoundClass> bindTypes(
@@ -409,7 +409,8 @@ public final class Binder {
     // lazily evaluated fields in the current compilation unit with
     // constant fields in the classpath (which don't require evaluation).
     Env<FieldSymbol, Const.Value> constenv =
-        new LazyEnv<>(completers.build(), SimpleEnv.<FieldSymbol, Const.Value>builder().build());
+        new LazyEnv<>(
+            completers.buildOrThrow(), SimpleEnv.<FieldSymbol, Const.Value>builder().build());
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {

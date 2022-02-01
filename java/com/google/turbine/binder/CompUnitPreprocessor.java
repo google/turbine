@@ -149,7 +149,7 @@ public final class CompUnitPreprocessor {
         types.add(new SourceBoundClass(sym, owner, children, access, decl));
       }
     }
-    return result.build();
+    return result.buildOrThrow();
   }
 
   /** Desugars access flags for a class. */

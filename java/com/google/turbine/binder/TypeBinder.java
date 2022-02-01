@@ -560,7 +560,7 @@ public class TypeBinder {
           new TyVarInfo(
               IntersectionTy.create(bounds.build()), /* lowerBound= */ null, annotations));
     }
-    return result.build();
+    return result.buildOrThrow();
   }
 
   private List<MethodInfo> bindMethods(
@@ -588,7 +588,7 @@ public class TypeBinder {
       for (Tree.TyParam pt : t.typarams()) {
         builder.put(pt.name().value(), new TyVarSymbol(sym, pt.name().value()));
       }
-      typeParameters = builder.build();
+      typeParameters = builder.buildOrThrow();
     }
 
     // type parameters can refer to each other in f-bounds, so update the scope first

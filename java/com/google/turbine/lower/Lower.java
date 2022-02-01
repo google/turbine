@@ -140,7 +140,7 @@ public class Lower {
             lower(module, env, symbols, majorVersion));
       }
     }
-    return new Lowered(result.build(), ImmutableSet.copyOf(symbols));
+    return new Lowered(result.buildOrThrow(), ImmutableSet.copyOf(symbols));
   }
 
   /** Lowers a class to bytecode. */
@@ -637,7 +637,7 @@ public class Lower {
     for (Map.Entry<String, Const> entry : values.entrySet()) {
       result.put(entry.getKey(), annotationValue(entry.getValue()));
     }
-    return result.build();
+    return result.buildOrThrow();
   }
 
   private ElementValue annotationValue(Const value) {

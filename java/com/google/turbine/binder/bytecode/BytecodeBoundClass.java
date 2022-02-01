@@ -157,7 +157,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
                   result.put(inner.innerName(), new ClassSymbol(inner.innerClass()));
                 }
               }
-              return result.build();
+              return result.buildOrThrow();
             }
           });
 
@@ -212,7 +212,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
               for (Sig.TyParamSig p : csig.tyParams()) {
                 result.put(p.name(), new TyVarSymbol(sym, p.name()));
               }
-              return result.build();
+              return result.buildOrThrow();
             }
           });
 
@@ -325,7 +325,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
                 // typeParameters() is constructed to guarantee the requireNonNull call is safe.
                 tparams.put(requireNonNull(typeParameters().get(p.name())), bindTyParam(p, scope));
               }
-              return tparams.build();
+              return tparams.buildOrThrow();
             }
           });
 
@@ -406,7 +406,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
       for (Sig.TyParamSig p : sig.tyParams()) {
         result.put(p.name(), new TyVarSymbol(methodSymbol, p.name()));
       }
-      tyParams = result.build();
+      tyParams = result.buildOrThrow();
     }
 
     ImmutableMap<TyVarSymbol, TyVarInfo> tyParamTypes;
@@ -417,7 +417,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
         // tyParams is constructed to guarantee the requireNonNull call is safe.
         tparams.put(requireNonNull(tyParams.get(p.name())), bindTyParam(p, scope));
       }
-      tyParamTypes = tparams.build();
+      tyParamTypes = tparams.buildOrThrow();
     }
 
     Function<String, TyVarSymbol> scope = makeScope(env, sym, tyParams);

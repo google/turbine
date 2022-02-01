@@ -106,7 +106,7 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
                   checkState(m.parameters().isEmpty());
                   result.put(m.name(), m);
                 }
-                return result.build();
+                return result.buildOrThrow();
               }
             });
     this.elementValues =
@@ -126,7 +126,7 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
                       factory.executableElement(methodInfo.sym()),
                       annotationValue(factory, value.getValue()));
                 }
-                return result.build();
+                return result.buildOrThrow();
               }
             });
     this.elementValuesWithDefaults =

@@ -58,7 +58,7 @@ public final class Transitive {
       transitive.put(
           sym.binaryName(), ClassWriter.writeClass(trimClass(info.classFile(), info.jarFile())));
     }
-    return transitive.build();
+    return transitive.buildOrThrow();
   }
 
   /**

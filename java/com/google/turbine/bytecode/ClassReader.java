@@ -335,7 +335,7 @@ public class ClassReader {
         // The runtimeVisible bit in AnnotationInfo is only used during lowering; earlier passes
         // read the meta-annotations.
         /* runtimeVisible= */ false,
-        values.build());
+        values.buildOrThrow());
   }
 
   private ElementValue readElementValue(ConstantPoolReader constantPool) {

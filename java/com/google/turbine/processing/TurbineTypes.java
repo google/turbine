@@ -639,7 +639,7 @@ public class TurbineTypes implements Types {
       TyVarSymbol t = bx.next();
       mapping.put(t, TyVar.create(s, ImmutableList.of()));
     }
-    return mapping.build();
+    return mapping.buildOrThrow();
   }
 
   /**
@@ -660,7 +660,7 @@ public class TurbineTypes implements Types {
       }
       verify(!bx.hasNext());
     }
-    return mapping.build();
+    return mapping.buildOrThrow();
   }
 
   @Override

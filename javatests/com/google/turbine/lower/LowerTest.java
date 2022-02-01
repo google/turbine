@@ -498,7 +498,7 @@ public class LowerTest {
       ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
       sources.forEach(
           (k, v) -> builder.put(k, v.replaceAll("import static b\\.B\\.nosuch\\..*;", "")));
-      noImports = builder.build();
+      noImports = builder.buildOrThrow();
     }
 
     Map<String, byte[]> expected = IntegrationTestSupport.runJavac(noImports, ImmutableList.of());

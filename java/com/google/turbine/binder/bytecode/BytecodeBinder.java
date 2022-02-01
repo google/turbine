@@ -137,7 +137,7 @@ public final class BytecodeBinder {
     for (Map.Entry<String, ElementValue> e : value.elementValuePairs().entrySet()) {
       values.put(e.getKey(), bindValue(e.getValue()));
     }
-    return new TurbineAnnotationValue(new AnnoInfo(null, sym, null, values.build()));
+    return new TurbineAnnotationValue(new AnnoInfo(null, sym, null, values.buildOrThrow()));
   }
 
   static ImmutableList<AnnoInfo> bindAnnotations(List<AnnotationInfo> input) {

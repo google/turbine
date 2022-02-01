@@ -114,7 +114,8 @@ public class HierarchyBinder {
       typeParameters.put(p.name().value(), new TyVarSymbol(origin, p.name().value()));
     }
 
-    return new SourceHeaderBoundClass(base, superclass, interfaces.build(), typeParameters.build());
+    return new SourceHeaderBoundClass(
+        base, superclass, interfaces.build(), typeParameters.buildOrThrow());
   }
 
   /**

@@ -334,7 +334,7 @@ public class ConstBinder {
               /* lowerBound= */ null,
               constEvaluator.evaluateAnnotations(info.annotations())));
     }
-    return result.build();
+    return result.buildOrThrow();
   }
 
   private Type bindType(Type type) {
