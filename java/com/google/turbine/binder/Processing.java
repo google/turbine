@@ -424,7 +424,7 @@ public class Processing {
     }
     return new URLClassLoader(
         toUrls(processorPath),
-        new ClassLoader(getPlatformClassLoader()) {
+        new ClassLoader(ClassLoader.getPlatformClassLoader()) {
           @Override
           protected Class<?> findClass(String name) throws ClassNotFoundException {
             if (name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")) {
@@ -455,15 +455,6 @@ public class Processing {
       urls[i++] = Paths.get(path).toUri().toURL();
     }
     return urls;
-  }
-
-  public static @Nullable ClassLoader getPlatformClassLoader() {
-    try {
-      return (ClassLoader) ClassLoader.class.getMethod("getPlatformClassLoader").invoke(null);
-    } catch (ReflectiveOperationException e) {
-      // In earlier releases, set 'null' as the parent to delegate to the boot class loader.
-      return null;
-    }
   }
 
   private static ImmutableMap<String, String> processorOptions(ImmutableList<String> javacopts) {
