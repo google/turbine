@@ -676,6 +676,33 @@ public class ProcessingIntegrationTest {
             "METHOD y()");
   }
 
+  @Test
+  public void missingElementValue() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            "import java.lang.annotation.Retention;",
+            "@Retention() @interface T {}");
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ProcessorInfo.create(
+                        // missing annotation arguments are not a recoverable error, annotation
+                        // processing shouldn't happen
+                        ImmutableList.of(new CrashingProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
+        .containsExactly("missing required annotation argument: value");
+  }
+
   private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {
     return IntegrationTestSupport.TestInput.parse(Joiner.on('\n').join(lines))
         .sources

@@ -771,12 +771,6 @@ public class BinderErrorTest {
           "<>:3: error: missing required annotation argument: value",
           "@Retention",
           "^",
-          "<>:4: error: missing required annotation argument: value",
-          "@Retention",
-          "^",
-          "<>:3: error: java.lang.annotation.Retention is not @Repeatable",
-          "@Retention",
-          "^",
         },
       },
       {

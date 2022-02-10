@@ -1269,7 +1269,8 @@ public strictfp class ConstEvaluator {
     }
     for (MethodInfo methodInfo : template.values()) {
       if (!methodInfo.hasDefaultValue()) {
-        log.error(info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name());
+        throw error(
+            info.tree().position(), ErrorKind.MISSING_ANNOTATION_ARGUMENT, methodInfo.name());
       }
     }
     return info.withValues(ImmutableMap.copyOf(values));
