@@ -219,8 +219,15 @@ public class TurbineTypes implements Types {
     if (bounds.isEmpty()) {
       return true;
     }
-    ClassTy first = (ClassTy) bounds.get(0);
-    return factory.getSymbol(first.sym()).kind().equals(TurbineTyKind.INTERFACE);
+    Type bound = bounds.get(0);
+    switch (bound.tyKind()) {
+      case TY_VAR:
+        return false;
+      case CLASS_TY:
+        return factory.getSymbol(((ClassTy) bound).sym()).kind().equals(TurbineTyKind.INTERFACE);
+      default:
+        throw new AssertionError(bound.tyKind());
+    }
   }
 
   private boolean isSameWildType(WildTy a, Type other) {
@@ -366,8 +373,8 @@ public class TurbineTypes implements Types {
   }
 
   private boolean isTyVarSubtype(TyVar a, Type b, boolean strict) {
-    if (b.tyKind() == TyKind.TY_VAR) {
-      return a.sym().equals(((TyVar) b).sym());
+    if (b.tyKind() == TyKind.TY_VAR && a.sym().equals(((TyVar) b).sym())) {
+      return true;
     }
     TyVarInfo tyVarInfo = factory.getTyVarInfo(a.sym());
     return isSubtype(tyVarInfo.upperBound(), b, strict);

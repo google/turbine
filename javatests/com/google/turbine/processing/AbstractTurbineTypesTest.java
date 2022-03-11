@@ -345,6 +345,21 @@ class AbstractTurbineTypesTest {
                 "  void h(T t) {}",
                 "}"));
 
+    // type variable bounds
+    files.add(
+        Joiner.on('\n')
+            .join(
+                "import java.util.List;",
+                "class N<X, T extends X> {",
+                "  void h(T t) {}",
+                "}",
+                "class O<X extends Enum<X>, T extends X> {",
+                "  void h(T t) {}",
+                "}",
+                "class P<X extends List<?>, T extends X> {",
+                "  void h(T t) {}",
+                "}"));
+
     Context context = new Context();
     JavaFileManager fileManager = new JavacFileManager(context, true, UTF_8);
     idx.set(0);

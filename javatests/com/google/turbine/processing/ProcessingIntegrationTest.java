@@ -23,6 +23,8 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.util.ElementFilter.methodsIn;
+import static javax.lang.model.util.ElementFilter.typesIn;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 
@@ -55,7 +57,9 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -711,5 +715,93 @@ public class ProcessingIntegrationTest {
         .map(e -> new SourceFile(e.getKey(), e.getValue()))
         .map(Parser::parse)
         .collect(toImmutableList());
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class AllMethodsProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+
+      ImmutableList<ExecutableElement> methods =
+          typesIn(roundEnv.getRootElements()).stream()
+              .flatMap(t -> methodsIn(t.getEnclosedElements()).stream())
+              .collect(toImmutableList());
+      for (ExecutableElement a : methods) {
+        for (ExecutableElement b : methods) {
+          if (a.equals(b)) {
+            continue;
+          }
+          ExecutableType ta = (ExecutableType) a.asType();
+          ExecutableType tb = (ExecutableType) b.asType();
+          boolean r = processingEnv.getTypeUtils().isSubsignature(ta, tb);
+          processingEnv
+              .getMessager()
+              .printMessage(
+                  Diagnostic.Kind.ERROR,
+                  String.format(
+                      "%s#%s%s <: %s#%s%s ? %s",
+                      a.getEnclosingElement(),
+                      a.getSimpleName(),
+                      ta,
+                      b.getEnclosingElement(),
+                      b.getSimpleName(),
+                      tb,
+                      r));
+        }
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void bound() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== A.java ===", //
+            "import java.util.List;",
+            "class A<T> {",
+            "  <U extends T> U f(List<U> list) {",
+            "    return list.get(0);",
+            "  }",
+            "}",
+            "class B extends A<String> {",
+            "  @Override",
+            "  <U extends String> U f(List<U> list) {",
+            "    return super.f(list);",
+            "  }",
+            "}",
+            "class C extends A<Object> {",
+            "  @Override",
+            "  <U> U f(List<U> list) {",
+            "    return super.f(list);",
+            "  }",
+            "}");
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ProcessorInfo.create(
+                        ImmutableList.of(new AllMethodsProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
+        .containsExactly(
+            "A#f<U>(java.util.List<U>)U <: B#f<U>(java.util.List<U>)U ? false",
+            "A#f<U>(java.util.List<U>)U <: C#f<U>(java.util.List<U>)U ? false",
+            "B#f<U>(java.util.List<U>)U <: A#f<U>(java.util.List<U>)U ? false",
+            "B#f<U>(java.util.List<U>)U <: C#f<U>(java.util.List<U>)U ? false",
+            "C#f<U>(java.util.List<U>)U <: A#f<U>(java.util.List<U>)U ? false",
+            "C#f<U>(java.util.List<U>)U <: B#f<U>(java.util.List<U>)U ? false");
   }
 }
