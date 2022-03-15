@@ -437,9 +437,6 @@ public class ConstExpressionParser {
     ImmutableList.Builder<Ident> bits = ImmutableList.builder();
     bits.add(ident());
     eat();
-    if (token == Token.LBRACK) {
-      return finishClassLiteral(pos, asClassTy(pos, bits.build()));
-    }
     while (token == Token.DOT) {
       eat();
       switch (token) {
@@ -454,6 +451,9 @@ public class ConstExpressionParser {
           return null;
       }
       eat();
+    }
+    if (token == Token.LBRACK) {
+      return finishClassLiteral(pos, asClassTy(pos, bits.build()));
     }
     return new Tree.ConstVarName(pos, bits.build());
   }

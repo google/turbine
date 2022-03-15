@@ -1,4 +1,6 @@
 === Test.java ===
+import java.util.Map;
+
 @interface Anno {
   Class<?> value() default Object.class;
 }
@@ -8,4 +10,5 @@ class Test {
   @Anno(byte[][].class) int b;
   @Anno(int[][].class) int c;
   @Anno(Object[].class) int d;
+  @Anno(Map.Entry[].class) int e;
 }
