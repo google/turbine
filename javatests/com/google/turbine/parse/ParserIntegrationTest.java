@@ -42,6 +42,7 @@ public class ParserIntegrationTest {
   public static Iterable<Object[]> parameters() {
     String[] tests = {
       "anno1.input",
+      "anno2.input",
       "annodecl1.input",
       "annodecl2.input",
       "annodecl3.input",
