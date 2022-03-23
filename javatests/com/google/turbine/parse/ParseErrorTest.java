@@ -307,6 +307,19 @@ public class ParseErrorTest {
                 "                     ^"));
   }
 
+  @Test
+  public void singleLineTextBlockRejected() {
+    String input = "class T { String s = \"\"\" \"\"\"; }";
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:1: error: unexpected input: \"",
+                "class T { String s = \"\"\" \"\"\"; }",
+                "                         ^"));
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

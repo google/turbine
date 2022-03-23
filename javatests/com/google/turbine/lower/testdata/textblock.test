@@ -1,0 +1,30 @@
+=== TextBlock.java ===
+class TextBlock {
+  public static final String hello = """
+      hello
+      world
+      """;
+  public static final String escape = """
+      hello\nworld\"
+      \r\t\b
+      \0123
+      \'
+      \\
+      \"
+      """;
+  public static final String quotes = """
+      " "" ""\" """;
+  public static final String newline = """
+      hello
+      world""";
+  public static final String blank = """
+      hello
+
+
+      world
+      """;
+  public static final String allBlank = """
+
+
+      """;
+}

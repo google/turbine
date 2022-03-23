@@ -17,17 +17,23 @@
 package com.google.turbine.parse;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.escape.SourceCodeEscapers;
+import com.google.common.truth.Expect;
 import com.google.turbine.diag.SourceFile;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class LexerTest {
+
+  @Rule public final Expect expect = Expect.create();
 
   @Test
   public void testSimple() {
@@ -366,5 +372,26 @@ public class LexerTest {
       tokens.add(tokenString);
     } while (token != Token.EOF);
     return tokens;
+  }
+
+  @Test
+  public void stripIndent() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 13);
+    String[] inputs = {
+      "",
+      "hello",
+      "hello\n",
+      "\nhello",
+      "\n    hello\n    world",
+      "\n    hello\n    world\n    ",
+      "\n    hello\n    world\n",
+      "\n    hello\n     world\n     ",
+      "\n    hello\nworld",
+      "\n    hello\n     \nworld\n     ",
+    };
+    Method stripIndent = String.class.getMethod("stripIndent");
+    for (String input : inputs) {
+      expect.that(StreamLexer.stripIndent(input)).isEqualTo(stripIndent.invoke(input));
+    }
   }
 }

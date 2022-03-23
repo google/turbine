@@ -17,8 +17,11 @@
 package com.google.turbine.parse;
 
 import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.turbine.parse.UnicodeEscapePreprocessor.ASCII_SUB;
+import static java.lang.Math.min;
 
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -399,6 +402,15 @@ public class StreamLexer implements Lexer {
         case '"':
           {
             eat();
+            if (ch == '"') {
+              eat();
+              if (ch != '"') {
+                saveValue("");
+                return Token.STRING_LITERAL;
+              }
+              eat();
+              return textBlock();
+            }
             readFrom();
             StringBuilder sb = new StringBuilder();
             STRING:
@@ -434,6 +446,156 @@ public class StreamLexer implements Lexer {
           throw inputError();
       }
     }
+  }
+
+  private Token textBlock() {
+    OUTER:
+    while (true) {
+      switch (ch) {
+        case ' ':
+        case '\r':
+        case '\t':
+          eat();
+          break;
+        default:
+          break OUTER;
+      }
+    }
+    switch (ch) {
+      case '\r':
+        eat();
+        if (ch == '\n') {
+          eat();
+        }
+        break;
+      case '\n':
+        eat();
+        break;
+      default:
+        throw inputError();
+    }
+    readFrom();
+    StringBuilder sb = new StringBuilder();
+    while (true) {
+      switch (ch) {
+        case '"':
+          eat();
+          if (ch != '"') {
+            sb.append("\"");
+            continue;
+          }
+          eat();
+          if (ch != '"') {
+            sb.append("\"\"");
+            continue;
+          }
+          eat();
+          String value = sb.toString();
+          value = stripIndent(value);
+          value = translateEscapes(value);
+          saveValue(value);
+          return Token.STRING_LITERAL;
+        case ASCII_SUB:
+          if (reader.done()) {
+            return Token.EOF;
+          }
+          // falls through
+        default:
+          sb.appendCodePoint(ch);
+          eat();
+          continue;
+      }
+    }
+  }
+
+  static String stripIndent(String value) {
+    if (value.isEmpty()) {
+      return value;
+    }
+    ImmutableList<String> lines = value.lines().collect(toImmutableList());
+    // the amount of whitespace to strip from the beginning of every line
+    int strip = Integer.MAX_VALUE;
+    char last = value.charAt(value.length() - 1);
+    boolean trailingNewline = last == '\n' || last == '\r';
+    if (trailingNewline) {
+      // If the input contains a trailing newline, we have something like:
+      //
+      // |String s = """
+      // |    foo
+      // |""";
+      //
+      // Because the final """ is unindented, nothing should be stripped.
+      strip = 0;
+    } else {
+      // find the longest common prefix of whitespace across all non-blank lines
+      for (int i = 0; i < lines.size(); i++) {
+        String line = lines.get(i);
+        int nonWhitespaceStart = nonWhitespaceStart(line);
+        if (nonWhitespaceStart == line.length()) {
+          continue;
+        }
+        strip = min(strip, nonWhitespaceStart);
+      }
+    }
+    StringBuilder result = new StringBuilder();
+    boolean first = true;
+    for (String line : lines) {
+      if (!first) {
+        result.append('\n');
+      }
+      int end = trailingWhitespaceStart(line);
+      if (strip <= end) {
+        result.append(line, strip, end);
+      }
+      first = false;
+    }
+    if (trailingNewline) {
+      result.append('\n');
+    }
+    return result.toString();
+  }
+
+  private static int nonWhitespaceStart(String value) {
+    int i = 0;
+    while (i < value.length() && Character.isWhitespace(value.charAt(i))) {
+      i++;
+    }
+    return i;
+  }
+
+  private static int trailingWhitespaceStart(String value) {
+    int i = value.length() - 1;
+    while (i >= 0 && Character.isWhitespace(value.charAt(i))) {
+      i--;
+    }
+    return i + 1;
+  }
+
+  private static String translateEscapes(String value) {
+    StreamLexer lexer =
+        new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, value + ASCII_SUB)));
+    return lexer.translateEscapes();
+  }
+
+  private String translateEscapes() {
+    readFrom();
+    StringBuilder sb = new StringBuilder();
+    OUTER:
+    while (true) {
+      switch (ch) {
+        case '\\':
+          eat();
+          sb.append(escape());
+          continue;
+        case ASCII_SUB:
+          break OUTER;
+        default:
+          sb.appendCodePoint(ch);
+          eat();
+          continue;
+      }
+    }
+    return sb.toString();
   }
 
   private char escape() {
