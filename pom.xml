@@ -30,7 +30,7 @@
   <url>https://github.com/google/turbine</url>
 
   <properties>
-    <asm.version>9.2</asm.version>
+    <asm.version>9.3</asm.version>
     <guava.version>31.0.1-jre</guava.version>
     <errorprone.version>2.11.0</errorprone.version>
     <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
