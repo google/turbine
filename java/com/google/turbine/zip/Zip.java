@@ -65,7 +65,6 @@ import java.util.zip.ZipException;
  *       supported.
  *   <li>UTF-8 is the only supported encoding.
  *   <li>STORED and DEFLATE are the only supported compression methods.
- *   <li>zip64 extensible data sectors are not supported.
  *   <li>Zip files larger than Integer.MAX_VALUE bytes are not supported.
  *   <li>The only supported ZIP64 field is ENDTOT. This implementation assumes that the ZIP64 end
  *       header is present only if ENDTOT in EOCD header is 0xFFFF.
