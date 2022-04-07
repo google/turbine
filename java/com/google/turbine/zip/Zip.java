@@ -74,6 +74,7 @@ import java.util.zip.ZipException;
 public final class Zip {
 
   static final int ZIP64_ENDSIG = 0x06064b50;
+  static final int ZIP64_LOCSIG = 0x07064b50;
 
   static final int LOCHDR = 30; // LOC header size
   static final int CENHDR = 46; // CEN header size
@@ -196,18 +197,42 @@ public final class Zip {
       if (totalEntries == ZIP64_MAGICCOUNT) {
         // Assume the zip64 EOCD has the usual size; we don't support zip64 extensible data sectors.
         long zip64eocdOffset = size - ENDHDR - ZIP64_LOCHDR - ZIP64_ENDHDR;
-        MappedByteBuffer zip64eocd = chan.map(MapMode.READ_ONLY, zip64eocdOffset, ZIP64_ENDHDR);
-        zip64eocd.order(ByteOrder.LITTLE_ENDIAN);
         // Note that zip reading is necessarily best-effort, since an archive could contain 0xFFFF
         // entries and the last entry's data could contain a ZIP64_ENDSIG. Some implementations
         // read the full EOCD records and compare them.
-        if (zip64eocd.getInt(0) == ZIP64_ENDSIG) {
-          cdsize = zip64eocd.getLong(ZIP64_ENDSIZ);
+        long zip64cdsize = zip64cdsize(chan, zip64eocdOffset);
+        if (zip64cdsize != -1) {
           eocdOffset = zip64eocdOffset;
+          cdsize = zip64cdsize;
+        } else {
+          // If we couldn't find a zip64 EOCD at a fixed offset, either it doesn't exist
+          // or there was a zip64 extensible data sector, so try going through the
+          // locator. This approach doesn't work if data was prepended to the archive
+          // without updating the offset in the locator.
+          MappedByteBuffer zip64loc =
+              chan.map(MapMode.READ_ONLY, size - ENDHDR - ZIP64_LOCHDR, ZIP64_LOCHDR);
+          zip64loc.order(ByteOrder.LITTLE_ENDIAN);
+          if (zip64loc.getInt(0) == ZIP64_LOCSIG) {
+            zip64eocdOffset = zip64loc.getLong(8);
+            zip64cdsize = zip64cdsize(chan, zip64eocdOffset);
+            if (zip64cdsize != -1) {
+              eocdOffset = zip64eocdOffset;
+              cdsize = zip64cdsize;
+            }
+          }
         }
       }
       this.cd = chan.map(MapMode.READ_ONLY, eocdOffset - cdsize, cdsize);
       cd.order(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    static long zip64cdsize(FileChannel chan, long eocdOffset) throws IOException {
+      MappedByteBuffer zip64eocd = chan.map(MapMode.READ_ONLY, eocdOffset, ZIP64_ENDHDR);
+      zip64eocd.order(ByteOrder.LITTLE_ENDIAN);
+      if (zip64eocd.getInt(0) == ZIP64_ENDSIG) {
+        return zip64eocd.getLong(ZIP64_ENDSIZ);
+      }
+      return -1;
     }
 
     @Override
