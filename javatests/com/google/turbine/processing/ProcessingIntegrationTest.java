@@ -48,6 +48,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
@@ -61,6 +64,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import org.junit.Test;
@@ -803,5 +807,61 @@ public class ProcessingIntegrationTest {
             "B#f<U>(java.util.List<U>)U <: C#f<U>(java.util.List<U>)U ? false",
             "C#f<U>(java.util.List<U>)U <: A#f<U>(java.util.List<U>)U ? false",
             "C#f<U>(java.util.List<U>)U <: B#f<U>(java.util.List<U>)U ? false");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class URIProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!first) {
+        return false;
+      }
+      first = false;
+      try {
+        FileObject output =
+            processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "foo", "Bar");
+        Path path = Paths.get(output.toUri());
+        processingEnv
+            .getMessager()
+            .printMessage(Diagnostic.Kind.ERROR, output.toUri() + " - " + path);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void uriProcessing() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            "class T {}");
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    units,
+                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ProcessorInfo.create(
+                        ImmutableList.of(new URIProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()),
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly("file:///foo/Bar - " + Paths.get(URI.create("file:///foo/Bar")));
   }
 }

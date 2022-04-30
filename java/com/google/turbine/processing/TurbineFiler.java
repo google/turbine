@@ -232,7 +232,7 @@ public class TurbineFiler implements Filer {
 
     @Override
     public URI toUri() {
-      return URI.create("file://" + path);
+      return URI.create("file:///" + path);
     }
 
     @Override
@@ -309,7 +309,7 @@ public class TurbineFiler implements Filer {
 
     @Override
     public URI toUri() {
-      return URI.create("file://" + name + kind.extension);
+      return URI.create("file:///" + name + kind.extension);
     }
 
     @Override
