@@ -48,6 +48,7 @@ public class LowerIntegrationTest {
           "record.test", 16, //
           "record2.test", 16,
           "sealed.test", 17,
+          "sealed_nested.test", 17,
           "textblock.test", 15);
 
   @Parameters(name = "{index}: {0}")

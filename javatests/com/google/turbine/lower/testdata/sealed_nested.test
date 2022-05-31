@@ -1,0 +1,7 @@
+=== T.java ===
+
+class T {
+  static sealed class Sealed permits Sealed.Foo {
+    static final class Foo extends Sealed {}
+  }
+}

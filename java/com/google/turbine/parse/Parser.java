@@ -719,6 +719,11 @@ public class Parser {
 
         case IDENT:
           Ident ident = ident();
+          if (ident.value().equals("sealed")) {
+            next();
+            access.add(TurbineModifier.SEALED);
+            break;
+          }
           if (ident.value().equals("non")) {
             int pos = position;
             next();
