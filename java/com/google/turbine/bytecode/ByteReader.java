@@ -20,11 +20,9 @@ import static com.google.common.base.Verify.verify;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.ByteArrayInputStream;
 
 /** A {@link ByteArrayDataInput} wrapper that tracks the current byte array index. */
-@CanIgnoreReturnValue
 public class ByteReader {
 
   private final byte[] bytes;

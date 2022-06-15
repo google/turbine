@@ -312,7 +312,7 @@ public class LowerTest {
       String attributeName = pool.utf8(reader.u2());
       switch (attributeName) {
         case "Signature":
-          reader.u4(); // length
+          int unusedLength = reader.u4();
           signature = pool.utf8(reader.u2());
           break;
         default:

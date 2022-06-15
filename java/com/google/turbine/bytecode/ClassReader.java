@@ -159,7 +159,7 @@ public class ClassReader {
   /** Reads a JVMS 4.7.9 Signature attribute. */
   private String readSignature(ConstantPoolReader constantPool) {
     String signature;
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     signature = constantPool.utf8(reader.u2());
     return signature;
   }
@@ -167,7 +167,7 @@ public class ClassReader {
   /** Reads JVMS 4.7.6 InnerClasses attributes. */
   private List<ClassFile.InnerClass> readInnerClasses(
       ConstantPoolReader constantPool, String thisClass) {
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     int numberOfClasses = reader.u2();
     List<ClassFile.InnerClass> innerclasses = new ArrayList<>();
     for (int i = 0; i < numberOfClasses; i++) {
@@ -197,7 +197,7 @@ public class ClassReader {
   private void readAnnotations(
       ImmutableList.Builder<ClassFile.AnnotationInfo> annotations,
       ConstantPoolReader constantPool) {
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     int numAnnotations = reader.u2();
     for (int n = 0; n < numAnnotations; n++) {
       annotations.add(readAnnotation(constantPool));
@@ -207,7 +207,7 @@ public class ClassReader {
   /** Processes a JVMS 4.7.18 RuntimeVisibleParameterAnnotations attribute */
   public void readParameterAnnotations(
       List<ImmutableList.Builder<AnnotationInfo>> annotations, ConstantPoolReader constantPool) {
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     int numParameters = reader.u1();
     while (annotations.size() < numParameters) {
       annotations.add(ImmutableList.builder());
@@ -223,7 +223,7 @@ public class ClassReader {
   /** Processes a JVMS 4.7.24 MethodParameters attribute. */
   private void readMethodParameters(
       ImmutableList.Builder<ParameterInfo> parameters, ConstantPoolReader constantPool) {
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     int numParameters = reader.u1();
     for (int i = 0; i < numParameters; i++) {
       String name = constantPool.utf8(reader.u2());
@@ -239,7 +239,7 @@ public class ClassReader {
 
   /** Processes a JVMS 4.7.25 Module attribute. */
   private ModuleInfo readModule(ConstantPoolReader constantPool) {
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     String name = constantPool.moduleInfo(reader.u2());
     int flags = reader.u2();
     int versionIndex = reader.u2();
@@ -423,7 +423,7 @@ public class ClassReader {
             signature = readSignature(constantPool);
             break;
           case "AnnotationDefault":
-            reader.u4(); // length
+            int unusedLength = reader.u4();
             defaultValue = readElementValue(constantPool);
             break;
           case "RuntimeInvisibleAnnotations":
@@ -470,7 +470,7 @@ public class ClassReader {
   /** Reads an Exceptions attribute. */
   private ImmutableList<String> readExceptions(ConstantPoolReader constantPool) {
     ImmutableList.Builder<String> exceptions = ImmutableList.builder();
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     int numberOfExceptions = reader.u2();
     for (int exceptionIndex = 0; exceptionIndex < numberOfExceptions; exceptionIndex++) {
       exceptions.add(constantPool.classInfo(reader.u2()));
@@ -496,7 +496,7 @@ public class ClassReader {
         String attributeName = constantPool.utf8(reader.u2());
         switch (attributeName) {
           case "ConstantValue":
-            reader.u4(); // length
+            int unusedLength = reader.u4();
             value = constantPool.constant(reader.u2());
             break;
           case "RuntimeInvisibleAnnotations":
@@ -525,7 +525,7 @@ public class ClassReader {
   }
 
   private String readTurbineTransitiveJar(ConstantPoolReader constantPool) {
-    reader.u4(); // length
+    int unusedLength = reader.u4();
     return constantPool.utf8(reader.u2());
   }
 }
