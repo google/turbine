@@ -22,7 +22,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
-import com.google.common.io.ByteStreams;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -116,9 +115,7 @@ public class ZipTest {
         JarEntry je = entries.nextElement();
         result.put(
             je.getName(),
-            Hashing.goodFastHash(128)
-                .hashBytes(ByteStreams.toByteArray(jf.getInputStream(je)))
-                .padToLong());
+            Hashing.goodFastHash(128).hashBytes(jf.getInputStream(je).readAllBytes()).padToLong());
       }
     }
     return result;

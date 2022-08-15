@@ -19,7 +19,6 @@ package com.google.turbine.binder;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
@@ -113,7 +112,7 @@ public final class FileManagerClassBinder {
                   @Override
                   public byte[] get() {
                     try {
-                      return ByteStreams.toByteArray(jfo.openInputStream());
+                      return jfo.openInputStream().readAllBytes();
                     } catch (IOException e) {
                       throw new UncheckedIOException(e);
                     }
@@ -162,7 +161,7 @@ public final class FileManagerClassBinder {
         @Override
         public byte[] get() {
           try {
-            return ByteStreams.toByteArray(fileObject.openInputStream());
+            return fileObject.openInputStream().readAllBytes();
           } catch (IOException e) {
             throw new UncheckedIOException(e);
           }

@@ -26,7 +26,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.io.ByteStreams;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.InnerClass;
@@ -87,7 +86,7 @@ public class TransitiveTest {
       Enumeration<JarEntry> entries = jf.entries();
       while (entries.hasMoreElements()) {
         JarEntry je = entries.nextElement();
-        jarEntries.put(je.getName(), ByteStreams.toByteArray(jf.getInputStream(je)));
+        jarEntries.put(je.getName(), jf.getInputStream(je).readAllBytes());
       }
     }
     return jarEntries;

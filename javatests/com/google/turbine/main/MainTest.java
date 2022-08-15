@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.MoreFiles;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.diag.TurbineError;
@@ -148,7 +147,7 @@ public class MainTest {
       Enumeration<JarEntry> entries = jf.entries();
       while (entries.hasMoreElements()) {
         JarEntry je = entries.nextElement();
-        data.put(je.getName(), ByteStreams.toByteArray(jf.getInputStream(je)));
+        data.put(je.getName(), jf.getInputStream(je).readAllBytes());
       }
     }
     return data;

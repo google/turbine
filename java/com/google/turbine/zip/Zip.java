@@ -18,7 +18,6 @@ package com.google.turbine.zip;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.io.ByteStreams;
 import com.google.common.primitives.UnsignedInts;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -332,9 +331,9 @@ public final class Zip {
         fc.get(bytes);
         if (deflate) {
           bytes =
-              ByteStreams.toByteArray(
-                  new InflaterInputStream(
-                      new ByteArrayInputStream(bytes), new Inflater(/*nowrap=*/ true)));
+              new InflaterInputStream(
+                      new ByteArrayInputStream(bytes), new Inflater(/*nowrap=*/ true))
+                  .readAllBytes();
         }
         return bytes;
       } catch (IOException e) {

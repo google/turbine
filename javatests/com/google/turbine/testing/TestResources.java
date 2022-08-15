@@ -19,7 +19,6 @@ package com.google.turbine.testing;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.io.ByteStreams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -32,7 +31,7 @@ public final class TestResources {
 
   public static byte[] getResourceBytes(Class<?> clazz, String resource) {
     try (InputStream is = requireNonNull(clazz.getResourceAsStream(resource), resource)) {
-      return ByteStreams.toByteArray(is);
+      return is.readAllBytes();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

@@ -24,7 +24,6 @@ import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.Iterables;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -195,7 +194,7 @@ public class BytecodeBoundClassTest {
 
   private static byte[] toByteArrayOrDie(InputStream is) {
     try {
-      return ByteStreams.toByteArray(is);
+      return is.readAllBytes();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
