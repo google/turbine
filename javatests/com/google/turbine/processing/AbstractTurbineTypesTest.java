@@ -31,6 +31,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Streams;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
@@ -232,18 +233,23 @@ class AbstractTurbineTypesTest {
         "Float",
         "Double",
       },
-      // type annotations
-      {
-        "@A List<@B Integer>",
-        "@A List",
-        "@A int @B []",
-        "@A List<@A int @B []>",
-        "Map.@A Entry<@B Integer, @C Number>",
-      },
     };
+
+    // type annotations
+    List<String> annotatedTypes = new ArrayList<>();
+    annotatedTypes.add("@A int @B []");
+    // The string representation of these types changed in JDK 19, see JDK-8281238
+    if (Runtime.version().feature() >= 19) {
+      annotatedTypes.add("@A List<@B Integer>");
+      annotatedTypes.add("@A List");
+      annotatedTypes.add("@A List<@A int @B []>");
+      annotatedTypes.add("Map.@A Entry<@B Integer, @C Number>");
+    }
+
     List<String> files = new ArrayList<>();
     AtomicInteger idx = new AtomicInteger();
-    for (String[] group : types) {
+    for (String[] group :
+        ObjectArrays.<String[]>concat(annotatedTypes.toArray(new String[0]), types)) {
       StringBuilder sb = new StringBuilder();
       Joiner.on('\n')
           .appendTo(

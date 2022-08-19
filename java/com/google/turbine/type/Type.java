@@ -17,6 +17,7 @@
 package com.google.turbine.type;
 
 import static com.google.common.collect.Iterables.getLast;
+import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
@@ -144,15 +145,23 @@ public interface Type {
       StringBuilder sb = new StringBuilder();
       boolean first = true;
       for (SimpleClassTy c : classes()) {
-        for (AnnoInfo anno : c.annos()) {
-          sb.append(anno);
-          sb.append(' ');
-        }
+        String binaryName = c.sym().binaryName();
         if (!first) {
+          for (AnnoInfo anno : c.annos()) {
+            sb.append(anno);
+            sb.append(' ');
+          }
           sb.append('.');
-          sb.append(c.sym().binaryName().substring(c.sym().binaryName().lastIndexOf('$') + 1));
+          sb.append(binaryName, binaryName.lastIndexOf('$') + 1, binaryName.length());
         } else {
-          sb.append(c.sym().binaryName().replace('/', '.').replace('$', '.'));
+          int idx = max(binaryName.lastIndexOf('/'), binaryName.lastIndexOf('$')) + 1;
+          String name = binaryName.replace('/', '.').replace('$', '.');
+          sb.append(name, 0, idx);
+          for (AnnoInfo anno : c.annos()) {
+            sb.append(anno);
+            sb.append(' ');
+          }
+          sb.append(name, idx, name.length());
         }
         if (!c.targs().isEmpty()) {
           sb.append('<');
