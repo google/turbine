@@ -588,11 +588,11 @@ public class ConstExpressionParser {
     }
     eat();
     int pos = position;
-    Tree.ConstVarName constVarName = (Tree.ConstVarName) qualIdent();
-    if (constVarName == null) {
+    Expression constVarName = qualIdent();
+    if (!(constVarName instanceof Tree.ConstVarName)) {
       return null;
     }
-    ImmutableList<Ident> name = constVarName.name();
+    ImmutableList<Ident> name = ((Tree.ConstVarName) constVarName).name();
     ImmutableList.Builder<Tree.Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {
       eat();

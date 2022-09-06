@@ -320,6 +320,19 @@ public class ParseErrorTest {
                 "                         ^"));
   }
 
+  @Test
+  public void annotationClassLiteral() {
+    String input = "@interface A { A value() default @Integer.class; }";
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:1: error: unexpected token: ;",
+                "@interface A { A value() default @Integer.class; }",
+                "                                               ^"));
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
