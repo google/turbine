@@ -53,7 +53,7 @@ public abstract class LanguageVersion {
     try {
       return SourceVersion.valueOf("RELEASE_" + source());
     } catch (IllegalArgumentException unused) {
-      throw new IllegalArgumentException("invalid -source version: " + source());
+      return SourceVersion.latestSupported();
     }
   }
 

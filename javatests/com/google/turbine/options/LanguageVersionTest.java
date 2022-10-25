@@ -140,8 +140,6 @@ public class LanguageVersionTest {
   public void unsupportedSourceVersion() {
     LanguageVersion languageVersion =
         LanguageVersion.fromJavacopts(ImmutableList.of("-source", "9999"));
-    IllegalArgumentException expected =
-        assertThrows(IllegalArgumentException.class, languageVersion::sourceVersion);
-    assertThat(expected).hasMessageThat().contains("invalid -source version:");
+    assertThat(languageVersion.sourceVersion()).isEqualTo(SourceVersion.latestSupported());
   }
 }
