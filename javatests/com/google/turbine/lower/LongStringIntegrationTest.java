@@ -44,7 +44,7 @@ public class LongStringIntegrationTest {
   public void test() throws Exception {
     Map<String, byte[]> output =
         runTurbineWithStack(
-            /* stackSize= */ 1,
+            /* stackSize= */ 100_000,
             /* input= */ ImmutableMap.of("Test.java", source()),
             /* classpath= */ ImmutableList.of());
 
@@ -70,7 +70,7 @@ public class LongStringIntegrationTest {
             },
             /* name= */ "turbine",
             stackSize);
-    t.run();
+    t.start();
     t.join();
     return output;
   }
