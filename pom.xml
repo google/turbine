@@ -33,7 +33,7 @@
     <asm.version>9.4</asm.version>
     <guava.version>31.0.1-jre</guava.version>
     <errorprone.version>2.16</errorprone.version>
-    <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <protobuf.version>3.19.2</protobuf.version>
@@ -262,7 +262,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>3.4.1</version>
         <configuration>
           <source>8</source>
           <detectJavaApiLink>false</detectJavaApiLink>
