@@ -16,8 +16,6 @@
 
 package com.google.turbine.processing;
 
-import static com.google.common.truth.Truth.assertWithMessage;
-
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
@@ -25,22 +23,10 @@ import javax.lang.model.util.Types;
  * A combo test for {@link TurbineTypes} that compares the behaviour of bipredicates like {@link
  * Types#isSubtype(TypeMirror, TypeMirror)} with javac's implementation.
  */
-abstract class AbstractTurbineTypesBiPredicateTest extends AbstractTurbineTypesTest {
-
-  final String testDescription;
-  final TypesBiFunctionInput javacInput;
-  final TypesBiFunctionInput turbineInput;
-
+abstract class AbstractTurbineTypesBiPredicateTest
+    extends AbstractTurbineTypesBiFunctionTest<Boolean> {
   public AbstractTurbineTypesBiPredicateTest(
       String testDescription, TypesBiFunctionInput javacInput, TypesBiFunctionInput turbineInput) {
-    this.testDescription = testDescription;
-    this.javacInput = javacInput;
-    this.turbineInput = turbineInput;
-  }
-
-  protected void test(String symbol, TypeBiPredicate predicate) {
-    assertWithMessage("%s = %s", javacInput.format(symbol), turbineInput.format(symbol))
-        .that(turbineInput.apply(predicate))
-        .isEqualTo(javacInput.apply(predicate));
+    super(testDescription, javacInput, turbineInput);
   }
 }

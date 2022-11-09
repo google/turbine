@@ -384,7 +384,7 @@ public class TurbineElements implements Elements {
       return false;
     }
     TypeMirror a = overrider.asType();
-    TypeMirror b = types.asMemberOf((DeclaredType) type.asType(), overridden);
+    TypeMirror b = types.asMemberOfInternal((DeclaredType) type.asType(), overridden);
     if (b == null) {
       return false;
     }

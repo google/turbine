@@ -94,8 +94,8 @@ class AbstractTurbineTypesTest {
     }
   }
 
-  protected interface TypeBiPredicate {
-    boolean apply(Types types, TypeMirror a, TypeMirror b);
+  protected interface TypeBiFunction<T> {
+    T apply(Types types, TypeMirror a, TypeMirror b);
   }
 
   static class TypesBiFunctionInput {
@@ -109,8 +109,8 @@ class AbstractTurbineTypesTest {
       this.rhs = rhs;
     }
 
-    boolean apply(TypeBiPredicate predicate) {
-      return predicate.apply(types, lhs, rhs);
+    <T> T apply(TypeBiFunction<T> function) {
+      return function.apply(types, lhs, rhs);
     }
 
     String format(String symbol) {

@@ -26,18 +26,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.binder.sym.FieldSymbol;
-import com.google.turbine.binder.sym.MethodSymbol;
-import com.google.turbine.binder.sym.ParamSymbol;
-import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
-import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
-import com.google.turbine.processing.TurbineElement.TurbineTypeParameterElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineErrorType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
@@ -1127,41 +1120,6 @@ public class TurbineTypes implements Types {
                     .build()));
   }
 
-  private static ClassSymbol enclosingClass(Symbol symbol) {
-    switch (symbol.symKind()) {
-      case CLASS:
-        return (ClassSymbol) symbol;
-      case TY_PARAM:
-        return enclosingClass(((TyVarSymbol) symbol).owner());
-      case METHOD:
-        return ((MethodSymbol) symbol).owner();
-      case FIELD:
-        return ((FieldSymbol) symbol).owner();
-      case PARAMETER:
-        return ((ParamSymbol) symbol).owner().owner();
-      case RECORD_COMPONENT:
-        return ((RecordComponentSymbol) symbol).owner();
-      case MODULE:
-      case PACKAGE:
-        throw new IllegalArgumentException(symbol.symKind().toString());
-    }
-    throw new AssertionError(symbol.symKind());
-  }
-
-  private static Type type(Element element) {
-    switch (element.getKind()) {
-      case TYPE_PARAMETER:
-        return TyVar.create(((TurbineTypeParameterElement) element).sym(), ImmutableList.of());
-      case FIELD:
-        return ((TurbineFieldElement) element).info().type();
-      case METHOD:
-      case CONSTRUCTOR:
-        return ((TurbineExecutableElement) element).info().asType();
-      default:
-        throw new UnsupportedOperationException(element.toString());
-    }
-  }
-
   /**
    * Returns the {@link TypeMirror} of the given {@code element} as a member of {@code containing},
    * or else {@code null} if it is not a member.
@@ -1171,13 +1129,24 @@ public class TurbineTypes implements Types {
    */
   @Override
   public TypeMirror asMemberOf(DeclaredType containing, Element element) {
+    TypeMirror result = asMemberOfInternal(containing, element);
+    if (result == null) {
+      throw new IllegalArgumentException(String.format("asMemberOf(%s, %s)", containing, element));
+    }
+    return result;
+  }
+
+  public @Nullable TypeMirror asMemberOfInternal(DeclaredType containing, Element element) {
     ClassTy c = ((TurbineDeclaredType) containing).asTurbineType();
-    ClassSymbol symbol = enclosingClass(((TurbineElement) element).sym());
-    ImmutableList<ClassTy> path = factory.cha().search(c, enclosingClass(symbol));
+    Symbol enclosing = ((TurbineElement) element.getEnclosingElement()).sym();
+    if (!enclosing.symKind().equals(Symbol.Kind.CLASS)) {
+      return null;
+    }
+    ImmutableList<ClassTy> path = factory.cha().search(c, (ClassSymbol) enclosing);
     if (path.isEmpty()) {
       return null;
     }
-    Type type = type(element);
+    Type type = asTurbineType(element.asType());
     for (ClassTy ty : path) {
       ImmutableMap<TyVarSymbol, Type> mapping = getMapping(ty);
       if (mapping == null) {
