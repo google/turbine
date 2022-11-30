@@ -547,6 +547,7 @@ public class Parser {
       switch (token) {
         case IDENT:
           {
+            String javadoc = lexer.javadoc();
             Ident name = eatIdent();
             if (token == Token.LPAREN) {
               dropParens();
@@ -569,7 +570,7 @@ public class Parser {
                         ImmutableList.of()),
                     name,
                     Optional.<Expression>empty(),
-                    null));
+                    javadoc));
             annos = ImmutableList.builder();
             break;
           }

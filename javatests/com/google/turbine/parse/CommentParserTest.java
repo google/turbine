@@ -58,6 +58,13 @@ public class CommentParserTest {
                     "   * class C",
                     "   */",
                     "  class C {}",
+                    "  /** This is an enum. */",
+                    "  enum E {",
+                    "    /** This is H. */",
+                    "    H,",
+                    "    /** This is I. */",
+                    "    I",
+                    "  }",
                     "}\n"));
     TyDecl decl = getOnlyElement(unit.decls());
     assertThat(decl.javadoc()).isEqualTo(" hello world ");
@@ -68,11 +75,17 @@ public class CommentParserTest {
                 .collect(toImmutableMap(c -> c.name().value(), c -> c.javadoc())))
         .containsExactly(
             "A", "\n   * This is\n   * class A\n   ",
-            "C", "\n   * This is\n   * class C\n   ");
+            "C", "\n   * This is\n   * class C\n   ",
+            "E", " This is an enum. ");
     TyDecl a = (TyDecl) decl.members().get(0);
     MethDecl f = (MethDecl) a.members().get(0);
     assertThat(f.javadoc()).isEqualTo(" This is a method ");
     VarDecl g = (VarDecl) a.members().get(1);
     assertThat(g.javadoc()).isEqualTo(" This is a field ");
+    TyDecl e = (TyDecl) decl.members().get(3);
+    VarDecl h = (VarDecl) e.members().get(0);
+    assertThat(h.javadoc()).isEqualTo(" This is H. ");
+    VarDecl i = (VarDecl) e.members().get(1);
+    assertThat(i.javadoc()).isEqualTo(" This is I. ");
   }
 }
