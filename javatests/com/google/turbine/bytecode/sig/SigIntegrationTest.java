@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+import org.objectweb.asm.Opcodes;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -44,7 +45,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Reads all field, class, and method signatures in the bootclasspath, and round-trips them through
