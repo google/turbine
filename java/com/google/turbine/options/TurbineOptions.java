@@ -19,6 +19,7 @@ package com.google.turbine.options;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Optional;
 
 /** Header compilation options. */
@@ -181,6 +182,7 @@ public abstract class TurbineOptions {
 
     abstract ImmutableList.Builder<String> javacOptsBuilder();
 
+    @CanIgnoreReturnValue
     public Builder addAllJavacOpts(Iterable<String> javacOpts) {
       javacOptsBuilder().addAll(javacOpts);
       return this;
