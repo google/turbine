@@ -339,6 +339,11 @@ public class LexerTest {
     lexerComparisonTest("import pkg\uD800\uDC00.test;");
   }
 
+  @Test
+  public void javadocUnicodeEscape() {
+    lexerComparisonTest("class {/***/\\u007D;");
+  }
+
   private void lexerComparisonTest(String s) {
     assertThat(lex(s)).containsExactlyElementsIn(JavacLexer.javacLex(s));
   }
@@ -349,6 +354,8 @@ public class LexerTest {
     Token token;
     do {
       token = lexer.next();
+      // Just check that javadoc handling doesn't crash
+      String unused = lexer.javadoc();
       String tokenString;
       switch (token) {
         case IDENT:

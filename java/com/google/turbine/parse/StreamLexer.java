@@ -75,8 +75,8 @@ public class StreamLexer implements Lexer {
     if (result == null) {
       return null;
     }
-    verify(result.endsWith("*/"), result);
-    return result.substring(0, result.length() - "*/".length());
+    verify(result.endsWith("*"), result);
+    return result.substring(0, result.length() - "*".length());
   }
 
   @Override
@@ -153,16 +153,18 @@ public class StreamLexer implements Lexer {
                       sawStar = true;
                       break;
                     case '/':
-                      eat();
                       if (sawStar) {
                         if (isJavadoc) {
                           // Save the comment, excluding the leading `/**` and including
                           // the trailing `/*`. The comment is trimmed and normalized later.
                           javadoc = stringValue();
+                          verify(javadoc.endsWith("*"), javadoc);
                         }
+                        eat();
                         continue OUTER;
                       }
                       sawStar = false;
+                      eat();
                       break;
                     case ASCII_SUB:
                       if (reader.done()) {
