@@ -1,0 +1,35 @@
+=== Records.java ===
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import java.util.Objects;
+
+class Records {
+  public record A() {
+    @Override
+    public String toString() {
+      return "A";
+    }
+  }
+
+  public record B() {
+    @Override
+    public final String toString() {
+      return "B";
+    }
+  }
+
+  public record C() {
+    @Override
+    public final boolean equals(Object o) {
+      return false;
+    }
+  }
+
+  public record D() {
+    @Override
+    public final int hashCode() {
+      return -1;
+    }
+  }
+}

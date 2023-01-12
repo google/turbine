@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
@@ -248,12 +249,13 @@ public class TypeBinder {
 
     ImmutableList<RecordComponentInfo> components = bindComponents(scope, base.decl().components());
 
+    ImmutableList<MethodInfo> boundSyntheticMethods =
+        syntheticMethods(syntheticMethods, components);
+    List<MethodInfo> boundMethods = bindMethods(scope, base.decl().members(), components);
     ImmutableList.Builder<MethodInfo> methods =
-        ImmutableList.<MethodInfo>builder()
-            .addAll(syntheticMethods(syntheticMethods, components))
-            .addAll(bindMethods(scope, base.decl().members(), components));
+        ImmutableList.<MethodInfo>builder().addAll(boundSyntheticMethods).addAll(boundMethods);
     if (base.kind().equals(TurbineTyKind.RECORD)) {
-      methods.addAll(syntheticRecordMethods(syntheticMethods, components));
+      methods.addAll(syntheticRecordMethods(syntheticMethods, components, boundMethods));
     }
 
     ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
@@ -467,52 +469,79 @@ public class TypeBinder {
   }
 
   private ImmutableList<MethodInfo> syntheticRecordMethods(
-      SyntheticMethods syntheticMethods, ImmutableList<RecordComponentInfo> components) {
+      SyntheticMethods syntheticMethods,
+      ImmutableList<RecordComponentInfo> components,
+      List<MethodInfo> boundMethods) {
+    boolean hasToString = false;
+    boolean hasEquals = false;
+    boolean hasHashCode = false;
+    for (MethodInfo m : boundMethods) {
+      switch (m.name()) {
+        case "toString":
+          hasToString = m.parameters().isEmpty();
+          break;
+        case "equals":
+          hasEquals =
+              m.parameters().size() == 1
+                  && getOnlyElement(m.parameters()).type().equals(Type.ClassTy.OBJECT);
+          break;
+        case "hashCode":
+          hasHashCode = m.parameters().isEmpty();
+          break;
+        default: // fall out
+      }
+    }
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
-    MethodSymbol toStringMethod = syntheticMethods.create(owner, "toString");
-    methods.add(
-        new MethodInfo(
-            toStringMethod,
-            ImmutableMap.of(),
-            Type.ClassTy.STRING,
-            ImmutableList.of(),
-            ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
-            null,
-            null,
-            ImmutableList.of(),
-            null));
-    MethodSymbol hashCodeMethod = syntheticMethods.create(owner, "hashCode");
-    methods.add(
-        new MethodInfo(
-            hashCodeMethod,
-            ImmutableMap.of(),
-            Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
-            ImmutableList.of(),
-            ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
-            null,
-            null,
-            ImmutableList.of(),
-            null));
-    MethodSymbol equalsMethod = syntheticMethods.create(owner, "equals");
-    methods.add(
-        new MethodInfo(
-            equalsMethod,
-            ImmutableMap.of(),
-            Type.PrimTy.create(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
-            ImmutableList.of(
-                new ParamInfo(
-                    new ParamSymbol(equalsMethod, "other"),
-                    Type.ClassTy.OBJECT,
-                    ImmutableList.of(),
-                    TurbineFlag.ACC_MANDATED)),
-            ImmutableList.of(),
-            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
-            null,
-            null,
-            ImmutableList.of(),
-            null));
+    if (!hasToString) {
+      MethodSymbol toStringMethod = syntheticMethods.create(owner, "toString");
+      methods.add(
+          new MethodInfo(
+              toStringMethod,
+              ImmutableMap.of(),
+              Type.ClassTy.STRING,
+              ImmutableList.of(),
+              ImmutableList.of(),
+              TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
+              null,
+              null,
+              ImmutableList.of(),
+              null));
+    }
+    if (!hasHashCode) {
+      MethodSymbol hashCodeMethod = syntheticMethods.create(owner, "hashCode");
+      methods.add(
+          new MethodInfo(
+              hashCodeMethod,
+              ImmutableMap.of(),
+              Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
+              ImmutableList.of(),
+              ImmutableList.of(),
+              TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
+              null,
+              null,
+              ImmutableList.of(),
+              null));
+    }
+    if (!hasEquals) {
+      MethodSymbol equalsMethod = syntheticMethods.create(owner, "equals");
+      methods.add(
+          new MethodInfo(
+              equalsMethod,
+              ImmutableMap.of(),
+              Type.PrimTy.create(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
+              ImmutableList.of(
+                  new ParamInfo(
+                      new ParamSymbol(equalsMethod, "other"),
+                      Type.ClassTy.OBJECT,
+                      ImmutableList.of(),
+                      TurbineFlag.ACC_MANDATED)),
+              ImmutableList.of(),
+              TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
+              null,
+              null,
+              ImmutableList.of(),
+              null));
+    }
     for (RecordComponentInfo c : components) {
       MethodSymbol componentMethod = syntheticMethods.create(owner, c.name());
       methods.add(

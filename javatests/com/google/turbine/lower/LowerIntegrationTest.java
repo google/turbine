@@ -23,6 +23,7 @@ import static org.junit.Assume.assumeTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import java.io.IOError;
 import java.io.IOException;
@@ -47,6 +48,7 @@ public class LowerIntegrationTest {
       ImmutableMap.of(
           "record.test", 16, //
           "record2.test", 16,
+          "record_tostring.test", 16,
           "sealed.test", 17,
           "sealed_nested.test", 17,
           "textblock.test", 15);
@@ -269,9 +271,11 @@ public class LowerIntegrationTest {
       "receiver_param.test",
       "record.test",
       "record2.test",
+      "record_tostring.test",
       "rek.test",
       "samepkg.test",
       "sealed.test",
+      "sealed_nested.test",
       "self.test",
       "semi.test",
       // https://bugs.openjdk.java.net/browse/JDK-8054064 ?
@@ -333,8 +337,9 @@ public class LowerIntegrationTest {
       "wildcanon.test",
       // keep-sorted end
     };
-    List<Object[]> tests =
-        ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
+    ImmutableSet<String> cases = ImmutableSet.copyOf(testCases);
+    assertThat(cases).containsAtLeastElementsIn(SOURCE_VERSION.keySet());
+    List<Object[]> tests = cases.stream().map(x -> new Object[] {x}).collect(toList());
     String testShardIndex = System.getenv("TEST_SHARD_INDEX");
     String testTotalShards = System.getenv("TEST_TOTAL_SHARDS");
     if (testShardIndex == null || testTotalShards == null) {
