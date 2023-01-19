@@ -49,6 +49,7 @@ public class LowerIntegrationTest {
           "record.test", 16, //
           "record2.test", 16,
           "record_tostring.test", 16,
+          "record_ctor.test", 16,
           "sealed.test", 17,
           "sealed_nested.test", 17,
           "textblock.test", 15);
@@ -271,6 +272,7 @@ public class LowerIntegrationTest {
       "receiver_param.test",
       "record.test",
       "record2.test",
+      "record_ctor.test",
       "record_tostring.test",
       "rek.test",
       "samepkg.test",

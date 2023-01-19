@@ -1,0 +1,52 @@
+=== Records.java ===
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+public class Records {
+  public record A(String value) {
+
+    void one() {}
+
+    public A(String a, String b) {
+      this(a + ", " + b);
+    }
+
+    void two() {}
+  }
+
+  @Target(ElementType.TYPE_USE)
+  @interface N {}
+
+  public record B(String value) {
+
+    void one() {}
+
+    public B(@N String value) {
+      this.value = value;
+    }
+
+    void two() {}
+
+    public B(String a, String b) {
+      this(a + ", " + b);
+    }
+
+    void three() {}
+  }
+
+  class Inner {}
+
+  public record C(Records.Inner value) {
+
+    public C(Records. @N Inner value) {
+      this.value = value;
+    }
+  }
+
+  public record D<T>(T value) {
+
+    public D(T value) {
+      this.value = value;
+    }
+  }
+}
