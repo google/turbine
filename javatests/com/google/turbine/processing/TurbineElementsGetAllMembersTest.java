@@ -77,17 +77,17 @@ public class TurbineElementsGetAllMembersTest {
       },
       {
         "=== I.java ===",
-        "abstract class I {",
-        "  abstract Integer f();",
+        "interface I {",
+        "  default Integer f() {}",
         "}",
         "=== J.java ===",
-        "interface J extends I {",
-        "  default Integer f() {",
+        "class J implements I {",
+        "  Integer f() {",
         "    return 42;",
         "  }",
         "}",
         "=== Test.java ===", //
-        "class Test extends I implements J {",
+        "class Test extends J implements I {",
         "}",
       },
       {

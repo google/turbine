@@ -681,7 +681,9 @@ public class BinderErrorTest {
           "class T extends T {}",
         },
         {
-          "<>:1: error: cycle in class hierarchy: T", "class T extends T {}", "                ^",
+          "<>:1: error: cycle in class hierarchy: T", //
+          "class T extends T {}",
+          "                ^",
         },
       },
       {
@@ -692,6 +694,19 @@ public class BinderErrorTest {
           "<>:1: error: cycle in class hierarchy: T",
           "class T implements T {}",
           "                   ^",
+          "<>:1: error: expected interface type",
+          "class T implements T {}",
+          "                   ^",
+        },
+      },
+      {
+        {
+          "interface T extends T {}",
+        },
+        {
+          "<>:1: error: cycle in class hierarchy: T",
+          "interface T extends T {}",
+          "                    ^",
         },
       },
       {
@@ -768,7 +783,9 @@ public class BinderErrorTest {
           "@interface Test {}",
         },
         {
-          "<>:3: error: missing required annotation argument: value", "@Retention", "^",
+          "<>:3: error: missing required annotation argument: value", //
+          "@Retention",
+          "^",
         },
       },
       {
@@ -954,6 +971,25 @@ public class BinderErrorTest {
           "<>:2: error: value 2 of type int cannot be converted to String",
           "  public static final boolean X = \"1\" != 2;",
           "                                         ^",
+        },
+      },
+      {
+        {
+          "class C {}", //
+          "interface I {}",
+          "class A extends I implements C {}",
+          "interface B extends C {}",
+        },
+        {
+          "<>:3: error: unexpected interface type",
+          "class A extends I implements C {}",
+          "                ^",
+          "<>:3: error: expected interface type",
+          "class A extends I implements C {}",
+          "                             ^",
+          "<>:4: error: expected interface type",
+          "interface B extends C {}",
+          "                    ^",
         },
       },
       {

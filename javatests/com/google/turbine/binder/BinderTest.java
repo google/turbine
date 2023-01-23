@@ -265,7 +265,7 @@ public class BinderTest {
             parseLines(
                 "import java.lang.annotation.Target;",
                 "import java.lang.annotation.ElementType;",
-                "public class C implements B {",
+                "public class C extends B {",
                 "  @Target(ElementType.TYPE_USE)",
                 "  @interface A {};",
                 "}"));

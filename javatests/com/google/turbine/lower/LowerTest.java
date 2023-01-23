@@ -545,7 +545,7 @@ public class LowerTest {
             .put(
                 "Test.java",
                 lines(
-                    "public class Test extends B.BM {", //
+                    "public class Test implements B.BM {", //
                     "  I i;",
                     "}"))
             .build();

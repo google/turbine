@@ -206,7 +206,8 @@ public class TypeBinder {
         break;
       case CLASS:
         if (base.decl().xtnds().isPresent()) {
-          superClassType = bindClassTy(bindingScope, base.decl().xtnds().get());
+          superClassType =
+              checkClassType(bindingScope, base.decl().xtnds().get(), /* expectInterface= */ false);
         } else if (owner.equals(ClassSymbol.OBJECT)) {
           // java.lang.Object doesn't have a superclass
           superClassType = null;
@@ -228,7 +229,7 @@ public class TypeBinder {
     }
 
     for (Tree.ClassTy i : base.decl().impls()) {
-      interfaceTypes.add(bindClassTy(bindingScope, i));
+      interfaceTypes.add(checkClassType(bindingScope, i, /* expectInterface= */ true));
     }
 
     ImmutableList.Builder<ClassSymbol> permits = ImmutableList.builder();
@@ -447,6 +448,30 @@ public class TypeBinder {
         // fall out: impossible method parameter types
     }
     throw new AssertionError(a.tyKind());
+  }
+
+  private Type checkClassType(CompoundScope scope, ClassTy tree, boolean expectInterface) {
+    Type type = bindClassTy(scope, tree);
+    if (type.tyKind().equals(Type.TyKind.ERROR_TY)) {
+      return type;
+    }
+    HeaderBoundClass info = env.getNonNull(((Type.ClassTy) type).sym());
+    boolean isInterface;
+    switch (info.kind()) {
+      case INTERFACE:
+      case ANNOTATION:
+        isInterface = true;
+        break;
+      default:
+        isInterface = false;
+        break;
+    }
+    if (expectInterface != isInterface) {
+      log.error(
+          tree.position(),
+          expectInterface ? ErrorKind.EXPECTED_INTERFACE : ErrorKind.UNEXPECTED_INTERFACE);
+    }
+    return type;
   }
 
   /**
