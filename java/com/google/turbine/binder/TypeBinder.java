@@ -64,6 +64,7 @@ import com.google.turbine.types.Deannotate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -627,7 +628,7 @@ public class TypeBinder {
   /** Bind type parameter types. */
   private ImmutableMap<TyVarSymbol, TyVarInfo> bindTyParams(
       ImmutableList<Tree.TyParam> trees, CompoundScope scope, Map<String, TyVarSymbol> symbols) {
-    ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
+    LinkedHashMap<TyVarSymbol, TyVarInfo> result = new LinkedHashMap<>();
     for (Tree.TyParam tree : trees) {
       // `symbols` is constructed to guarantee the requireNonNull call is safe.
       TyVarSymbol sym = requireNonNull(symbols.get(tree.name().value()));
@@ -636,12 +637,16 @@ public class TypeBinder {
         bounds.add(bindTy(scope, bound));
       }
       ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, tree.annos());
-      result.put(
-          sym,
-          new TyVarInfo(
-              IntersectionTy.create(bounds.build()), /* lowerBound= */ null, annotations));
+      TyVarInfo existing =
+          result.putIfAbsent(
+              sym,
+              new TyVarInfo(
+                  IntersectionTy.create(bounds.build()), /* lowerBound= */ null, annotations));
+      if (existing != null) {
+        log.error(tree.position(), ErrorKind.DUPLICATE_DECLARATION, tree.name());
+      }
     }
-    return result.buildOrThrow();
+    return ImmutableMap.copyOf(result);
   }
 
   private List<MethodInfo> bindMethods(
@@ -669,7 +674,8 @@ public class TypeBinder {
       for (Tree.TyParam pt : t.typarams()) {
         builder.put(pt.name().value(), new TyVarSymbol(sym, pt.name().value()));
       }
-      typeParameters = builder.buildOrThrow();
+      // errors for duplicates are reported in bindTyParams
+      typeParameters = builder.buildKeepingLast();
     }
 
     // type parameters can refer to each other in f-bounds, so update the scope first

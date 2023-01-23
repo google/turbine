@@ -34,6 +34,7 @@ import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
 import java.util.ArrayDeque;
+import java.util.LinkedHashMap;
 import org.jspecify.nullness.Nullable;
 
 /** Type hierarchy binding. */
@@ -109,13 +110,17 @@ public class HierarchyBinder {
       }
     }
 
-    ImmutableMap.Builder<String, TyVarSymbol> typeParameters = ImmutableMap.builder();
+    LinkedHashMap<String, TyVarSymbol> typeParameters = new LinkedHashMap<>();
     for (Tree.TyParam p : decl.typarams()) {
-      typeParameters.put(p.name().value(), new TyVarSymbol(origin, p.name().value()));
+      TyVarSymbol existing =
+          typeParameters.putIfAbsent(p.name().value(), new TyVarSymbol(origin, p.name().value()));
+      if (existing != null) {
+        log.error(p.position(), ErrorKind.DUPLICATE_DECLARATION, p.name());
+      }
     }
 
     return new SourceHeaderBoundClass(
-        base, superclass, interfaces.build(), typeParameters.buildOrThrow());
+        base, superclass, interfaces.build(), ImmutableMap.copyOf(typeParameters));
   }
 
   /**

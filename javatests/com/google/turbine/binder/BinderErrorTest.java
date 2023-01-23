@@ -768,9 +768,7 @@ public class BinderErrorTest {
           "@interface Test {}",
         },
         {
-          "<>:3: error: missing required annotation argument: value",
-          "@Retention",
-          "^",
+          "<>:3: error: missing required annotation argument: value", "@Retention", "^",
         },
       },
       {
@@ -956,6 +954,21 @@ public class BinderErrorTest {
           "<>:2: error: value 2 of type int cannot be converted to String",
           "  public static final boolean X = \"1\" != 2;",
           "                                         ^",
+        },
+      },
+      {
+        {
+          "class T<X, X> {", //
+          "  <Y, Y> void f() {}",
+          "}",
+        },
+        {
+          "<>:1: error: duplicate declaration of X",
+          "class T<X, X> {",
+          "           ^",
+          "<>:2: error: duplicate declaration of Y",
+          "  <Y, Y> void f() {}",
+          "      ^",
         },
       },
     };
