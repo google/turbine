@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder;
 
-import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -36,6 +35,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 import org.jspecify.nullness.Nullable;
 
 /** Sets up an environment for symbols on the classpath. */

@@ -21,7 +21,6 @@ import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeate
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -87,6 +86,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import org.jspecify.nullness.Nullable;
 
 /** Lowering from bound classes to bytecode. */

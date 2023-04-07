@@ -16,7 +16,6 @@
 
 package com.google.turbine.types;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
@@ -29,6 +28,7 @@ import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
+import java.util.function.Function;
 
 /** Generic type erasure. */
 public final class Erasure {

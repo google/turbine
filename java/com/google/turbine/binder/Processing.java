@@ -19,7 +19,6 @@ package com.google.turbine.binder;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
@@ -66,6 +65,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;

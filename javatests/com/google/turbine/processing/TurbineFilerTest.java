@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.io.CharStreams;
 import com.google.turbine.diag.SourceFile;
@@ -34,6 +33,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import javax.annotation.processing.FilerException;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;

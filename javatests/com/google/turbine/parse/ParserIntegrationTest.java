@@ -20,15 +20,12 @@ import static com.google.common.base.Verify.verifyNotNull;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Function;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 import com.google.common.io.CharStreams;
 import com.google.turbine.tree.Tree;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,8 +36,8 @@ import org.junit.runners.Parameterized.Parameters;
 public class ParserIntegrationTest {
 
   @Parameters(name = "{index}: {0}")
-  public static Iterable<Object[]> parameters() {
-    String[] tests = {
+  public static String[] parameters() {
+    return new String[] {
       "anno1.input",
       "anno2.input",
       "annodecl1.input",
@@ -79,14 +76,6 @@ public class ParserIntegrationTest {
       "record.input",
       "sealed.input",
     };
-    return Iterables.transform(
-        Arrays.asList(tests),
-        new Function<String, Object[]>() {
-          @Override
-          public Object[] apply(String input) {
-            return new Object[] {input};
-          }
-        });
   }
 
   final String input;
