@@ -40,6 +40,7 @@ import org.objectweb.asm.ByteVector;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.ModuleVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -57,12 +58,16 @@ public class ClassReaderTest {
         null,
         "java/lang/Object",
         null);
-    cw.visitMethod(
-        Opcodes.ACC_PUBLIC,
-        "f",
-        "(Ljava/lang/String;)Ljava/lang/String;",
-        "<T:Ljava/lang/String;>(TT;)TT;",
-        null);
+    MethodVisitor mv =
+        cw.visitMethod(
+            Opcodes.ACC_PUBLIC,
+            "f",
+            "(Ljava/lang/String;)Ljava/lang/String;",
+            "<T:Ljava/lang/String;>(TT;)TT;",
+            null);
+    mv.visitParameter(null, 0); // skip synthetic parameters
+    mv.visitParameter("<no name>", Opcodes.ACC_SYNTHETIC); // skip synthetic parameters
+    mv.visitParameter("parameterName", 42);
     cw.visitMethod(
         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
         "g",
@@ -92,6 +97,9 @@ public class ClassReaderTest {
     assertThat(f.annotations()).isEmpty();
     assertThat(f.parameterAnnotations()).isEmpty();
     assertThat(f.defaultValue()).isNull();
+    assertThat(f.parameters()).hasSize(1);
+    assertThat(f.parameters().get(0).name()).isEqualTo("parameterName");
+    assertThat(f.parameters().get(0).access()).isEqualTo(42);
 
     ClassFile.MethodInfo g = classFile.methods().get(1);
     assertThat(g.access()).isEqualTo(TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC);

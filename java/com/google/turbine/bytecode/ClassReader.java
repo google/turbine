@@ -226,9 +226,10 @@ public class ClassReader {
     int unusedLength = reader.u4();
     int numParameters = reader.u1();
     for (int i = 0; i < numParameters; i++) {
-      String name = constantPool.utf8(reader.u2());
+      int nameIndex = reader.u2();
+      String name = nameIndex == 0 ? null : constantPool.utf8(nameIndex);
       int access = reader.u2();
-      if ((access & (TurbineFlag.ACC_SYNTHETIC | TurbineFlag.ACC_MANDATED)) != 0) {
+      if (name == null || (access & (TurbineFlag.ACC_SYNTHETIC | TurbineFlag.ACC_MANDATED)) != 0) {
         // ExecutableElement#getParameters doesn't expect synthetic or mandated
         // parameters
         continue;
