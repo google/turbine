@@ -320,11 +320,13 @@ public final class Main {
       units.add(Parser.parse(new SourceFile(source, MoreFiles.asCharSource(path, UTF_8).read())));
     }
     for (String sourceJar : options.sourceJars()) {
-      for (Zip.Entry ze : new Zip.ZipIterable(Paths.get(sourceJar))) {
-        if (ze.name().endsWith(".java")) {
-          String name = ze.name();
-          String source = new String(ze.data(), UTF_8);
-          units.add(Parser.parse(new SourceFile(name, source)));
+      try (Zip.ZipIterable iterable = new Zip.ZipIterable(Paths.get(sourceJar))) {
+        for (Zip.Entry ze : iterable) {
+          if (ze.name().endsWith(".java")) {
+            String name = ze.name();
+            String source = new String(ze.data(), UTF_8);
+            units.add(Parser.parse(new SourceFile(name, source)));
+          }
         }
       }
     }
