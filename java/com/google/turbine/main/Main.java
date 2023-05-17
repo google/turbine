@@ -267,7 +267,7 @@ public final class Main {
                 /* processorPath= */ options.processorPath(),
                 /* builtinProcessors= */ options.builtinProcessors())),
         bootclasspath,
-        /* moduleVersion=*/ Optional.empty());
+        /* moduleVersion= */ Optional.empty());
   }
 
   private static void usage(TurbineOptions options) {
@@ -314,12 +314,17 @@ public final class Main {
   /** Parse all source files and source jars. */
   // TODO(cushon): parallelize
   private static ImmutableList<CompUnit> parseAll(TurbineOptions options) throws IOException {
+    return parseAll(options.sources(), options.sourceJars());
+  }
+
+  static ImmutableList<CompUnit> parseAll(Iterable<String> sources, Iterable<String> sourceJars)
+      throws IOException {
     ImmutableList.Builder<CompUnit> units = ImmutableList.builder();
-    for (String source : options.sources()) {
+    for (String source : sources) {
       Path path = Paths.get(source);
       units.add(Parser.parse(new SourceFile(source, MoreFiles.asCharSource(path, UTF_8).read())));
     }
-    for (String sourceJar : options.sourceJars()) {
+    for (String sourceJar : sourceJars) {
       try (Zip.ZipIterable iterable = new Zip.ZipIterable(Paths.get(sourceJar))) {
         for (Zip.Entry ze : iterable) {
           if (ze.name().endsWith(".java")) {
