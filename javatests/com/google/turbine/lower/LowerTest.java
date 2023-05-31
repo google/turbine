@@ -233,7 +233,7 @@ public class LowerTest {
 
     Map<String, byte[]> bytes =
         Lower.lowerAll(
-                LanguageVersion.createDefault(),
+                Lower.LowerOptions.createDefault(),
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
                 ImmutableList.of(),
@@ -261,10 +261,10 @@ public class LowerTest {
                             "}"))),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.empty());
+            /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
-                LanguageVersion.createDefault(),
+                Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -341,10 +341,10 @@ public class LowerTest {
                             "}"))),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.empty());
+            /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
-                LanguageVersion.createDefault(),
+                Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -424,10 +424,10 @@ public class LowerTest {
             ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.empty());
+            /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
-                LanguageVersion.createDefault(),
+                Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -650,10 +650,14 @@ public class LowerTest {
             ImmutableList.of(Parser.parse("class Test {}")),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion=*/ Optional.empty());
+            /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
-                LanguageVersion.fromJavacopts(ImmutableList.of("-source", "7", "-target", "7")),
+                Lower.LowerOptions.builder()
+                    .languageVersion(
+                        LanguageVersion.fromJavacopts(
+                            ImmutableList.of("-source", "7", "-target", "7")))
+                    .build(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -675,6 +679,76 @@ public class LowerTest {
             },
             0);
     assertThat(major[0]).isEqualTo(Opcodes.V1_8);
+  }
+
+  @Test
+  public void privateFields() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    "class Test {\n" //
+                        + "  private int x;\n"
+                        + "  int y;\n"
+                        + "}")),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.builder().emitPrivateFields(true).build(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<String> fields = new ArrayList<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String descriptor, String signature, Object value) {
+                fields.add(name);
+                return null;
+              }
+            },
+            0);
+    assertThat(fields).containsExactly("x", "y");
+  }
+
+  @Test
+  public void noPrivateFields() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    "class Test {\n" //
+                        + "  private int x;\n"
+                        + "  int y;\n"
+                        + "}")),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<String> fields = new ArrayList<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String descriptor, String signature, Object value) {
+                fields.add(name);
+                return null;
+              }
+            },
+            0);
+    assertThat(fields).containsExactly("y");
   }
 
   static String lines(String... lines) {

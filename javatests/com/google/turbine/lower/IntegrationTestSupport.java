@@ -497,7 +497,9 @@ public final class IntegrationTestSupport {
       throws IOException {
     BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
     return Lower.lowerAll(
-            LanguageVersion.fromJavacopts(javacopts),
+            Lower.LowerOptions.builder()
+                .languageVersion(LanguageVersion.fromJavacopts(javacopts))
+                .build(),
             bound.units(),
             bound.modules(),
             bound.classPathEnv())

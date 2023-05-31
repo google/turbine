@@ -195,7 +195,13 @@ public final class Main {
       // TODO(cushon): parallelize
       Lowered lowered =
           Lower.lowerAll(
-              options.languageVersion(), bound.units(), bound.modules(), bound.classPathEnv());
+              Lower.LowerOptions.builder()
+                  .languageVersion(options.languageVersion())
+                  .emitPrivateFields(options.javacOpts().contains("-XDturbine.emitPrivateFields"))
+                  .build(),
+              bound.units(),
+              bound.modules(),
+              bound.classPathEnv());
 
       if (options.outputDeps().isPresent()) {
         DepsProto.Dependencies deps =

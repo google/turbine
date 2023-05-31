@@ -21,6 +21,7 @@ import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeate
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -92,30 +93,53 @@ import org.jspecify.nullness.Nullable;
 /** Lowering from bound classes to bytecode. */
 public class Lower {
 
+  /** Lowering options. */
+  @AutoValue
+  public abstract static class LowerOptions {
+
+    public abstract LanguageVersion languageVersion();
+
+    public abstract boolean emitPrivateFields();
+
+    public static LowerOptions createDefault() {
+      return builder().build();
+    }
+
+    public static Builder builder() {
+      return new AutoValue_Lower_LowerOptions.Builder()
+          .languageVersion(LanguageVersion.createDefault())
+          .emitPrivateFields(false);
+    }
+
+    /** Builder for {@link LowerOptions}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+      public abstract Builder languageVersion(LanguageVersion languageVersion);
+
+      public abstract Builder emitPrivateFields(boolean emitPrivateFields);
+
+      public abstract LowerOptions build();
+    }
+  }
+
   /** The lowered compilation output. */
-  public static class Lowered {
-    private final ImmutableMap<String, byte[]> bytes;
-    private final ImmutableSet<ClassSymbol> symbols;
-
-    public Lowered(ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
-      this.bytes = bytes;
-      this.symbols = symbols;
-    }
-
+  @AutoValue
+  public abstract static class Lowered {
     /** Returns the bytecode for classes in the compilation. */
-    public ImmutableMap<String, byte[]> bytes() {
-      return bytes;
-    }
+    public abstract ImmutableMap<String, byte[]> bytes();
 
     /** Returns the set of all referenced symbols in the compilation. */
-    public ImmutableSet<ClassSymbol> symbols() {
-      return symbols;
+    public abstract ImmutableSet<ClassSymbol> symbols();
+
+    public static Lowered create(
+        ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
+      return new AutoValue_Lower_Lowered(bytes, symbols);
     }
   }
 
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
-      LanguageVersion languageVersion,
+      LowerOptions options,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       ImmutableList<SourceModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> classpath) {
@@ -124,9 +148,11 @@ public class Lower {
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     // Output Java 8 bytecode at minimum, for type annotations
-    int majorVersion = max(languageVersion.majorVersion(), 52);
+    int majorVersion = max(options.languageVersion().majorVersion(), 52);
     for (ClassSymbol sym : units.keySet()) {
-      result.put(sym.binaryName(), lower(units.get(sym), env, sym, symbols, majorVersion));
+      result.put(
+          sym.binaryName(),
+          lower(units.get(sym), env, sym, symbols, majorVersion, options.emitPrivateFields()));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
@@ -140,17 +166,18 @@ public class Lower {
             lower(module, env, symbols, majorVersion));
       }
     }
-    return new Lowered(result.buildOrThrow(), ImmutableSet.copyOf(symbols));
+    return Lowered.create(result.buildOrThrow(), ImmutableSet.copyOf(symbols));
   }
 
   /** Lowers a class to bytecode. */
-  public static byte[] lower(
+  private static byte[] lower(
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       Set<ClassSymbol> symbols,
-      int majorVersion) {
-    return new Lower(env).lower(info, sym, symbols, majorVersion);
+      int majorVersion,
+      boolean emitPrivateFields) {
+    return new Lower(env).lower(info, sym, symbols, majorVersion, emitPrivateFields);
   }
 
   private static byte[] lower(
@@ -251,7 +278,11 @@ public class Lower {
   }
 
   private byte[] lower(
-      SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols, int majorVersion) {
+      SourceTypeBoundClass info,
+      ClassSymbol sym,
+      Set<ClassSymbol> symbols,
+      int majorVersion,
+      boolean emitPrivateFields) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info, env);
@@ -286,8 +317,7 @@ public class Lower {
 
     ImmutableList.Builder<ClassFile.FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : info.fields()) {
-      if ((f.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
-        // TODO(cushon): drop private members earlier?
+      if (!emitPrivateFields && (f.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
         continue;
       }
       fields.add(lowerField(f));
@@ -568,7 +598,9 @@ public class Lower {
 
     private final Map<TyVarSymbol, TyVarInfo> tyParams;
 
-    /** @param tyParams the initial lookup scope, e.g. a method's formal type parameters. */
+    /**
+     * @param tyParams the initial lookup scope, e.g. a method's formal type parameters.
+     */
     public TyVarEnv(Map<TyVarSymbol, TyVarInfo> tyParams) {
       this.tyParams = tyParams;
     }

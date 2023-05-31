@@ -29,7 +29,6 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.lower.Lower.Lowered;
-import com.google.turbine.options.LanguageVersion;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.testing.TestClassPaths;
@@ -105,11 +104,11 @@ public class DependenciesTest {
               units.build(),
               ClassPathBinder.bindClasspath(classpath),
               TestClassPaths.TURBINE_BOOTCLASSPATH,
-              /* moduleVersion=*/ Optional.empty());
+              /* moduleVersion= */ Optional.empty());
 
       Lowered lowered =
           Lower.lowerAll(
-              LanguageVersion.createDefault(),
+              Lower.LowerOptions.createDefault(),
               bound.units(),
               bound.modules(),
               bound.classPathEnv());
