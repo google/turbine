@@ -18,6 +18,7 @@ package com.google.turbine.main;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -207,7 +208,11 @@ public final class Main {
         DepsProto.Dependencies deps =
             Dependencies.collectDeps(options.targetLabel(), bootclasspath, bound, lowered);
         Path path = Paths.get(options.outputDeps().get());
-        Files.createDirectories(path.getParent());
+        /*
+         * TODO: cpovirk - Consider checking outputDeps for validity earlier so that anyone who
+         * `--output_deps=/` or similar will get a proper error instead of NPE.
+         */
+        Files.createDirectories(requireNonNull(path.getParent()));
         try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(path))) {
           deps.writeTo(os);
         }
@@ -355,7 +360,8 @@ public final class Main {
     if (Files.isDirectory(path)) {
       for (SourceFile source : generatedSources.values()) {
         Path to = path.resolve(source.path());
-        Files.createDirectories(to.getParent());
+        // TODO: cpovirk - Consider checking gensrcOutput, similar to outputDeps.
+        Files.createDirectories(requireNonNull(to.getParent()));
         Files.writeString(to, source.source());
       }
       return;
@@ -380,7 +386,8 @@ public final class Main {
     if (Files.isDirectory(path)) {
       for (Map.Entry<String, byte[]> resource : generatedResources.entrySet()) {
         Path to = path.resolve(resource.getKey());
-        Files.createDirectories(to.getParent());
+        // TODO: cpovirk - Consider checking resourceOutput, similar to outputDeps.
+        Files.createDirectories(requireNonNull(to.getParent()));
         Files.write(to, resource.getValue());
       }
       return;
