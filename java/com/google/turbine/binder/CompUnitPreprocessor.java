@@ -105,7 +105,7 @@ public final class CompUnitPreprocessor {
       // "While the file could technically contain the source code
       // for one or more package-private (default-access) classes,
       // it would be very bad form." -- JLS 7.4.1
-      if (!unit.pkg().get().annos().isEmpty()) {
+      if (!unit.pkg().get().annos().isEmpty() || unit.decls().isEmpty()) {
         decls = Iterables.concat(decls, ImmutableList.of(packageInfoTree(unit.pkg().get())));
       }
     } else {

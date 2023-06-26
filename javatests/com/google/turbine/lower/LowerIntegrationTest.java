@@ -391,7 +391,12 @@ public class LowerIntegrationTest {
     int version = SOURCE_VERSION.getOrDefault(test, 8);
     assumeTrue(version <= Runtime.version().feature());
     ImmutableList<String> javacopts =
-        ImmutableList.of("-source", String.valueOf(version), "-target", String.valueOf(version));
+        ImmutableList.of(
+            "-source",
+            String.valueOf(version),
+            "-target",
+            String.valueOf(version),
+            "-Xpkginfo:always");
 
     Map<String, byte[]> expected =
         IntegrationTestSupport.runJavac(input.sources, classpathJar, javacopts);
