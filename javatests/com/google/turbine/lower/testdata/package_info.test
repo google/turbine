@@ -10,3 +10,5 @@ package p;
 package p;
 class Test {}
 
+=== Empty.java ===
+package p;

@@ -106,7 +106,7 @@ public class MainTest {
 
   @Test
   public void packageInfo() throws IOException {
-    Path src = temporaryFolder.newFile("package-info.jar").toPath();
+    Path src = temporaryFolder.newFile("package-info.java").toPath();
     MoreFiles.asCharSink(src, UTF_8).write("@Deprecated package test;");
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
@@ -467,7 +467,7 @@ public class MainTest {
 
   @Test
   public void classGeneration() throws IOException {
-    Path src = temporaryFolder.newFile("package-info.jar").toPath();
+    Path src = temporaryFolder.newFile("package-info.java").toPath();
     MoreFiles.asCharSink(src, UTF_8).write("@Deprecated package test;");
     File resources = temporaryFolder.newFile("resources.jar");
     Main.compile(

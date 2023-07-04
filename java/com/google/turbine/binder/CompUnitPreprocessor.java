@@ -36,6 +36,8 @@ import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.tree.Tree.PkgDecl;
 import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.TurbineModifier;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -105,7 +107,7 @@ public final class CompUnitPreprocessor {
       // "While the file could technically contain the source code
       // for one or more package-private (default-access) classes,
       // it would be very bad form." -- JLS 7.4.1
-      if (!unit.pkg().get().annos().isEmpty() || unit.decls().isEmpty()) {
+      if (isPackageInfo(unit)) {
         decls = Iterables.concat(decls, ImmutableList.of(packageInfoTree(unit.pkg().get())));
       }
     } else {
@@ -122,6 +124,18 @@ public final class CompUnitPreprocessor {
     }
     return new PreprocessedCompUnit(
         unit.imports(), types.build(), unit.mod(), unit.source(), packageName);
+  }
+
+  private static boolean isPackageInfo(CompUnit unit) {
+    String path = unit.source().path();
+    if (path == null) {
+      return false;
+    }
+    Path fileName = Paths.get(path).getFileName();
+    if (fileName == null) {
+      return false;
+    }
+    return fileName.toString().equals("package-info.java");
   }
 
   private static ImmutableMap<String, ClassSymbol> preprocessChildren(
