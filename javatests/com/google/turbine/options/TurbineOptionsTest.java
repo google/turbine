@@ -21,18 +21,20 @@ import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 
 @RunWith(JUnit4.class)
 public class TurbineOptionsTest {
@@ -193,7 +195,7 @@ public class TurbineOptionsTest {
   public void paramsFile() throws Exception {
     Iterable<String> paramsArgs =
         Iterables.concat(
-            BASE_ARGS, Arrays.asList("--javacopts", "-source", "8", "-target", "8", "--"));
+            BASE_ARGS, Arrays.asList("--javacopts", "-source", "8", "-target", "8","-Aconnector.opt=with,space, here", "--"));
     Path params = tmpFolder.newFile("params.txt").toPath();
     Files.write(params, paramsArgs, StandardCharsets.UTF_8);
 
@@ -206,7 +208,7 @@ public class TurbineOptionsTest {
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(lines));
 
     // assert that options were read from params file
-    assertThat(options.javacOpts()).containsExactly("-source", "8", "-target", "8").inOrder();
+    assertThat(options.javacOpts()).containsExactly("-source", "8", "-target", "8", "-Aconnector.opt=with,space, here").inOrder();
     // ... and directly from the command line
     assertThat(options.targetLabel()).hasValue("//custom/label");
   }
