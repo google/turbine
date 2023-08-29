@@ -1,2 +1,10 @@
 .idea/
 target/
+/.apt_generated/
+/.apt_generated_tests/
+
+# Eclipse
+.classpath
+.project
+.factorypath
+/.settings/
