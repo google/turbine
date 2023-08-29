@@ -17,6 +17,7 @@
 package com.google.turbine.options;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -47,9 +48,7 @@ public final class TurbineOptionsParser {
    */
   public static void parse(TurbineOptions.Builder builder, Iterable<String> args)
       throws IOException {
-    Deque<String> argumentDeque = new ArrayDeque<>();
-    expandParamsFiles(argumentDeque, args);
-    parse(builder, argumentDeque);
+    parse(builder, expandArguments(args));
   }
 
   private static void parse(TurbineOptions.Builder builder, Deque<String> argumentDeque) {
@@ -175,6 +174,7 @@ public final class TurbineOptionsParser {
       if (arg.charAt(0) == '\'') {
         // perform best-effort unescaping as a concession to ninja, see:
         // https://android.googlesource.com/platform/external/ninja/+/6f903faaf5488dc052ffc4e3e0b12757b426e088/src/util.cc#274
+    	// FIXME: do we need this? OptionParser in Bazel's javac compiler does not support this at all!
         checkArgument(arg.charAt(arg.length() - 1) == '\'', arg);
         arg = arg.substring(1, arg.length() - 1);
         checkArgument(!arg.contains("'"), arg);
@@ -190,6 +190,45 @@ public final class TurbineOptionsParser {
       } else {
         argumentDeque.addLast(arg);
       }
+    }
+  }
+
+  /**
+   * Pre-processes an argument list, expanding options @filename to read in the content of the file
+   * and add it to the list of arguments.
+   *
+   * @param args the List of arguments to pre-process.
+   * @return the List of pre-processed arguments.
+   * @throws java.io.IOException if one of the files containing options cannot be read.
+   */
+  private static Deque<String> expandArguments(Iterable<String> args) throws IOException {
+    Deque<String> expanded = new ArrayDeque<>();
+    for (String arg : args) {
+      expandArgument(expanded, arg);
+    }
+    return expanded;
+  }
+
+  /**
+   * Expands a single argument, expanding options @filename to read in the content of the file and
+   * add it to the list of processed arguments. The @ itself can be escaped with @@.
+   *
+   * @param expanded the list of processed arguments.
+   * @param arg the argument to pre-process.
+   * @throws java.io.IOException if one of the files containing options cannot be read.
+   */
+  private static void expandArgument(Deque<String> expanded, String arg) throws IOException {
+	// duplicated from https://github.com/bazelbuild/bazel/blob/9e7aa139ae33376cf1ccab205dda6608967f56bd/src/java_tools/buildjar/java/com/google/devtools/build/buildjar/OptionsParser.java#L257
+    if (arg.startsWith("@@")) {
+      expanded.add(arg.substring(1));
+    } else if (arg.startsWith("@")) {
+      for (String line : Files.readAllLines(Paths.get(arg.substring(1)), UTF_8)) {
+        if (line.length() > 0) {
+          expandArgument(expanded, line);
+        }
+      }
+    } else {
+      expanded.add(arg);
     }
   }
 
