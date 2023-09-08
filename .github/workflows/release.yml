@@ -59,4 +59,4 @@ jobs:
           tag_name: "v${{ github.event.inputs.version }}"
           target_commitish: ${{ env.TARGET_COMMITISH }}
           files: |
-            core/target/turbine-*.jar
+            target/turbine-*.jar
