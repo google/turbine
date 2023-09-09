@@ -52,6 +52,19 @@
     </developer>
   </developers>
 
+  <scm>
+    <connection>scm:git:https://github.com/google/turbine.git</connection>
+    <developerConnection>scm:git:git@github.com:google/turbine.git</developerConnection>
+    <url>https://github.com/google/turbine</url>
+  </scm>
+
+  <licenses>
+    <license>
+      <name>Apache 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
