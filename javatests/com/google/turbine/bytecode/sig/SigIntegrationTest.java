@@ -23,7 +23,8 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
-import org.objectweb.asm.Opcodes;
+import com.google.turbine.bytecode.ClassFile;
+import com.google.turbine.bytecode.ClassReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -41,10 +42,6 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
 
 /**
  * Reads all field, class, and method signatures in the bootclasspath, and round-trips them through
@@ -92,51 +89,31 @@ public class SigIntegrationTest {
     forEachBootclass(
         path -> {
           try {
-            new ClassReader(Files.newInputStream(path))
-                .accept(
-                    new ClassVisitor(Opcodes.ASM9) {
-                      @Override
-                      public void visit(
-                          int version,
-                          int access,
-                          String name,
-                          String signature,
-                          String superName,
-                          String[] interfaces) {
-                        if (signature != null) {
-                          assertThat(SigWriter.classSig(new SigParser(signature).parseClassSig()))
-                              .isEqualTo(signature);
-                          totalSignatures[0]++;
-                        }
-                      }
-
-                      @Override
-                      public FieldVisitor visitField(
-                          int access, String name, String desc, String signature, Object value) {
-                        if (signature != null) {
-                          assertThat(SigWriter.type(new SigParser(signature).parseFieldSig()))
-                              .isEqualTo(signature);
-                          totalSignatures[0]++;
-                        }
-                        return super.visitField(access, name, desc, signature, value);
-                      }
-
-                      @Override
-                      public MethodVisitor visitMethod(
-                          int access,
-                          String name,
-                          String desc,
-                          String signature,
-                          String[] exceptions) {
-                        if (signature != null) {
-                          assertThat(SigWriter.method(new SigParser(signature).parseMethodSig()))
-                              .isEqualTo(signature);
-                          totalSignatures[0]++;
-                        }
-                        return super.visitMethod(access, name, desc, signature, exceptions);
-                      }
-                    },
-                    ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+            ClassFile classFile = ClassReader.read(path.toString(), Files.readAllBytes(path));
+            {
+              String signature = classFile.signature();
+              if (signature != null) {
+                assertThat(SigWriter.classSig(new SigParser(signature).parseClassSig()))
+                    .isEqualTo(signature);
+                totalSignatures[0]++;
+              }
+            }
+            for (ClassFile.FieldInfo field : classFile.fields()) {
+              String signature = field.signature();
+              if (signature != null) {
+                assertThat(SigWriter.type(new SigParser(signature).parseFieldSig()))
+                    .isEqualTo(signature);
+                totalSignatures[0]++;
+              }
+            }
+            for (ClassFile.MethodInfo method : classFile.methods()) {
+              String signature = method.signature();
+              if (signature != null) {
+                assertThat(SigWriter.method(new SigParser(signature).parseMethodSig()))
+                    .isEqualTo(signature);
+                totalSignatures[0]++;
+              }
+            }
           } catch (IOException e) {
             throw new UncheckedIOException(e);
           }
