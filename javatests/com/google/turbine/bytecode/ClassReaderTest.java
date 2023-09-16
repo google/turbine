@@ -214,6 +214,7 @@ public class ClassReaderTest {
     cw.visitInnerClass(
         "test/Hello$Inner", "test/Hello", "Inner", Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE);
     cw.visitInnerClass("test/Hello$Inner$InnerMost", "test/Hello$Inner", "InnerMost", 0);
+    cw.visitInnerClass("test/Hello$Local", null, "Local", 0);
     byte[] bytes = cw.toByteArray();
 
     ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
