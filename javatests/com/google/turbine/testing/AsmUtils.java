@@ -16,6 +16,10 @@
 
 package com.google.turbine.testing;
 
+import static java.util.stream.Collectors.joining;
+
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.objectweb.asm.ClassReader;
@@ -37,7 +41,12 @@ public final class AsmUtils {
             ClassReader.SKIP_FRAMES
                 | ClassReader.SKIP_CODE
                 | (skipDebug ? ClassReader.SKIP_DEBUG : 0));
-    return sw.toString();
+    // TODO(cushon): Remove this after next ASM update
+    // See https://gitlab.ow2.org/asm/asm/-/commit/af4ee811fde0b14bd7db84aa944a1b3733c37289
+    return Splitter.onPattern("\\R")
+        .splitToStream(sw.toString())
+        .map(CharMatcher.is(' ')::trimTrailingFrom)
+        .collect(joining("\n"));
   }
 
   private AsmUtils() {}
