@@ -81,8 +81,7 @@ public class LazyEnv<S extends Symbol, T, V extends T> implements Env<S, V> {
   /** A lazy value provider which is given access to the current environment. */
   public interface Completer<S extends Symbol, T, V extends T> {
     /** Provides the value for the given symbol in the current environment. */
-    @Nullable
-    V complete(Env<S, T> env, S k);
+    @Nullable V complete(Env<S, T> env, S k);
   }
 
   /** Indicates that a completer tried to complete itself, possibly transitively. */

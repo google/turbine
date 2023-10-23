@@ -32,7 +32,7 @@ public final class JavacLexer {
   static List<String> javacLex(final String input) {
     Context context = new Context();
     Scanner scanner =
-        ScannerFactory.instance(context).newScanner(input, /*keepDocComments=*/ false);
+        ScannerFactory.instance(context).newScanner(input, /* keepDocComments= */ false);
     List<Tokens.Token> tokens = new ArrayList<>();
     do {
       scanner.nextToken();

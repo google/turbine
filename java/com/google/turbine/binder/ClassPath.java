@@ -39,6 +39,5 @@ public interface ClassPath {
   /** The classpath's top level index. */
   TopLevelIndex index();
 
-  @Nullable
-  Supplier<byte[]> resource(String path);
+  @Nullable Supplier<byte[]> resource(String path);
 }

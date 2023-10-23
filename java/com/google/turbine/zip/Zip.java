@@ -281,14 +281,14 @@ public final class Zip {
               nameLength,
               extLength,
               UnsignedInts.toLong(cd.getInt(cdindex + CENSIZ)),
-              /*deflate=*/ true);
+              /* deflate= */ true);
         case 0x0:
           return getBytes(
               offset,
               nameLength,
               extLength,
               UnsignedInts.toLong(cd.getInt(cdindex + CENLEN)),
-              /*deflate=*/ false);
+              /* deflate= */ false);
         default:
           throw new AssertionError(
               String.format("unsupported compression mode: 0x%x", compression));
@@ -332,7 +332,7 @@ public final class Zip {
         if (deflate) {
           bytes =
               new InflaterInputStream(
-                      new ByteArrayInputStream(bytes), new Inflater(/*nowrap=*/ true))
+                      new ByteArrayInputStream(bytes), new Inflater(/* nowrap= */ true))
                   .readAllBytes();
         }
         return bytes;

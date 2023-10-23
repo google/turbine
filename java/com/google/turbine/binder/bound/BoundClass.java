@@ -32,8 +32,7 @@ public interface BoundClass {
   TurbineTyKind kind();
 
   /** The enclosing declaration for member types, or {@code null} for top-level declarations. */
-  @Nullable
-  ClassSymbol owner();
+  @Nullable ClassSymbol owner();
 
   /** Class access bits (see JVMS table 4.1). */
   int access();

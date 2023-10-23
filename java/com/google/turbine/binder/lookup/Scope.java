@@ -24,6 +24,5 @@ public interface Scope {
    * Performs qualified name lookup on the given {@link LookupKey}, and returns either a {@link
    * LookupResult} or else {@code null} indicating that the name could not be resolved.
    */
-  @Nullable
-  LookupResult lookup(LookupKey lookupKey);
+  @Nullable LookupResult lookup(LookupKey lookupKey);
 }

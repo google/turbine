@@ -36,6 +36,5 @@ public interface TopLevelIndex {
   Scope scope();
 
   /** Returns a scope to look up members of the given package. */
-  @Nullable
-  PackageScope lookupPackage(Iterable<String> packagename);
+  @Nullable PackageScope lookupPackage(Iterable<String> packagename);
 }

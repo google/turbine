@@ -35,8 +35,7 @@ import org.jspecify.nullness.Nullable;
  */
 public interface Env<S extends Symbol, V> {
   /** Returns the information associated with the given symbol in this environment. */
-  @Nullable
-  V get(S sym);
+  @Nullable V get(S sym);
 
   default V getNonNull(S sym) {
     V result = get(sym);

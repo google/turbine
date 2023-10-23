@@ -16,7 +16,6 @@
 
 package com.google.turbine.bytecode;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CheckReturnValue;

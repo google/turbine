@@ -110,7 +110,7 @@ public final class Transitive {
         /* nestHost= */ null,
         /* nestMembers= */ ImmutableList.of(),
         /* record= */ null,
-        /* transitiveJar = */ transitiveJar);
+        /* transitiveJar= */ transitiveJar);
   }
 
   private static Set<ClassSymbol> superClosure(BindingResult bound) {

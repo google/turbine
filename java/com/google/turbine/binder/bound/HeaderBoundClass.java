@@ -25,8 +25,7 @@ import org.jspecify.nullness.Nullable;
 /** A bound node that augments {@link BoundClass} with superclasses and interfaces. */
 public interface HeaderBoundClass extends BoundClass {
   /** The superclass of the declaration. */
-  @Nullable
-  ClassSymbol superclass();
+  @Nullable ClassSymbol superclass();
 
   /** The interfaces of the declaration. */
   ImmutableList<ClassSymbol> interfaces();

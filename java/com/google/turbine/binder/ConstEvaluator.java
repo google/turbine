@@ -234,8 +234,7 @@ public strictfp class ConstEvaluator {
   }
 
   /** Evaluates a reference to another constant variable. */
-  @Nullable
-  Const evalConstVar(ConstVarName t) {
+  @Nullable Const evalConstVar(ConstVarName t) {
     FieldInfo field = resolveField(t);
     if (field == null) {
       return null;
@@ -1312,8 +1311,7 @@ public strictfp class ConstEvaluator {
     return new Const.ArrayInitValue(elements.build());
   }
 
-  @Nullable
-  Const evalAnnotationValue(Tree tree, Type ty) {
+  @Nullable Const evalAnnotationValue(Tree tree, Type ty) {
     if (ty == null) {
       throw error(tree.position(), ErrorKind.EXPRESSION_ERROR);
     }

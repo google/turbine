@@ -105,14 +105,12 @@ public class JimageClassBinder {
     this.modulesRoot = modules;
   }
 
-  @Nullable
-  Path modulePath(String moduleName) {
+  @Nullable Path modulePath(String moduleName) {
     Path path = modulesRoot.resolve(moduleName);
     return Files.exists(path) ? path : null;
   }
 
-  @Nullable
-  ModuleInfo module(String moduleName) {
+  @Nullable ModuleInfo module(String moduleName) {
     ModuleInfo result = moduleMap.get(moduleName);
     if (result == null) {
       Path path = modulePath(moduleName);

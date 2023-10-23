@@ -38,8 +38,7 @@ import org.jspecify.nullness.Nullable;
 public interface TypeBoundClass extends HeaderBoundClass {
 
   /** The super-class type. */
-  @Nullable
-  Type superClassType();
+  @Nullable Type superClassType();
 
   /** Implemented interface types. */
   ImmutableList<Type> interfaceTypes();
@@ -62,8 +61,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
    * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link
    * java.lang.annotation.Retention}, and {@link java.lang.annotation.Repeatable}.
    */
-  @Nullable
-  AnnotationMetadata annotationMetadata();
+  @Nullable AnnotationMetadata annotationMetadata();
 
   /** Declaration annotations. */
   ImmutableList<AnnoInfo> annotations();

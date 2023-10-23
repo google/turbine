@@ -33,13 +33,11 @@ public interface ImportScope {
    */
   @FunctionalInterface
   interface ResolveFunction {
-    @Nullable
-    ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name);
+    @Nullable ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name);
   }
 
   /** See {@link Scope#lookup(LookupKey)}. */
-  @Nullable
-  LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve);
+  @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve);
 
   /** Adds a scope to the chain, in the manner of {@link CompoundScope#append(Scope)}. */
   default ImportScope append(ImportScope next) {

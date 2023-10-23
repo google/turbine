@@ -209,8 +209,7 @@ public abstract class TurbineElement implements Element {
               });
     }
 
-    @Nullable
-    TypeBoundClass info() {
+    @Nullable TypeBoundClass info() {
       return info.get();
     }
 
@@ -677,8 +676,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
-    @Nullable
-    MethodInfo info() {
+    @Nullable MethodInfo info() {
       return info.get();
     }
 
@@ -883,8 +881,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
-    @Nullable
-    FieldInfo info() {
+    @Nullable FieldInfo info() {
       return info.get();
     }
 
@@ -1147,8 +1144,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
-    @Nullable
-    ParamInfo info() {
+    @Nullable ParamInfo info() {
       return info.get();
     }
 
@@ -1252,8 +1248,7 @@ public abstract class TurbineElement implements Element {
               }
             });
 
-    @Nullable
-    RecordComponentInfo info() {
+    @Nullable RecordComponentInfo info() {
       return info.get();
     }
 

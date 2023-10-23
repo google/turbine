@@ -1030,7 +1030,7 @@ public class BinderErrorTest {
                         ImmutableList.of(parseLines(source)),
                         ClassPathBinder.bindClasspath(ImmutableList.of()),
                         TURBINE_BOOTCLASSPATH,
-                        /* moduleVersion=*/ Optional.empty())
+                        /* moduleVersion= */ Optional.empty())
                     .units());
     assertThat(e).hasMessageThat().isEqualTo(lines(expected));
   }
@@ -1066,7 +1066,7 @@ public class BinderErrorTest {
                             /* options= */ ImmutableMap.of(),
                             SourceVersion.latestSupported()),
                         TURBINE_BOOTCLASSPATH,
-                        /* moduleVersion=*/ Optional.empty())
+                        /* moduleVersion= */ Optional.empty())
                     .units());
     assertThat(e).hasMessageThat().isEqualTo(lines(expected));
   }

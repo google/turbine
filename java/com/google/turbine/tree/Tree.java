@@ -856,6 +856,7 @@ public abstract class Tree {
     public Optional<Tree> defaultValue() {
       return defaultValue;
     }
+
     /**
      * A javadoc comment, excluding the opening and closing delimiters but including all interior
      * characters and whitespace.
@@ -1017,6 +1018,7 @@ public abstract class Tree {
     public TurbineTyKind tykind() {
       return tykind;
     }
+
     /**
      * A javadoc comment, excluding the opening and closing delimiters but including all interior
      * characters and whitespace.
