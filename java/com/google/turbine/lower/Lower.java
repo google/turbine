@@ -723,12 +723,12 @@ public class Lower {
             result,
             info.superClassType(),
             TargetType.SUPERTYPE,
-            new TypeAnnotationInfo.SuperTypeTarget(-1));
+            TypeAnnotationInfo.SuperTypeTarget.create(-1));
       }
       int idx = 0;
       for (Type i : info.interfaceTypes()) {
         lowerTypeAnnotations(
-            result, i, TargetType.SUPERTYPE, new TypeAnnotationInfo.SuperTypeTarget(idx++));
+            result, i, TargetType.SUPERTYPE, TypeAnnotationInfo.SuperTypeTarget.create(idx++));
       }
     }
     typeParameterAnnotations(
@@ -752,7 +752,7 @@ public class Lower {
     {
       int idx = 0;
       for (Type e : m.exceptions()) {
-        lowerTypeAnnotations(result, e, TargetType.METHOD_THROWS, new ThrowsTarget(idx++));
+        lowerTypeAnnotations(result, e, TargetType.METHOD_THROWS, ThrowsTarget.create(idx++));
       }
     }
 
@@ -777,7 +777,7 @@ public class Lower {
             result,
             p.type(),
             TargetType.METHOD_FORMAL_PARAMETER,
-            new TypeAnnotationInfo.FormalParameterTarget(idx++));
+            TypeAnnotationInfo.FormalParameterTarget.create(idx++));
       }
     }
 
@@ -803,7 +803,7 @@ public class Lower {
         result.add(
             new TypeAnnotationInfo(
                 targetType,
-                new TypeAnnotationInfo.TypeParameterTarget(typeParameterIndex),
+                TypeAnnotationInfo.TypeParameterTarget.create(typeParameterIndex),
                 TypePath.root(),
                 info));
       }
@@ -817,7 +817,7 @@ public class Lower {
             result,
             i,
             boundTargetType,
-            new TypeAnnotationInfo.TypeParameterBoundTarget(typeParameterIndex, boundIndex++));
+            TypeAnnotationInfo.TypeParameterBoundTarget.create(typeParameterIndex, boundIndex++));
       }
       typeParameterIndex++;
     }

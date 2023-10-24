@@ -18,6 +18,7 @@ package com.google.turbine.bytecode;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.model.Const;
@@ -612,16 +613,13 @@ public class ClassFile {
     }
 
     /** A JVMS 4.7.20.1 type_parameter_target. */
-    public static class TypeParameterTarget extends Target {
-      private final int index;
-
-      public TypeParameterTarget(int index) {
-        this.index = index;
+    @AutoValue
+    public abstract static class TypeParameterTarget extends Target {
+      public static TypeParameterTarget create(int index) {
+        return new AutoValue_ClassFile_TypeAnnotationInfo_TypeParameterTarget(index);
       }
 
-      public int index() {
-        return index;
-      }
+      public abstract int index();
 
       @Override
       public Target.Kind kind() {
@@ -630,11 +628,10 @@ public class ClassFile {
     }
 
     /** A JVMS 4.7.20.1 supertype_target. */
-    public static class SuperTypeTarget extends Target {
-      private final int index;
-
-      public SuperTypeTarget(int index) {
-        this.index = index;
+    @AutoValue
+    public abstract static class SuperTypeTarget extends Target {
+      public static SuperTypeTarget create(int index) {
+        return new AutoValue_ClassFile_TypeAnnotationInfo_SuperTypeTarget(index);
       }
 
       @Override
@@ -642,19 +639,15 @@ public class ClassFile {
         return Target.Kind.SUPERTYPE;
       }
 
-      public int index() {
-        return index;
-      }
+      public abstract int index();
     }
 
     /** A JVMS 4.7.20.1 type_parameter_bound_target. */
-    public static class TypeParameterBoundTarget extends Target {
-      private final int typeParameterIndex;
-      private final int boundIndex;
-
-      public TypeParameterBoundTarget(int typeParameterIndex, int boundIndex) {
-        this.typeParameterIndex = typeParameterIndex;
-        this.boundIndex = boundIndex;
+    @AutoValue
+    public abstract static class TypeParameterBoundTarget extends Target {
+      public static TypeParameterBoundTarget create(int typeParameterIndex, int boundIndex) {
+        return new AutoValue_ClassFile_TypeAnnotationInfo_TypeParameterBoundTarget(
+            typeParameterIndex, boundIndex);
       }
 
       @Override
@@ -662,13 +655,9 @@ public class ClassFile {
         return Target.Kind.TYPE_PARAMETER_BOUND;
       }
 
-      public int typeParameterIndex() {
-        return typeParameterIndex;
-      }
+      public abstract int typeParameterIndex();
 
-      public int boundIndex() {
-        return boundIndex;
-      }
+      public abstract int boundIndex();
     }
 
     /** A JVMS 4.7.20.1 empty_target. */
@@ -681,11 +670,11 @@ public class ClassFile {
         };
 
     /** A JVMS 4.7.20.1 formal_parameter_target. */
-    public static class FormalParameterTarget extends Target {
-      private final int index;
+    @AutoValue
+    public abstract static class FormalParameterTarget extends Target {
 
-      public FormalParameterTarget(int index) {
-        this.index = index;
+      public static FormalParameterTarget create(int index) {
+        return new AutoValue_ClassFile_TypeAnnotationInfo_FormalParameterTarget(index);
       }
 
       @Override
@@ -693,17 +682,15 @@ public class ClassFile {
         return Target.Kind.FORMAL_PARAMETER;
       }
 
-      public int index() {
-        return index;
-      }
+      public abstract int index();
     }
 
     /** A JVMS 4.7.20.1 throws_target. */
-    public static class ThrowsTarget extends Target {
-      private final int index;
+    @AutoValue
+    public abstract static class ThrowsTarget extends Target {
 
-      public ThrowsTarget(int index) {
-        this.index = index;
+      public static ThrowsTarget create(int index) {
+        return new AutoValue_ClassFile_TypeAnnotationInfo_ThrowsTarget(index);
       }
 
       @Override
@@ -711,9 +698,7 @@ public class ClassFile {
         return Target.Kind.THROWS;
       }
 
-      public int index() {
-        return index;
-      }
+      public abstract int index();
     }
 
     /**
@@ -722,35 +707,36 @@ public class ClassFile {
      * <p>Represented as an immutable linked-list of nodes, which is built out by {@code Lower}
      * while recursively searching for type annotations to process.
      */
-    public static class TypePath {
+    @AutoValue
+    public abstract static class TypePath {
 
       /** The root type_path_kind, used for initialization. */
       public static TypePath root() {
-        return new TypePath(null, null);
+        return create(null, null);
       }
 
       /** Adds an array type_path_kind entry. */
       public TypePath array() {
-        return new TypePath(TypePath.Kind.ARRAY, this);
+        return create(TypePath.Kind.ARRAY, this);
       }
 
       /** Adds a nested type type_path_kind entry. */
       public TypePath nested() {
-        return new TypePath(TypePath.Kind.NESTED, this);
+        return create(TypePath.Kind.NESTED, this);
       }
 
       /** Adds a wildcard bound type_path_kind entry. */
       public TypePath wild() {
-        return new TypePath(TypePath.Kind.WILDCARD_BOUND, this);
+        return create(TypePath.Kind.WILDCARD_BOUND, this);
       }
 
       /** Adds a type argument type_path_kind entry. */
       public TypePath typeArgument(int idx) {
-        return new TypePath(idx, TypePath.Kind.TYPE_ARGUMENT, this);
+        return create(idx, TypePath.Kind.TYPE_ARGUMENT, this);
       }
 
       /** A type_path_kind. */
-      enum Kind {
+      public enum Kind {
         ARRAY(0),
         NESTED(1),
         WILDCARD_BOUND(2),
@@ -763,35 +749,32 @@ public class ClassFile {
         }
       }
 
-      private final @Nullable TypePath parent;
-      private final TypePath.@Nullable Kind kind;
-      private final int index;
-
-      private TypePath(TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
-        // JVMS 4.7.20.2: type_argument_index is 0 if the bound kind is not TYPE_ARGUMENT
-        this(0, kind, parent);
-      }
-
-      private TypePath(int index, TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
-        this.index = index;
-        this.kind = kind;
-        this.parent = parent;
-      }
-
       /** The type argument index; set only if the kind is {@code TYPE_ARGUMENT}. */
-      public int typeArgumentIndex() {
-        return index;
+      public abstract int typeArgumentIndex();
+
+      public abstract @Nullable Kind kind();
+
+      public abstract @Nullable TypePath parent();
+
+      private static TypePath create(TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
+        // JVMS 4.7.20.2: type_argument_index is 0 if the bound kind is not TYPE_ARGUMENT
+        return create(0, kind, parent);
+      }
+
+      private static TypePath create(
+          int index, TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
+        return new AutoValue_ClassFile_TypeAnnotationInfo_TypePath(index, kind, parent);
       }
 
       /** The JVMS 4.7.20.2-A serialized value of the type_path_kind. */
       public byte tag() {
-        return (byte) requireNonNull(kind).tag;
+        return (byte) requireNonNull(kind()).tag;
       }
 
       /** Returns a flattened view of the type path. */
       public ImmutableList<TypePath> flatten() {
         Deque<TypePath> flat = new ArrayDeque<>();
-        for (TypePath curr = this; requireNonNull(curr).kind != null; curr = curr.parent) {
+        for (TypePath curr = this; requireNonNull(curr).kind() != null; curr = curr.parent()) {
           flat.addFirst(curr);
         }
         return ImmutableList.copyOf(flat);
