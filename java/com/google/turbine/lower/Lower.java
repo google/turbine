@@ -51,6 +51,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.RuntimeVisibility;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.Target;
@@ -433,13 +434,13 @@ public class Lower {
       }
       ImmutableList.Builder<AnnotationInfo> parameterAnnotations = ImmutableList.builder();
       for (AnnoInfo annotation : parameter.annotations()) {
-        Boolean visible = isVisible(annotation.sym());
-        if (visible == null) {
+        RuntimeVisibility visibility = getVisibility(annotation.sym());
+        if (visibility == null) {
           continue;
         }
         String desc = sig.objectType(annotation.sym());
         parameterAnnotations.add(
-            new AnnotationInfo(desc, visible, annotationValues(annotation.values())));
+            new AnnotationInfo(desc, visibility, annotationValues(annotation.values())));
       }
       annotations.add(parameterAnnotations.build());
     }
@@ -638,26 +639,26 @@ public class Lower {
   }
 
   private @Nullable AnnotationInfo lowerAnnotation(AnnoInfo annotation) {
-    Boolean visible = isVisible(annotation.sym());
-    if (visible == null) {
+    RuntimeVisibility visibility = getVisibility(annotation.sym());
+    if (visibility == null) {
       return null;
     }
     return new AnnotationInfo(
-        sig.objectType(annotation.sym()), visible, annotationValues(annotation.values()));
+        sig.objectType(annotation.sym()), visibility, annotationValues(annotation.values()));
   }
 
   /**
    * Returns true if the annotation is visible at runtime, false if it is not visible at runtime,
    * and {@code null} if it should not be retained in bytecode.
    */
-  private @Nullable Boolean isVisible(ClassSymbol sym) {
+  private @Nullable RuntimeVisibility getVisibility(ClassSymbol sym) {
     RetentionPolicy retention =
         requireNonNull(env.getNonNull(sym).annotationMetadata()).retention();
     switch (retention) {
       case CLASS:
-        return false;
+        return RuntimeVisibility.INVISIBLE;
       case RUNTIME:
-        return true;
+        return RuntimeVisibility.VISIBLE;
       case SOURCE:
         return null;
     }
@@ -698,14 +699,14 @@ public class Lower {
       case ANNOTATION:
         {
           TurbineAnnotationValue annotationValue = (TurbineAnnotationValue) value;
-          Boolean visible = isVisible(annotationValue.sym());
-          if (visible == null) {
-            visible = true;
+          RuntimeVisibility visibility = getVisibility(annotationValue.sym());
+          if (visibility == null) {
+            visibility = RuntimeVisibility.VISIBLE;
           }
           return new ElementValue.ConstTurbineAnnotationValue(
               new AnnotationInfo(
                   sig.objectType(annotationValue.sym()),
-                  visible,
+                  visibility,
                   annotationValues(annotationValue.values())));
         }
       case PRIMITIVE:

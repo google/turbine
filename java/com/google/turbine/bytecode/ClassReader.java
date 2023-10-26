@@ -26,6 +26,7 @@ import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTu
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.bytecode.ClassFile.AnnotationInfo.RuntimeVisibility;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.ExportInfo;
@@ -113,10 +114,10 @@ public class ClassReader {
       String name = constantPool.utf8(attributeNameIndex);
       switch (name) {
         case "RuntimeInvisibleAnnotations":
-          readAnnotations(annotations, constantPool, /* runtimeVisible= */ false);
+          readAnnotations(annotations, constantPool, RuntimeVisibility.INVISIBLE);
           break;
         case "RuntimeVisibleAnnotations":
-          readAnnotations(annotations, constantPool, /* runtimeVisible= */ true);
+          readAnnotations(annotations, constantPool, RuntimeVisibility.VISIBLE);
           break;
         case "Signature":
           signature = readSignature(constantPool);
@@ -195,11 +196,11 @@ public class ClassReader {
   private void readAnnotations(
       ImmutableList.Builder<ClassFile.AnnotationInfo> annotations,
       ConstantPoolReader constantPool,
-      boolean runtimeVisible) {
+      RuntimeVisibility runtimeVisibility) {
     int unusedLength = reader.u4();
     int numAnnotations = reader.u2();
     for (int n = 0; n < numAnnotations; n++) {
-      annotations.add(readAnnotation(constantPool, runtimeVisible));
+      annotations.add(readAnnotation(constantPool, runtimeVisibility));
     }
   }
 
@@ -207,7 +208,7 @@ public class ClassReader {
   public void readParameterAnnotations(
       List<ImmutableList.Builder<AnnotationInfo>> annotations,
       ConstantPoolReader constantPool,
-      boolean runtimeVisible) {
+      RuntimeVisibility runtimeVisibility) {
     int unusedLength = reader.u4();
     int numParameters = reader.u1();
     while (annotations.size() < numParameters) {
@@ -216,7 +217,7 @@ public class ClassReader {
     for (int i = 0; i < numParameters; i++) {
       int numAnnotations = reader.u2();
       for (int n = 0; n < numAnnotations; n++) {
-        annotations.get(i).add(readAnnotation(constantPool, runtimeVisible));
+        annotations.get(i).add(readAnnotation(constantPool, runtimeVisibility));
       }
     }
   }
@@ -322,7 +323,7 @@ public class ClassReader {
    * skips over the annotation.
    */
   private ClassFile.AnnotationInfo readAnnotation(
-      ConstantPoolReader constantPool, boolean runtimeVisible) {
+      ConstantPoolReader constantPool, RuntimeVisibility runtimeVisibility) {
     int typeIndex = reader.u2();
     String annotationType = constantPool.utf8(typeIndex);
     int numElementValuePairs = reader.u2();
@@ -333,7 +334,7 @@ public class ClassReader {
       ElementValue value = readElementValue(constantPool);
       values.put(key, value);
     }
-    return new ClassFile.AnnotationInfo(annotationType, runtimeVisible, values.buildOrThrow());
+    return new ClassFile.AnnotationInfo(annotationType, runtimeVisibility, values.buildOrThrow());
   }
 
   private ElementValue readElementValue(ConstantPoolReader constantPool) {
@@ -374,7 +375,7 @@ public class ClassReader {
         // the attribute the annotation appears in (e.g. Runtime{Invisible,Visible}Annotations).
         // See also JVMS 4.7.16.1.
         return new ConstTurbineAnnotationValue(
-            readAnnotation(constantPool, /* runtimeVisible= */ false));
+            readAnnotation(constantPool, RuntimeVisibility.INVISIBLE));
       case '[':
         {
           int numValues = reader.u2();
@@ -430,18 +431,18 @@ public class ClassReader {
             defaultValue = readElementValue(constantPool);
             break;
           case "RuntimeInvisibleAnnotations":
-            readAnnotations(annotations, constantPool, /* runtimeVisible= */ false);
+            readAnnotations(annotations, constantPool, RuntimeVisibility.INVISIBLE);
             break;
           case "RuntimeVisibleAnnotations":
-            readAnnotations(annotations, constantPool, /* runtimeVisible= */ true);
+            readAnnotations(annotations, constantPool, RuntimeVisibility.VISIBLE);
             break;
           case "RuntimeInvisibleParameterAnnotations":
             readParameterAnnotations(
-                parameterAnnotationsBuilder, constantPool, /* runtimeVisible= */ false);
+                parameterAnnotationsBuilder, constantPool, RuntimeVisibility.INVISIBLE);
             break;
           case "RuntimeVisibleParameterAnnotations":
             readParameterAnnotations(
-                parameterAnnotationsBuilder, constantPool, /* runtimeVisible= */ true);
+                parameterAnnotationsBuilder, constantPool, RuntimeVisibility.VISIBLE);
             break;
           case "MethodParameters":
             readMethodParameters(parameters, constantPool);
@@ -509,10 +510,10 @@ public class ClassReader {
             value = constantPool.constant(reader.u2());
             break;
           case "RuntimeInvisibleAnnotations":
-            readAnnotations(annotations, constantPool, /* runtimeVisible= */ false);
+            readAnnotations(annotations, constantPool, RuntimeVisibility.INVISIBLE);
             break;
           case "RuntimeVisibleAnnotations":
-            readAnnotations(annotations, constantPool, /* runtimeVisible= */ true);
+            readAnnotations(annotations, constantPool, RuntimeVisibility.VISIBLE);
             break;
           case "Signature":
             signature = readSignature(constantPool);

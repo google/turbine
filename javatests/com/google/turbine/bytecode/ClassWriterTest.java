@@ -202,13 +202,19 @@ public class ClassWriterTest {
                         "Ljava/util/List;",
                         "Ljava/util/List<Ljava/lang/Integer;>;",
                         ImmutableList.of(
-                            new ClassFile.AnnotationInfo("LA;", true, ImmutableMap.of())),
+                            new ClassFile.AnnotationInfo(
+                                "LA;",
+                                ClassFile.AnnotationInfo.RuntimeVisibility.VISIBLE,
+                                ImmutableMap.of())),
                         ImmutableList.of(
                             new ClassFile.TypeAnnotationInfo(
                                 ClassFile.TypeAnnotationInfo.TargetType.FIELD,
                                 ClassFile.TypeAnnotationInfo.EMPTY_TARGET,
                                 ClassFile.TypeAnnotationInfo.TypePath.root(),
-                                new ClassFile.AnnotationInfo("LA;", true, ImmutableMap.of())))),
+                                new ClassFile.AnnotationInfo(
+                                    "LA;",
+                                    ClassFile.AnnotationInfo.RuntimeVisibility.VISIBLE,
+                                    ImmutableMap.of())))),
                     new ClassFile.RecordInfo.RecordComponentInfo(
                         "y", "I", null, ImmutableList.of(), ImmutableList.of()))),
             /* transitiveJar= */ null);

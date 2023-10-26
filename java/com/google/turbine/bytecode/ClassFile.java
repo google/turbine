@@ -381,14 +381,22 @@ public class ClassFile {
   /** The contents of a JVMS §4.7.16 annotation structure. */
   public static class AnnotationInfo {
 
+    /** Whether the annotation is visible at runtime. */
+    public enum RuntimeVisibility {
+      VISIBLE,
+      INVISIBLE
+    }
+
     private final String typeName;
-    private final boolean runtimeVisible;
+    private final RuntimeVisibility runtimeVisibility;
     private final Map<String, ElementValue> elementValuePairs;
 
     public AnnotationInfo(
-        String typeName, boolean runtimeVisible, Map<String, ElementValue> elementValuePairs) {
+        String typeName,
+        RuntimeVisibility runtimeVisibility,
+        Map<String, ElementValue> elementValuePairs) {
       this.typeName = typeName;
-      this.runtimeVisible = runtimeVisible;
+      this.runtimeVisibility = runtimeVisibility;
       this.elementValuePairs = elementValuePairs;
     }
 
@@ -399,7 +407,7 @@ public class ClassFile {
 
     /** Returns true if the annotation is visible at runtime. */
     public boolean isRuntimeVisible() {
-      return runtimeVisible;
+      return runtimeVisibility == RuntimeVisibility.VISIBLE;
     }
 
     /** The element-value pairs of the annotation. */
