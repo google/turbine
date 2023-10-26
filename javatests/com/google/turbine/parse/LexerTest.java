@@ -401,4 +401,17 @@ public class LexerTest {
       expect.that(StreamLexer.stripIndent(input)).isEqualTo(stripIndent.invoke(input));
     }
   }
+
+  @Test
+  public void textBlockNewlineEscapes() throws Exception {
+    assumeTrue(Runtime.version().feature() >= 13);
+    String input =
+        "\"\"\"\n" //
+            + "hello\\\n"
+            + "hello\\\r"
+            + "hello\\\r\n"
+            + "\"\"\"";
+    lexerComparisonTest(input);
+    assertThat(lex(input)).containsExactly("STRING_LITERAL(hellohellohello)", "EOF");
+  }
 }

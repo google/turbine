@@ -21,7 +21,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -80,7 +79,7 @@ public class TurbineDiagnostic {
       requireNonNull(source); // line and column imply source is non-null
       sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position)))
           .append(System.lineSeparator());
-      sb.append(Strings.repeat(" ", column() - 1)).append('^');
+      sb.append(" ".repeat(column() - 1)).append('^');
     }
     return sb.toString();
   }
@@ -136,6 +135,10 @@ public class TurbineDiagnostic {
   public static TurbineDiagnostic format(
       Diagnostic.Kind severity, SourceFile source, int position, ErrorKind kind, Object... args) {
     return create(severity, kind, ImmutableList.copyOf(args), source, position);
+  }
+
+  public TurbineDiagnostic withPosition(SourceFile source, int position) {
+    return new TurbineDiagnostic(severity, kind, args, source, position);
   }
 
   @Override

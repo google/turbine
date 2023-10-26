@@ -52,12 +52,15 @@ public class LowerIntegrationTest {
           "record_ctor.test", 16,
           "sealed.test", 17,
           "sealed_nested.test", 17,
-          "textblock.test", 15);
+          "textblock.test", 15,
+          "textblock2.test", 15,
+          "B306423115.test", 15);
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
     String[] testCases = {
       // keep-sorted start
+      "B306423115.test",
       "B33513475.test",
       "B33513475b.test",
       "B33513475c.test",
@@ -297,6 +300,7 @@ public class LowerIntegrationTest {
       "supplierfunction.test",
       "tbound.test",
       "textblock.test",
+      "textblock2.test",
       "tyanno_inner.test",
       "tyanno_varargs.test",
       "typaram.test",

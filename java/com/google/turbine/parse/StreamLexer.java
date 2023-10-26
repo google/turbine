@@ -497,6 +497,14 @@ public class StreamLexer implements Lexer {
           value = translateEscapes(value);
           saveValue(value);
           return Token.STRING_LITERAL;
+        case '\\':
+          // Escapes are handled later (after stripping indentation), but we need to ensure
+          // that \" escapes don't count towards the closing delimiter of the text block.
+          sb.appendCodePoint(ch);
+          eat();
+          sb.appendCodePoint(ch);
+          eat();
+          continue;
         case ASCII_SUB:
           if (reader.done()) {
             return Token.EOF;
@@ -573,10 +581,21 @@ public class StreamLexer implements Lexer {
     return i + 1;
   }
 
-  private static String translateEscapes(String value) {
+  private String translateEscapes(String value) {
     StreamLexer lexer =
         new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, value + ASCII_SUB)));
-    return lexer.translateEscapes();
+    try {
+      return lexer.translateEscapes();
+    } catch (TurbineError e) {
+      // Rethrow since the source positions above are relative to the text block, not the entire
+      // file. This means that diagnostics for invalid escapes in text blocks will be emitted at the
+      // delimiter.
+      // TODO(cushon): consider merging this into stripIndent and tracking the real position
+      throw new TurbineError(
+          e.diagnostics().stream()
+              .map(d -> d.withPosition(reader.source(), reader.position()))
+              .collect(toImmutableList()));
+    }
   }
 
   private String translateEscapes() {
@@ -587,7 +606,20 @@ public class StreamLexer implements Lexer {
       switch (ch) {
         case '\\':
           eat();
-          sb.append(escape());
+          switch (ch) {
+            case '\r':
+              eat();
+              if (ch == '\n') {
+                eat();
+              }
+              break;
+            case '\n':
+              eat();
+              break;
+            default:
+              sb.append(escape());
+              break;
+          }
           continue;
         case ASCII_SUB:
           break OUTER;
@@ -618,6 +650,9 @@ public class StreamLexer implements Lexer {
       case 'r':
         eat();
         return '\r';
+      case 's':
+        eat();
+        return ' ';
       case '"':
         eat();
         return '\"';

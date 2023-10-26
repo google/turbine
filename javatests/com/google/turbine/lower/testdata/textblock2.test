@@ -1,0 +1,92 @@
+=== T.java ===
+class T {
+  static final String a = """
+    line 1
+    line 2
+    line 3
+    """;
+
+  static final String b = """
+    line 1
+    line 2
+    line 3""";
+
+  static final String c = """
+    """;
+  static final String g =
+      """
+              <html>\r
+                  <body>\r
+                      <p>Hello, world</p>\r
+                  </body>\r
+              </html>\r
+              """;
+  static final String h =
+      """
+    "When I use a word," Humpty Dumpty said,
+    in rather a scornful tone, "it means just what I
+    choose it to mean - neither more nor less."
+    "The question is," said Alice, "whether you
+    can make words mean so many different things."
+    "The question is," said Humpty Dumpty,
+    "which is to be master - that's all."
+    """;
+
+  static final String i = """
+    String empty = "";
+    """;
+
+  static final String j =
+      """
+    String text = \"""
+        A text block inside a text block
+    \""";
+    """;
+
+  static final String k = """
+    A common character
+    in Java programs
+    is \"""";
+
+  static final String l =
+      """
+    The empty string literal
+    is formed from " characters
+    as follows: \"\"""";
+
+  static final String m =
+      """
+    "
+    ""
+    ""\"
+    ""\""
+    ""\"""
+    ""\"""\"
+    ""\"""\""
+    ""\"""\"""
+    ""\"""\"""\"
+    ""\"""\"""\""
+    ""\"""\"""\"""
+    ""\"""\"""\"""\"
+    """;
+
+  static final String n =
+      """
+    Lorem ipsum dolor sit amet, consectetur adipiscing \
+    elit, sed do eiusmod tempor incididunt ut labore \
+    et dolore magna aliqua.\
+    """;
+
+  static final String o = """
+    red  \s
+    green\s
+    blue \s
+    """;
+
+  static final String p =
+      "public void print(Object o) {"
+          + """
+        System.out.println(Objects.toString(o));
+    }
+    """;
+}

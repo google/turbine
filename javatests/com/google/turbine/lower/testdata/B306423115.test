@@ -1,0 +1,8 @@
+=== T.java ===
+public class T {
+    public static final String a =
+        """
+        a \
+        b \
+        """;
+}
