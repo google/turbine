@@ -124,9 +124,6 @@ public class Canonicalize {
     if (ty.sym().equals(ClassSymbol.ERROR)) {
       return ty;
     }
-    if (isRaw(ty)) {
-      return Erasure.eraseClassTy(ty);
-    }
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
     // for the enclosing declarations
     Iterator<ClassTy.SimpleClassTy> it = ty.classes().iterator();
@@ -139,6 +136,9 @@ public class Canonicalize {
     // canonicalize each additional simple name that appeared in source
     while (it.hasNext()) {
       canon = canonOne(canon, it.next());
+    }
+    if (isRaw(canon)) {
+      canon = Erasure.eraseClassTy(canon);
     }
     return canon;
   }

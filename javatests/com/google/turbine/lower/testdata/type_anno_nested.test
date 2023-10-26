@@ -1,0 +1,23 @@
+=== Annotations.java ===
+import static java.lang.annotation.ElementType.TYPE_USE;
+import java.lang.annotation.Target;
+
+@Target(TYPE_USE) @interface A {}
+@Target(TYPE_USE) @interface B {}
+@Target(TYPE_USE) @interface C {}
+
+=== Outer.java ===
+class Outer {
+
+  @A Outer . @B Middle . @C Inner f;
+  Outer . @A MiddleStatic . @B Inner g;
+  Outer . MiddleStatic . @A InnerStatic h;
+
+  class Middle {
+    class Inner {}
+  }
+  static class MiddleStatic {
+    class Inner {}
+    static class InnerStatic {}
+  }
+}

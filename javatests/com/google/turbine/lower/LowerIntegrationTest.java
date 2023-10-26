@@ -41,6 +41,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+/**
+ * A test that compiles inputs with both javac and turbine, and asserts that the output is
+ * equivalent.
+ */
 @RunWith(Parameterized.class)
 public class LowerIntegrationTest {
 
@@ -314,6 +318,9 @@ public class LowerIntegrationTest {
       "type_anno_c_array.test",
       "type_anno_cstyle_array_dims.test",
       "type_anno_hello.test",
+      "type_anno_nested.test",
+      "type_anno_nested_generic.test",
+      "type_anno_nested_raw.test",
       "type_anno_order.test",
       "type_anno_parameter_index.test",
       "type_anno_qual.test",

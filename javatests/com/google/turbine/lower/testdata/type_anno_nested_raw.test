@@ -1,0 +1,32 @@
+=== Annotations.java ===
+import static java.lang.annotation.ElementType.TYPE_USE;
+import java.lang.annotation.Target;
+
+@Target(TYPE_USE) @interface A {}
+@Target(TYPE_USE) @interface B {}
+@Target(TYPE_USE) @interface C {}
+
+=== Outer.java ===
+import java.util.List;
+
+class Outer {
+  static class StaticMiddle<T> {
+    class Inner<U> {}
+    static class StaticInner<U> {}
+
+    // raw types with parameterized enclosing types
+    @A Inner a;
+    @A StaticInner b;
+  }
+
+  Outer . StaticMiddle . @A Inner e;
+  Outer . StaticMiddle . @A StaticInner f;
+  Outer . StaticMiddle<@A String> . @B Inner<@C String> g;
+
+  Outer . StaticMiddle<@A List> . @B Inner<@C List> h;
+  List<Outer . StaticMiddle . @A StaticInner> i;
+
+  // javac rejects these partially raw types
+  // Outer . StaticMiddle<@A String> . @B Inner j;
+  // Outer . StaticMiddle . @B Inner<@C String> k;
+}
