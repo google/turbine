@@ -135,6 +135,21 @@ public final class IntegrationTestSupport {
     return toByteCode(classes);
   }
 
+  public static Map<String, byte[]> removeUnsupportedAttributes(Map<String, byte[]> in) {
+    List<ClassNode> classes = toClassNodes(in);
+    for (ClassNode c : classes) {
+      c.nestMembers = null;
+      c.nestHostClass = null;
+      // TODO(b/307939333): class reading for sealed classes
+      c.permittedSubclasses = null;
+      // TODO(b/307939164): class reading for record components
+      c.recordComponents = null;
+      // this is a synthetic access flag that ASM sets if recordComponents is present
+      c.access &= ~Opcodes.ACC_RECORD;
+    }
+    return toByteCode(classes);
+  }
+
   private static boolean isLocal(ClassNode n) {
     return n.outerMethod != null;
   }

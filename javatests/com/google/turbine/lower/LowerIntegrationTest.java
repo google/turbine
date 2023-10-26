@@ -25,11 +25,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.turbine.bytecode.ClassFile;
+import com.google.turbine.bytecode.ClassReader;
+import com.google.turbine.bytecode.ClassWriter;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
@@ -59,6 +63,35 @@ public class LowerIntegrationTest {
           "textblock.test", 15,
           "textblock2.test", 15,
           "B306423115.test", 15);
+
+  // TODO(b/307310010): enable these after adding support for reading type annotation attributes
+  private static final ImmutableSet<String> TYPE_ANNOTATION_TESTS =
+      ImmutableSet.of(
+          "c_array.test",
+          "tyanno_inner.test",
+          "tyanno_varargs.test",
+          "type_anno_ambiguous.test",
+          "type_anno_ambiguous_param.test",
+          "type_anno_ambiguous_qualified.test",
+          "type_anno_array_bound.test",
+          "type_anno_array_dims.test",
+          "type_anno_c_array.test",
+          "type_anno_cstyle_array_dims.test",
+          "type_anno_hello.test",
+          "type_anno_nested.test",
+          "type_anno_nested_raw.test",
+          "type_anno_nested_generic.test",
+          "type_anno_order.test",
+          "type_anno_parameter_index.test",
+          "type_anno_qual.test",
+          "type_anno_raw.test",
+          "anno_repeated.test",
+          "type_anno_receiver.test",
+          "type_anno_retention.test",
+          "type_anno_return.test",
+          "receiver_param.test",
+          "record.test",
+          "record_ctor.test");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
@@ -417,5 +450,19 @@ public class LowerIntegrationTest {
 
     assertThat(IntegrationTestSupport.dump(IntegrationTestSupport.sortMembers(actual)))
         .isEqualTo(IntegrationTestSupport.dump(IntegrationTestSupport.canonicalize(expected)));
+
+    if (!TYPE_ANNOTATION_TESTS.contains(test)) {
+      Map<String, byte[]> bytecode = new LinkedHashMap<>();
+      actual.forEach(
+          (name, bytes) -> {
+            ClassFile classFile = ClassReader.read(name, bytes);
+            bytecode.put(name, ClassWriter.writeClass(classFile));
+          });
+
+      assertThat(IntegrationTestSupport.dump(bytecode))
+          .isEqualTo(
+              IntegrationTestSupport.dump(
+                  IntegrationTestSupport.removeUnsupportedAttributes(actual)));
+    }
   }
 }

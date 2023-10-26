@@ -113,14 +113,16 @@ public class ClassReader {
       String name = constantPool.utf8(attributeNameIndex);
       switch (name) {
         case "RuntimeInvisibleAnnotations":
+          readAnnotations(annotations, constantPool, /* runtimeVisible= */ false);
+          break;
         case "RuntimeVisibleAnnotations":
-          readAnnotations(annotations, constantPool);
+          readAnnotations(annotations, constantPool, /* runtimeVisible= */ true);
           break;
         case "Signature":
           signature = readSignature(constantPool);
           break;
         case "InnerClasses":
-          innerclasses = readInnerClasses(constantPool, thisClass);
+          innerclasses = readInnerClasses(constantPool);
           break;
         case "Module":
           module = readModule(constantPool);
@@ -163,8 +165,7 @@ public class ClassReader {
   }
 
   /** Reads JVMS 4.7.6 InnerClasses attributes. */
-  private List<ClassFile.InnerClass> readInnerClasses(
-      ConstantPoolReader constantPool, String thisClass) {
+  private List<ClassFile.InnerClass> readInnerClasses(ConstantPoolReader constantPool) {
     int unusedLength = reader.u4();
     int numberOfClasses = reader.u2();
     List<ClassFile.InnerClass> innerclasses = new ArrayList<>();
@@ -177,9 +178,7 @@ public class ClassReader {
       int innerNameIndex = reader.u2();
       String innerName = innerNameIndex != 0 ? constantPool.utf8(innerNameIndex) : null;
       int innerClassAccessFlags = reader.u2();
-      if (innerName != null
-          && outerClass != null
-          && (thisClass.equals(innerClass) || thisClass.equals(outerClass))) {
+      if (innerName != null && outerClass != null) {
         innerclasses.add(
             new ClassFile.InnerClass(innerClass, outerClass, innerName, innerClassAccessFlags));
       }
@@ -195,17 +194,20 @@ public class ClassReader {
    */
   private void readAnnotations(
       ImmutableList.Builder<ClassFile.AnnotationInfo> annotations,
-      ConstantPoolReader constantPool) {
+      ConstantPoolReader constantPool,
+      boolean runtimeVisible) {
     int unusedLength = reader.u4();
     int numAnnotations = reader.u2();
     for (int n = 0; n < numAnnotations; n++) {
-      annotations.add(readAnnotation(constantPool));
+      annotations.add(readAnnotation(constantPool, runtimeVisible));
     }
   }
 
   /** Processes a JVMS 4.7.18 RuntimeVisibleParameterAnnotations attribute */
   public void readParameterAnnotations(
-      List<ImmutableList.Builder<AnnotationInfo>> annotations, ConstantPoolReader constantPool) {
+      List<ImmutableList.Builder<AnnotationInfo>> annotations,
+      ConstantPoolReader constantPool,
+      boolean runtimeVisible) {
     int unusedLength = reader.u4();
     int numParameters = reader.u1();
     while (annotations.size() < numParameters) {
@@ -214,7 +216,7 @@ public class ClassReader {
     for (int i = 0; i < numParameters; i++) {
       int numAnnotations = reader.u2();
       for (int n = 0; n < numAnnotations; n++) {
-        annotations.get(i).add(readAnnotation(constantPool));
+        annotations.get(i).add(readAnnotation(constantPool, runtimeVisible));
       }
     }
   }
@@ -319,7 +321,8 @@ public class ClassReader {
    * Extracts an {@link @Retention} or {@link ElementType} {@link ClassFile.AnnotationInfo}, or else
    * skips over the annotation.
    */
-  private ClassFile.AnnotationInfo readAnnotation(ConstantPoolReader constantPool) {
+  private ClassFile.AnnotationInfo readAnnotation(
+      ConstantPoolReader constantPool, boolean runtimeVisible) {
     int typeIndex = reader.u2();
     String annotationType = constantPool.utf8(typeIndex);
     int numElementValuePairs = reader.u2();
@@ -330,12 +333,7 @@ public class ClassReader {
       ElementValue value = readElementValue(constantPool);
       values.put(key, value);
     }
-    return new ClassFile.AnnotationInfo(
-        annotationType,
-        // The runtimeVisible bit in AnnotationInfo is only used during lowering; earlier passes
-        // read the meta-annotations.
-        /* runtimeVisible= */ false,
-        values.buildOrThrow());
+    return new ClassFile.AnnotationInfo(annotationType, runtimeVisible, values.buildOrThrow());
   }
 
   private ElementValue readElementValue(ConstantPoolReader constantPool) {
@@ -371,7 +369,12 @@ public class ClassReader {
           return new ConstTurbineClassValue(className);
         }
       case '@':
-        return new ConstTurbineAnnotationValue(readAnnotation(constantPool));
+        // The runtime visibility stored in the AnnotationInfo is never used for annotations that
+        // appear in element-values of other annotations. For top-level annotations, it determines
+        // the attribute the annotation appears in (e.g. Runtime{Invisible,Visible}Annotations).
+        // See also JVMS 4.7.16.1.
+        return new ConstTurbineAnnotationValue(
+            readAnnotation(constantPool, /* runtimeVisible= */ false));
       case '[':
         {
           int numValues = reader.u2();
@@ -427,12 +430,18 @@ public class ClassReader {
             defaultValue = readElementValue(constantPool);
             break;
           case "RuntimeInvisibleAnnotations":
+            readAnnotations(annotations, constantPool, /* runtimeVisible= */ false);
+            break;
           case "RuntimeVisibleAnnotations":
-            readAnnotations(annotations, constantPool);
+            readAnnotations(annotations, constantPool, /* runtimeVisible= */ true);
             break;
           case "RuntimeInvisibleParameterAnnotations":
+            readParameterAnnotations(
+                parameterAnnotationsBuilder, constantPool, /* runtimeVisible= */ false);
+            break;
           case "RuntimeVisibleParameterAnnotations":
-            readParameterAnnotations(parameterAnnotationsBuilder, constantPool);
+            readParameterAnnotations(
+                parameterAnnotationsBuilder, constantPool, /* runtimeVisible= */ true);
             break;
           case "MethodParameters":
             readMethodParameters(parameters, constantPool);
@@ -500,8 +509,10 @@ public class ClassReader {
             value = constantPool.constant(reader.u2());
             break;
           case "RuntimeInvisibleAnnotations":
+            readAnnotations(annotations, constantPool, /* runtimeVisible= */ false);
+            break;
           case "RuntimeVisibleAnnotations":
-            readAnnotations(annotations, constantPool);
+            readAnnotations(annotations, constantPool, /* runtimeVisible= */ true);
             break;
           case "Signature":
             signature = readSignature(constantPool);
