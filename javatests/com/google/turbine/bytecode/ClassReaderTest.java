@@ -17,11 +17,17 @@
 package com.google.turbine.bytecode;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.io.ByteStreams;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.ExportInfo;
@@ -31,6 +37,14 @@ import com.google.turbine.bytecode.ClassFile.ModuleInfo.RequireInfo;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.jar.JarFile;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -383,5 +397,59 @@ public class ClassReaderTest {
         });
     ClassFile cf = ClassReader.read(null, cw.toByteArray());
     assertThat(cf.transitiveJar()).isEqualTo("path/to/transitive.jar");
+  }
+
+  static class C {
+    @Target(TYPE_USE)
+    @Retention(RUNTIME)
+    @interface A {
+      int value();
+    }
+
+    @SuppressWarnings("unused")
+    @A(0x14)
+    int f(Object o) {
+      @A(0x40)
+      int local;
+      try (@A(0x41)
+          JarFile jarFile = new JarFile("hello.jar")) {
+      } catch (
+          @A(0x42)
+          IOException e) {
+        throw new UncheckedIOException(e);
+      }
+      if (o instanceof @A(0x43) String) {}
+      new @A(0x44) ArrayList<>();
+      // TODO(b/308157568): fix g-j-f and enable this test
+      // Supplier<List<?>> a = @A(0x45) ArrayList::new;
+      // Supplier<List<?>> b = @A(0x46) ImmutableList::of;
+      String s = (@A(0x47) String) o;
+      List<?> xs = new ArrayList<@A(0x48) String>();
+      xs = ImmutableList.<@A(0x49) String>of();
+      Supplier<List<?>> c = ArrayList<@A(0x4A) String>::new;
+      Supplier<List<?>> d = ImmutableList::<@A(0x4B) String>of;
+      return 0;
+    }
+  }
+
+  // Ensure that we skip over JVMS 4.7.20-B target_types, and handle the single API type annotation
+  @Test
+  public void nonApiTypeAnnotations() throws Exception {
+    byte[] bytes =
+        ByteStreams.toByteArray(
+            getClass().getResourceAsStream("/" + C.class.getName().replace('.', '/') + ".class"));
+    ClassFile cf = ClassReader.read(null, bytes);
+    ClassFile.MethodInfo m =
+        cf.methods().stream().filter(x -> x.name().contains("f")).collect(onlyElement());
+    ClassFile.TypeAnnotationInfo ta = getOnlyElement(m.typeAnnotations());
+    assertThat(ta.targetType()).isEqualTo(ClassFile.TypeAnnotationInfo.TargetType.METHOD_RETURN);
+    assertThat(ta.path()).isEqualTo(ClassFile.TypeAnnotationInfo.TypePath.root());
+    assertThat(ta.target()).isEqualTo(ClassFile.TypeAnnotationInfo.EMPTY_TARGET);
+    assertThat(ta.anno().typeName()).isEqualTo("Lcom/google/turbine/bytecode/ClassReaderTest$C$A;");
+    assertThat(
+            ((ElementValue.ConstValue) ta.anno().elementValuePairs().get("value"))
+                .value()
+                .getValue())
+        .isEqualTo(0x14);
   }
 }

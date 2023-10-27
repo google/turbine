@@ -580,7 +580,7 @@ public class ClassFile {
       return path;
     }
 
-    /** A JVMS 4.7.20 target_type kind. */
+    /** A JVMS 4.7.20-A target_type kind. */
     public enum TargetType {
       CLASS_TYPE_PARAMETER(0x00),
       METHOD_TYPE_PARAMETER(0x01),
@@ -601,6 +601,37 @@ public class ClassFile {
 
       public int tag() {
         return tag;
+      }
+
+      /**
+       * Returns the {@link TargetType} for the given JVMS 4.7.20-A target_type value, and {@code
+       * null} for target_type values that do not correspond to API elements (see JVMS 4.7.20-B).
+       */
+      static @Nullable TargetType forTag(int targetType) {
+        switch (targetType) {
+          case 0x00:
+            return CLASS_TYPE_PARAMETER;
+          case 0x01:
+            return METHOD_TYPE_PARAMETER;
+          case 0x10:
+            return SUPERTYPE;
+          case 0x11:
+            return CLASS_TYPE_PARAMETER_BOUND;
+          case 0x12:
+            return METHOD_TYPE_PARAMETER_BOUND;
+          case 0x13:
+            return FIELD;
+          case 0x14:
+            return METHOD_RETURN;
+          case 0x15:
+            return METHOD_RECEIVER_PARAMETER;
+          case 0x16:
+            return METHOD_FORMAL_PARAMETER;
+          case 0x17:
+            return METHOD_THROWS;
+          default:
+            return null;
+        }
       }
     }
 
