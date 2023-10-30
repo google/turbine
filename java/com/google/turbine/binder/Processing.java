@@ -161,7 +161,7 @@ public class Processing {
         SupportedAnnotationTypes supportedAnnotationTypes = e.getValue();
         Set<TypeElement> annotations = new HashSet<>();
         boolean run = supportedAnnotationTypes.everything() || toRun.contains(processor);
-        for (ClassSymbol a : allAnnotations.keys()) {
+        for (ClassSymbol a : allAnnotations.keySet()) {
           if (supportedAnnotationTypes.everything()
               || supportedAnnotationTypes.pattern().matcher(a.toString()).matches()) {
             annotations.add(factory.typeElement(a));
