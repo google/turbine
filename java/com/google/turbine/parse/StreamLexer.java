@@ -502,6 +502,9 @@ public class StreamLexer implements Lexer {
           // that \" escapes don't count towards the closing delimiter of the text block.
           sb.appendCodePoint(ch);
           eat();
+          if (ch == ASCII_SUB && reader.done()) {
+            return Token.EOF;
+          }
           sb.appendCodePoint(ch);
           eat();
           continue;

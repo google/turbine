@@ -414,4 +414,13 @@ public class LexerTest {
     lexerComparisonTest(input);
     assertThat(lex(input)).containsExactly("STRING_LITERAL(hellohellohello)", "EOF");
   }
+
+  // Check for EOF when skipping over escapes in text blocks
+  @Test
+  public void textBlockEOF() {
+    String input = "\"\"\"\n\\";
+    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
+    assertThat(lexer.next()).isEqualTo(Token.EOF);
+    assertThat(lexer.stringValue()).isEqualTo("\\");
+  }
 }
