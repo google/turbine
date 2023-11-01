@@ -175,14 +175,13 @@ public final class BytecodeBinder {
     }
     // Deficient numberic types and booleans are all stored as ints in the class file,
     // coerce them to the target type.
-    // TODO(b/32626659): this is not bug-compatible with javac
     switch (((Type.PrimTy) type).primkind()) {
       case CHAR:
         return new Const.CharValue((char) asInt(value));
       case SHORT:
         return new Const.ShortValue((short) asInt(value));
       case BOOLEAN:
-        // boolean constants are encoded as integers
+        // boolean constants are encoded as integers, see also JDK-8171132
         return new Const.BooleanValue(asInt(value) != 0);
       case BYTE:
         return new Const.ByteValue((byte) asInt(value));
