@@ -420,9 +420,8 @@ public class ClassReaderTest {
       }
       if (o instanceof @A(0x43) String) {}
       new @A(0x44) ArrayList<>();
-      // TODO(b/308157568): fix g-j-f and enable this test
-      // Supplier<List<?>> a = @A(0x45) ArrayList::new;
-      // Supplier<List<?>> b = @A(0x46) ImmutableList::of;
+      Supplier<List<?>> a = @A(0x45) ArrayList::new;
+      Supplier<List<?>> b = @A(0x46) ImmutableList::of;
       String s = (@A(0x47) String) o;
       List<?> xs = new ArrayList<@A(0x48) String>();
       xs = ImmutableList.<@A(0x49) String>of();
