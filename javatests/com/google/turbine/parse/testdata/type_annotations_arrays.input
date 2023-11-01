@@ -1,0 +1,11 @@
+public class Test {
+  int @A [] @B [] f @C [] @D [];
+  int @A [] @B [] @C [] g @D [] @E [] @F [];
+}
+
+===
+
+public class Test {
+  int @C [] @D [] @A [] @B [] f;
+  int @D [] @E [] @F [] @A [] @B [] @C [] g;
+}

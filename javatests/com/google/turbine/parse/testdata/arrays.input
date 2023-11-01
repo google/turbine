@@ -1,0 +1,5 @@
+class T {
+  List<?>[] xs;
+  @A List<?> @B [] ys;
+  List<List<@A int @B []>> zs;
+}

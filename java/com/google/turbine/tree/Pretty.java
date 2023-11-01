@@ -108,17 +108,28 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
 
   @Override
   public @Nullable Void visitArrTy(Tree.ArrTy arrTy, @Nullable Void input) {
-    arrTy.elem().accept(this, null);
-    if (!arrTy.annos().isEmpty()) {
-      append(' ');
-      printAnnos(arrTy.annos());
+    ImmutableList.Builder<Tree.ArrTy> flat = ImmutableList.builder();
+    Tree next = arrTy;
+    do {
+      Tree.ArrTy curr = (Tree.ArrTy) next;
+      flat.add(curr);
+      next = curr.elem();
+    } while (next.kind().equals(Tree.Kind.ARR_TY));
+
+    next.accept(this, null);
+    for (Tree.ArrTy dim : flat.build()) {
+      if (!dim.annos().isEmpty()) {
+        append(' ');
+        printAnnos(dim.annos());
+      }
+      append("[]");
     }
-    append("[]");
     return null;
   }
 
   @Override
   public @Nullable Void visitPrimTy(Tree.PrimTy primTy, @Nullable Void input) {
+    printAnnos(primTy.annos());
     append(primTy.tykind().toString());
     return null;
   }

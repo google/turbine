@@ -240,9 +240,9 @@ public class ParseErrorTest {
         .hasMessageThat()
         .isEqualTo(
             lines(
-                "<>:1: error: unexpected token: <", //
+                "<>:1: error: expected token <identifier>", //
                 "enum\te{p;ullt[].<~>>>L\0",
-                "                ^"));
+                "               ^"));
   }
 
   @Test
@@ -439,6 +439,40 @@ public class ParseErrorTest {
                 "<>:2: error: unexpected input: \r", //
                 "  String a = \"\\",
                 "               ^"));
+  }
+
+  @Test
+  public void typeAnnotationAfterDims() {
+    String input =
+        lines(
+            "class T {", //
+            "  int[] @A a;",
+            "}");
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:2: error: unexpected identifier 'a'", //
+                "  int[] @A a;",
+                "           ^"));
+  }
+
+  @Test
+  public void typeAnnotationBeforeParam() {
+    String input =
+        lines(
+            "class T {", //
+            "  void f(int @A a) {}",
+            "}");
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:2: error: unexpected identifier 'a'", //
+                "  void f(int @A a) {}",
+                "                ^"));
   }
 
   private static String lines(String... lines) {

@@ -3,13 +3,27 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.Map;
 
-@Target(ElementType.TYPE_USE) @interface A {}
+@Target(ElementType.TYPE_USE) @interface A {
+  int value() default 0;
+}
 @Target(ElementType.TYPE_USE) @interface B {}
 @Target(ElementType.TYPE_USE) @interface C {}
 @Target(ElementType.TYPE_USE) @interface D {}
 @Target(ElementType.TYPE_USE) @interface E {}
+@Target(ElementType.TYPE_USE) @interface F {}
+@Target(ElementType.TYPE_USE) @interface G {}
+@Target(ElementType.TYPE_USE) @interface H {}
+@Target(ElementType.TYPE_USE) @interface J {}
+@Target(ElementType.TYPE_USE) @interface K {}
 
 class Test {
   int [] x = {}, y @B @C [] @D @E [] = {{{1}}};
+
+  @A int @B [] @C [] @D [] z @E [] @F [] @G [];
+
   void log(@A Object [] params @B @C [] @D @E []) {}
+
+  @A int @B [] @C [] @D [] f(@A Object @B [] @C [] @D [] params @E [] @F [] @G []) @D [] @E [] @F [] {
+    return null;
+  }
 }

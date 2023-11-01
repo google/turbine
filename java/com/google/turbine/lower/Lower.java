@@ -81,9 +81,7 @@ import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.types.Erasure;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -865,7 +863,7 @@ public class Lower {
           lowerClassTypeTypeAnnotations((ClassTy) type, path);
           break;
         case ARRAY_TY:
-          lowerArrayTypeAnnotations(type, path);
+          lowerArrayTypeAnnotations((ArrayTy) type, path);
           break;
         case WILD_TY:
           lowerWildTyTypeAnnotations((WildTy) type, path);
@@ -904,19 +902,9 @@ public class Lower {
       }
     }
 
-    private void lowerArrayTypeAnnotations(Type type, TypePath path) {
-      Type base = type;
-      Deque<ArrayTy> flat = new ArrayDeque<>();
-      while (base instanceof ArrayTy) {
-        ArrayTy arrayTy = (ArrayTy) base;
-        flat.addFirst(arrayTy);
-        base = arrayTy.elementType();
-      }
-      for (ArrayTy arrayTy : flat) {
-        lowerTypeAnnotations(arrayTy.annos(), path);
-        path = path.array();
-      }
-      lowerTypeAnnotations(base, path);
+    private void lowerArrayTypeAnnotations(ArrayTy type, TypePath path) {
+      lowerTypeAnnotations(type.annos(), path);
+      lowerTypeAnnotations(type.elementType(), path.array());
     }
 
     private void lowerClassTypeTypeAnnotations(ClassTy type, TypePath path) {

@@ -613,7 +613,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror asType() {
-      return factory.asTypeMirror(Type.TyVar.create(sym, info().annotations()));
+      return factory.asTypeMirror(Type.TyVar.create(sym, ImmutableList.of()));
     }
 
     @Override

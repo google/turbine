@@ -72,9 +72,11 @@ public class ParserIntegrationTest {
       "packinfo1.input",
       "weirdstring.input",
       "type_annotations.input",
+      "type_annotations_arrays.input",
       "module-info.input",
       "record.input",
       "sealed.input",
+      "arrays.input",
     };
   }
 
