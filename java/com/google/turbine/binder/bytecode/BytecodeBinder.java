@@ -19,7 +19,9 @@ package com.google.turbine.binder.bytecode;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
@@ -34,6 +36,7 @@ import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ArrayVa
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTurbineClassValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
+import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.sig.Sig;
 import com.google.turbine.bytecode.sig.Sig.LowerBoundTySig;
@@ -45,105 +48,225 @@ import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import org.jspecify.nullness.Nullable;
 
 /** Bind {@link Type}s from bytecode. */
 public final class BytecodeBinder {
 
-  static Type.ClassTy bindClassTy(Sig.ClassTySig sig, Function<String, TyVarSymbol> scope) {
-    StringBuilder sb = new StringBuilder(sig.pkg());
+  /** Context that is required to create types from type signatures in bytecode. */
+  interface Scope {
+    /** Look up a type variable by name on an enclosing method or class. */
+    TyVarSymbol apply(String input);
+
+    /**
+     * Returns the enclosing class for a nested class, or {@code null}.
+     *
+     * <p>Locating type annotations on nested classes requires knowledge of their enclosing types.
+     */
+    @Nullable ClassSymbol outer(ClassSymbol sym);
+  }
+
+  public static Type.ClassTy bindClassTy(
+      Sig.ClassTySig sig, Scope scope, ImmutableList<TypeAnnotationInfo> annotations) {
+    return bindClassTy(
+        sig, scope, typeAnnotationsByPath(annotations, scope), TypeAnnotationInfo.TypePath.root());
+  }
+
+  private static Type.ClassTy bindClassTy(
+      Sig.ClassTySig sig,
+      Scope scope,
+      ImmutableListMultimap<TypeAnnotationInfo.TypePath, AnnoInfo> annotations,
+      TypeAnnotationInfo.TypePath typePath) {
+    StringBuilder sb = new StringBuilder();
+    if (!sig.pkg().isEmpty()) {
+      sb.append(sig.pkg()).append('/');
+    }
     boolean first = true;
-    List<Type.ClassTy.SimpleClassTy> classes = new ArrayList<>();
+    Map<ClassSymbol, Sig.SimpleClassTySig> syms = new LinkedHashMap<>();
     for (Sig.SimpleClassTySig s : sig.classes()) {
-      sb.append(first ? '/' : '$');
+      if (!first) {
+        sb.append('$');
+      }
       sb.append(s.simpleName());
       ClassSymbol sym = new ClassSymbol(sb.toString());
-
-      ImmutableList.Builder<Type> tyArgs = ImmutableList.builder();
-      for (Sig.TySig arg : s.tyArgs()) {
-        tyArgs.add(bindTy(arg, scope));
-      }
-
-      classes.add(Type.ClassTy.SimpleClassTy.create(sym, tyArgs.build(), ImmutableList.of()));
+      syms.put(sym, s);
       first = false;
+    }
+    ArrayDeque<ClassSymbol> outers = new ArrayDeque<>();
+    for (ClassSymbol curr = Iterables.getLast(syms.keySet());
+        curr != null;
+        curr = scope.outer(curr)) {
+      outers.addFirst(curr);
+    }
+    List<Type.ClassTy.SimpleClassTy> classes = new ArrayList<>();
+    for (ClassSymbol curr : outers) {
+      ImmutableList.Builder<Type> tyArgs = ImmutableList.builder();
+      Sig.SimpleClassTySig s = syms.get(curr);
+      if (s != null) {
+        for (int i = 0; i < s.tyArgs().size(); i++) {
+          tyArgs.add(bindTy(s.tyArgs().get(i), scope, annotations, typePath.typeArgument(i)));
+        }
+      }
+      classes.add(
+          Type.ClassTy.SimpleClassTy.create(curr, tyArgs.build(), annotations.get(typePath)));
+      typePath = typePath.nested();
     }
     return Type.ClassTy.create(classes);
   }
 
-  private static Type wildTy(WildTySig sig, Function<String, TyVarSymbol> scope) {
+  private static Type wildTy(
+      WildTySig sig,
+      Scope scope,
+      ImmutableListMultimap<TypeAnnotationInfo.TypePath, AnnoInfo> annotations,
+      TypeAnnotationInfo.TypePath typePath) {
     switch (sig.boundKind()) {
       case NONE:
-        return Type.WildUnboundedTy.create(ImmutableList.of());
+        return Type.WildUnboundedTy.create(annotations.get(typePath));
       case LOWER:
         return Type.WildLowerBoundedTy.create(
-            bindTy(((LowerBoundTySig) sig).bound(), scope), ImmutableList.of());
+            bindTy(((LowerBoundTySig) sig).bound(), scope, annotations, typePath.wild()),
+            annotations.get(typePath));
       case UPPER:
         return Type.WildUpperBoundedTy.create(
-            bindTy(((UpperBoundTySig) sig).bound(), scope), ImmutableList.of());
+            bindTy(((UpperBoundTySig) sig).bound(), scope, annotations, typePath.wild()),
+            annotations.get(typePath));
     }
     throw new AssertionError(sig.boundKind());
   }
 
-  static Type bindTy(Sig.TySig sig, Function<String, TyVarSymbol> scope) {
+  public static Type bindTy(
+      Sig.TySig sig, Scope scope, ImmutableList<TypeAnnotationInfo> annotations) {
+    return bindTy(
+        sig, scope, typeAnnotationsByPath(annotations, scope), TypeAnnotationInfo.TypePath.root());
+  }
+
+  static Type bindTy(
+      Sig.TySig sig,
+      Scope scope,
+      ImmutableListMultimap<TypeAnnotationInfo.TypePath, AnnoInfo> annotations,
+      TypeAnnotationInfo.TypePath typePath) {
     switch (sig.kind()) {
       case BASE_TY_SIG:
-        return Type.PrimTy.create(((Sig.BaseTySig) sig).type(), ImmutableList.of());
+        return Type.PrimTy.create(((Sig.BaseTySig) sig).type(), annotations.get(typePath));
       case CLASS_TY_SIG:
-        return bindClassTy((Sig.ClassTySig) sig, scope);
+        return bindClassTy((Sig.ClassTySig) sig, scope, annotations, typePath);
       case TY_VAR_SIG:
-        return Type.TyVar.create(scope.apply(((Sig.TyVarSig) sig).name()), ImmutableList.of());
+        return Type.TyVar.create(
+            scope.apply(((Sig.TyVarSig) sig).name()), annotations.get(typePath));
       case ARRAY_TY_SIG:
-        return bindArrayTy((Sig.ArrayTySig) sig, scope);
+        return bindArrayTy((Sig.ArrayTySig) sig, scope, annotations, typePath);
       case WILD_TY_SIG:
-        return wildTy((WildTySig) sig, scope);
+        return wildTy((WildTySig) sig, scope, annotations, typePath);
       case VOID_TY_SIG:
         return Type.VOID;
     }
     throw new AssertionError(sig.kind());
   }
 
-  private static Type bindArrayTy(Sig.ArrayTySig arrayTySig, Function<String, TyVarSymbol> scope) {
-    return Type.ArrayTy.create(bindTy(arrayTySig.elementType(), scope), ImmutableList.of());
+  private static Type bindArrayTy(
+      Sig.ArrayTySig arrayTySig,
+      Scope scope,
+      ImmutableListMultimap<TypeAnnotationInfo.TypePath, AnnoInfo> annotations,
+      TypeAnnotationInfo.TypePath typePath) {
+    return Type.ArrayTy.create(
+        bindTy(arrayTySig.elementType(), scope, annotations, typePath.array()),
+        annotations.get(typePath));
   }
 
-  public static Const bindValue(ElementValue value) {
+  private static ImmutableListMultimap<TypeAnnotationInfo.TypePath, AnnoInfo> typeAnnotationsByPath(
+      ImmutableList<TypeAnnotationInfo> typeAnnotations, Scope scope) {
+    if (typeAnnotations.isEmpty()) {
+      return ImmutableListMultimap.of();
+    }
+    ImmutableListMultimap.Builder<TypeAnnotationInfo.TypePath, AnnoInfo> result =
+        ImmutableListMultimap.builder();
+    for (TypeAnnotationInfo typeAnnotation : typeAnnotations) {
+      result.put(typeAnnotation.path(), bindAnnotationValue(typeAnnotation.anno(), scope).info());
+    }
+    return result.build();
+  }
+
+  /**
+   * Similar to {@link Type.ClassTy#asNonParametricClassTy}, but handles any provided type
+   * annotations and attaches them to the corresponding {@link Type.ClassTy.SimpleClassTy}.
+   */
+  public static Type.ClassTy asNonParametricClassTy(
+      ClassSymbol sym, ImmutableList<TypeAnnotationInfo> annotations, Scope scope) {
+    return asNonParametricClassTy(sym, scope, typeAnnotationsByPath(annotations, scope));
+  }
+
+  private static Type.ClassTy asNonParametricClassTy(
+      ClassSymbol sym,
+      Scope scope,
+      ImmutableListMultimap<TypeAnnotationInfo.TypePath, AnnoInfo> annotations) {
+    if (annotations.isEmpty()) {
+      // fast path if there are no type annotations
+      return Type.ClassTy.asNonParametricClassTy(sym);
+    }
+    ArrayDeque<ClassSymbol> outers = new ArrayDeque<>();
+    for (ClassSymbol curr = sym; curr != null; curr = scope.outer(curr)) {
+      outers.addFirst(curr);
+    }
+    List<Type.ClassTy.SimpleClassTy> classes = new ArrayList<>();
+    TypeAnnotationInfo.TypePath typePath = TypeAnnotationInfo.TypePath.root();
+    for (ClassSymbol curr : outers) {
+      classes.add(
+          Type.ClassTy.SimpleClassTy.create(curr, ImmutableList.of(), annotations.get(typePath)));
+      typePath = typePath.nested();
+    }
+    return Type.ClassTy.create(classes);
+  }
+
+  public static Const bindValue(ElementValue value, Scope scope) {
     switch (value.kind()) {
       case ENUM:
         return bindEnumValue((EnumConstValue) value);
       case CONST:
         return ((ConstValue) value).value();
       case ARRAY:
-        return bindArrayValue((ArrayValue) value);
+        return bindArrayValue((ArrayValue) value, scope);
       case CLASS:
         return new TurbineClassValue(
             bindTy(
                 new SigParser(((ConstTurbineClassValue) value).className()).parseType(),
-                x -> {
-                  throw new IllegalStateException(x);
-                }));
+                new Scope() {
+                  @Override
+                  public TyVarSymbol apply(String x) {
+                    throw new IllegalStateException(x);
+                  }
+
+                  @Override
+                  public @Nullable ClassSymbol outer(ClassSymbol sym) {
+                    return scope.outer(sym);
+                  }
+                },
+                /* annotations= */ ImmutableList.of()));
       case ANNOTATION:
-        return bindAnnotationValue(((ElementValue.ConstTurbineAnnotationValue) value).annotation());
+        return bindAnnotationValue(
+            ((ElementValue.ConstTurbineAnnotationValue) value).annotation(), scope);
     }
     throw new AssertionError(value.kind());
   }
 
-  static TurbineAnnotationValue bindAnnotationValue(AnnotationInfo value) {
+  static TurbineAnnotationValue bindAnnotationValue(AnnotationInfo value, Scope scope) {
     ClassSymbol sym = asClassSymbol(value.typeName());
     ImmutableMap.Builder<String, Const> values = ImmutableMap.builder();
     for (Map.Entry<String, ElementValue> e : value.elementValuePairs().entrySet()) {
-      values.put(e.getKey(), bindValue(e.getValue()));
+      values.put(e.getKey(), bindValue(e.getValue(), scope));
     }
     return new TurbineAnnotationValue(new AnnoInfo(null, sym, null, values.buildOrThrow()));
   }
 
-  static ImmutableList<AnnoInfo> bindAnnotations(List<AnnotationInfo> input) {
+  static ImmutableList<AnnoInfo> bindAnnotations(List<AnnotationInfo> input, Scope scope) {
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
     for (AnnotationInfo annotation : input) {
-      TurbineAnnotationValue anno = bindAnnotationValue(annotation);
+      TurbineAnnotationValue anno = bindAnnotationValue(annotation, scope);
       if (!shouldSkip(anno)) {
         result.add(anno.info());
       }
@@ -161,10 +284,10 @@ public final class BytecodeBinder {
     return new ClassSymbol(s.substring(1, s.length() - 1));
   }
 
-  private static Const bindArrayValue(ArrayValue value) {
+  private static Const bindArrayValue(ArrayValue value, Scope scope) {
     ImmutableList.Builder<Const> elements = ImmutableList.builder();
     for (ElementValue element : value.elements()) {
-      elements.add(bindValue(element));
+      elements.add(bindValue(element, scope));
     }
     return new ArrayInitValue(elements.build());
   }
@@ -173,7 +296,7 @@ public final class BytecodeBinder {
     if (type.tyKind() != Type.TyKind.PRIM_TY) {
       return value;
     }
-    // Deficient numberic types and booleans are all stored as ints in the class file,
+    // Deficient numeric types and booleans are all stored as ints in the class file,
     // coerce them to the target type.
     switch (((Type.PrimTy) type).primkind()) {
       case CHAR:

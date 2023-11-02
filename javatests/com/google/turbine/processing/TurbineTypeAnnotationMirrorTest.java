@@ -41,16 +41,22 @@ import com.google.turbine.binder.Processing;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
+import com.google.turbine.lower.Lower;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
 import com.sun.source.util.JavacTask;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -250,7 +256,7 @@ public class TurbineTypeAnnotationMirrorTest {
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());
-    Binder.BindingResult unused =
+    Binder.BindingResult bound =
         Binder.bind(
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
@@ -264,6 +270,42 @@ public class TurbineTypeAnnotationMirrorTest {
 
     // Ensure that the processor produced the same results on both javac and turbine
     assertWithMessage(test).that(turbineSource).containsExactlyEntriesIn(javacOutput);
+
+    // Run the annotation processor using turbine, with the elements loaded from class files
+    ListMultimap<Integer, String> turbineBytecode =
+        MultimapBuilder.linkedHashKeys().arrayListValues().build();
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.builder().build(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
+      for (Map.Entry<String, byte[]> entry : lowered.entrySet()) {
+        jos.putNextEntry(new JarEntry(entry.getKey() + ".class"));
+        jos.write(entry.getValue());
+      }
+    }
+    ImmutableList<Path> classpathJar = ImmutableList.of(lib);
+    Binder.BindingResult unused =
+        Binder.bind(
+            // Turbine requires sources to be present to do annotation processing.
+            // The actual element that will be processed is still 'Test' from the classpath.
+            ImmutableList.of(Parser.parse("class Hello {}")),
+            ClassPathBinder.bindClasspath(classpathJar),
+            Processing.ProcessorInfo.create(
+                ImmutableList.of(new TypeAnnotationRecorder(turbineBytecode, elements)),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+
+    // Ensure that the processor produced the same results on both javac and turbine, when the
+    // elements are loaded from class files
+    assertWithMessage(test).that(turbineBytecode).containsExactlyEntriesIn(javacOutput);
   }
 
   /**
