@@ -66,6 +66,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.lang.*;
 import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;

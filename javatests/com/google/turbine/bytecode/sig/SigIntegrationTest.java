@@ -19,6 +19,11 @@ package com.google.turbine.bytecode.sig;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.MoreFiles.getFileExtension;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -104,6 +109,15 @@ public class SigIntegrationTest {
                 assertThat(SigWriter.type(new SigParser(signature).parseFieldSig()))
                     .isEqualTo(signature);
                 totalSignatures[0]++;
+                SigParser sigParser = new SigParser(signature); // Initialize based on your implementation
+
+//                try {
+//                  sigParser.parseFieldSig();
+//                  fail("Expected AssertionError to be thrown");
+//                } catch (AssertionError e) {
+//                  assertEquals("Expected AssertionError message", "Some message here", e.getMessage());
+//                  // Add more assertions if necessary
+//                }
               }
             }
             for (ClassFile.MethodInfo method : classFile.methods()) {
@@ -120,5 +134,19 @@ public class SigIntegrationTest {
         });
     // sanity-check that the bootclasspath contains a plausible number of signatures; 8u60 has >18k
     assertThat(totalSignatures[0]).isGreaterThan(10000);
+  }
+  @Test
+  public void testParseFieldSigDefaultCase() {
+    SigParser sigParser = mock(SigParser.class); // You should initialize it based on your implementation
+    // Mock the behavior of peek() method to force the default case
+    when(sigParser.peek()).thenReturn('X'); // 'X' represents any value that does not match the cases in the switch statement
+
+    try {
+      sigParser.parseFieldSig();
+      fail("Expected AssertionError to be thrown");
+    } catch (AssertionError e) {
+      // Add assertions here
+      assertEquals("Assertion error message", "Some message here", e.getMessage());
+    }
   }
 }
