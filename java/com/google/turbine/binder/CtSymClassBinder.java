@@ -48,11 +48,20 @@ public final class CtSymClassBinder {
   private static final int FEATURE_VERSION = Runtime.version().feature();
 
   public static @Nullable ClassPath bind(int version) throws IOException {
-    String javaHome = JAVA_HOME.value();
-    requireNonNull(javaHome, "attempted to use --release, but JAVA_HOME is not set");
-    Path ctSym = Paths.get(javaHome).resolve("lib/ct.sym");
-    if (!Files.exists(ctSym)) {
-      throw new IllegalStateException("lib/ct.sym does not exist in " + javaHome);
+    Path ctSym;
+    String explicitCtSymPath = System.getProperty("turbine.ctSymPath");
+    if (explicitCtSymPath == null) {
+      String javaHome = JAVA_HOME.value();
+      requireNonNull(javaHome, "attempted to use --release, but JAVA_HOME is not set");
+      ctSym = Paths.get(javaHome).resolve("lib/ct.sym");
+      if (!Files.exists(ctSym)) {
+        throw new IllegalStateException("lib/ct.sym does not exist in " + javaHome);
+      }
+    } else {
+      ctSym = Paths.get(explicitCtSymPath);
+      if (!Files.exists(ctSym)) {
+        throw new IllegalStateException("ct.sym does not exist at " + ctSym);
+      }
     }
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
