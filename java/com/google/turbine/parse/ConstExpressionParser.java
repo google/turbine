@@ -290,32 +290,32 @@ public class ConstExpressionParser {
   /** Finish hex, decimal, octal, and binary integer literals (see JLS 3.10.1). */
   private Expression finishLiteral(TurbineConstantTypeKind kind, boolean negate) {
     int pos = position;
-    String text = ident().value();
+    String lexAnalysedText = ident().value();
     Const.Value value;
     switch (kind) {
       case INT:
         {
           int radix = 10;
-          if (text.startsWith("0x") || text.startsWith("0X")) {
-            text = text.substring(2);
+          if (lexAnalysedText.startsWith("0x") || lexAnalysedText.startsWith("0X")) {
+            lexAnalysedText = lexAnalysedText.substring(2);
             radix = 0x10;
-          } else if (isOctal(text)) {
+          } else if (isOctal(lexAnalysedText)) {
             radix = 010;
-          } else if (text.startsWith("0b") || text.startsWith("0B")) {
-            text = text.substring(2);
+          } else if (lexAnalysedText.startsWith("0b") || lexAnalysedText.startsWith("0B")) {
+            lexAnalysedText = lexAnalysedText.substring(2);
             radix = 0b10;
           }
           if (negate) {
-            text = "-" + text;
+            lexAnalysedText = "-" + lexAnalysedText;
           }
-          long longValue = parseLong(text, radix);
+          long longValue = parseLong(lexAnalysedText, radix);
           if (radix == 10) {
             if (longValue != (int) longValue) {
-              throw error(ErrorKind.INVALID_LITERAL, text);
+              throw error(ErrorKind.INVALID_LITERAL, lexAnalysedText);
             }
           } else {
             if (Math.abs(longValue) >> 32 != 0) {
-              throw error(ErrorKind.INVALID_LITERAL, text);
+              throw error(ErrorKind.INVALID_LITERAL, lexAnalysedText);
             }
           }
           value = new Const.IntValue((int) longValue);
@@ -324,43 +324,44 @@ public class ConstExpressionParser {
       case LONG:
         {
           int radix = 10;
-          if (text.startsWith("0x") || text.startsWith("0X")) {
-            text = text.substring(2);
+          lexAnalysedText = lexAnalysedText.toLowerCase();
+          if (lexAnalysedText.startsWith("0x")) {
+            lexAnalysedText = lexAnalysedText.substring(2);
             radix = 0x10;
-          } else if (isOctal(text)) {
+          } else if (isOctal(lexAnalysedText)) {
             radix = 010;
-          } else if (text.startsWith("0b") || text.startsWith("0B")) {
-            text = text.substring(2);
+          } else if (lexAnalysedText.startsWith("0b") || lexAnalysedText.startsWith("0B")) {
+            lexAnalysedText = lexAnalysedText.substring(2);
             radix = 0b10;
           }
           if (negate) {
-            text = "-" + text;
+            lexAnalysedText = "-" + lexAnalysedText;
           }
-          if (text.endsWith("L") || text.endsWith("l")) {
-            text = text.substring(0, text.length() - 1);
+          if (lexAnalysedText.endsWith("L") || lexAnalysedText.endsWith("l")) {
+            lexAnalysedText = lexAnalysedText.substring(0, lexAnalysedText.length() - 1);
           }
-          value = new Const.LongValue(parseLong(text, radix));
+          value = new Const.LongValue(parseLong(lexAnalysedText, radix));
           break;
         }
       case CHAR:
-        value = new Const.CharValue(text.charAt(0));
+        value = new Const.CharValue(lexAnalysedText.charAt(0));
         break;
       case FLOAT:
         try {
-          value = new Const.FloatValue(Float.parseFloat(text.replace("_", "")));
+          value = new Const.FloatValue(Float.parseFloat(lexAnalysedText.replace("_", "")));
         } catch (NumberFormatException e) {
-          throw error(ErrorKind.INVALID_LITERAL, text);
+          throw error(ErrorKind.INVALID_LITERAL, lexAnalysedText);
         }
         break;
       case DOUBLE:
         try {
-          value = new Const.DoubleValue(Double.parseDouble(text.replace("_", "")));
+          value = new Const.DoubleValue(Double.parseDouble(lexAnalysedText.replace("_", "")));
         } catch (NumberFormatException e) {
-          throw error(ErrorKind.INVALID_LITERAL, text);
+          throw error(ErrorKind.INVALID_LITERAL, lexAnalysedText);
         }
         break;
       case STRING:
-        value = new Const.StringValue(text);
+        value = new Const.StringValue(lexAnalysedText);
         break;
       default:
         throw new AssertionError(kind);
