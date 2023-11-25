@@ -575,3 +575,30 @@ public final class Binder {
 
   private Binder() {}
 }
+public class ConstUtils {
+
+  public static boolean isConst(FieldInfo field) {
+    if ((field.access() & TurbineFlag.ACC_FINAL) == 0) {
+      return false;
+    }
+    if (field.decl() == null) {
+      return false;
+    }
+    final Optional<Tree.Expression> init = field.decl().init();
+    if (!init.isPresent()) {
+      return false;
+    }
+    switch (field.type().tyKind()) {
+      case PRIM_TY:
+        break;
+      case CLASS_TY:
+        if (((Type.ClassTy) field.type()).sym().equals(ClassSymbol.STRING)) {
+          break;
+        }
+        // fall through
+      default:
+        return false;
+    }
+    return true;
+  }
+}

@@ -26,40 +26,17 @@ import com.google.common.collect.Range;
 public class LineMap {
 
   private final String source;
-  private final ImmutableRangeMap<Integer, Integer> lines;
 
-  private LineMap(String source, ImmutableRangeMap<Integer, Integer> lines) {
+  private final SourceLinesMap lines;
+//  private final ImmutableRangeMap<Integer, Integer> lines;
+
+  private LineMap(String source, SourceLinesMap lines) {
     this.source = source;
     this.lines = lines;
   }
 
   public static LineMap create(String source) {
-    int last = 0;
-    int line = 1;
-    ImmutableRangeMap.Builder<Integer, Integer> builder = ImmutableRangeMap.builder();
-    for (int idx = 0; idx < source.length(); idx++) {
-      char ch = source.charAt(idx);
-      switch (ch) {
-          // handle CR line endings
-        case '\r':
-          // ...and CRLF
-          if (idx + 1 < source.length() && source.charAt(idx + 1) == '\n') {
-            idx++;
-          }
-          // falls through
-        case '\n':
-          builder.put(Range.closedOpen(last, idx + 1), line++);
-          last = idx + 1;
-          break;
-        default:
-          break;
-      }
-    }
-    // no trailing newline
-    if (last < source.length()) {
-      builder.put(Range.closedOpen(last, source.length()), line++);
-    }
-    return new LineMap(source, builder.build());
+    return new LineMap(source, SourceLinesMap.create(source));
   }
 
   /** The zero-indexed column number of the given source position. */
@@ -82,5 +59,45 @@ public class LineMap {
     // requireNonNull is safe because `lines` covers the whole file length.
     Range<Integer> range = requireNonNull(lines.getEntry(position)).getKey();
     return source.substring(range.lowerEndpoint(), range.upperEndpoint());
+  }}
+class SourceLinesMap {
+  private final ImmutableRangeMap<Integer, Integer> lines;
+
+  private SourceLinesMap(ImmutableRangeMap<Integer, Integer> lines) {
+    this.lines = lines;
+  }
+
+  public static SourceLinesMap create(String source) {
+    int last = 0;
+    int line = 1;
+    ImmutableRangeMap.Builder<Integer, Integer> builder = ImmutableRangeMap.builder();
+    for (int idx = 0; idx < source.length(); idx++) {
+      char ch = source.charAt(idx);
+      switch (ch) {
+        case '\r':
+          if (idx + 1 < source.length() && source.charAt(idx + 1) == '\n') {
+            idx++;
+          }
+          // falls through
+        case '\n':
+          builder.put(Range.closedOpen(last, idx + 1), line++);
+          last = idx + 1;
+          break;
+        default:
+          break;
+      }
+    }
+    if (last < source.length()) {
+      builder.put(Range.closedOpen(last, source.length()), line++);
+    }
+    return new SourceLinesMap(builder.build());
+  }
+
+  public Range<Integer> getEntry(int position) {
+    return lines.getEntry(position).getKey();
+  }
+
+  public Integer get(int position) {
+    return lines.get(position);
   }
 }

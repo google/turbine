@@ -222,4 +222,15 @@ public final class Resolve {
   }
 
   private Resolve() {}
+
+//  @Override
+
+
+  public @Nullable ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name) {
+    try {
+      return Resolve.resolve(env, origin, base, name);
+    } catch (LazyBindingError e) {
+      return null;
+    }
+  }
 }
