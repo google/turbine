@@ -338,10 +338,10 @@ public abstract class TurbineElement implements Element {
                 return factory.asTypeMirror(asGenericType(sym));
               }
 
-              ClassTy asGenericType(ClassSymbol symbol) {
+              Type asGenericType(ClassSymbol symbol) {
                 TypeBoundClass info = info();
                 if (info == null) {
-                  return ClassTy.asNonParametricClassTy(symbol);
+                  return ErrorTy.create(getQualifiedName().toString());
                 }
                 Deque<Type.ClassTy.SimpleClassTy> simples = new ArrayDeque<>();
                 simples.addFirst(simple(symbol, info));

@@ -37,22 +37,29 @@ import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing;
 import com.google.turbine.binder.Processing.ProcessorInfo;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -62,17 +69,22 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ProcessingIntegrationTest {
+
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @SupportedAnnotationTypes("*")
   public static class CrashingProcessor extends AbstractProcessor {
@@ -863,5 +875,75 @@ public class ProcessingIntegrationTest {
                 .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
                 .map(d -> d.message()))
         .containsExactly("file:///foo/Bar - " + Paths.get(URI.create("file:///foo/Bar")));
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class MethodAnnotationTypeKindProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!first) {
+        return false;
+      }
+      first = false;
+      TypeElement e = processingEnv.getElementUtils().getTypeElement("T");
+      for (AnnotationMirror a : e.getAnnotationMirrors()) {
+        DeclaredType t = a.getAnnotationType();
+        processingEnv
+            .getMessager()
+            .printMessage(Diagnostic.Kind.NOTE, t + "(" + t.getKind() + ")", e);
+        // this shouldn't crash
+        requireNonNull(a.getAnnotationType().asElement().getEnclosedElements());
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void missingAnnotationType() throws IOException {
+    Map<String, byte[]> library =
+        IntegrationTestSupport.runTurbine(
+            ImmutableMap.of(
+                "A.java", //
+                "@interface A {}",
+                "T.java",
+                "@A class T {}"),
+            ImmutableList.of());
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      // deliberately exclude the definition of the annotation
+      jos.putNextEntry(new JarEntry("T.class"));
+      jos.write(requireNonNull(library.get("T")));
+    }
+
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== Y.java ===", //
+            "class Y {}");
+
+    TurbineLog log = new TurbineLog();
+    BindingResult bound =
+        Binder.bind(
+            log,
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+            ProcessorInfo.create(
+                ImmutableList.of(new MethodAnnotationTypeKindProcessor()),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+    assertThat(bound.units().keySet()).containsExactly(new ClassSymbol("Y"));
+    ImmutableList<String> messages =
+        log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
+    assertThat(messages).containsExactly("A(ERROR)");
   }
 }
