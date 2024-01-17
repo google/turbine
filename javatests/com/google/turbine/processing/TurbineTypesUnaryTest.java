@@ -97,6 +97,16 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
   public void erasure() {
     String expected = javacTypes.erasure(javacA).toString();
     String actual = turbineTypes.erasure(turbineA).toString();
+    // Work around javac bug https://bugs.openjdk.org/browse/JDK-8042981 until it is fixed.
+    // The erasure of `@A int @B []` should be just `int[]`, but pre-bugfix javac will report
+    // `@A int @B []`. So for this specific case, change the expected string to what javac *should*
+    // return.
+    switch (turbineA.toString()) {
+      case "@p.Test0.A int @p.Test0.B []":
+        expected = "int[]";
+        break;
+      default: // fall out
+    }
     assertWithMessage("erasure(`%s`) = erasure(`%s`)", javacA, turbineA)
         .that(actual)
         .isEqualTo(expected);
@@ -111,6 +121,14 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
 
     String expected = Joiner.on(", ").join(javacTypes.directSupertypes(javacA));
     String actual = Joiner.on(", ").join(turbineTypes.directSupertypes(turbineA));
+    // Work around javac bug https://bugs.openjdk.org/browse/JDK-8042981 until it is fixed.
+    // See comment in the erasure() test method.
+    switch (turbineA.toString()) {
+      case "java.util.@p.Test0.A List<@p.Test0.A int @p.Test0.B []>":
+        expected = "java.lang.Object, java.util.SequencedCollection<int[]>";
+        break;
+      default: // fall out
+    }
     assertWithMessage("directSupertypes(`%s`) = directSupertypes(`%s`)", javacA, turbineA)
         .that(actual)
         .isEqualTo(expected);

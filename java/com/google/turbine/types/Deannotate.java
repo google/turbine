@@ -46,7 +46,7 @@ public class Deannotate {
     throw new AssertionError(ty.tyKind());
   }
 
-  private static ImmutableList<Type> deannotate(ImmutableList<Type> types) {
+  public static ImmutableList<Type> deannotate(ImmutableList<Type> types) {
     ImmutableList.Builder<Type> result = ImmutableList.builder();
     for (Type type : types) {
       result.add(deannotate(type));
