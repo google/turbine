@@ -244,6 +244,8 @@ class AbstractTurbineTypesTest {
       annotatedTypes.add("@A List");
       annotatedTypes.add("@A List<@A int @B []>");
       annotatedTypes.add("Map.@A Entry<@B Integer, @C Number>");
+      annotatedTypes.add("@A List<@B ? extends @C String>");
+      annotatedTypes.add("@A List<@B ? super @C String>");
     }
 
     List<String> files = new ArrayList<>();

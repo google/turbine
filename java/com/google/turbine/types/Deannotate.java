@@ -68,9 +68,9 @@ public class Deannotate {
       case NONE:
         return Type.WildUnboundedTy.create(ImmutableList.of());
       case LOWER:
-        return Type.WildLowerBoundedTy.create(ty.bound(), ImmutableList.of());
+        return Type.WildLowerBoundedTy.create(deannotate(ty.bound()), ImmutableList.of());
       case UPPER:
-        return Type.WildUpperBoundedTy.create(ty.bound(), ImmutableList.of());
+        return Type.WildUpperBoundedTy.create(deannotate(ty.bound()), ImmutableList.of());
     }
     throw new AssertionError(ty.boundKind());
   }
