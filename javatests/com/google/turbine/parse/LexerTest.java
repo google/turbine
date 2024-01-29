@@ -367,6 +367,7 @@ public class LexerTest {
           break;
         case CHAR_LITERAL:
         case STRING_LITERAL:
+        case STRING_TEMPLATE:
           tokenString =
               String.format(
                   "%s(%s)",
@@ -422,5 +423,39 @@ public class LexerTest {
     Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
     assertThat(lexer.next()).isEqualTo(Token.EOF);
     assertThat(lexer.stringValue()).isEqualTo("\\");
+  }
+
+  @Test
+  public void stringTemplate() {
+    assertThat(lex("STR.\"\\{X}\""))
+        .containsExactly("IDENT(STR)", "DOT", "STRING_TEMPLATE({})", "EOF");
+  }
+
+  @Test
+  public void stringTemplateNested() {
+    assertThat(lex("STR.\"template \\{example.foo()+ STR.\"templateInner\\{example}\"}xxx }\""))
+        .containsExactly("IDENT(STR)", "DOT", "STRING_TEMPLATE(template {}xxx })", "EOF");
+  }
+
+  @Test
+  public void stringTemplateNestedBraces() {
+    assertThat(lex("STR.\"\\{ new Object() {} }\" + \"\""))
+        .containsExactly(
+            "IDENT(STR)", "DOT", "STRING_TEMPLATE({})", "PLUS", "STRING_LITERAL()", "EOF");
+  }
+
+  @Test
+  public void stringTemplateBraces() {
+    assertThat(lex("\"foo \\{'{'}\"")).containsExactly("STRING_TEMPLATE(foo {})", "EOF");
+    assertThat(lex("\"foo \\{\"}\"}\"")).containsExactly("STRING_TEMPLATE(foo {})", "EOF");
+    assertThat(lex("\"foo \\{new Bar[]{}}\"")).containsExactly("STRING_TEMPLATE(foo {})", "EOF");
+    assertThat(lex("\"foo \\{\"bar \\{'}'}\"}\""))
+        .containsExactly("STRING_TEMPLATE(foo {})", "EOF");
+  }
+
+  @Test
+  public void textBlockStringTemplate() {
+    assertThat(lex("STR.\"\"\"\n\\{X}\"\"\""))
+        .containsExactly("IDENT(STR)", "DOT", "STRING_TEMPLATE({})", "EOF");
   }
 }

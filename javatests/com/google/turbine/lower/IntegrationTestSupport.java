@@ -131,6 +131,7 @@ public final class IntegrationTestSupport {
       makeEnumsFinal(all, n);
       sortAttributes(n);
       undeprecate(n);
+      removePreviewVersion(n);
     }
 
     return toByteCode(classes);
@@ -174,6 +175,11 @@ public final class IntegrationTestSupport {
     n.fields.stream()
         .filter(f -> !isDeprecated(f.visibleAnnotations))
         .forEach(f -> f.access &= ~Opcodes.ACC_DEPRECATED);
+  }
+
+  // Mask out preview bits from version number
+  private static void removePreviewVersion(ClassNode n) {
+    n.version &= 0xffff;
   }
 
   private static boolean isDeprecated(List<AnnotationNode> visibleAnnotations) {

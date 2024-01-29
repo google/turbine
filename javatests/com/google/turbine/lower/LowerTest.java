@@ -17,6 +17,7 @@
 package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.Objects.requireNonNull;
@@ -56,6 +57,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -749,6 +751,42 @@ public class LowerTest {
             },
             0);
     assertThat(fields).containsExactly("y");
+  }
+
+  // Ensure we don't emit bogus ConstantValues for string templates with a missing processor
+  @Test
+  public void stringTemplate() throws Exception {
+    assume().that(Runtime.version().feature()).isAtLeast(21);
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    "class Test {\n" //
+                        + "  public static final String X = \"hello \\{ \"world\" }\";\n"
+                        + "}")),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    Map<String, Object> fields = new HashMap<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String descriptor, String signature, Object value) {
+                fields.put(name, value);
+                return null;
+              }
+            },
+            0);
+    assertThat(fields).containsExactly("X", null);
   }
 
   static String lines(String... lines) {

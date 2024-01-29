@@ -17,9 +17,9 @@
 package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assume.assumeTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -62,7 +62,11 @@ public class LowerIntegrationTest {
           "sealed_nested.test", 17,
           "textblock.test", 15,
           "textblock2.test", 15,
-          "B306423115.test", 15);
+          "B306423115.test", 15,
+          "string_template.test", 21);
+
+  private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW =
+      ImmutableSet.of("string_template.test");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
@@ -304,6 +308,7 @@ public class LowerIntegrationTest {
       "strictfp.test",
       "string.test",
       "string_const.test",
+      "string_template.test",
       "superabstract.test",
       "supplierfunction.test",
       "tbound.test",
@@ -356,6 +361,7 @@ public class LowerIntegrationTest {
     };
     ImmutableSet<String> cases = ImmutableSet.copyOf(testCases);
     assertThat(cases).containsAtLeastElementsIn(SOURCE_VERSION.keySet());
+    assertThat(cases).containsAtLeastElementsIn(SOURCE_VERSION_PREVIEW);
     List<Object[]> tests = cases.stream().map(x -> new Object[] {x}).collect(toList());
     String testShardIndex = System.getenv("TEST_SHARD_INDEX");
     String testTotalShards = System.getenv("TEST_TOTAL_SHARDS");
@@ -403,15 +409,19 @@ public class LowerIntegrationTest {
       classpathJar = ImmutableList.of(lib);
     }
 
-    int version = SOURCE_VERSION.getOrDefault(test, 8);
-    assumeTrue(version <= Runtime.version().feature());
-    ImmutableList<String> javacopts =
-        ImmutableList.of(
-            "-source",
-            String.valueOf(version),
-            "-target",
-            String.valueOf(version),
-            "-Xpkginfo:always");
+    int actualVersion = Runtime.version().feature();
+    int requiredVersion = SOURCE_VERSION.getOrDefault(test, 8);
+    assume().that(actualVersion).isAtLeast(requiredVersion);
+    ImmutableList.Builder<String> javacoptsBuilder = ImmutableList.builder();
+    if (SOURCE_VERSION_PREVIEW.contains(test)) {
+      requiredVersion = actualVersion;
+      javacoptsBuilder.add("--enable-preview");
+    }
+    javacoptsBuilder.add(
+        "-source", String.valueOf(requiredVersion), "-target", String.valueOf(requiredVersion));
+    javacoptsBuilder.add("-Xpkginfo:always");
+
+    ImmutableList<String> javacopts = javacoptsBuilder.build();
 
     Map<String, byte[]> expected =
         IntegrationTestSupport.runJavac(input.sources, classpathJar, javacopts);
