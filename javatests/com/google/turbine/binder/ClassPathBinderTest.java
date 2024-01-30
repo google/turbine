@@ -21,7 +21,6 @@ import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -33,6 +32,7 @@ import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.MoreFiles;
+import com.google.common.truth.Truth8;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -126,7 +126,7 @@ public class ClassPathBinderTest {
             new LookupKey(
                 ImmutableList.of(ident("java"), ident("util"), ident("Map"), ident("Entry"))));
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
-    assertThat(result.remaining().stream().map(Ident::value)).containsExactly("Entry");
+    Truth8.assertThat(result.remaining().stream().map(Ident::value)).containsExactly("Entry");
 
     result =
         scope.lookup(new LookupKey(ImmutableList.of(ident("java"), ident("util"), ident("Map"))));
