@@ -17,10 +17,10 @@
 package com.google.turbine.options;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.truth.Truth8;
 import javax.lang.model.SourceVersion;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -102,9 +102,9 @@ public class LanguageVersionTest {
 
   @Test
   public void parseRelease() {
-    assertThat(LanguageVersion.fromJavacopts(ImmutableList.of("--release", "16")).release())
+    Truth8.assertThat(LanguageVersion.fromJavacopts(ImmutableList.of("--release", "16")).release())
         .hasValue(16);
-    assertThat(
+    Truth8.assertThat(
             LanguageVersion.fromJavacopts(ImmutableList.of("-source", "8", "-target", "8"))
                 .release())
         .isEmpty();
@@ -126,11 +126,11 @@ public class LanguageVersionTest {
 
   @Test
   public void releaseUnderride() {
-    assertThat(
+    Truth8.assertThat(
             LanguageVersion.fromJavacopts(ImmutableList.of("--release", "12", "-source", "8"))
                 .release())
         .isEmpty();
-    assertThat(
+    Truth8.assertThat(
             LanguageVersion.fromJavacopts(ImmutableList.of("--release", "12", "-target", "8"))
                 .release())
         .isEmpty();
