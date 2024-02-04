@@ -125,10 +125,13 @@ public class TransitiveTest {
     // libb repackages A, and any member types
     assertThat(readJar(libb).keySet())
         .containsExactly(
-            "b/B.class",
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
             "META-INF/TRANSITIVE/a/A.class",
             "META-INF/TRANSITIVE/a/A$Anno.class",
-            "META-INF/TRANSITIVE/a/A$Inner.class");
+            "META-INF/TRANSITIVE/a/A$Inner.class",
+            "b/B.class")
+        .inOrder();
 
     ClassFile a = ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A.class"));
     // methods and non-constant fields are removed
@@ -176,15 +179,19 @@ public class TransitiveTest {
                 ImmutableList.of(libb).stream().map(Path::toString).collect(toImmutableList()))
             .setOutput(libc.toString())
             .setOutputDeps(libcDeps.toString())
+            .setTargetLabel("//foo:foo")
             .build());
 
     assertThat(readJar(libc).keySet())
         .containsExactly(
-            "c/C.class",
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
             "META-INF/TRANSITIVE/b/B.class",
             "META-INF/TRANSITIVE/a/A.class",
             "META-INF/TRANSITIVE/a/A$Anno.class",
-            "META-INF/TRANSITIVE/a/A$Inner.class");
+            "META-INF/TRANSITIVE/a/A$Inner.class",
+            "c/C.class")
+        .inOrder();
 
     // liba is recorded as an explicit dep, even thought it's only present as a transitive class
     // repackaged in lib
@@ -247,7 +254,12 @@ public class TransitiveTest {
     // libb repackages A and any named member types
     assertThat(readJar(libb).keySet())
         .containsExactly(
-            "b/B.class", "META-INF/TRANSITIVE/a/A.class", "META-INF/TRANSITIVE/a/A$I.class");
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/a/A.class",
+            "META-INF/TRANSITIVE/a/A$I.class",
+            "b/B.class")
+        .inOrder();
   }
 
   @Test
@@ -283,11 +295,14 @@ public class TransitiveTest {
 
     assertThat(readJar(libb).keySet())
         .containsExactly(
-            "b/B.class",
-            "b/B$I.class",
-            "META-INF/TRANSITIVE/a/A.class",
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
             "META-INF/TRANSITIVE/a/A$I.class",
-            "META-INF/TRANSITIVE/a/S.class");
+            "META-INF/TRANSITIVE/a/S.class",
+            "META-INF/TRANSITIVE/a/A.class",
+            "b/B$I.class",
+            "b/B.class")
+        .inOrder();
   }
 
   private Path runTurbine(ImmutableList<Path> sources, ImmutableList<Path> classpath)
@@ -298,6 +313,7 @@ public class TransitiveTest {
             .setSources(sources.stream().map(Path::toString).collect(toImmutableList()))
             .setClassPath(classpath.stream().map(Path::toString).collect(toImmutableList()))
             .setOutput(out.toString())
+            .setTargetLabel("//foo:foo")
             .build());
     return out;
   }

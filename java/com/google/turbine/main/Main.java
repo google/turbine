@@ -369,10 +369,10 @@ public final class Main {
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {
+      writeManifest(jos, manifest());
       for (SourceFile source : generatedSources.values()) {
         addEntry(jos, source.path(), source.source().getBytes(UTF_8));
       }
-      writeManifest(jos, manifest());
     }
   }
 
@@ -412,18 +412,18 @@ public final class Main {
     try (OutputStream os = Files.newOutputStream(path);
         BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
         JarOutputStream jos = new JarOutputStream(bos)) {
-      for (Map.Entry<String, byte[]> entry : lowered.entrySet()) {
-        addEntry(jos, entry.getKey() + ".class", entry.getValue());
-      }
-      for (Map.Entry<String, byte[]> entry : generated.entrySet()) {
-        addEntry(jos, entry.getKey(), entry.getValue());
+      if (options.targetLabel().isPresent()) {
+        writeManifest(jos, manifest(options));
       }
       for (Map.Entry<String, byte[]> entry : transitive.entrySet()) {
         addEntry(
             jos, ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ".class", entry.getValue());
       }
-      if (options.targetLabel().isPresent()) {
-        writeManifest(jos, manifest(options));
+      for (Map.Entry<String, byte[]> entry : lowered.entrySet()) {
+        addEntry(jos, entry.getKey() + ".class", entry.getValue());
+      }
+      for (Map.Entry<String, byte[]> entry : generated.entrySet()) {
+        addEntry(jos, entry.getKey(), entry.getValue());
       }
     }
   }
