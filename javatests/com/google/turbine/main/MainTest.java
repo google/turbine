@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.MoreFiles;
-import com.google.common.truth.Truth8;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.options.LanguageVersion;
@@ -205,7 +204,7 @@ public class MainTest {
 
     try (JarFile jarFile = new JarFile(output.toFile())) {
       try (Stream<JarEntry> entries = jarFile.stream()) {
-        Truth8.assertThat(entries.map(JarEntry::getName))
+        assertThat(entries.map(JarEntry::getName))
             .containsAtLeast("META-INF/", "META-INF/MANIFEST.MF");
       }
       Manifest manifest = requireNonNull(jarFile.getManifest());
@@ -311,7 +310,7 @@ public class MainTest {
     Main.compile(optionsWithBootclasspath().setGensrcOutput(gensrc.toString()).build());
     try (JarFile jarFile = new JarFile(gensrc);
         Stream<JarEntry> entries = jarFile.stream()) {
-      Truth8.assertThat(entries.map(JarEntry::getName))
+      assertThat(entries.map(JarEntry::getName))
           .containsExactly("META-INF/", "META-INF/MANIFEST.MF");
     }
   }
@@ -419,7 +418,7 @@ public class MainTest {
             .build());
     try (JarFile jarFile = new JarFile(gensrc);
         Stream<JarEntry> entries = jarFile.stream()) {
-      Truth8.assertThat(entries.map(JarEntry::getName))
+      assertThat(entries.map(JarEntry::getName))
           .containsExactly("META-INF/", "META-INF/MANIFEST.MF");
     }
   }
@@ -486,7 +485,7 @@ public class MainTest {
             .build());
     try (JarFile jarFile = new JarFile(resources);
         Stream<JarEntry> entries = jarFile.stream()) {
-      Truth8.assertThat(entries.map(JarEntry::getName)).containsExactly("g/Gen.class");
+      assertThat(entries.map(JarEntry::getName)).containsExactly("g/Gen.class");
     }
   }
 

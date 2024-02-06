@@ -22,7 +22,6 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.truth.Truth8;
 import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -82,7 +81,7 @@ public class TurbineOptionsTest {
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    Truth8.assertThat(options.output()).hasValue("out.jar");
+    assertThat(options.output()).hasValue("out.jar");
     assertThat(options.sourceJars())
         .containsExactly("sources1.srcjar", "sources2.srcjar")
         .inOrder();
@@ -94,9 +93,9 @@ public class TurbineOptionsTest {
     assertThat(options.bootClassPath()).containsExactly("rt.jar", "zipfs.jar").inOrder();
     assertThat(options.javacOpts()).containsExactly("-source", "8", "-target", "8").inOrder();
     assertThat(options.sources()).containsExactly("Source1.java", "Source2.java");
-    Truth8.assertThat(options.outputDeps()).hasValue("out.jdeps");
-    Truth8.assertThat(options.targetLabel()).hasValue("//java/com/google/test");
-    Truth8.assertThat(options.injectingRuleKind()).hasValue("foo_library");
+    assertThat(options.outputDeps()).hasValue("out.jdeps");
+    assertThat(options.targetLabel()).hasValue("//java/com/google/test");
+    assertThat(options.injectingRuleKind()).hasValue("foo_library");
     assertThat(options.reducedClasspathMode()).isEqualTo(ReducedClasspathMode.NONE);
   }
 
@@ -119,7 +118,7 @@ public class TurbineOptionsTest {
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    Truth8.assertThat(options.targetLabel()).hasValue("//java/com/google/test");
+    assertThat(options.targetLabel()).hasValue("//java/com/google/test");
     assertThat(options.directJars()).containsExactly("blaze-out/foo/libbar.jar");
     assertThat(options.depsArtifacts()).containsExactly("foo.jdeps", "bar.jdeps");
   }
@@ -185,8 +184,8 @@ public class TurbineOptionsTest {
 
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(lines));
 
-    Truth8.assertThat(options.targetLabel()).isEmpty();
-    Truth8.assertThat(options.injectingRuleKind()).isEmpty();
+    assertThat(options.targetLabel()).isEmpty();
+    assertThat(options.injectingRuleKind()).isEmpty();
   }
 
   @Test
@@ -218,7 +217,7 @@ public class TurbineOptionsTest {
         .containsExactly("-source", "8", "-target", "8", "-Aconnector.opt=with,space, here")
         .inOrder();
     // ... and directly from the command line
-    Truth8.assertThat(options.targetLabel()).hasValue("//custom/label");
+    assertThat(options.targetLabel()).hasValue("//custom/label");
   }
 
   @Test
@@ -232,13 +231,13 @@ public class TurbineOptionsTest {
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    Truth8.assertThat(options.targetLabel()).hasValue("@other-repo//foo:local-jam");
+    assertThat(options.targetLabel()).hasValue("@other-repo//foo:local-jam");
   }
 
   @Test
   public void tolerateMissingOutput() throws Exception {
     TurbineOptions options = TurbineOptions.builder().build();
-    Truth8.assertThat(options.output()).isEmpty();
+    assertThat(options.output()).isEmpty();
   }
 
   @Test
@@ -320,8 +319,8 @@ public class TurbineOptionsTest {
             Iterables.concat(
                 BASE_ARGS,
                 ImmutableList.of("--gensrc_output", "gensrc.jar", "--profile", "turbine.prof")));
-    Truth8.assertThat(options.gensrcOutput()).hasValue("gensrc.jar");
-    Truth8.assertThat(options.profile()).hasValue("turbine.prof");
+    assertThat(options.gensrcOutput()).hasValue("gensrc.jar");
+    assertThat(options.profile()).hasValue("turbine.prof");
   }
 
   @Test
@@ -379,8 +378,8 @@ public class TurbineOptionsTest {
                     "--native_header_output",
                     "ignored",
                     "--compress_jar")));
-    Truth8.assertThat(options.outputDeps()).hasValue("output_deps.proto");
-    Truth8.assertThat(options.gensrcOutput()).hasValue("generated_sources.jar");
+    assertThat(options.outputDeps()).hasValue("output_deps.proto");
+    assertThat(options.gensrcOutput()).hasValue("generated_sources.jar");
   }
 
   @Test

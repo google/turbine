@@ -31,7 +31,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.truth.Truth8;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
@@ -573,7 +572,7 @@ public class ProcessingIntegrationTest {
                         SourceVersion.latestSupported()),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
-    Truth8.assertThat(
+    assertThat(
             e.diagnostics().stream()
                 .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
                 .map(d -> d.message()))
@@ -624,12 +623,12 @@ public class ProcessingIntegrationTest {
                         SourceVersion.latestSupported()),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
-    Truth8.assertThat(
+    assertThat(
             e.diagnostics().stream()
                 .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
                 .map(d -> d.message()))
         .containsExactly("could not resolve element noSuch() in java.lang.Deprecated");
-    Truth8.assertThat(
+    assertThat(
             e.diagnostics().stream()
                 .filter(d -> d.severity().equals(Diagnostic.Kind.NOTE))
                 .map(d -> d.message()))
@@ -680,7 +679,7 @@ public class ProcessingIntegrationTest {
                         SourceVersion.latestSupported()),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
-    Truth8.assertThat(
+    assertThat(
             e.diagnostics().stream()
                 .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
                 .map(d -> d.message()))
@@ -719,7 +718,7 @@ public class ProcessingIntegrationTest {
                         SourceVersion.latestSupported()),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
-    Truth8.assertThat(e.diagnostics().stream().map(d -> d.message()))
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly("missing required annotation argument: value");
   }
 
@@ -811,7 +810,7 @@ public class ProcessingIntegrationTest {
                         SourceVersion.latestSupported()),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
-    Truth8.assertThat(e.diagnostics().stream().map(d -> d.message()))
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly(
             "A#f<U>(java.util.List<U>)U <: B#f<U>(java.util.List<U>)U ? false",
             "A#f<U>(java.util.List<U>)U <: C#f<U>(java.util.List<U>)U ? false",
@@ -870,7 +869,7 @@ public class ProcessingIntegrationTest {
                         SourceVersion.latestSupported()),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
-    Truth8.assertThat(
+    assertThat(
             e.diagnostics().stream()
                 .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
                 .map(d -> d.message()))

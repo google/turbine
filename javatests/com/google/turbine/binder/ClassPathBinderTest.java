@@ -32,7 +32,6 @@ import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.MoreFiles;
-import com.google.common.truth.Truth8;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -126,7 +125,7 @@ public class ClassPathBinderTest {
             new LookupKey(
                 ImmutableList.of(ident("java"), ident("util"), ident("Map"), ident("Entry"))));
     assertThat(result.sym()).isEqualTo(new ClassSymbol("java/util/Map"));
-    Truth8.assertThat(result.remaining().stream().map(Ident::value)).containsExactly("Entry");
+    assertThat(result.remaining().stream().map(Ident::value)).containsExactly("Entry");
 
     result =
         scope.lookup(new LookupKey(ImmutableList.of(ident("java"), ident("util"), ident("Map"))));
