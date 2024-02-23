@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A {@link BoundClass} that corresponds to a source file being compiled. */
 public class SourceBoundClass implements BoundClass {

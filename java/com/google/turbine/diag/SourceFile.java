@@ -19,7 +19,7 @@ package com.google.turbine.diag;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Objects;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A source file. */
 public class SourceFile {

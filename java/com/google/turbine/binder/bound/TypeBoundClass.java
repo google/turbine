@@ -32,7 +32,7 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
 public interface TypeBoundClass extends HeaderBoundClass {

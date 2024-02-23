@@ -31,7 +31,7 @@ import com.google.turbine.tree.Tree;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Qualified name resolution. */
 public final class Resolve {

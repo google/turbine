@@ -18,7 +18,7 @@ package com.google.turbine.binder.bound;
 
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.Const;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An enum constant. */
 public class EnumConstantValue extends Const {

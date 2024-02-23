@@ -40,7 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
 public final class CtSymClassBinder {

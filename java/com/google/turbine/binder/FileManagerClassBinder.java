@@ -39,7 +39,7 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Binds a {@link StandardJavaFileManager} to an {@link ClassPath}. This can be used to share a

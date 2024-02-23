@@ -19,7 +19,7 @@ package com.google.turbine.binder.env;
 import static java.util.Objects.requireNonNull;
 
 import com.google.turbine.binder.sym.Symbol;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An {@link Env} that chains two existing envs together. */
 public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {

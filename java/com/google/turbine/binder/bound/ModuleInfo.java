@@ -19,7 +19,7 @@ package com.google.turbine.binder.bound;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.type.AnnoInfo;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A bound module declaration (see JLS §7.7). */
 public class ModuleInfo {

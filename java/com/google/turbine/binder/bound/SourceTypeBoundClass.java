@@ -29,7 +29,7 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.TyKind;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A HeaderBoundClass for classes compiled from source. */
 public class SourceTypeBoundClass implements TypeBoundClass {

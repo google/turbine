@@ -18,7 +18,7 @@ package com.google.turbine.binder.env;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An environment that maps {@link Symbol}s {@code S} to bound nodes {@code V}.

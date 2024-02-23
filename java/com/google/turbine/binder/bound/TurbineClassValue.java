@@ -19,7 +19,7 @@ package com.google.turbine.binder.bound;
 import com.google.turbine.model.Const;
 import com.google.turbine.type.Type;
 import java.util.Objects;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A class literal constant. */
 public class TurbineClassValue extends Const {

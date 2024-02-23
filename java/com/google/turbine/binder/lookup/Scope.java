@@ -16,7 +16,7 @@
 
 package com.google.turbine.binder.lookup;
 
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A scope that defines types, and supports qualified name resolution. */
 public interface Scope {

@@ -23,7 +23,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineElementType;
 import java.lang.annotation.RetentionPolicy;
 import java.util.EnumSet;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Annotation metadata, e.g. from {@link java.lang.annotation.Target}, {@link

@@ -53,7 +53,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Constructs a platform {@link ClassPath} from the current JDK's jimage file using jrtfs. */
 public class JimageClassBinder {

@@ -63,7 +63,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Types;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An implementation of {@link Types} backed by turbine's {@link TypeMirror}. */
 @SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.

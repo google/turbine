@@ -33,7 +33,7 @@ import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.model.TurbineFlag;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Collects the minimal compile-time API for symbols in the supertype closure of compiled classes.

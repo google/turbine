@@ -29,7 +29,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.Set;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An AST node. */
 public abstract class Tree {

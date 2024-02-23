@@ -69,7 +69,7 @@ import com.google.turbine.type.Type;
 import java.time.Duration;
 import java.util.Optional;
 import javax.annotation.processing.Processor;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** The entry point for analysis. */
 public final class Binder {
