@@ -1,0 +1,22 @@
+=== a/Lib.java ===
+package a;
+public class Lib {
+  protected static class Inner {}
+}
+=== b/Lib.java ===
+package b;
+public class Lib {
+  public static class Inner {}
+}
+=== T.java ===
+import a.Lib.*;
+import b.Lib.*;
+class T {
+  Inner x;
+}
+=== S.java ===
+import static a.Lib.*;
+import static b.Lib.*;
+class S {
+  Inner x;
+}

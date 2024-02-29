@@ -301,6 +301,8 @@ public class LowerIntegrationTest {
       "simplemethod.test",
       "source_anno_retention.test",
       "source_bootclasspath_order.test",
+      "star_import_visibility.test",
+      "star_import_visibility_nested.test",
       "static_final_boxed.test",
       "static_member_type_import.test",
       "static_member_type_import_recursive.test",

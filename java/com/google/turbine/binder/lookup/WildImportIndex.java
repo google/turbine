@@ -29,8 +29,6 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>Resolution is lazy, imports are not evaluated until the first request for a matching simple
  * name.
- *
- * <p>Static on-demand imports of types are not supported.
  */
 public class WildImportIndex implements ImportScope {
 
@@ -160,9 +158,14 @@ public class WildImportIndex implements ImportScope {
         continue;
       }
       LookupResult result = scope.lookup(lookup, resolve);
-      if (result != null) {
-        return result;
+      if (result == null) {
+        continue;
       }
+      ClassSymbol sym = (ClassSymbol) result.sym();
+      if (!resolve.visible(sym)) {
+        continue;
+      }
+      return result;
     }
     return null;
   }

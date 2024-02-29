@@ -101,6 +101,12 @@ public final class Resolve {
           return null;
         }
       }
+
+      @Override
+      public boolean visible(ClassSymbol sym) {
+        String packageName = origin != null ? origin.packageName() : null;
+        return importVisible(env, sym, packageName);
+      }
     };
   }
 
@@ -131,18 +137,23 @@ public final class Resolve {
 
     @Override
     public boolean visible(ClassSymbol sym) {
-      TurbineVisibility visibility = TurbineVisibility.fromAccess(env.getNonNull(sym).access());
-      switch (visibility) {
-        case PUBLIC:
-          return true;
-        case PROTECTED:
-        case PACKAGE:
-          return Objects.equals(sym.packageName(), packagename);
-        case PRIVATE:
-          return false;
-      }
-      throw new AssertionError(visibility);
+      return importVisible(env, sym, packagename);
     }
+  }
+
+  private static boolean importVisible(
+      Env<ClassSymbol, ? extends BoundClass> env, ClassSymbol sym, @Nullable String packagename) {
+    TurbineVisibility visibility = TurbineVisibility.fromAccess(env.getNonNull(sym).access());
+    switch (visibility) {
+      case PUBLIC:
+        return true;
+      case PROTECTED:
+      case PACKAGE:
+        return Objects.equals(sym.packageName(), packagename);
+      case PRIVATE:
+        return false;
+    }
+    throw new AssertionError(visibility);
   }
 
   /**

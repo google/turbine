@@ -1,0 +1,21 @@
+=== a/Lib.java ===
+package a;
+class Lib {
+}
+=== b/Lib.java ===
+package b;
+public class Lib {
+}
+=== T.java ===
+import a.*; // a.Lib is not visible, b.Lib should be resolved
+import b.*;
+class T {
+  Lib x;
+}
+=== a/SamePackage.java ===
+package a;
+import a.*; // a.Lib is visible
+import b.*;
+class SamePackage {
+  Lib x;
+}

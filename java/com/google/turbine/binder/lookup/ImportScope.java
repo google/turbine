@@ -31,9 +31,10 @@ public interface ImportScope {
    * A function that performs non-canonical resolution, see {@link
    * com.google.turbine.binder.Resolve#resolve}.
    */
-  @FunctionalInterface
   interface ResolveFunction {
     @Nullable ClassSymbol resolveOne(ClassSymbol base, Tree.Ident name);
+
+    boolean visible(ClassSymbol sym);
   }
 
   /** See {@link Scope#lookup(LookupKey)}. */
