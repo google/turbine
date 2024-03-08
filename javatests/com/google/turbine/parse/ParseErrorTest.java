@@ -475,6 +475,22 @@ public class ParseErrorTest {
                 "                ^"));
   }
 
+  @Test
+  public void moduleInfoOpen() {
+    String input =
+        lines(
+            "open {", //
+            "}");
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:1: error: unexpected token: {", //
+                "open {",
+                "     ^"));
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

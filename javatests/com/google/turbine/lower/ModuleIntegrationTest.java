@@ -47,6 +47,7 @@ public class ModuleIntegrationTest {
       "module-info.test", //
       "classpath.test",
       "multimodule.test",
+      "module-info-open.test",
     };
     return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
   }
@@ -61,7 +62,7 @@ public class ModuleIntegrationTest {
 
   @Test
   public void test() throws Exception {
-    if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
+    if (Runtime.version().feature() < 9) {
       // only run on JDK 9 and later
       return;
     }

@@ -210,7 +210,11 @@ public class Parser {
                 && (ident.value().equals("module") || ident.value().equals("open"))) {
               boolean open = false;
               if (ident.value().equals("open")) {
-                ident = eatIdent();
+                next();
+                if (token != IDENT) {
+                  throw error(token);
+                }
+                ident = ident();
                 open = true;
               }
               if (!ident.value().equals("module")) {

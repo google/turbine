@@ -1,0 +1,5 @@
+=== module-info.java ===
+open module com.google.foop.annotation {
+  requires java.base;
+  requires java.compiler;
+}
