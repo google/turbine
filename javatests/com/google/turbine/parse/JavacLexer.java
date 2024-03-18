@@ -280,8 +280,9 @@ public final class JavacLexer {
       case CHARLITERAL:
         return String.format(
             "CHAR_LITERAL(%s)", SourceCodeEscapers.javaCharEscaper().escape(token.stringVal()));
+      default:
+        throw new AssertionError("Unknown token kind: " + token.kind);
     }
-    return token.kind.toString();
   }
 
   private JavacLexer() {}
