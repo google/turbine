@@ -1007,6 +1007,20 @@ public class BinderErrorTest {
           "      ^",
         },
       },
+      {
+        {
+          "package com.google.foo;", //
+          "sealed interface Iface permits Impl1, Impl2 {}",
+        },
+        {
+          "<>:2: error: could not resolve Impl1",
+          "sealed interface Iface permits Impl1, Impl2 {}",
+          "                               ^",
+          "<>:2: error: could not resolve Impl2",
+          "sealed interface Iface permits Impl1, Impl2 {}",
+          "                                      ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

@@ -235,10 +235,15 @@ public class TypeBinder {
     ImmutableList.Builder<ClassSymbol> permits = ImmutableList.builder();
     for (Tree.ClassTy i : base.decl().permits()) {
       Type type = bindClassTy(bindingScope, i);
-      if (!type.tyKind().equals(Type.TyKind.CLASS_TY)) {
-        throw new AssertionError(type.tyKind());
+      switch (type.tyKind()) {
+        case ERROR_TY:
+          continue;
+        case CLASS_TY:
+          permits.add(((Type.ClassTy) type).sym());
+          break;
+        default:
+          throw new AssertionError(type.tyKind());
       }
-      permits.add(((Type.ClassTy) type).sym());
     }
 
     CompoundScope scope =
