@@ -32,8 +32,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -323,5 +326,33 @@ public class ZipTest {
     Path path = temporaryFolder.newFile("test.jar").toPath();
     Files.write(path, bytes);
     assertThat(actual(path)).isEqualTo(expected(path));
+  }
+
+  @Test
+  public void zip64Offset() throws Exception {
+    Path path = temporaryFolder.newFile("test.jar").toPath();
+    Files.delete(path);
+
+    try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(path))) {
+      byte[] gb = new byte[1 << 30];
+      for (int i = 1; i <= 5; i++) {
+        createEntry(zos, "entry" + i, gb);
+      }
+    }
+
+    List<String> names = new ArrayList<>();
+    Iterator<Zip.Entry> it = new Zip.ZipIterable(path).iterator();
+    Zip.Entry entry = null;
+    while (it.hasNext()) {
+      entry = it.next();
+      names.add(entry.name());
+    }
+    Zip.Entry lastEntry = entry;
+
+    assertThat(names).containsExactly("entry1", "entry2", "entry3", "entry4", "entry5").inOrder();
+    AssertionError e = assertThrows(AssertionError.class, lastEntry::data);
+    assertThat(e)
+        .hasMessageThat()
+        .contains("entry5 requires missing zip64 support, please file a bug");
   }
 }

@@ -82,6 +82,7 @@ public final class Zip {
 
   static final int ENDTOT = 10; // total number of entries
   static final int ENDSIZ = 12; // central directory size in bytes
+  static final int ENDOFF = 16; // central directory offset
   static final int ENDCOM = 20; // zip file comment length
 
   static final int CENHOW = 10; // compression method
@@ -97,6 +98,8 @@ public final class Zip {
   static final int ZIP64_ENDSIZ = 40; // central directory size in bytes
 
   static final int ZIP64_MAGICCOUNT = 0xFFFF;
+
+  static final long ZIP64_MAGICVAL = 0xFFFFFFFFL;
 
   /** Iterates over a zip archive. */
   static class ZipIterator implements Iterator<Entry> {
@@ -120,7 +123,7 @@ public final class Zip {
       return cdindex < cd.limit();
     }
 
-    /* Returns a {@link Entry} for the current CEN entry. */
+    /** Returns a {@link Entry} for the current CEN entry. */
     @Override
     public Entry next() {
       // TODO(cushon): technically we're supposed to throw NSEE
@@ -185,14 +188,17 @@ public final class Zip {
       checkSignature(path, eocd, index, 5, 6, "ENDSIG");
       int totalEntries = eocd.getChar(index + ENDTOT);
       long cdsize = UnsignedInts.toLong(eocd.getInt(index + ENDSIZ));
+      long cdoffset = UnsignedInts.toLong(eocd.getInt(index + ENDOFF));
       int actualCommentSize = eocd.getChar(index + ENDCOM);
       if (commentSize != actualCommentSize) {
         throw new ZipException(
             String.format(
                 "zip file comment length was %d, expected %d", commentSize, actualCommentSize));
       }
-      // If the number of entries is 0xffff, check if the archive has a zip64 EOCD locator.
-      if (totalEntries == ZIP64_MAGICCOUNT) {
+      // If zip64 sentinal values are present, check if the archive has a zip64 EOCD locator.
+      if (totalEntries == ZIP64_MAGICCOUNT
+          || cdsize == ZIP64_MAGICVAL
+          || cdoffset == ZIP64_MAGICVAL) {
         // Assume the zip64 EOCD has the usual size; we don't support zip64 extensible data sectors.
         long zip64eocdOffset = size - ENDHDR - ZIP64_LOCHDR - ZIP64_ENDHDR;
         // Note that zip reading is necessarily best-effort, since an archive could contain 0xFFFF
@@ -271,6 +277,11 @@ public final class Zip {
       // Read the offset and variable lengths from the central directory and then try to map in the
       // data section in one shot.
       long offset = UnsignedInts.toLong(cd.getInt(cdindex + CENOFF));
+      if (offset == ZIP64_MAGICVAL) {
+        // TODO(cushon): read the offset from the 'Zip64 Extended Information Extra Field'
+        throw new AssertionError(
+            String.format("%s: %s requires missing zip64 support, please file a bug", path, name));
+      }
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);
       int compression = cd.getChar(cdindex + CENHOW);
