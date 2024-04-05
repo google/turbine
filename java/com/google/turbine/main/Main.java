@@ -301,16 +301,16 @@ public final class Main {
     }
 
     if (release.isPresent()) {
-      if (release.getAsInt() == Integer.parseInt(JAVA_SPECIFICATION_VERSION.value())) {
+      // Search ct.sym for a matching release
+      ClassPath bootclasspath = CtSymClassBinder.bind(release.getAsInt());
+      if (bootclasspath != null) {
+        return bootclasspath;
+      } else if (release.getAsInt() == Integer.parseInt(JAVA_SPECIFICATION_VERSION.value())) {
         // if --release matches the host JDK, use its jimage instead of ct.sym
         return JimageClassBinder.bindDefault();
-      }
-      // ... otherwise, search ct.sym for a matching release
-      ClassPath bootclasspath = CtSymClassBinder.bind(release.getAsInt());
-      if (bootclasspath == null) {
+      } else {
         throw new UsageException("not a supported release: " + release);
       }
-      return bootclasspath;
     }
 
     if (options.system().isPresent()) {
