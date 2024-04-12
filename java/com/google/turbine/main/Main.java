@@ -83,7 +83,7 @@ public final class Main {
   static final Attributes.Name TARGET_LABEL = new Attributes.Name("Target-Label");
   static final Attributes.Name INJECTING_RULE_KIND = new Attributes.Name("Injecting-Rule-Kind");
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
     boolean ok;
     try {
       compile(args);
@@ -218,7 +218,7 @@ public final class Main {
         }
       }
       if (options.output().isPresent()) {
-        Map<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
+        ImmutableMap<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
       }
       if (options.outputManifest().isPresent()) {
@@ -301,16 +301,7 @@ public final class Main {
     }
 
     if (release.isPresent()) {
-      // Search ct.sym for a matching release
-      ClassPath bootclasspath = CtSymClassBinder.bind(release.getAsInt());
-      if (bootclasspath != null) {
-        return bootclasspath;
-      } else if (release.getAsInt() == Integer.parseInt(JAVA_SPECIFICATION_VERSION.value())) {
-        // if --release matches the host JDK, use its jimage instead of ct.sym
-        return JimageClassBinder.bindDefault();
-      } else {
-        throw new UsageException("not a supported release: " + release);
-      }
+      return release(release.getAsInt());
     }
 
     if (options.system().isPresent()) {
@@ -320,6 +311,19 @@ public final class Main {
 
     // the bootclasspath might be empty, e.g. when compiling java.lang
     return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+  }
+
+  private static ClassPath release(int release) throws IOException {
+    // Search ct.sym for a matching release
+    ClassPath bootclasspath = CtSymClassBinder.bind(release);
+    if (bootclasspath != null) {
+      return bootclasspath;
+    }
+    if (release == Integer.parseInt(JAVA_SPECIFICATION_VERSION.value())) {
+      // if --release matches the host JDK, use its jimage
+      return JimageClassBinder.bindDefault();
+    }
+    throw new UsageException("not a supported release: " + release);
   }
 
   /** Parse all source files and source jars. */
