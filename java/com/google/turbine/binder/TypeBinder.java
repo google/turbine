@@ -302,6 +302,10 @@ public class TypeBinder {
     boolean hasEquals = false;
     boolean hasHashCode = false;
     boolean hasPrimaryConstructor = false;
+    Set<String> componentNamesToDeclare = new HashSet<>();
+    for (RecordComponentInfo c : components) {
+      componentNamesToDeclare.add(c.name());
+    }
     for (MethodInfo m : boundMethods) {
       if (m.name().equals("<init>")) {
         if (isPrimaryConstructor(m, components)) {
@@ -321,7 +325,10 @@ public class TypeBinder {
           case "hashCode":
             hasHashCode = m.parameters().isEmpty();
             break;
-          default: // fall out
+          default:
+            if (m.parameters().isEmpty()) {
+              componentNamesToDeclare.remove(m.name());
+            }
         }
         boundNonConstructors.add(m);
       }
@@ -383,6 +390,9 @@ public class TypeBinder {
               null));
     }
     for (RecordComponentInfo c : components) {
+      if (!componentNamesToDeclare.contains(c.name())) {
+        continue;
+      }
       MethodSymbol componentMethod = syntheticMethods.create(owner, c.name());
       methods.add(
           new MethodInfo(

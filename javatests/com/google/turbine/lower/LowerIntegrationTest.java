@@ -19,6 +19,7 @@ package com.google.turbine.lower;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.turbine.testing.TestResources.getResource;
+import static java.util.Map.entry;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.ImmutableList;
@@ -53,17 +54,18 @@ import org.junit.runners.Parameterized.Parameters;
 public class LowerIntegrationTest {
 
   private static final ImmutableMap<String, Integer> SOURCE_VERSION =
-      ImmutableMap.of(
-          "record.test", 16, //
-          "record2.test", 16,
-          "record_tostring.test", 16,
-          "record_ctor.test", 16,
-          "sealed.test", 17,
-          "sealed_nested.test", 17,
-          "textblock.test", 15,
-          "textblock2.test", 15,
-          "B306423115.test", 15,
-          "string_template.test", 21);
+      ImmutableMap.ofEntries(
+          entry("record.test", 16),
+          entry("record2.test", 16),
+          entry("record_tostring.test", 16),
+          entry("record_ctor.test", 16),
+          entry("record_getter_override.test", 16),
+          entry("sealed.test", 17),
+          entry("sealed_nested.test", 17),
+          entry("textblock.test", 15),
+          entry("textblock2.test", 15),
+          entry("B306423115.test", 15),
+          entry("string_template.test", 21));
 
   private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW =
       ImmutableSet.of("string_template.test");
@@ -288,6 +290,7 @@ public class LowerIntegrationTest {
       "record.test",
       "record2.test",
       "record_ctor.test",
+      "record_getter_override.test",
       "record_tostring.test",
       "rek.test",
       "samepkg.test",

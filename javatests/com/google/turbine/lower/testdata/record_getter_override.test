@@ -1,0 +1,10 @@
+=== Foo.java ===
+import java.util.ArrayList;
+import java.util.List;
+
+public record Foo(int bar, List<String> baz) {
+  /** This should override the default baz() getter. */
+  public List<String> baz() {
+    return baz == null ? new ArrayList<>() : baz;
+  }
+}
