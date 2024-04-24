@@ -23,7 +23,7 @@
 
   <groupId>com.google.turbine</groupId>
   <artifactId>turbine</artifactId>
-  <version>HEAD-SNAPSHOT</version>
+  <version>0.6.0</version>
 
   <name>turbine</name>
   <description>turbine is a header compiler for Java</description>
