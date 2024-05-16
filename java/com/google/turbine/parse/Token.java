@@ -39,7 +39,6 @@ public enum Token {
   DOUBLE_LITERAL("<double literal>"),
   CHAR_LITERAL("<char literal>"),
   STRING_LITERAL("<string literal>"),
-  STRING_TEMPLATE("<string template>"),
   AT("@"),
   EQ("=="),
   ASSIGN("="),

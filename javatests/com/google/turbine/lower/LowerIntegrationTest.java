@@ -64,11 +64,9 @@ public class LowerIntegrationTest {
           entry("sealed_nested.test", 17),
           entry("textblock.test", 15),
           entry("textblock2.test", 15),
-          entry("B306423115.test", 15),
-          entry("string_template.test", 21));
+          entry("B306423115.test", 15));
 
-  private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW =
-      ImmutableSet.of("string_template.test");
+  private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW = ImmutableSet.of();
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
@@ -313,7 +311,6 @@ public class LowerIntegrationTest {
       "strictfp.test",
       "string.test",
       "string_const.test",
-      "string_template.test",
       "superabstract.test",
       "supplierfunction.test",
       "tbound.test",

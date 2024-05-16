@@ -415,24 +415,17 @@ public class StreamLexer implements Lexer {
             }
             readFrom();
             StringBuilder sb = new StringBuilder();
-            Token stringToken = Token.STRING_LITERAL;
             STRING:
             while (true) {
               switch (ch) {
                 case '\\':
                   eat();
-                  if (ch == '{') {
-                    eat();
-                    stringTemplate(sb);
-                    stringToken = Token.STRING_TEMPLATE;
-                  } else {
-                    sb.append(escape());
-                  }
+                  sb.append(escape());
                   continue STRING;
                 case '"':
                   saveValue(sb.toString());
                   eat();
-                  return stringToken;
+                  return Token.STRING_LITERAL;
                 case '\n':
                   throw error(ErrorKind.UNTERMINATED_STRING);
                 case ASCII_SUB:
@@ -453,29 +446,6 @@ public class StreamLexer implements Lexer {
             return identifier();
           }
           throw inputError();
-      }
-    }
-  }
-
-  // String templates aren't compile-time constants, so they don't affect the API. Advance through
-  // the entire template, dropping any contained \{ ... }, and tokenize it as a single string
-  // literal.
-  private void stringTemplate(StringBuilder sb) {
-    sb.append("{}");
-    int depth = 1;
-    while (depth > 0) {
-      Token next = next();
-      switch (next) {
-        case LBRACE:
-          depth++;
-          break;
-        case RBRACE:
-          depth--;
-          break;
-        case EOF:
-          return;
-        default:
-          break;
       }
     }
   }
@@ -508,7 +478,6 @@ public class StreamLexer implements Lexer {
     }
     readFrom();
     StringBuilder sb = new StringBuilder();
-    Token stringToken = Token.STRING_LITERAL;
     while (true) {
       switch (ch) {
         case '"':
@@ -527,23 +496,17 @@ public class StreamLexer implements Lexer {
           value = stripIndent(value);
           value = translateEscapes(value);
           saveValue(value);
-          return stringToken;
+          return Token.STRING_LITERAL;
         case '\\':
           // Escapes are handled later (after stripping indentation), but we need to ensure
           // that \" escapes don't count towards the closing delimiter of the text block.
+          sb.appendCodePoint(ch);
           eat();
-          if (ch == '{') {
-            eat();
-            stringTemplate(sb);
-            stringToken = Token.STRING_TEMPLATE;
-          } else {
-            sb.append('\\');
-            if (ch == ASCII_SUB && reader.done()) {
-              return Token.EOF;
-            }
-            sb.appendCodePoint(ch);
-            eat();
+          if (ch == ASCII_SUB && reader.done()) {
+            return Token.EOF;
           }
+          sb.appendCodePoint(ch);
+          eat();
           continue;
         case ASCII_SUB:
           if (reader.done()) {
