@@ -554,15 +554,17 @@ public class Parser {
             if (token == Token.LPAREN) {
               dropParens();
             }
+            EnumSet<TurbineModifier> access = EnumSet.copyOf(ENUM_CONSTANT_MODIFIERS);
             // TODO(cushon): consider desugaring enum constants later
             if (token == Token.LBRACE) {
               dropBlocks();
+              access.add(TurbineModifier.ENUM_IMPL);
             }
             maybe(Token.COMMA);
             result.add(
                 new VarDecl(
                     position,
-                    ENUM_CONSTANT_MODIFIERS,
+                    access,
                     annos.build(),
                     new ClassTy(
                         position,

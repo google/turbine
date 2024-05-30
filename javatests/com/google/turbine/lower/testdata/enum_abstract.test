@@ -11,3 +11,33 @@ class Test {
     };
   }
 }
+=== I.java ===
+interface I {
+  void f();
+}
+=== EnumConstantImplementsInterface.java ===
+enum EnumConstantImplementsInterface implements I {
+  ONE {
+    @Override
+    public void f() {}
+  };
+}
+=== EnumImplementsInterface.java ===
+enum EnumImplementsInterface implements I {
+  ONE;
+
+  public void f() {}
+}
+=== EnumConstantImplementsMethod.java ===
+enum EnumConstantImplementsMethod {
+  ONE {
+    @Override
+    public void f() {}
+  };
+  public void f() {}
+}
+=== EnumConstantEmptyBody.java ===
+enum EnumConstantEmptyBody {
+  ONE {
+  };
+}

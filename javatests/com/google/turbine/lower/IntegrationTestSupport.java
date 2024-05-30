@@ -128,7 +128,7 @@ public final class IntegrationTestSupport {
     for (ClassNode n : classes) {
       removeImplementation(n);
       removeUnusedInnerClassAttributes(infos, n);
-      makeEnumsFinal(all, n);
+      makeEnumsNonAbstract(all, n);
       sortAttributes(n);
       undeprecate(n);
       removePreviewVersion(n);
@@ -187,17 +187,15 @@ public final class IntegrationTestSupport {
         && visibleAnnotations.stream().anyMatch(a -> a.desc.equals("Ljava/lang/Deprecated;"));
   }
 
-  private static void makeEnumsFinal(Set<String> all, ClassNode n) {
+  private static void makeEnumsNonAbstract(Set<String> all, ClassNode n) {
     n.innerClasses.forEach(
         x -> {
           if (all.contains(x.name) && (x.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
             x.access &= ~Opcodes.ACC_ABSTRACT;
-            x.access |= Opcodes.ACC_FINAL;
           }
         });
     if ((n.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
       n.access &= ~Opcodes.ACC_ABSTRACT;
-      n.access |= Opcodes.ACC_FINAL;
     }
   }
 

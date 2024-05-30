@@ -117,7 +117,7 @@ public final class CompUnitPreprocessor {
     for (TyDecl decl : decls) {
       ClassSymbol sym =
           new ClassSymbol((!packageName.isEmpty() ? packageName + "/" : "") + decl.name());
-      int access = access(decl.mods(), decl.tykind());
+      int access = access(decl.mods(), decl);
       ImmutableMap<String, ClassSymbol> children =
           preprocessChildren(unit.source(), types, sym, decl.members(), access);
       types.add(new SourceBoundClass(sym, null, children, access, decl));
@@ -167,12 +167,12 @@ public final class CompUnitPreprocessor {
   }
 
   /** Desugars access flags for a class. */
-  public static int access(ImmutableSet<TurbineModifier> mods, TurbineTyKind tykind) {
+  public static int access(ImmutableSet<TurbineModifier> mods, TyDecl decl) {
     int access = 0;
     for (TurbineModifier m : mods) {
       access |= m.flag();
     }
-    switch (tykind) {
+    switch (decl.tykind()) {
       case CLASS:
         access |= TurbineFlag.ACC_SUPER;
         break;
@@ -180,11 +180,14 @@ public final class CompUnitPreprocessor {
         access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE;
         break;
       case ENUM:
-        // Assuming all enums are final is safe, because nothing outside
-        // the compilation unit can extend abstract enums anyways, and
-        // refactoring an existing enum to implement methods in the container
-        // class instead of the constants is not a breaking change.
-        access |= TurbineFlag.ACC_SUPER | TurbineFlag.ACC_ENUM | TurbineFlag.ACC_FINAL;
+        // Assuming all enums are non-abstract is safe, because nothing outside
+        // the compilation unit can extend abstract enums, and refactoring an
+        // existing enum to implement methods in the container class instead
+        // of the constants is not a breaking change.
+        access |= TurbineFlag.ACC_SUPER | TurbineFlag.ACC_ENUM;
+        if (isEnumFinal(decl.members())) {
+          access |= TurbineFlag.ACC_FINAL;
+        }
         break;
       case ANNOTATION:
         access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION;
@@ -196,9 +199,27 @@ public final class CompUnitPreprocessor {
     return access;
   }
 
+  /**
+   * If any enum constants have a class body (which is recorded in the parser by setting ENUM_IMPL),
+   * the class generated for the enum needs to not have ACC_FINAL set.
+   */
+  private static boolean isEnumFinal(ImmutableList<Tree> declMembers) {
+    for (Tree t : declMembers) {
+      if (t.kind() != Tree.Kind.VAR_DECL) {
+        continue;
+      }
+      Tree.VarDecl var = (Tree.VarDecl) t;
+      if (!var.mods().contains(TurbineModifier.ENUM_IMPL)) {
+        continue;
+      }
+      return false;
+    }
+    return true;
+  }
+
   /** Desugars access flags for an inner class. */
   private static int innerClassAccess(int enclosing, TyDecl decl) {
-    int access = access(decl.mods(), decl.tykind());
+    int access = access(decl.mods(), decl);
 
     // types declared in interfaces and annotations are implicitly public (JLS 9.5)
     if ((enclosing & (TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION)) != 0) {
