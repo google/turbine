@@ -145,6 +145,7 @@ public final class TurbineOptionsParser {
         case "--experimental_fix_deps_tool":
         case "--strict_java_deps":
         case "--native_header_output":
+        case "--post_processor":
           // accepted (and ignored) for compatibility with JavaBuilder command lines
           readOne(next, argumentDeque);
           break;

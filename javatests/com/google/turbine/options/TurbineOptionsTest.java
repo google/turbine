@@ -377,7 +377,9 @@ public class TurbineOptionsTest {
                     "ignored",
                     "--native_header_output",
                     "ignored",
-                    "--compress_jar")));
+                    "--compress_jar",
+                    "--post_processor",
+                    "jacoco")));
     assertThat(options.outputDeps()).hasValue("output_deps.proto");
     assertThat(options.gensrcOutput()).hasValue("generated_sources.jar");
   }
