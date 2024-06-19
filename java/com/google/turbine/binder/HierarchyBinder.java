@@ -35,7 +35,7 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.ClassTy;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Type hierarchy binding. */
 public class HierarchyBinder {

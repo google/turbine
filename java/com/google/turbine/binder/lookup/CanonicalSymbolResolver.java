@@ -18,7 +18,7 @@ package com.google.turbine.binder.lookup;
 
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Canonical type resolution. Breaks a circular dependency between binding and import handling. */
 public interface CanonicalSymbolResolver extends ImportScope.ResolveFunction {

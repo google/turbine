@@ -30,7 +30,7 @@ import com.google.turbine.tree.Tree.ImportDecl;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An index for statically imported members, in particular constant variables. */
 public class MemberImportIndex {

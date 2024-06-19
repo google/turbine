@@ -18,7 +18,7 @@ package com.google.turbine.binder.lookup;
 
 import com.google.common.collect.Iterables;
 import com.google.turbine.binder.sym.ClassSymbol;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A scope that corresponds to a particular package, which supports iteration over its enclosed
