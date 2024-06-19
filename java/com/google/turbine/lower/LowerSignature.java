@@ -46,7 +46,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** Translator from {@link Type}s to {@link Sig}natures. */
 public class LowerSignature {

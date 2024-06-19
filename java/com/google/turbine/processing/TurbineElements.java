@@ -53,7 +53,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** An implementation of {@link Elements} backed by turbine's {@link Element}. */
 @SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.

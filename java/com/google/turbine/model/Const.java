@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.escape.SourceCodeEscapers;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * Compile-time constant expressions, including literals of primitive or String type, class

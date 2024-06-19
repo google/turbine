@@ -16,7 +16,7 @@
 
 package com.google.turbine.binder.lookup;
 
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * An index of canonical type names.

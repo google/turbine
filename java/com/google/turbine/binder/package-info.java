@@ -15,5 +15,5 @@
  */
 
 @com.google.errorprone.annotations.CheckReturnValue
-@org.jspecify.annotations.NullMarked
+@org.jspecify.nullness.NullMarked
 package com.google.turbine.binder;

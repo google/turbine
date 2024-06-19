@@ -32,7 +32,7 @@ import com.google.turbine.tree.Tree.Expression;
 import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.tree.TurbineOperatorKind;
 import java.util.Optional;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** A parser for compile-time constant expressions. */
 public class ConstExpressionParser {

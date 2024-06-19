@@ -24,7 +24,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** Turbine's {@link ProcessingEnvironment}. */
 public class TurbineProcessingEnvironment implements ProcessingEnvironment {

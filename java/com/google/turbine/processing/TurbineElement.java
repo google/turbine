@@ -82,7 +82,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /** An {@link Element} implementation backed by a {@link Symbol}. */
 @SuppressWarnings("nullness") // TODO(cushon): Address nullness diagnostics.

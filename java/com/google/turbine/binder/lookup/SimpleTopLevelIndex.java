@@ -23,7 +23,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.nullness.Nullable;
 
 /**
  * An index of canonical type names where all members are known statically.
