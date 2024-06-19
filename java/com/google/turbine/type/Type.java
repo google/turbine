@@ -33,7 +33,7 @@ import com.google.turbine.tree.Tree;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** JLS 4 types. */
 public interface Type {

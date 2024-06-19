@@ -15,5 +15,5 @@
  */
 
 @com.google.errorprone.annotations.CheckReturnValue
-@org.jspecify.nullness.NullMarked
+@org.jspecify.annotations.NullMarked
 package com.google.turbine.bytecode.sig;

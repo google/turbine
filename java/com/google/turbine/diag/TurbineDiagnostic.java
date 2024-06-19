@@ -26,7 +26,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import java.util.Objects;
 import javax.tools.Diagnostic;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A compilation error. */
 public class TurbineDiagnostic {

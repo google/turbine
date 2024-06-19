@@ -63,7 +63,7 @@ import com.google.turbine.tree.TurbineModifier;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A parser for the subset of Java required for header compilation.

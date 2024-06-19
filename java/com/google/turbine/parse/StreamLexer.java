@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A {@link Lexer} that streams input from a {@link UnicodeEscapePreprocessor}. */
 public class StreamLexer implements Lexer {
