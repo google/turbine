@@ -35,7 +35,7 @@ import com.google.turbine.tree.Tree.ModUses;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A pretty-printer for {@link Tree}s. */
 public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {

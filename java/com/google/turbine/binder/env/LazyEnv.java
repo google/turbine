@@ -22,7 +22,7 @@ import com.google.turbine.binder.sym.Symbol;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import org.jspecify.nullness.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An env that permits an analysis pass to access information about symbols from the current pass,
