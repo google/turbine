@@ -379,9 +379,16 @@ public class TurbineOptionsTest {
                     "ignored",
                     "--compress_jar",
                     "--post_processor",
-                    "jacoco")));
+                    "jacoco",
+                    "paths-for-coverage.txt",
+                    "coverage-metadata",
+                    "-*Test",
+                    "-*TestCase",
+                    "--classpath",
+                    "lib.jar")));
     assertThat(options.outputDeps()).hasValue("output_deps.proto");
     assertThat(options.gensrcOutput()).hasValue("generated_sources.jar");
+    assertThat(options.classPath()).containsExactly("lib.jar");
   }
 
   @Test
