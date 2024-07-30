@@ -266,7 +266,23 @@ public class VariableInitializerParser {
   }
 
   private void save() {
-    tokens.add(new SavedToken(token, lexer.stringValue(), lexer.position()));
+    String value;
+    switch (token) {
+      case IDENT:
+      case INT_LITERAL:
+      case LONG_LITERAL:
+      case DOUBLE_LITERAL:
+      case FLOAT_LITERAL:
+      case STRING_LITERAL:
+      case CHAR_LITERAL:
+        value = lexer.stringValue();
+        break;
+      default:
+        // memory optimization: don't save string values for tokens that don't require them
+        value = null;
+        break;
+    }
+    tokens.add(new SavedToken(token, value, lexer.position()));
   }
 
   private void dropBracks(int many) {
