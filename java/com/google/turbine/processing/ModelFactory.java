@@ -79,6 +79,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.NoType;
 import javax.lang.model.type.NullType;
@@ -270,7 +271,7 @@ public class ModelFactory {
     return paramCache.computeIfAbsent(sym, k -> new TurbineParameterElement(this, sym));
   }
 
-  VariableElement recordComponentElement(RecordComponentSymbol sym) {
+  RecordComponentElement recordComponentElement(RecordComponentSymbol sym) {
     return recordComponentCache.computeIfAbsent(
         sym, k -> new TurbineRecordComponentElement(this, sym));
   }

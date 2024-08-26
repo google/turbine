@@ -67,6 +67,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
@@ -817,6 +818,55 @@ public class ProcessingIntegrationTest {
     ImmutableList<String> messages =
         log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
     assertThat(messages).containsExactly("A(ERROR)");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class RecordComponentProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+
+      ImmutableList<RecordComponentElement> components =
+          typesIn(roundEnv.getRootElements()).stream()
+              .flatMap(t -> t.getRecordComponents().stream())
+              .collect(toImmutableList());
+      for (RecordComponentElement c : components) {
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                String.format(
+                    "enclosing: %s, name: %s, accessor: %s %s",
+                    c.getEnclosingElement(),
+                    c.getSimpleName(),
+                    c.getAccessor(),
+                    c.getAccessor().getAnnotationMirrors()));
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void recordComponents() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== C.java ===", //
+            "abstract class C {",
+            "  abstract int x();",
+            "  abstract int t();",
+            "}",
+            "=== R.java ===", //
+            "record R(int x, @Deprecated int y) {",
+            "}");
+    TurbineError e = runProcessors(units, new RecordComponentProcessor());
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
+        .containsExactly(
+            "enclosing: R, name: x, accessor: x() []",
+            "enclosing: R, name: y, accessor: y() [@java.lang.Deprecated]");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
