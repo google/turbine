@@ -165,7 +165,7 @@ public final class Dependencies {
     }
   }
 
-  private static void addPackageInfos(Set<ClassSymbol> closure, BindingResult bound) {
+  static void addPackageInfos(Set<ClassSymbol> closure, BindingResult bound) {
     Set<ClassSymbol> packages = new LinkedHashSet<>();
     for (ClassSymbol sym : closure) {
       String packageName = sym.packageName();

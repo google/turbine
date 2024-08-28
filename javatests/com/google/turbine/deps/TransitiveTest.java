@@ -305,6 +305,44 @@ public class TransitiveTest {
         .inOrder();
   }
 
+  @Test
+  public void packageInfo() throws Exception {
+    Path libPackageInfo =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "p/Anno.java",
+                    "package p;",
+                    "import java.lang.annotation.Retention;",
+                    "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
+                    "@Retention(RUNTIME)",
+                    "@interface Anno {}")
+                .addSourceLines(
+                    "p/package-info.java", //
+                    "@Anno",
+                    "package p;")
+                .build(),
+            ImmutableList.of());
+
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "p/P.java", //
+                    "package p;",
+                    "public class P {}")
+                .build(),
+            ImmutableList.of(libPackageInfo));
+
+    assertThat(readJar(liba).keySet())
+        .containsExactly(
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/p/package-info.class",
+            "p/P.class")
+        .inOrder();
+  }
+
   private Path runTurbine(ImmutableList<Path> sources, ImmutableList<Path> classpath)
       throws IOException {
     Path out = temporaryFolder.newFolder().toPath().resolve("out.jar");

@@ -45,7 +45,9 @@ public final class Transitive {
   public static ImmutableMap<String, byte[]> collectDeps(
       ClassPath bootClassPath, BindingResult bound) {
     ImmutableMap.Builder<String, byte[]> transitive = ImmutableMap.builder();
-    for (ClassSymbol sym : superClosure(bound)) {
+    Set<ClassSymbol> closure = superClosure(bound);
+    Dependencies.addPackageInfos(closure, bound);
+    for (ClassSymbol sym : closure) {
       BytecodeBoundClass info = bound.classPathEnv().get(sym);
       if (info == null) {
         // the symbol wasn't loaded from the classpath
