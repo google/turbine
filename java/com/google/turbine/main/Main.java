@@ -421,7 +421,9 @@ public final class Main {
       }
       for (Map.Entry<String, byte[]> entry : transitive.entrySet()) {
         addEntry(
-            jos, ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ".class", entry.getValue());
+            jos,
+            ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ClassPathBinder.TRANSITIVE_SUFFIX,
+            entry.getValue());
       }
       for (Map.Entry<String, byte[]> entry : lowered.entrySet()) {
         addEntry(jos, entry.getKey() + ".class", entry.getValue());

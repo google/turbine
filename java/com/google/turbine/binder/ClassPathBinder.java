@@ -47,6 +47,12 @@ public final class ClassPathBinder {
    */
   public static final String TRANSITIVE_PREFIX = "META-INF/TRANSITIVE/";
 
+  /**
+   * The suffix for repackaged transitive dependencies; see {@link
+   * com.google.turbine.deps.Transitive}.
+   */
+  public static final String TRANSITIVE_SUFFIX = ".turbine";
+
   /** Creates an environment containing symbols in the given classpath. */
   public static ClassPath bindClasspath(Collection<Path> paths) throws IOException {
     // TODO(cushon): this is going to require an env eventually,
@@ -110,14 +116,14 @@ public final class ClassPathBinder {
     // TODO(cushon): don't leak file descriptors
     for (Zip.Entry ze : new Zip.ZipIterable(path)) {
       String name = ze.name();
-      if (!name.endsWith(".class")) {
-        resources.put(name, toByteArrayOrDie(ze));
-        continue;
-      }
       if (name.startsWith(TRANSITIVE_PREFIX)) {
+        if (!name.endsWith(TRANSITIVE_SUFFIX)) {
+          continue;
+        }
         ClassSymbol sym =
             new ClassSymbol(
-                name.substring(TRANSITIVE_PREFIX.length(), name.length() - ".class".length()));
+                name.substring(
+                    TRANSITIVE_PREFIX.length(), name.length() - TRANSITIVE_SUFFIX.length()));
         transitive.computeIfAbsent(
             sym,
             new Function<ClassSymbol, BytecodeBoundClass>() {
@@ -126,6 +132,10 @@ public final class ClassPathBinder {
                 return new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString());
               }
             });
+        continue;
+      }
+      if (!name.endsWith(".class")) {
+        resources.put(name, toByteArrayOrDie(ze));
         continue;
       }
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.class")) {

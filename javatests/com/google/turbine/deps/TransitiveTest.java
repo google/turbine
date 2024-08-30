@@ -127,13 +127,13 @@ public class TransitiveTest {
         .containsExactly(
             "META-INF/",
             "META-INF/MANIFEST.MF",
-            "META-INF/TRANSITIVE/a/A.class",
-            "META-INF/TRANSITIVE/a/A$Anno.class",
-            "META-INF/TRANSITIVE/a/A$Inner.class",
+            "META-INF/TRANSITIVE/a/A.turbine",
+            "META-INF/TRANSITIVE/a/A$Anno.turbine",
+            "META-INF/TRANSITIVE/a/A$Inner.turbine",
             "b/B.class")
         .inOrder();
 
-    ClassFile a = ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A.class"));
+    ClassFile a = ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A.turbine"));
     // methods and non-constant fields are removed
     assertThat(getOnlyElement(a.fields()).name()).isEqualTo("CONST");
     assertThat(a.methods()).isEmpty();
@@ -142,7 +142,7 @@ public class TransitiveTest {
 
     // annotation interface methods are preserved
     assertThat(
-            ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A$Anno.class"))
+            ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A$Anno.turbine"))
                 .methods())
         .hasSize(1);
 
@@ -186,10 +186,10 @@ public class TransitiveTest {
         .containsExactly(
             "META-INF/",
             "META-INF/MANIFEST.MF",
-            "META-INF/TRANSITIVE/b/B.class",
-            "META-INF/TRANSITIVE/a/A.class",
-            "META-INF/TRANSITIVE/a/A$Anno.class",
-            "META-INF/TRANSITIVE/a/A$Inner.class",
+            "META-INF/TRANSITIVE/b/B.turbine",
+            "META-INF/TRANSITIVE/a/A.turbine",
+            "META-INF/TRANSITIVE/a/A$Anno.turbine",
+            "META-INF/TRANSITIVE/a/A$Inner.turbine",
             "c/C.class")
         .inOrder();
 
@@ -256,8 +256,8 @@ public class TransitiveTest {
         .containsExactly(
             "META-INF/",
             "META-INF/MANIFEST.MF",
-            "META-INF/TRANSITIVE/a/A.class",
-            "META-INF/TRANSITIVE/a/A$I.class",
+            "META-INF/TRANSITIVE/a/A.turbine",
+            "META-INF/TRANSITIVE/a/A$I.turbine",
             "b/B.class")
         .inOrder();
   }
@@ -297,9 +297,9 @@ public class TransitiveTest {
         .containsExactly(
             "META-INF/",
             "META-INF/MANIFEST.MF",
-            "META-INF/TRANSITIVE/a/A$I.class",
-            "META-INF/TRANSITIVE/a/S.class",
-            "META-INF/TRANSITIVE/a/A.class",
+            "META-INF/TRANSITIVE/a/A$I.turbine",
+            "META-INF/TRANSITIVE/a/S.turbine",
+            "META-INF/TRANSITIVE/a/A.turbine",
             "b/B$I.class",
             "b/B.class")
         .inOrder();
@@ -338,7 +338,7 @@ public class TransitiveTest {
         .containsExactly(
             "META-INF/",
             "META-INF/MANIFEST.MF",
-            "META-INF/TRANSITIVE/p/package-info.class",
+            "META-INF/TRANSITIVE/p/package-info.turbine",
             "p/P.class")
         .inOrder();
   }
