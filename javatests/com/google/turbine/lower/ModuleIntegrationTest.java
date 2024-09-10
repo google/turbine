@@ -48,6 +48,8 @@ public class ModuleIntegrationTest {
       "classpath.test",
       "multimodule.test",
       "module-info-open.test",
+      "module-requires-static-transitive.test",
+      "module-requires-transitive-static.test",
     };
     return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
   }

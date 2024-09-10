@@ -464,12 +464,12 @@ public class Parser {
       if (token == Token.IDENT && lexer.stringValue().equals("transitive")) {
         next();
         access.add(TurbineModifier.TRANSITIVE);
-        break;
+        continue;
       }
       if (token == Token.STATIC) {
         next();
         access.add(TurbineModifier.STATIC);
-        break;
+        continue;
       }
       break;
     }

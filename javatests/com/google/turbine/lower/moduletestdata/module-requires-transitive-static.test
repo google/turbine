@@ -1,0 +1,5 @@
+=== module-info.java ===
+
+module foo {
+  requires transitive static java.base;
+}
