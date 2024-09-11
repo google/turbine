@@ -18,7 +18,7 @@ package com.google.turbine.model;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.escape.SourceCodeEscapers;
+import com.google.turbine.escape.SourceCodeEscapers;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
 import org.jspecify.annotations.Nullable;

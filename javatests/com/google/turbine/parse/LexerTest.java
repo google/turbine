@@ -19,9 +19,9 @@ package com.google.turbine.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeTrue;
 
-import com.google.common.escape.SourceCodeEscapers;
 import com.google.common.truth.Expect;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.escape.SourceCodeEscapers;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;

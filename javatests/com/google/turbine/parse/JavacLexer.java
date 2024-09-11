@@ -18,7 +18,7 @@ package com.google.turbine.parse;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.escape.SourceCodeEscapers;
+import com.google.turbine.escape.SourceCodeEscapers;
 import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.parser.Tokens;

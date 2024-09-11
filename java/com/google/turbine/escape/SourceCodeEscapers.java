@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.common.escape;
+package com.google.turbine.escape;
 
+import com.google.common.escape.ArrayBasedCharEscaper;
+import com.google.common.escape.CharEscaper;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +41,7 @@ public final class SourceCodeEscapers {
   private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
   /**
-   * Returns an {@link Escaper} instance that escapes special characters in a string so it can
+   * Returns an {@link CharEscaper} instance that escapes special characters in a string so it can
    * safely be included in either a Java character literal or string literal. This is the preferred
    * way to escape Java characters for use in String or character literals.
    *
@@ -83,16 +85,16 @@ public final class SourceCodeEscapers {
 
   // Helper for common case of escaping a single char.
   private static char[] asUnicodeHexEscape(char c) {
-    // Equivalent to String.format("\\u%04x", (int)c);
+    // Equivalent to String.format("\\u%04x", (int) c);
     char[] r = new char[6];
     r[0] = '\\';
     r[1] = 'u';
     r[5] = HEX_DIGITS[c & 0xF];
-    c >>>= 4;
+    c = (char) (c >>> 4);
     r[4] = HEX_DIGITS[c & 0xF];
-    c >>>= 4;
+    c = (char) (c >>> 4);
     r[3] = HEX_DIGITS[c & 0xF];
-    c >>>= 4;
+    c = (char) (c >>> 4);
     r[2] = HEX_DIGITS[c & 0xF];
     return r;
   }
