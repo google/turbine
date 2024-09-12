@@ -1038,7 +1038,12 @@ public abstract class TurbineElement implements Element {
     if ((access & TurbineFlag.ACC_STRICT) == TurbineFlag.ACC_STRICT) {
       modifiers.add(Modifier.STRICTFP);
     }
-
+    if ((access & TurbineFlag.ACC_SEALED) == TurbineFlag.ACC_SEALED) {
+      modifiers.add(Modifier.SEALED);
+    }
+    if ((access & TurbineFlag.ACC_NON_SEALED) == TurbineFlag.ACC_NON_SEALED) {
+      modifiers.add(Modifier.NON_SEALED);
+    }
     return Sets.immutableEnumSet(modifiers);
   }
 

@@ -869,6 +869,36 @@ public class ProcessingIntegrationTest {
             "enclosing: R, name: y, accessor: y() [@java.lang.Deprecated]");
   }
 
+  @SupportedAnnotationTypes("*")
+  public static class ModifiersProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      for (Element e : roundEnv.getRootElements()) {
+        processingEnv
+            .getMessager()
+            .printMessage(Diagnostic.Kind.ERROR, String.format("%s %s", e, e.getModifiers()), e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void modifiers() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== I.java ===", //
+            "sealed interface I {}",
+            "non-sealed interface J {}");
+    TurbineError e = runProcessors(units, new ModifiersProcessor());
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
+        .containsExactly("I [abstract, sealed]", "J [abstract, non-sealed]");
+  }
+
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
     return assertThrows(
         TurbineError.class,
