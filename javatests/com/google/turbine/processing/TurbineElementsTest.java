@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.TruthJUnit.assume;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.Binder.BindingResult;
@@ -56,64 +55,64 @@ public class TurbineElementsTest {
 
   private static final IntegrationTestSupport.TestInput SOURCES =
       IntegrationTestSupport.TestInput.parse(
-          Joiner.on('\n')
-              .join(
-                  "=== Test.java ===",
-                  "@Deprecated",
-                  "@A class Test extends One {}",
-                  "=== One.java ===",
-                  "/** javadoc",
-                  "  * for",
-                  "  * one",
-                  "  */",
-                  "@B class One extends Two {",
-                  "  /** method javadoc */",
-                  "  void f() {}",
-                  "  /** field javadoc */",
-                  "  int x;",
-                  "}",
-                  "=== Two.java ===",
-                  "/** javadoc",
-                  " for",
-                  " two with extra *",
-                  " */",
-                  "@C(1) class Two extends Three {}",
-                  "=== Three.java ===",
-                  "@C(2) class Three extends Four {}",
-                  "=== Four.java ===",
-                  "@D class Four {}",
-                  "=== Annotations.java ===",
-                  "import java.lang.annotation.Inherited;",
-                  "@interface A {}",
-                  "@interface B {}",
-                  "@Inherited",
-                  "@interface C {",
-                  "  int value() default 42;",
-                  "}",
-                  "@Inherited",
-                  "@interface D {}",
-                  "=== com/pkg/P.java ===",
-                  "package com.pkg;",
-                  "@interface P {}",
-                  "=== com/pkg/package-info.java ===",
-                  "@P",
-                  "package com.pkg;",
-                  "=== Const.java ===",
-                  "class Const {",
-                  "  static final int X = 1867;",
-                  "}",
-                  "=== com/pkg/empty/package-info.java ===",
-                  "@P",
-                  "package com.pkg.empty;",
-                  "import com.pkg.P;",
-                  "=== com/pkg/A.java ===",
-                  "package com.pkg;",
-                  "class A {",
-                  "  class I {}",
-                  "}",
-                  "=== com/pkg/B.java ===",
-                  "package com.pkg;",
-                  "class B {}"));
+          """
+          === Test.java ===
+          @Deprecated
+          @A class Test extends One {}
+          === One.java ===
+          /** javadoc
+            * for
+            * one
+            */
+          @B class One extends Two {
+            /** method javadoc */
+            void f() {}
+            /** field javadoc */
+            int x;
+          }
+          === Two.java ===
+          /** javadoc
+           for
+           two with extra *
+           */
+          @C(1) class Two extends Three {}
+          === Three.java ===
+          @C(2) class Three extends Four {}
+          === Four.java ===
+          @D class Four {}
+          === Annotations.java ===
+          import java.lang.annotation.Inherited;
+          @interface A {}
+          @interface B {}
+          @Inherited
+          @interface C {
+            int value() default 42;
+          }
+          @Inherited
+          @interface D {}
+          === com/pkg/P.java ===
+          package com.pkg;
+          @interface P {}
+          === com/pkg/package-info.java ===
+          @P
+          package com.pkg;
+          === Const.java ===
+          class Const {
+            static final int X = 1867;
+          }
+          === com/pkg/empty/package-info.java ===
+          @P
+          package com.pkg.empty;
+          import com.pkg.P;
+          === com/pkg/A.java ===
+          package com.pkg;
+          class A {
+            class I {}
+          }
+          === com/pkg/B.java ===
+          package com.pkg;
+          class B {}
+          """);
 
   Elements javacElements;
   ModelFactory factory;
@@ -352,10 +351,11 @@ public class TurbineElementsTest {
         w,
         turbineElements.getTypeElement("com.pkg.A"),
         turbineElements.getTypeElement("com.pkg.A.I"));
-    assertThat(w.toString()).isEqualTo(lines("com.pkg.A", "com.pkg.A.I"));
-  }
-
-  private String lines(String... lines) {
-    return Joiner.on(System.lineSeparator()).join(lines) + System.lineSeparator();
+    assertThat(w.toString())
+        .isEqualTo(
+            """
+            com.pkg.A
+            com.pkg.A.I
+            """);
   }
 }

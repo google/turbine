@@ -23,7 +23,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.diag.TurbineError;
@@ -65,22 +64,21 @@ public class ReducedClasspathTest {
     Map<String, byte[]> compiled =
         IntegrationTestSupport.runJavac(
             TestInput.parse(
-                    String.join(
-                        "\n",
-                        ImmutableList.of(
-                            "=== a/A.java ===",
-                            "package a;",
-                            "public class A {",
-                            "  public static class I {}",
-                            "}",
-                            "=== b/B.java ===",
-                            "package b;",
-                            "import a.A;",
-                            "public class B extends A {}",
-                            "=== c/C.java ===",
-                            "package c;",
-                            "import b.B;",
-                            "public class C extends B {}")))
+                    """
+                    === a/A.java ===
+                    package a;
+                    public class A {
+                      public static class I {}
+                    }
+                    === b/B.java ===
+                    package b;
+                    import a.A;
+                    public class B extends A {}
+                    === c/C.java ===
+                    package c;
+                    import b.B;
+                    public class C extends B {}
+                    """)
                 .sources,
             /* classpath= */ ImmutableList.of());
 
@@ -116,12 +114,13 @@ public class ReducedClasspathTest {
   @Test
   public void succeedsWithoutFallingBack() throws Exception {
     Path src = temporaryFolder.newFile("Test.java").toPath();
-    Files.write(
+    Files.writeString(
         src,
-        ImmutableList.of(
-            "import c.C;", //
-            "class Test extends C {",
-            "}"),
+        """
+        import c.C;
+        class Test extends C {
+        }
+        """,
         UTF_8);
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
@@ -150,13 +149,14 @@ public class ReducedClasspathTest {
   @Test
   public void succeedsAfterFallingBack() throws Exception {
     Path src = temporaryFolder.newFile("Test.java").toPath();
-    Files.write(
+    Files.writeString(
         src,
-        ImmutableList.of(
-            "import c.C;", //
-            "class Test extends C {",
-            "  I i;",
-            "}"),
+        """
+        import c.C;
+        class Test extends C {
+          I i;
+        }
+        """,
         UTF_8);
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
@@ -179,13 +179,14 @@ public class ReducedClasspathTest {
   @Test
   public void bazelFallback() throws Exception {
     Path src = temporaryFolder.newFile("Test.java").toPath();
-    Files.write(
+    Files.writeString(
         src,
-        ImmutableList.of(
-            "import c.C;", //
-            "class Test extends C {",
-            "  I i;",
-            "}"),
+        """
+        import c.C;
+        class Test extends C {
+          I i;
+        }
+        """,
         UTF_8);
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
@@ -221,13 +222,14 @@ public class ReducedClasspathTest {
   @Test
   public void noFallbackWithoutDirectJarsAndJdeps() throws Exception {
     Path src = temporaryFolder.newFile("Test.java").toPath();
-    Files.write(
+    Files.writeString(
         src,
-        ImmutableList.of(
-            "import c.C;", //
-            "class Test extends C {",
-            "  I i;",
-            "}"),
+        """
+        import c.C;
+        class Test extends C {
+          I i;
+        }
+        """,
         UTF_8);
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
@@ -245,9 +247,5 @@ public class ReducedClasspathTest {
                         .setDepsArtifacts(ImmutableList.of(libcJdeps.toString()))
                         .build()));
     assertThat(e).hasMessageThat().contains("could not resolve I");
-  }
-
-  static String lines(String... lines) {
-    return Joiner.on(System.lineSeparator()).join(lines);
   }
 }

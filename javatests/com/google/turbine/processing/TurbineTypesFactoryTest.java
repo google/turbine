@@ -19,7 +19,6 @@ package com.google.turbine.processing;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -48,12 +47,12 @@ public class TurbineTypesFactoryTest {
 
   private static final IntegrationTestSupport.TestInput SOURCES =
       IntegrationTestSupport.TestInput.parse(
-          Joiner.on('\n')
-              .join(
-                  "=== Test.java ===", //
-                  "class Test {",
-                  "  class I {}",
-                  "}"));
+          """
+          === Test.java ===
+          class Test {
+            class I {}
+          }
+          """);
 
   ModelFactory factory;
   TurbineElements turbineElements;

@@ -457,42 +457,46 @@ public class LowerTest {
         ImmutableMap.<String, String>builder()
             .put(
                 "b/B.java",
-                lines(
-                    "package b;", //
-                    "public class B {",
-                    "  public static class A {",
-                    "    public static final int X = 0;",
-                    "  }",
-                    "  public static class C {}",
-                    "}"))
+                """
+                package b;
+                public class B {
+                  public static class A {
+                    public static final int X = 0;
+                  }
+                  public static class C {}
+                }
+                """)
             .put(
                 "anno/Anno.java",
-                lines(
-                    "package anno;", //
-                    "public @interface Anno {",
-                    "  int value() default 0;",
-                    "}"))
+                """
+                package anno;
+                public @interface Anno {
+                  int value() default 0;
+                }
+                """)
             .put(
                 "a/A.java",
-                lines(
-                    "package a;", //
-                    "import b.B;",
-                    "import anno.Anno;",
-                    "import static b.B.nosuch.A;",
-                    "@Anno(A.X)",
-                    "public class A extends B {",
-                    "  public A a;",
-                    "  public static final int X = 1;",
-                    "}"))
+                """
+                package a;
+                import b.B;
+                import anno.Anno;
+                import static b.B.nosuch.A;
+                @Anno(A.X)
+                public class A extends B {
+                  public A a;
+                  public static final int X = 1;
+                }
+                """)
             .put(
                 "a/C.java",
-                lines(
-                    "package c;", //
-                    "import static b.B.nosuch.C;",
-                    "class C {",
-                    "  C c;",
-                    "}"))
-            .build();
+                """
+                package c;
+                import static b.B.nosuch.C;
+                class C {
+                  C c;
+                }
+                """)
+            .buildOrThrow();
 
     ImmutableMap<String, String> noImports;
     {
@@ -515,19 +519,21 @@ public class LowerTest {
         IntegrationTestSupport.runJavac(
             ImmutableMap.of(
                 "A.java",
-                    lines(
-                        "interface A {", //
-                        "  interface M {",
-                        "    interface I {}",
-                        "  } ",
-                        "}"),
+                """
+                interface A {
+                  interface M {
+                    interface I {}
+                  }
+                }
+                """,
                 "B.java",
-                    lines(
-                        "interface B extends A {",
-                        "  interface BM extends M {",
-                        "    interface BI extends I {}",
-                        "  }",
-                        "}")),
+                """
+                interface B extends A {
+                  interface BM extends M {
+                    interface BI extends I {}
+                  }
+                }
+                """),
             ImmutableList.of());
 
     Path libJar = temporaryFolder.newFile("lib.jar").toPath();
@@ -541,14 +547,13 @@ public class LowerTest {
     }
 
     ImmutableMap<String, String> sources =
-        ImmutableMap.<String, String>builder()
-            .put(
-                "Test.java",
-                lines(
-                    "public class Test implements B.BM {", //
-                    "  I i;",
-                    "}"))
-            .build();
+        ImmutableMap.of(
+            "Test.java",
+            """
+            public class Test implements B.BM {
+              I i;
+            }
+            """);
 
     TurbineError error =
         assertThrows(
@@ -566,19 +571,21 @@ public class LowerTest {
         IntegrationTestSupport.runJavac(
             ImmutableMap.of(
                 "A.java",
-                lines(
-                    "class A {", //
-                    "  class M { ",
-                    "    class I {} ",
-                    "  } ",
-                    "}"),
+                """
+                class A {
+                  class M {
+                    class I {}
+                  }
+                }
+                """,
                 "B.java",
-                lines(
-                    "class B extends A { ",
-                    "  class BM extends M { ",
-                    "    class BI extends I {} ",
-                    "  } ",
-                    "}")),
+                """
+                class B extends A {
+                  class BM extends M {
+                    class BI extends I {}
+                  }
+                }
+                """),
             ImmutableList.of());
 
     Path libJar = temporaryFolder.newFile("lib.jar").toPath();
@@ -592,16 +599,15 @@ public class LowerTest {
     }
 
     ImmutableMap<String, String> sources =
-        ImmutableMap.<String, String>builder()
-            .put(
-                "Test.java",
-                lines(
-                    "public class Test extends B {", //
-                    "  class M extends BM {",
-                    "     I i;",
-                    "  }",
-                    "}"))
-            .build();
+        ImmutableMap.of(
+            "Test.java",
+            """
+            public class Test extends B {
+              class M extends BM {
+                 I i;
+              }
+            }
+            """);
 
     TurbineError error =
         assertThrows(
@@ -610,8 +616,12 @@ public class LowerTest {
     assertThat(error)
         .hasMessageThat()
         .contains(
-            lines(
-                "Test.java:3: error: could not locate class file for A", "     I i;", "       ^"));
+            """
+            Test.java:3: error: could not locate class file for A
+                 I i;
+                   ^
+            """
+                .stripTrailing());
   }
 
   // If an element incorrectly has multiple visibility modifiers, pick one, and rely on javac to
@@ -749,10 +759,6 @@ public class LowerTest {
             },
             0);
     assertThat(fields).containsExactly("y");
-  }
-
-  static String lines(String... lines) {
-    return Joiner.on(System.lineSeparator()).join(lines);
   }
 
   static void write(JarOutputStream jos, Map<String, byte[]> lib, String name) throws IOException {

@@ -148,10 +148,12 @@ public class DependenciesTest {
         new LibraryBuilder()
             .setClasspath(liba)
             .addSourceLines(
-                "B.java", //
-                "class B {",
-                "  public static final A a = new A();",
-                "}")
+                "B.java",
+                """
+                class B {
+                  public static final A a = new A();
+                }
+                """)
             .compileToJar("libb.jar");
     DepsProto.Dependencies deps =
         new DepsBuilder()
@@ -167,10 +169,12 @@ public class DependenciesTest {
     Path liba =
         new LibraryBuilder()
             .addSourceLines(
-                "A.java", //
-                "class A {",
-                "  public static final class Y {}",
-                "}")
+                "A.java",
+                """
+                class A {
+                  public static final class Y {}
+                }
+                """)
             .compileToJar("liba.jar");
     Path libb =
         new LibraryBuilder()
@@ -181,10 +185,12 @@ public class DependenciesTest {
         new DepsBuilder()
             .setClasspath(liba, libb)
             .addSourceLines(
-                "Test.java", //
-                "class Test extends B {",
-                "  public static class X extends Y {}",
-                "}")
+                "Test.java",
+                """
+                class Test extends B {
+                  public static class X extends Y {}
+                }
+                """)
             .run();
     assertThat(depsMap(deps))
         .containsExactly(
@@ -197,35 +203,49 @@ public class DependenciesTest {
         new LibraryBuilder()
             .addSourceLines(
                 "i/I.java",
-                "package i;", //
-                "public interface I {}")
+                """
+                package i;
+
+                public interface I {}
+                """)
             .compileToJar("libi.jar");
     Path liba =
         new LibraryBuilder()
             .setClasspath(libi)
             .addSourceLines(
-                "a/A.java", //
-                "package a;",
-                "import i.I;",
-                "public class A implements I {}")
+                "a/A.java",
+                """
+                package a;
+
+                import i.I;
+
+                public class A implements I {}
+                """)
             .compileToJar("liba.jar");
     Path libb =
         new LibraryBuilder()
             .setClasspath(liba, libi)
             .addSourceLines(
-                "b/B.java", //
-                "package b;",
-                "import a.A;",
-                "public class B extends A {}")
+                "b/B.java",
+                """
+                package b;
+
+                import a.A;
+
+                public class B extends A {}
+                """)
             .compileToJar("libb.jar");
     {
       DepsProto.Dependencies deps =
           new DepsBuilder()
               .setClasspath(liba, libb, libi)
               .addSourceLines(
-                  "Test.java", //
-                  "import b.B;",
-                  "class Test extends B {}")
+                  "Test.java",
+                  """
+                  import b.B;
+
+                  class Test extends B {}
+                  """)
               .run();
       assertThat(depsMap(deps))
           .containsExactly(
@@ -242,9 +262,12 @@ public class DependenciesTest {
           new DepsBuilder()
               .setClasspath(liba, libb)
               .addSourceLines(
-                  "Test.java", //
-                  "import b.B;",
-                  "class Test extends B {}")
+                  "Test.java",
+                  """
+                  import b.B;
+
+                  class Test extends B {}
+                  """)
               .run();
       assertThat(depsMap(deps))
           .containsExactly(
@@ -298,34 +321,46 @@ public class DependenciesTest {
         new LibraryBuilder()
             .addSourceLines(
                 "p/Anno.java",
-                "package p;",
-                "import java.lang.annotation.Retention;",
-                "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
-                "@Retention(RUNTIME)",
-                "@interface Anno {}")
+                """
+                package p;
+
+                import java.lang.annotation.Retention;
+                import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+                @Retention(RUNTIME)
+                @interface Anno {}
+                """)
             .addSourceLines(
-                "p/package-info.java", //
-                "@Anno",
-                "package p;")
+                "p/package-info.java",
+                """
+                @Anno
+                package p;
+                """)
             .compileToJar("libpackage-info.jar");
     Path libp =
         new LibraryBuilder()
             .setClasspath(libpackageInfo)
             .addSourceLines(
-                "p/P.java", //
-                "package p;",
-                "public class P {}")
+                "p/P.java",
+                """
+                package p;
+
+                public class P {}
+                """)
             .compileToJar("libp.jar");
     {
       DepsProto.Dependencies deps =
           new DepsBuilder()
               .setClasspath(libp, libpackageInfo)
               .addSourceLines(
-                  "Test.java", //
-                  "import p.P;",
-                  "class Test {",
-                  "  P p;",
-                  "}")
+                  "Test.java",
+                  """
+                  import p.P;
+
+                  class Test {
+                    P p;
+                  }
+                  """)
               .run();
       assertThat(depsMap(deps))
           .containsExactly(
@@ -345,12 +380,14 @@ public class DependenciesTest {
         new DepsBuilder()
             .setClasspath(libA, libB)
             .addSourceLines(
-                "Test.java", //
-                "import a.A;",
-                "import b.B;",
-                "@A(B.class)",
-                "class Test {",
-                "}")
+                "Test.java",
+                """
+                import a.A;
+                import b.B;
+
+                @A(B.class)
+                class Test {}
+                """)
             .run();
     assertThat(depsMap(deps))
         .containsExactly(
@@ -365,13 +402,16 @@ public class DependenciesTest {
         new DepsBuilder()
             .setClasspath(libA, libB)
             .addSourceLines(
-                "Test.java", //
-                "import a.A;",
-                "import b.B;",
-                "class Test {",
-                "  @A(B.class)",
-                "  int x;",
-                "}")
+                "Test.java",
+                """
+                import a.A;
+                import b.B;
+
+                class Test {
+                  @A(B.class)
+                  int x;
+                }
+                """)
             .run();
     assertThat(depsMap(deps))
         .containsExactly(
@@ -386,13 +426,16 @@ public class DependenciesTest {
         new DepsBuilder()
             .setClasspath(libA, libB)
             .addSourceLines(
-                "Test.java", //
-                "import a.A;",
-                "import b.B;",
-                "class Test {",
-                "  @A(B.class)",
-                "  void f() {}",
-                "}")
+                "Test.java",
+                """
+                import a.A;
+                import b.B;
+
+                class Test {
+                  @A(B.class)
+                  void f() {}
+                }
+                """)
             .run();
     assertThat(depsMap(deps))
         .containsExactly(
@@ -403,12 +446,15 @@ public class DependenciesTest {
     return new LibraryBuilder()
         .addSourceLines(
             "b/B.java",
-            "package b;",
-            "import java.lang.annotation.Retention;",
-            "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
-            "@Retention(RUNTIME)",
-            "public @interface B {",
-            "}")
+            """
+            package b;
+
+            import java.lang.annotation.Retention;
+            import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+            @Retention(RUNTIME)
+            public @interface B {}
+            """)
         .compileToJar("libb.jar");
   }
 
@@ -416,13 +462,17 @@ public class DependenciesTest {
     return new LibraryBuilder()
         .addSourceLines(
             "a/A.java",
-            "package a;",
-            "import java.lang.annotation.Retention;",
-            "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
-            "@Retention(RUNTIME)",
-            "public @interface A {",
-            "  Class<?> value() default Object.class;",
-            "}")
+            """
+            package a;
+
+            import java.lang.annotation.Retention;
+            import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+            @Retention(RUNTIME)
+            public @interface A {
+              Class<?> value() default Object.class;
+            }
+            """)
         .compileToJar("liba.jar");
   }
 

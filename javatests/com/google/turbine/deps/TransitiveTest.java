@@ -99,26 +99,39 @@ public class TransitiveTest {
             new SourceBuilder()
                 .addSourceLines(
                     "a/A.java",
-                    "package a;",
-                    "import java.util.Map;",
-                    "public class A {",
-                    "  public @interface Anno {",
-                    "    int x() default 42;",
-                    "  }",
-                    "  public static class Inner {}",
-                    "  public static final int CONST = 42;",
-                    "  public int mutable = 42;",
-                    "  public Map.Entry<String, String> f(Map<String, String> m) {",
-                    "    return m.entrySet().iterator().next();",
-                    "  }",
-                    "}")
+                    """
+                    package a;
+
+                    import java.util.Map;
+
+                    public class A {
+                      public @interface Anno {
+                        int x() default 42;
+                      }
+
+                      public static class Inner {}
+
+                      public static final int CONST = 42;
+                      public int mutable = 42;
+
+                      public Map.Entry<String, String> f(Map<String, String> m) {
+                        return m.entrySet().iterator().next();
+                      }
+                    }
+                    """)
                 .build(),
             ImmutableList.of());
 
     Path libb =
         runTurbine(
             new SourceBuilder()
-                .addSourceLines("b/B.java", "package b;", "public class B extends a.A {}")
+                .addSourceLines(
+                    "b/B.java",
+                    """
+                    package b;
+
+                    public class B extends a.A {}
+                    """)
                 .build(),
             ImmutableList.of(liba));
 
@@ -163,11 +176,16 @@ public class TransitiveTest {
         new SourceBuilder()
                 .addSourceLines(
                     "c/C.java",
-                    "package c;",
-                    "public class C extends b.B {",
-                    "  @Anno(x = 2) static final Inner i; // a.A$Inner ",
-                    "  static final int X = CONST; // a.A#CONST",
-                    "}")
+                    """
+                    package c;
+
+                    public class C extends b.B {
+                      @Anno(x = 2)
+                      static final Inner i; // a.A$Inner
+
+                      static final int X = CONST; // a.A#CONST
+                    }
+                    """)
                 .build()
                 .stream()
                 .map(Path::toString)
@@ -245,9 +263,12 @@ public class TransitiveTest {
         runTurbine(
             new SourceBuilder()
                 .addSourceLines(
-                    "b/B.java", //
-                    "package b;",
-                    "public class B extends a.A {}")
+                    "b/B.java",
+                    """
+                    package b;
+
+                    public class B extends a.A {}
+                    """)
                 .build(),
             ImmutableList.of(liba));
 
@@ -268,15 +289,21 @@ public class TransitiveTest {
         runTurbine(
             new SourceBuilder()
                 .addSourceLines(
-                    "a/S.java", //
-                    "package a;",
-                    "public class S {}")
+                    "a/S.java",
+                    """
+                    package a;
+
+                    public class S {}
+                    """)
                 .addSourceLines(
-                    "a/A.java", //
-                    "package a;",
-                    "public class A {",
-                    "  public class I extends S {}",
-                    "}")
+                    "a/A.java",
+                    """
+                    package a;
+
+                    public class A {
+                      public class I extends S {}
+                    }
+                    """)
                 .build(),
             ImmutableList.of());
 
@@ -284,12 +311,14 @@ public class TransitiveTest {
         runTurbine(
             new SourceBuilder()
                 .addSourceLines(
-                    "b/B.java", //
-                    "package b;",
-                    "public class B extends a.A {",
-                    "  class I extends a.A.I {",
-                    "  }",
-                    "}")
+                    "b/B.java",
+                    """
+                    package b;
+
+                    public class B extends a.A {
+                      class I extends a.A.I {}
+                    }
+                    """)
                 .build(),
             ImmutableList.of(liba));
 
@@ -312,15 +341,21 @@ public class TransitiveTest {
             new SourceBuilder()
                 .addSourceLines(
                     "p/Anno.java",
-                    "package p;",
-                    "import java.lang.annotation.Retention;",
-                    "import static java.lang.annotation.RetentionPolicy.RUNTIME;",
-                    "@Retention(RUNTIME)",
-                    "@interface Anno {}")
+                    """
+                    package p;
+
+                    import java.lang.annotation.Retention;
+                    import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+                    @Retention(RUNTIME)
+                    @interface Anno {}
+                    """)
                 .addSourceLines(
-                    "p/package-info.java", //
-                    "@Anno",
-                    "package p;")
+                    "p/package-info.java",
+                    """
+                    @Anno
+                    package p;
+                    """)
                 .build(),
             ImmutableList.of());
 
@@ -328,9 +363,12 @@ public class TransitiveTest {
         runTurbine(
             new SourceBuilder()
                 .addSourceLines(
-                    "p/P.java", //
-                    "package p;",
-                    "public class P {}")
+                    "p/P.java",
+                    """
+                    package p;
+
+                    public class P {}
+                    """)
                 .build(),
             ImmutableList.of(libPackageInfo));
 

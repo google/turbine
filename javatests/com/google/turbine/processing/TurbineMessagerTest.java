@@ -24,7 +24,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.common.AnnotationValues;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder;
@@ -67,38 +66,38 @@ public class TurbineMessagerTest {
 
   private static final IntegrationTestSupport.TestInput SOURCES =
       IntegrationTestSupport.TestInput.parse(
-          Joiner.on('\n')
-              .join(
-                  "=== Test.java ===",
-                  "@A class Test {",
-                  "  @A @B void f() {}",
-                  "  @B int x;",
-                  "}",
-                  "=== One.java ===",
-                  "class One<U, V> {",
-                  "  @A void f(@B int x, @C int y) {}",
-                  "  <X, Y> void g(X x) {}",
-                  "}",
-                  "=== Two.java ===",
-                  "class Two {",
-                  "  @D(value = 1) int x1;",
-                  "  @D(1) int x2;",
-                  "  @E(1) int x3;",
-                  "  @E({1, 2}) int x4;",
-                  "  @E(value = {1, 2}, y = 3) int x5;",
-                  "  @E(y = 0, value = {1, 2}) int x6;",
-                  "}",
-                  "=== Annotations.java ===",
-                  "@interface A {}",
-                  "@interface B {}",
-                  "@interface C {}",
-                  "@interface D {",
-                  "  int value() default 0;",
-                  "}",
-                  "@interface E {",
-                  "  int[] value() default {};",
-                  "  int y() default 0;",
-                  "}"));
+          """
+          === Test.java ===
+          @A class Test {
+            @A @B void f() {}
+            @B int x;
+          }
+          === One.java ===
+          class One<U, V> {
+            @A void f(@B int x, @C int y) {}
+            <X, Y> void g(X x) {}
+          }
+          === Two.java ===
+          class Two {
+            @D(value = 1) int x1;
+            @D(1) int x2;
+            @E(1) int x3;
+            @E({1, 2}) int x4;
+            @E(value = {1, 2}, y = 3) int x5;
+            @E(y = 0, value = {1, 2}) int x6;
+          }
+          === Annotations.java ===
+          @interface A {}
+          @interface B {}
+          @interface C {}
+          @interface D {
+            int value() default 0;
+          }
+          @interface E {
+            int[] value() default {};
+            int y() default 0;
+          }
+          """);
 
   /**
    * Tests {@link TurbineMessager} by logging a message at each {@link Element}, {@link

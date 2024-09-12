@@ -19,7 +19,6 @@ package com.google.turbine.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.base.Joiner;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import org.junit.Test;
@@ -57,10 +56,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected token: void",
-                "public static void main(String[] args) {}",
-                "              ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected token: void
+                public static void main(String[] args) {}
+                              ^"""));
   }
 
   @Test
@@ -70,10 +70,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected identifier 'clas'", //
-                "public clas Test {}",
-                "       ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected identifier 'clas'
+                public clas Test {}
+                       ^"""));
   }
 
   @Test
@@ -83,10 +84,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected end of input", //
-                "",
-                "^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected end of input
+
+                ^"""));
   }
 
   @Test
@@ -96,10 +98,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: invalid annotation argument", //
-                "@A(x = System.err.println()) class Test {}",
-                "                         ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: invalid annotation argument
+                @A(x = System.err.println()) class Test {}
+                                         ^"""));
   }
 
   @Test
@@ -109,10 +112,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected end of input", //
-                "enum E { ONE(",
-                "            ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected end of input
+                enum E { ONE(
+                            ^"""));
   }
 
   @Test
@@ -122,10 +126,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected end of input", //
-                "class T { Object f = new Object() {",
-                "                                  ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected end of input
+                class T { Object f = new Object() {
+                                                  ^"""));
   }
 
   @Test
@@ -135,10 +140,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unterminated string literal", //
-                "class T { String s = \"hello",
-                "                           ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unterminated string literal
+                class T { String s = \"hello
+                                           ^"""));
   }
 
   @Test
@@ -148,10 +154,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: empty char literal", //
-                "class T { char c = ''; }",
-                "                    ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: empty char literal
+                class T { char c = ''; }
+                                    ^"""));
   }
 
   @Test
@@ -161,10 +168,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unterminated char literal", //
-                "class T { char c = '; }",
-                "                     ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unterminated char literal
+                class T { char c = '; }
+                                     ^"""));
   }
 
   @Test
@@ -174,10 +182,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unterminated expression, expected ';' not found", //
-                "class T { String s = hello + world }",
-                "                     ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unterminated expression, expected ';' not found
+                class T { String s = hello + world }
+                                     ^"""));
   }
 
   @Test
@@ -187,10 +196,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: expected token <identifier>", //
-                "class T { int x,; }",
-                "                ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: expected token <identifier>
+                class T { int x,; }
+                                ^"""));
   }
 
   @Test
@@ -200,10 +210,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: invalid annotation argument", //
-                "@Foo(x =  @E [] x) class T {}",
-                "                ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: invalid annotation argument
+                @Foo(x =  @E [] x) class T {}
+                                ^"""));
   }
 
   @Test
@@ -213,10 +224,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unclosed comment", //
-                "/** *\u001a/ class Test {}",
-                "^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unclosed comment
+                /** *\u001a/ class Test {}
+                ^"""));
   }
 
   @Test
@@ -226,10 +238,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected end of input", //
-                "enum\te{l;p u@.<@",
-                "               ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected end of input
+                enum\te{l;p u@.<@
+                               ^"""));
   }
 
   @Test
@@ -239,10 +252,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: expected token <identifier>", //
-                "enum\te{p;ullt[].<~>>>L\0",
-                "               ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: expected token <identifier>
+                enum\te{p;ullt[].<~>>>L\0
+                               ^"""));
   }
 
   @Test
@@ -252,10 +266,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: 'extends' must come before 'implements'",
-                "class T implements A extends B {}",
-                "                     ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: 'extends' must come before 'implements'
+                class T implements A extends B {}
+                                     ^"""));
   }
 
   @Test
@@ -265,10 +280,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unpaired surrogate 0xd800",
-                "import pkg\uD800.PackageTest;",
-                "           ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unpaired surrogate 0xd800
+                import pkg\uD800.PackageTest;
+                           ^"""));
   }
 
   @Test
@@ -278,7 +294,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines("<>:1: error: unpaired surrogate 0xd800", "import pkg\uD800", "          ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unpaired surrogate 0xd800
+                import pkg\uD800
+                          ^"""));
   }
 
   @Test
@@ -288,10 +308,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected input: U+10000", //
-                "..\uD800\uDC00",
-                "   ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected input: U+10000
+                ..\uD800\uDC00
+                   ^"""));
   }
 
   @Test
@@ -301,10 +322,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: could not evaluate constant expression",
-                "@j(@truetugt^(oflur)!%t",
-                "                     ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: could not evaluate constant expression
+                @j(@truetugt^(oflur)!%t
+                                     ^"""));
   }
 
   @Test
@@ -314,10 +336,11 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected input: \"",
-                "class T { String s = \"\"\" \"\"\"; }",
-                "                         ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected input: \"
+                class T { String s = \"\"\" \"\"\"; }
+                                         ^"""));
   }
 
   @Test
@@ -327,171 +350,190 @@ public class ParseErrorTest {
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected token: ;",
-                "@interface A { A value() default @Integer.class; }",
-                "                                               ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected token: ;
+                @interface A { A value() default @Integer.class; }
+                                                               ^"""));
   }
 
   @Test
   public void textBlockNoTerminator() {
     String input =
-        lines(
-            "class T {", //
-            "  String a = \"\"\"\"\"\";",
-            "}");
+        """
+        class T {
+          String a = \"\"\"\"\"\";
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected input: \"",
-                "  String a = \"\"\"\"\"\";",
-                "                ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected input: \"
+                  String a = \"\"\"\"\"\";
+                                ^"""));
   }
 
   @Test
   public void textBlockNoTerminatorSpace() {
     String input =
-        lines(
-            "class T {", //
-            "  String a = \"\"\" \"\"\";",
-            "}");
+        """
+        class T {
+          String a = \"\"\" \"\"\";
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected input: \"",
-                "  String a = \"\"\" \"\"\";",
-                "                 ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected input: \"
+                  String a = \"\"\" \"\"\";
+                                 ^"""));
   }
 
   @Test
   public void textBlockUnclosed() {
     String input =
-        lines(
-            "class T {", //
-            "  String a = \"\"\"",
-            "             \"",
-            "}");
+        """
+        class T {
+          String a = \"\"\"
+                     \"
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unterminated expression, expected ';' not found",
-                "  String a = \"\"\"",
-                "             ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unterminated expression, expected ';' not found
+                  String a = \"\"\"
+                             ^"""));
   }
 
   @Test
   public void textBlockUnescapedBackslash() {
     String input =
-        lines(
-            "class T {", //
-            "  String a = \"\"\"",
-            "             abc \\ def",
-            "             \"\"\";",
-            "}");
+        """
+        class T {
+          String a = \"\"\"
+                     abc \\ def
+                     \"\"\";
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:4: error: unexpected input:  ", //
-                "             \"\"\";",
-                "                ^"));
+            normalizeNewlines(
+                """
+                <>:4: error: unexpected input:\s\s
+                             \"\"\";
+                                ^"""));
   }
 
   // Newline escapes are only allowed in text blocks
   @Test
   public void sEscape() {
     String input =
-        lines(
-            "class T {", //
-            "  String a = \"\\\n" //
-                + "             \";",
-            "}");
+        """
+        class T {
+          String a = \"\\
+              \";
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected input: \n", //
-                "  String a = \"\\",
-                "               ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected input: \n
+                  String a = \"\\
+                               ^"""));
   }
 
   @Test
   public void sEscape_windowsLineEnding() {
     String input =
-        lines(
-            "class T {", //
-            "  String a = \"\\\r\n" //
-                + "             \";",
-            "}");
+        """
+        class T {
+          String a = \"\\\r\n"
+                       +              \";
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected input: \r", //
-                "  String a = \"\\",
-                "               ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected input: \r
+                  String a = \"\\
+                               ^"""));
   }
 
   @Test
   public void typeAnnotationAfterDims() {
     String input =
-        lines(
-            "class T {", //
-            "  int[] @A a;",
-            "}");
+        """
+        class T {
+          int[] @A a;
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected identifier 'a'", //
-                "  int[] @A a;",
-                "           ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected identifier 'a'
+                  int[] @A a;
+                           ^"""));
   }
 
   @Test
   public void typeAnnotationBeforeParam() {
     String input =
-        lines(
-            "class T {", //
-            "  void f(int @A a) {}",
-            "}");
+        """
+        class T {
+          void f(int @A a) {}
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:2: error: unexpected identifier 'a'", //
-                "  void f(int @A a) {}",
-                "                ^"));
+            normalizeNewlines(
+                """
+                <>:2: error: unexpected identifier 'a'
+                  void f(int @A a) {}
+                                ^"""));
   }
 
   @Test
   public void moduleInfoOpen() {
     String input =
-        lines(
-            "open {", //
-            "}");
+        """
+        open {
+        }
+        """;
     TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
-            lines(
-                "<>:1: error: unexpected token: {", //
-                "open {",
-                "     ^"));
+            normalizeNewlines(
+                """
+                <>:1: error: unexpected token: {
+                open {
+                     ^"""));
   }
 
-  private static String lines(String... lines) {
-    return Joiner.on(System.lineSeparator()).join(lines);
+  private static String normalizeNewlines(String input) {
+    return Joiner.on(System.lineSeparator()).join(Splitter.onPattern("\\R").split(input));
   }
 }

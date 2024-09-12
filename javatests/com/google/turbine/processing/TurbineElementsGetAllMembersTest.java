@@ -20,7 +20,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.ClassPathBinder;
@@ -53,191 +52,191 @@ public class TurbineElementsGetAllMembersTest {
   @Parameters
   public static Iterable<Object[]> parameters() {
     // An array of test inputs. Each element is an array of lines of sources to compile.
-    String[][] inputs = {
-      {
-        "=== Test.java ===", //
-        "class Test {",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "interface A {",
-        "  Integer f();",
-        "}",
-        "=== B.java ===",
-        "interface B {",
-        "  Integer f();",
-        "}",
-        "=== Test.java ===", //
-        "class Test implements A, B {",
-        "  Integer f() {",
-        "    return 42;",
-        "  }",
-        "}",
-      },
-      {
-        "=== I.java ===",
-        "interface I {",
-        "  default Integer f() {}",
-        "}",
-        "=== J.java ===",
-        "class J implements I {",
-        "  Integer f() {",
-        "    return 42;",
-        "  }",
-        "}",
-        "=== Test.java ===", //
-        "class Test extends J implements I {",
-        "}",
-      },
-      {
-        "=== I.java ===",
-        "interface I {",
-        "  Integer f();",
-        "}",
-        "=== J.java ===",
-        "interface J extends I {",
-        "  default Integer f() {",
-        "    return 42;",
-        "  }",
-        "}",
-        "=== Test.java ===", //
-        "class Test implements J, I {",
-        "}",
-      },
-      {
-        "=== p/A.java ===",
-        "package p;",
-        "public class A {",
-        "  public boolean f() {",
-        "    return true;",
-        "  }",
-        "}",
-        "=== p/B.java ===",
-        "package p;",
-        "public interface B {",
-        "  public boolean f();",
-        "}",
-        "=== Test.java ===", //
-        "import p.*;",
-        "class Test extends A implements B {",
-        "}",
-      },
-      {
-        "=== p/A.java ===",
-        "package p;",
-        "public class A {",
-        "  public boolean f() {",
-        "    return true;",
-        "  }",
-        "}",
-        "=== p/B.java ===",
-        "package p;",
-        "public interface B {",
-        "  public boolean f();",
-        "}",
-        "=== Middle.java ===", //
-        "import p.*;",
-        "public abstract class Middle extends A implements B {",
-        "}",
-        "=== Test.java ===", //
-        "class Test extends Middle {",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "interface A {",
-        "  Integer f();",
-        "}",
-        "=== B.java ===",
-        "interface B {",
-        "  Number f();",
-        "}",
-        "=== Test.java ===", //
-        "abstract class Test implements A, B {",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "interface A {",
-        "  Integer f();",
-        "}",
-        "=== B.java ===",
-        "interface B {",
-        "  Integer f();",
-        "}",
-        "=== Test.java ===", //
-        "abstract class Test implements A, B {",
-        "}",
-      },
-      {
-        "=== I.java ===",
-        "interface I {",
-        "  int x;",
-        "}",
-        "=== J.java ===",
-        "interface J {",
-        "  int x;",
-        "}",
-        "=== B.java ===",
-        "class B {",
-        "  int x;",
-        "}",
-        "=== C.java ===",
-        "class C extends B {",
-        "  static int x;",
-        "}",
-        "=== Test.java ===",
-        "class Test extends C implements I, J {",
-        "  int x;",
-        "}",
-      },
-      {
-        "=== one/A.java ===",
-        "public class A {",
-        "  int a;",
-        "}",
-        "=== two/B.java ===",
-        "public class B extends A {",
-        "  int b;",
-        "  private int c;",
-        "  protected int d;",
-        "}",
-        "=== Test.java ===",
-        "public class Test extends B {",
-        "  int x;",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "interface A {",
-        "  class I {}",
-        "}",
-        "=== B.java ===",
-        "interface B {",
-        "  class J {}",
-        "}",
-        "=== Test.java ===", //
-        "abstract class Test implements A, B {",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "import java.util.List;",
-        "interface A<T> {",
-        "  List<? extends T> f();",
-        "}",
-        "=== Test.java ===",
-        "import java.util.List;",
-        "class Test<T extends Number> implements A<T> {",
-        "  public List<? extends T> f() {",
-        "    return null;",
-        "  }",
-        "}",
-      },
+    String[] inputs = {
+      """
+      === Test.java ===
+      class Test {
+      }
+      """,
+      """
+      === A.java ===
+      interface A {
+        Integer f();
+      }
+      === B.java ===
+      interface B {
+        Integer f();
+      }
+      === Test.java ===
+      class Test implements A, B {
+        Integer f() {
+          return 42;
+        }
+      }
+      """,
+      """
+      === I.java ===
+      interface I {
+        default Integer f() {}
+      }
+      === J.java ===
+      class J implements I {
+        Integer f() {
+          return 42;
+        }
+      }
+      === Test.java ===
+      class Test extends J implements I {
+      }
+      """,
+      """
+      === I.java ===
+      interface I {
+        Integer f();
+      }
+      === J.java ===
+      interface J extends I {
+        default Integer f() {
+          return 42;
+        }
+      }
+      === Test.java ===
+      class Test implements J, I {
+      }
+      """,
+      """
+      === p/A.java ===
+      package p;
+      public class A {
+        public boolean f() {
+          return true;
+        }
+      }
+      === p/B.java ===
+      package p;
+      public interface B {
+        public boolean f();
+      }
+      === Test.java ===
+      import p.*;
+      class Test extends A implements B {
+      }
+      """,
+      """
+      === p/A.java ===
+      package p;
+      public class A {
+        public boolean f() {
+          return true;
+        }
+      }
+      === p/B.java ===
+      package p;
+      public interface B {
+        public boolean f();
+      }
+      === Middle.java ===
+      import p.*;
+      public abstract class Middle extends A implements B {
+      }
+      === Test.java ===
+      class Test extends Middle {
+      }
+      """,
+      """
+      === A.java ===
+      interface A {
+        Integer f();
+      }
+      === B.java ===
+      interface B {
+        Number f();
+      }
+      === Test.java ===
+      abstract class Test implements A, B {
+      }
+      """,
+      """
+      === A.java ===
+      interface A {
+        Integer f();
+      }
+      === B.java ===
+      interface B {
+        Integer f();
+      }
+      === Test.java ===
+      abstract class Test implements A, B {
+      }
+      """,
+      """
+      === I.java ===
+      interface I {
+        int x;
+      }
+      === J.java ===
+      interface J {
+        int x;
+      }
+      === B.java ===
+      class B {
+        int x;
+      }
+      === C.java ===
+      class C extends B {
+        static int x;
+      }
+      === Test.java ===
+      class Test extends C implements I, J {
+        int x;
+      }
+      """,
+      """
+      === one/A.java ===
+      public class A {
+        int a;
+      }
+      === two/B.java ===
+      public class B extends A {
+        int b;
+        private int c;
+        protected int d;
+      }
+      === Test.java ===
+      public class Test extends B {
+        int x;
+      }
+      """,
+      """
+      === A.java ===
+      interface A {
+        class I {}
+      }
+      === B.java ===
+      interface B {
+        class J {}
+      }
+      === Test.java ===
+      abstract class Test implements A, B {
+      }
+      """,
+      """
+      === A.java ===
+      import java.util.List;
+      interface A<T> {
+        List<? extends T> f();
+      }
+      === Test.java ===
+      import java.util.List;
+      class Test<T extends Number> implements A<T> {
+        public List<? extends T> f() {
+          return null;
+        }
+      }
+      """,
     };
     return Arrays.stream(inputs)
-        .map(input -> TestInput.parse(Joiner.on('\n').join(input)))
+        .map(TestInput::parse)
         .map(x -> new Object[] {x})
         .collect(toImmutableList());
   }
