@@ -437,6 +437,24 @@ public abstract class TurbineElement implements Element {
       return enclosing.get();
     }
 
+    private final Supplier<ImmutableList<TypeMirror>> permits =
+        memoize(
+            new Supplier<>() {
+              @Override
+              public ImmutableList<TypeMirror> get() {
+                ImmutableList.Builder<TypeMirror> result = ImmutableList.builder();
+                for (ClassSymbol p : infoNonNull().permits()) {
+                  result.add(factory.asTypeMirror(ClassTy.asNonParametricClassTy(p)));
+                }
+                return result.build();
+              }
+            });
+
+    @Override
+    public List<? extends TypeMirror> getPermittedSubclasses() {
+      return permits.get();
+    }
+
     private final Supplier<ImmutableList<Element>> enclosed =
         memoize(
             new Supplier<ImmutableList<Element>>() {

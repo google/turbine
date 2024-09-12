@@ -71,6 +71,7 @@ import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
@@ -897,6 +898,39 @@ public class ProcessingIntegrationTest {
     TurbineError e = runProcessors(units, new ModifiersProcessor());
     assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly("I [abstract, sealed]", "J [abstract, non-sealed]");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class PermitsProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      for (TypeElement e : ElementFilter.typesIn(roundEnv.getRootElements())) {
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.ERROR, String.format("%s %s", e, e.getPermittedSubclasses()), e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void permits() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== I.java ===", //
+            "interface I permits J, K {}",
+            "interface J {}",
+            "interface K {}");
+    TurbineError e1 = runProcessors(units, new PermitsProcessor());
+    TurbineError e = e1;
+    assertThat(e.diagnostics().stream().map(d -> d.message()))
+        .containsExactly("I [J, K]", "J []", "K []");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
