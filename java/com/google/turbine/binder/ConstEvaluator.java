@@ -79,9 +79,10 @@ import org.jspecify.annotations.Nullable;
 /**
  * Constant expression evaluation.
  *
- * <p>JLS §15.4 requires this class to be strictfp.
+ * <p>This class requires strict floating point operations. In Java SE 17 and later, the Java SE
+ * Platform always requires strict evaluation of floating-point expressions.
  */
-public strictfp class ConstEvaluator {
+public class ConstEvaluator {
 
   /** The symbol of the originating class, for visibility checks. */
   private final @Nullable ClassSymbol origin;
