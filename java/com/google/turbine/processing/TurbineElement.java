@@ -50,9 +50,7 @@ import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
-import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
-import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -266,21 +264,8 @@ public abstract class TurbineElement implements Element {
                   case CLASS:
                   case ENUM:
                   case RECORD:
-                    if (info.superclass() != null) {
+                    if (info.superClassType() != null) {
                       return factory.asTypeMirror(info.superClassType());
-                    }
-                    if (info instanceof SourceTypeBoundClass) {
-                      // support simple names for stuff that doesn't exist
-                      TyDecl decl = ((SourceTypeBoundClass) info).decl();
-                      if (decl.xtnds().isPresent()) {
-                        ArrayDeque<Tree.Ident> flat = new ArrayDeque<>();
-                        for (Tree.ClassTy curr = decl.xtnds().get();
-                            curr != null;
-                            curr = curr.base().orElse(null)) {
-                          flat.addFirst(curr.name());
-                        }
-                        return factory.asTypeMirror(ErrorTy.create(flat));
-                      }
                     }
                     return factory.noType();
                   case INTERFACE:
