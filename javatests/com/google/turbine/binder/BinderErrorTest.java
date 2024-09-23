@@ -473,6 +473,9 @@ public class BinderErrorTest {
           "<>:3: error: symbol not found java.util.Map$Entry$NoSuch", //
           "  Map.Entry.NoSuch<List> ys;",
           "            ^",
+          "<>:3: error: could not resolve List",
+          "  Map.Entry.NoSuch<List> ys;",
+          "                   ^",
         },
       },
       {

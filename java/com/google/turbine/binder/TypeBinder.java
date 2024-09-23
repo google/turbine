@@ -971,7 +971,7 @@ public class TypeBinder {
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
       log.error(names.get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
-      return Type.ErrorTy.create(names);
+      return Type.ErrorTy.create(names, bindTyArgs(scope, t.tyargs()));
     }
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
@@ -983,7 +983,7 @@ public class TypeBinder {
       case TY_PARAM:
         if (!result.remaining().isEmpty()) {
           log.error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
-          return Type.ErrorTy.create(names);
+          return Type.ErrorTy.create(names, ImmutableList.of());
         }
         return Type.TyVar.create((TyVarSymbol) sym, annos);
       default:
@@ -1006,14 +1006,14 @@ public class TypeBinder {
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
       ClassSymbol next = resolveNext(sym, curr.name());
+      ImmutableList<Type> targs = bindTyArgs(scope, curr.tyargs());
       if (next == null) {
-        return Type.ErrorTy.create(bits);
+        return Type.ErrorTy.create(bits, targs);
       }
       sym = next;
 
       annotations = bindAnnotations(scope, curr.annos());
-      classes.add(
-          Type.ClassTy.SimpleClassTy.create(sym, bindTyArgs(scope, curr.tyargs()), annotations));
+      classes.add(Type.ClassTy.SimpleClassTy.create(sym, targs, annotations));
     }
     return Type.ClassTy.create(classes.build());
   }

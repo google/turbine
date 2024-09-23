@@ -544,9 +544,11 @@ public interface Type {
   final class ErrorTy implements Type {
 
     private final String name;
+    private final ImmutableList<Type> targs;
 
-    private ErrorTy(String name) {
+    private ErrorTy(String name, ImmutableList<Type> targs) {
       this.name = requireNonNull(name);
+      this.targs = requireNonNull(targs);
     }
 
     /**
@@ -557,16 +559,20 @@ public interface Type {
       return name;
     }
 
-    public static ErrorTy create(Iterable<Tree.Ident> names) {
+    public ImmutableList<Type> targs() {
+      return targs;
+    }
+
+    public static ErrorTy create(Iterable<Tree.Ident> names, ImmutableList<Type> targs) {
       List<String> bits = new ArrayList<>();
       for (Tree.Ident ident : names) {
         bits.add(ident.value());
       }
-      return create(Joiner.on('.').join(bits));
+      return create(Joiner.on('.').join(bits), targs);
     }
 
-    public static ErrorTy create(String name) {
-      return new ErrorTy(name);
+    public static ErrorTy create(String name, ImmutableList<Type> targs) {
+      return new ErrorTy(name, targs);
     }
 
     @Override
@@ -576,7 +582,14 @@ public interface Type {
 
     @Override
     public final String toString() {
-      return name();
+      StringBuilder sb = new StringBuilder();
+      sb.append(name());
+      if (!targs().isEmpty()) {
+        sb.append('<');
+        Joiner.on(',').appendTo(sb, targs());
+        sb.append('>');
+      }
+      return sb.toString();
     }
 
     @Override

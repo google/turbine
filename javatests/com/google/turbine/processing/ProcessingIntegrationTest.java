@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.util.ElementFilter.fieldsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 import static javax.lang.model.util.ElementFilter.typesIn;
 import static org.junit.Assert.assertThrows;
@@ -70,6 +71,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
@@ -931,6 +933,80 @@ public class ProcessingIntegrationTest {
     TurbineError e = e1;
     assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly("I [J, K]", "J []", "K []");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class MissingParameterizedTypeProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!first) {
+        return false;
+      }
+      first = false;
+      for (Element root : roundEnv.getRootElements()) {
+        ErrorType superClass = (ErrorType) ((TypeElement) root).getSuperclass();
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                String.format(
+                    "%s supertype: %s, arguments: %s, enclosing: %s",
+                    root,
+                    superClass,
+                    superClass.getTypeArguments(),
+                    superClass.getEnclosingType()));
+        for (Element field : fieldsIn(root.getEnclosedElements())) {
+          ErrorType type = (ErrorType) field.asType();
+          processingEnv
+              .getMessager()
+              .printMessage(
+                  Diagnostic.Kind.ERROR,
+                  String.format(
+                      "%s supertype: %s, arguments: %s, enclosing: %s",
+                      field, type, type.getTypeArguments(), type.getEnclosingType()));
+        }
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void missingParamterizedType() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            """
+            class T extends M<N> {
+              A a;
+              B<C, D> b;
+              B<C, D>.E<F> c;
+            }
+            """);
+    TurbineError e = runProcessors(units, new MissingParameterizedTypeProcessor());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            "could not resolve M",
+            "could not resolve N",
+            "could not resolve A",
+            "could not resolve B",
+            "could not resolve B.E",
+            "could not resolve C",
+            "could not resolve D",
+            "could not resolve F",
+            "T supertype: M<N>, arguments: [N], enclosing: none",
+            "a supertype: A, arguments: [], enclosing: none",
+            "b supertype: B<C,D>, arguments: [C, D], enclosing: none",
+            "c supertype: B.E<F>, arguments: [F], enclosing: none");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {

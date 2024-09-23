@@ -213,7 +213,7 @@ public class ConstEvaluator {
     LookupResult result = scope.lookup(new LookupKey(ImmutableList.copyOf(flat)));
     if (result == null) {
       log.error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.getFirst());
-      return Type.ErrorTy.create(flat);
+      return Type.ErrorTy.create(flat, ImmutableList.of());
     }
     if (result.sym().symKind() != Symbol.Kind.CLASS) {
       throw error(classTy.position(), ErrorKind.UNEXPECTED_TYPE_PARAMETER, flat.getFirst());

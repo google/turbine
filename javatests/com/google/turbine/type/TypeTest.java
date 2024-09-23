@@ -62,7 +62,8 @@ public class TypeTest {
                     ImmutableList.of(
                         new Ident(NO_POSITION, "com"),
                         new Ident(NO_POSITION, "foo"),
-                        new Ident(NO_POSITION, "Bar")))
+                        new Ident(NO_POSITION, "Bar")),
+                    ImmutableList.of())
                 .name())
         .isEqualTo("com.foo.Bar");
   }

@@ -338,7 +338,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public List<? extends TypeMirror> getTypeArguments() {
-      return ImmutableList.of();
+      return factory.asTypeMirrors(type.targs());
     }
 
     @Override

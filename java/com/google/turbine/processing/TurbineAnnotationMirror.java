@@ -91,7 +91,8 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
               public DeclaredType get() {
                 if (anno.sym() == null) {
                   return (ErrorType)
-                      factory.asTypeMirror(ErrorTy.create(getLast(anno.tree().name()).value()));
+                      factory.asTypeMirror(
+                          ErrorTy.create(getLast(anno.tree().name()).value(), ImmutableList.of()));
                 }
                 return (DeclaredType) factory.typeElement(anno.sym()).asType();
               }
