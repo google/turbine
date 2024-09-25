@@ -17,7 +17,6 @@
 package com.google.turbine.parse;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assume.assumeTrue;
 
 import com.google.common.truth.Expect;
 import com.google.turbine.diag.SourceFile;
@@ -383,7 +382,6 @@ public class LexerTest {
 
   @Test
   public void stripIndent() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 13);
     String[] inputs = {
       "",
       "hello",
@@ -404,7 +402,6 @@ public class LexerTest {
 
   @Test
   public void textBlockNewlineEscapes() throws Exception {
-    assumeTrue(Runtime.version().feature() >= 13);
     String input =
         "\"\"\"\n" //
             + "hello\\\n"

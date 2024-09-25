@@ -45,8 +45,6 @@ import org.jspecify.annotations.Nullable;
 /** Constructs a platform {@link ClassPath} from the current JDK's ct.sym file. */
 public final class CtSymClassBinder {
 
-  private static final int FEATURE_VERSION = Runtime.version().feature();
-
   public static @Nullable ClassPath bind(int version) throws IOException {
     Path ctSym;
     String explicitCtSymPath = System.getProperty("turbine.ctSymPath");
@@ -89,10 +87,8 @@ public final class CtSymClassBinder {
       if (!ze.name().substring(0, idx).contains(releaseString)) {
         continue;
       }
-      if (FEATURE_VERSION >= 12) {
-        // JDK >= 12 includes the module name as a prefix
-        idx = name.indexOf('/', idx + 1);
-      }
+      // JDK >= 12 includes the module name as a prefix
+      idx = name.indexOf('/', idx + 1);
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.sig")) {
         ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(name, toByteArrayOrDie(ze));
         modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);

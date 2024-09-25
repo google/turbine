@@ -64,11 +64,6 @@ public class ModuleIntegrationTest {
 
   @Test
   public void test() throws Exception {
-    if (Runtime.version().feature() < 9) {
-      // only run on JDK 9 and later
-      return;
-    }
-
     IntegrationTestSupport.TestInput input =
         IntegrationTestSupport.TestInput.parse(getResource(getClass(), "moduletestdata/" + test));
 

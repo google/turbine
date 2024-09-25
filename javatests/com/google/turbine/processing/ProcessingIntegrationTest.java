@@ -26,7 +26,6 @@ import static javax.lang.model.util.ElementFilter.fieldsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 import static javax.lang.model.util.ElementFilter.typesIn;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -586,7 +585,6 @@ public class ProcessingIntegrationTest {
 
   @Test
   public void recordProcessing() throws IOException {
-    assumeTrue(Runtime.version().feature() >= 15);
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
             "=== R.java ===", //

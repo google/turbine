@@ -25,7 +25,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ObjectArrays;
 import com.google.common.truth.Expect;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.ClassPathBinder;
@@ -160,29 +159,20 @@ public class TurbineElementsHidesTest {
         "public class A {",
         "}",
       },
+      {
+        // interfaces
+        "=== A.java ===",
+        "interface A {",
+        "  static void f() {}",
+        "  int x = 42;",
+        "}",
+        "=== B.java ===",
+        "interface B extends A {",
+        "  static void f() {}",
+        "  int x = 42;",
+        "}",
+      }
     };
-    // https://bugs.openjdk.java.net/browse/JDK-8275746
-    if (Runtime.version().feature() >= 11) {
-      inputs =
-          ObjectArrays.concat(
-              inputs,
-              new String[][] {
-                {
-                  // interfaces
-                  "=== A.java ===",
-                  "interface A {",
-                  "  static void f() {}",
-                  "  int x = 42;",
-                  "}",
-                  "=== B.java ===",
-                  "interface B extends A {",
-                  "  static void f() {}",
-                  "  int x = 42;",
-                  "}",
-                }
-              },
-              String[].class);
-    }
     return stream(inputs)
         .map(input -> TestInput.parse(Joiner.on('\n').join(input)))
         .map(x -> new TestInput[] {x})

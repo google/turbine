@@ -730,9 +730,5 @@ public final class IntegrationTestSupport {
     }
   }
 
-  public static int getMajor() {
-    return Runtime.version().feature();
-  }
-
   private IntegrationTestSupport() {}
 }
