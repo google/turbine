@@ -71,110 +71,110 @@ public class TurbineElementsHidesTest {
 
   @Parameters
   public static Iterable<TestInput[]> parameters() {
-    // An array of test inputs. Each element is an array of lines of sources to compile.
-    String[][] inputs = {
-      {
-        "=== A.java ===", //
-        "abstract class A {",
-        "  int f;",
-        "  static int f() { return 1; }",
-        "  static int f(int x) { return 1; }",
-        "}",
-        "=== B.java ===",
-        "abstract class B extends A {",
-        "  int f;",
-        "  int g;",
-        "  static int f() { return 1; }",
-        "  static int f(int x) { return 1; }",
-        "  static int g() { return 1; }",
-        "  static int g(int x) { return 1; }",
-        "}",
-        "=== C.java ===",
-        "abstract class C extends B {",
-        "  int f;",
-        "  int g;",
-        "  int h;",
-        "  static int f() { return 1; }",
-        "  static int g() { return 1; }",
-        "  static int h() { return 1; }",
-        "  static int f(int x) { return 1; }",
-        "  static int g(int x) { return 1; }",
-        "  static int h(int x) { return 1; }",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "class A {",
-        "  class I {",
-        "  }",
-        "}",
-        "=== B.java ===",
-        "class B extends A {",
-        "  class I extends A.I {",
-        "  }",
-        "}",
-        "=== C.java ===",
-        "class C extends B {",
-        "  class I extends B.I {",
-        "  }",
-        "}",
-      },
-      {
-        "=== A.java ===",
-        "class A {",
-        "  class I {",
-        "  }",
-        "}",
-        "=== B.java ===",
-        "class B extends A {",
-        "  interface I {}",
-        "}",
-        "=== C.java ===",
-        "class C extends B {",
-        "  @interface I {}",
-        "}",
-      },
-      {
-        // the containing class or interface of Intf.foo is an interface
-        "=== Outer.java ===",
-        "class Outer {",
-        "  static class Inner {",
-        "    static void foo() {}",
-        "    static class Innerer extends Inner {",
-        "      interface Intf {",
-        "        static void foo() {}",
-        "      }",
-        "    }",
-        "  }",
-        "}",
-      },
-      {
-        // test two top-level classes with the same name
-        "=== one/A.java ===",
-        "package one;",
-        "public class A {",
-        "}",
-        "=== two/A.java ===",
-        "package two;",
-        "public class A {",
-        "}",
-      },
-      {
-        // interfaces
-        "=== A.java ===",
-        "interface A {",
-        "  static void f() {}",
-        "  int x = 42;",
-        "}",
-        "=== B.java ===",
-        "interface B extends A {",
-        "  static void f() {}",
-        "  int x = 42;",
-        "}",
+    // An array of test inputs. Each element is source to compile.
+    String[] inputs = {
+      """
+      === A.java ===
+      abstract class A {
+        int f;
+        static int f() { return 1; }
+        static int f(int x) { return 1; }
       }
+      === B.java ===
+      abstract class B extends A {
+        int f;
+        int g;
+        static int f() { return 1; }
+        static int f(int x) { return 1; }
+        static int g() { return 1; }
+        static int g(int x) { return 1; }
+      }
+      === C.java ===
+      abstract class C extends B {
+        int f;
+        int g;
+        int h;
+        static int f() { return 1; }
+        static int g() { return 1; }
+        static int h() { return 1; }
+        static int f(int x) { return 1; }
+        static int g(int x) { return 1; }
+        static int h(int x) { return 1; }
+      }
+      """,
+      """
+      === A.java ===
+      class A {
+        class I {
+        }
+      }
+      === B.java ===
+      class B extends A {
+        class I extends A.I {
+        }
+      }
+      === C.java ===
+      class C extends B {
+        class I extends B.I {
+        }
+      }
+      """,
+      """
+      === A.java ===
+      class A {
+        class I {
+        }
+      }
+      === B.java ===
+      class B extends A {
+        interface I {}
+      }
+      === C.java ===
+      class C extends B {
+        @interface I {}
+      }
+      """,
+      // the containing class or interface of Intf.foo is an interface
+      """
+      === Outer.java ===
+      class Outer {
+        static class Inner {
+          static void foo() {}
+          static class Innerer extends Inner {
+            interface Intf {
+              static void foo() {}
+            }
+          }
+        }
+      }
+      """,
+      // test two top-level classes with the same name
+      """
+      === one/A.java ===
+      package one;
+      public class A {
+      }
+      === two/A.java ===
+      package two;
+      public class A {
+      }
+      """,
+      // interfaces
+      """
+      === A.java ===
+      interface A {
+        static void f() {}
+        int x = 42;
+      }
+      === B.java ===
+      interface B extends A {
+        static void f() {}
+        int x = 42;
+      }
+      """
     };
     return stream(inputs)
-        .map(input -> TestInput.parse(Joiner.on('\n').join(input)))
+        .map(TestInput::parse)
         .map(x -> new TestInput[] {x})
         .collect(toImmutableList());
   }

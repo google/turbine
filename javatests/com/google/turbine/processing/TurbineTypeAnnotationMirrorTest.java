@@ -93,105 +93,103 @@ public class TurbineTypeAnnotationMirrorTest {
 
   @Parameterized.Parameters
   public static ImmutableList<Object[]> parameters() {
-    String[][] testCases = {
-      {
-        // super types and interfaces
-        "  interface I {}",
-        "  interface J {}",
-        "  static class CA extends @A(0) Object {}",
-        "  static class CB implements @A(1) I {}",
-        "  static class CC implements @A(2) I, @A(3) J {}",
-        "  static class CD extends @A(4) Object implements @A(5) I, @A(6) J {}",
-      },
-      {
-        // class type parameters
-        "  interface I {}",
-        "  interface J {}",
-        "  class CA<@A(0) X> {}",
-        "  class CB<@A(1) X extends @A(2) Object> {}",
-        "  class CC<@A(3) X extends @A(4) I> {}",
-        "  class CD<@A(5) X extends @A(6) Object & @A(7) I & @A(8) J> {}",
-      },
-      {
-        // method type parameters
-        "  interface I {}",
-        "  interface J {}",
-        "  abstract <@A(0) X> X f();",
-        "  abstract <@A(1) X extends @A(2) Object> X g();",
-        "  abstract <@A(3) X extends @A(4) I> X h();",
-        "  abstract <@A(5) X extends @A(6) Object & @A(7) I & @A(8) J> X i();",
-      },
-      {
-        // constructor type parameters
-        "  interface I {}",
-        "  interface J {}",
-        "  <@A(0) X> Test(X p) {}",
-        "  <@A(1) X extends @A(2) Object> Test(X p, int p2) {}",
-        "  <@A(3) X extends @A(4) I> Test(X p, long p2) {}",
-        "  <@A(5) X extends @A(6) Object & @A(7) I & @A(8) J> Test(X p, double p2) {}",
-      },
-      {
-        // fields
-        "  @A(0) int x;",
-      },
-      {
-        // return types
-        "  abstract @A(0) int f();",
-      },
-      {
-        // method formal parameters
-        "  abstract void f(@A(0) int x, @A(1) int y);", //
-        "  abstract void g(@A(2) Test this, int x, @A(3) int y);",
-      },
-      {
-        // method throws
-        "  abstract void f() throws @A(0) Exception;",
-        "  abstract void g() throws @A(1) Exception, @A(2) RuntimeException;",
-      },
-      {
-        // nested class types
-        "  static class Outer {",
-        "    class Middle {",
-        "      class Inner {}",
-        "    }",
-        "    static class MiddleStatic {",
-        "      class Inner {}",
-        "      static class InnerStatic {}",
-        "    }",
-        "  }",
-        "  @A(0) Outer . @A(1) Middle . @A(2) Inner f;",
-        "  Outer . @A(3) MiddleStatic . @A(4) Inner g;",
-        "  Outer . MiddleStatic . @A(5) InnerStatic h;",
-      },
-      {
-        // wildcards
-        "  interface I<T> {}",
-        "  I<@A(0) ? extends @A(1) String> f;",
-        "  I<@A(2) ? super @A(3) String> g;",
-        "  I<@A(4) ?> h;",
-      },
-      {
-        // arrays
-        "  @A(1) int @A(2) [] @A(3) [] g;",
-      },
-      {
-        // arrays
-        "  @A(0) int @A(1) [] f;",
-        "  @A(2) int @A(3) [] @A(4) [] g;",
-        "  @A(5) int @A(6) [] @A(7) [] @A(8) [] h;",
-      },
-      {
-        // c-style arrays
-        "  @A(0) int @A(1) [] @A(2) [] @A(3) [] h @A(4) [] @A(5) [] @A(6) [];",
-      },
-      {
-        // multi-variable declaration of c-style arrays
-        "  @A(0) int @A(1) [] @A(2) [] x, y @A(3) [] @A(4) [], z @A(5) [] @A(6) [] @A(7) [];",
-      },
+    String[] testCases = {
+      // super types and interfaces
+      """
+        interface I {}
+        interface J {}
+        static class CA extends @A(0) Object {}
+        static class CB implements @A(1) I {}
+        static class CC implements @A(2) I, @A(3) J {}
+        static class CD extends @A(4) Object implements @A(5) I, @A(6) J {}
+      """,
+      // class type parameters
+      """
+        interface I {}
+        interface J {}
+        class CA<@A(0) X> {}
+        class CB<@A(1) X extends @A(2) Object> {}
+        class CC<@A(3) X extends @A(4) I> {}
+        class CD<@A(5) X extends @A(6) Object & @A(7) I & @A(8) J> {}
+      """,
+      // method type parameters
+      """
+        interface I {}
+        interface J {}
+        abstract <@A(0) X> X f();
+        abstract <@A(1) X extends @A(2) Object> X g();
+        abstract <@A(3) X extends @A(4) I> X h();
+        abstract <@A(5) X extends @A(6) Object & @A(7) I & @A(8) J> X i();
+      """,
+      // constructor type parameters
+      """
+        interface I {}
+        interface J {}
+        <@A(0) X> Test(X p) {}
+        <@A(1) X extends @A(2) Object> Test(X p, int p2) {}
+        <@A(3) X extends @A(4) I> Test(X p, long p2) {}
+        <@A(5) X extends @A(6) Object & @A(7) I & @A(8) J> Test(X p, double p2) {}
+      """,
+      // fields
+      """
+        @A(0) int x;
+      """,
+      // return types
+      """
+        abstract @A(0) int f();
+      """,
+      // method formal parameters
+      """
+        abstract void f(@A(0) int x, @A(1) int y); //
+        abstract void g(@A(2) Test this, int x, @A(3) int y);
+      """,
+      // method throws
+      """
+        abstract void f() throws @A(0) Exception;
+        abstract void g() throws @A(1) Exception, @A(2) RuntimeException;
+      """,
+      // nested class types
+      """
+        static class Outer {
+          class Middle {
+            class Inner {}
+          }
+          static class MiddleStatic {
+            class Inner {}
+            static class InnerStatic {}
+          }
+        }
+        @A(0) Outer . @A(1) Middle . @A(2) Inner f;
+        Outer . @A(3) MiddleStatic . @A(4) Inner g;
+        Outer . MiddleStatic . @A(5) InnerStatic h;
+      """,
+      // wildcards
+      """
+        interface I<T> {}
+        I<@A(0) ? extends @A(1) String> f;
+        I<@A(2) ? super @A(3) String> g;
+        I<@A(4) ?> h;
+      """,
+      // arrays
+      """
+        @A(1) int @A(2) [] @A(3) [] g;
+      """,
+      // arrays
+      """
+        @A(0) int @A(1) [] f;
+        @A(2) int @A(3) [] @A(4) [] g;
+        @A(5) int @A(6) [] @A(7) [] @A(8) [] h;
+      """,
+      // c-style arrays
+      """
+        @A(0) int @A(1) [] @A(2) [] @A(3) [] h @A(4) [] @A(5) [] @A(6) [];
+      """,
+      // multi-variable declaration of c-style arrays
+      """
+        @A(0) int @A(1) [] @A(2) [] x, y @A(3) [] @A(4) [], z @A(5) [] @A(6) [] @A(7) [];
+      """,
     };
-    return stream(testCases)
-        .map(lines -> new Object[] {String.join("\n", lines)})
-        .collect(toImmutableList());
+    return stream(testCases).map(source -> new Object[] {source}).collect(toImmutableList());
   }
 
   final String test;
@@ -204,24 +202,25 @@ public class TurbineTypeAnnotationMirrorTest {
   public void test() throws Exception {
     TestInput input =
         TestInput.parse(
-            String.join(
-                "\n",
-                "=== Test.java ===",
-                "import java.lang.annotation.ElementType;",
-                "import java.lang.annotation.Retention;",
-                "import java.lang.annotation.RetentionPolicy;",
-                "import java.lang.annotation.Target;",
-                "import java.util.Map;",
-                "import java.util.Map.Entry;",
-                "@Retention(RetentionPolicy.RUNTIME)",
-                "@Target(ElementType.TYPE_USE)",
-                "@interface A {",
-                "  int value();",
-                "}",
-                "abstract class Test {",
-                test,
-                "}",
-                ""));
+            String.format(
+                """
+                === Test.java ===
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+                import java.util.Map;
+                import java.util.Map.Entry;
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target(ElementType.TYPE_USE)
+                @interface A {
+                  int value();
+                }
+                abstract class Test {
+                  %s
+                }
+                """,
+                test));
 
     Set<String> elements = new HashSet<>();
 
