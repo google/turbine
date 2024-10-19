@@ -32,7 +32,7 @@
   <properties>
     <asm.version>9.7</asm.version>
     <guava.version>32.1.1-jre</guava.version>
-    <errorprone.version>2.32.0</errorprone.version>
+    <errorprone.version>2.34.0</errorprone.version>
     <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -187,6 +187,7 @@
           <compilerArgs>
             <arg>-parameters</arg>
             <arg>-XDcompilePolicy=simple</arg>
+            <arg>--should-stop=ifError=FLOW</arg>
             <arg>-Xplugin:ErrorProne</arg>
           </compilerArgs>
           <annotationProcessorPaths>
