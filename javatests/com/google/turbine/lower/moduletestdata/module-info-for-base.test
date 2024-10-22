@@ -1,0 +1,7 @@
+=== java/lang/Object.java ===
+package java.lang;
+
+public class Object {}
+
+=== module-info.java ===
+module java.base {}

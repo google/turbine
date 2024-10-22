@@ -136,7 +136,7 @@ public class ModuleBinder {
           break;
       }
     }
-    if (!requiresJavaBase) {
+    if (!requiresJavaBase && !module.module().moduleName().equals(ModuleSymbol.JAVA_BASE.name())) {
       // Everything requires java.base, either explicitly or implicitly.
       ModuleInfo javaBaseModule = moduleEnv.get(ModuleSymbol.JAVA_BASE);
       // Tolerate a missing java.base module, e.g. when compiling a module against a non-modular

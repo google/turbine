@@ -47,6 +47,7 @@ public class ModuleIntegrationTest {
       "module-info.test", //
       "classpath.test",
       "multimodule.test",
+      "module-info-for-base.test",
       "module-info-open.test",
       "module-requires-static-transitive.test",
       "module-requires-transitive-static.test",
