@@ -1,0 +1,5 @@
+=== A.java ===
+sealed interface A {
+  final class B implements A {}
+  record C() implements A {}
+}

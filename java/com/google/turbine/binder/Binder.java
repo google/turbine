@@ -171,6 +171,8 @@ public final class Binder {
             henv,
             CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
 
+    tenv = PermitsBinder.bindPermits(syms, tenv);
+
     tenv =
         constants(
             syms,

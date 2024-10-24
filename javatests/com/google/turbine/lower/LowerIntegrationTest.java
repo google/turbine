@@ -64,7 +64,8 @@ public class LowerIntegrationTest {
           entry("sealed_nested.test", 17),
           entry("textblock.test", 15),
           entry("textblock2.test", 15),
-          entry("B306423115.test", 15));
+          entry("B306423115.test", 15),
+          entry("permits.test", 17));
 
   private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW = ImmutableSet.of();
 
@@ -273,6 +274,7 @@ public class LowerIntegrationTest {
       "packagedecl.test",
       "packageprivateprotectedinner.test",
       "param_bound.test",
+      "permits.test",
       "prim_class.test",
       "private_member.test",
       "privateinner.test",
