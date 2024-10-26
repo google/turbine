@@ -16,12 +16,13 @@
 
 package com.google.turbine.binder.lookup;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
@@ -37,17 +38,20 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
   public static class Node {
 
     public @Nullable Node lookup(String bit) {
-      return children.get(bit);
+      return (children == null) ? null : children.get(bit);
     }
 
     private final @Nullable ClassSymbol sym;
-
-    // TODO(cushon): the set of children is typically going to be small, consider optimizing this
-    // to use a denser representation where appropriate.
-    private final Map<String, Node> children = new HashMap<>();
+    private final @Nullable HashMap<String, Node> children;
 
     Node(@Nullable ClassSymbol sym) {
-      this.sym = sym;
+      if (sym == null) {
+        this.sym = null;
+        this.children = new HashMap<>();
+      } else {
+        this.sym = sym;
+        this.children = null;
+      }
     }
 
     /**
@@ -57,6 +61,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
      * @return {@code null} if an existing symbol with the same name has already been inserted.
      */
     private @Nullable Node insert(String name, @Nullable ClassSymbol sym) {
+      checkNotNull(children, "Cannot insert child into a class node '%s'", this.sym);
       Node child = children.get(name);
       if (child != null) {
         if (child.sym != null) {
@@ -105,7 +110,6 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
       if (curr == null || !Objects.equals(curr.sym, sym)) {
         return;
       }
-      return;
     }
   }
 
@@ -191,6 +195,10 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
             new Supplier<ImmutableList<ClassSymbol>>() {
               @Override
               public ImmutableList<ClassSymbol> get() {
+                if (node.children == null) {
+                  return ImmutableList.of();
+                }
+
                 ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
                 for (Node child : node.children.values()) {
                   if (child.sym != null) {
