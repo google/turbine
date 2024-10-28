@@ -18,6 +18,7 @@ package com.google.turbine.zip;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Supplier;
 import com.google.common.primitives.UnsignedInts;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -251,7 +252,7 @@ public final class Zip {
   }
 
   /** An entry in a zip archive. */
-  public static class Entry {
+  public static class Entry implements Supplier<byte[]> {
 
     private final Path path;
     private final FileChannel chan;
@@ -350,6 +351,11 @@ public final class Zip {
       } catch (IOException e) {
         throw new IOError(e);
       }
+    }
+
+    @Override
+    public byte[] get() {
+      return data();
     }
   }
 

@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBinder;
@@ -86,13 +85,12 @@ public final class CtSymClassBinder {
       // JDK >= 12 includes the module name as a prefix
       idx = name.indexOf('/', idx + 1);
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.sig")) {
-        ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(name, toByteArrayOrDie(ze));
+        ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(name, ze);
         modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(idx + 1, name.length() - ".sig".length()));
-      map.putIfAbsent(
-          sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, ctSym + "!" + ze.name()));
+      map.putIfAbsent(sym, new BytecodeBoundClass(sym, ze, benv, ctSym + "!" + ze.name()));
     }
     if (map.isEmpty()) {
       // we didn't find any classes for the desired release
@@ -122,16 +120,6 @@ public final class CtSymClassBinder {
         return null;
       }
     };
-  }
-
-  private static Supplier<byte[]> toByteArrayOrDie(Zip.Entry ze) {
-    return Suppliers.memoize(
-        new Supplier<byte[]>() {
-          @Override
-          public byte[] get() {
-            return ze.data();
-          }
-        });
   }
 
   // ct.sym contains directories whose names are the concatenation of a list of target versions

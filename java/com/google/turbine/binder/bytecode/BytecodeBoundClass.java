@@ -58,6 +58,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -71,6 +72,20 @@ import org.jspecify.annotations.Nullable;
  * done on the classpath.
  */
 public class BytecodeBoundClass implements TypeBoundClass {
+
+  public static Supplier<BytecodeBoundClass> lazy(
+      ClassSymbol sym,
+      Supplier<byte[]> bytes,
+      Env<ClassSymbol, BytecodeBoundClass> env,
+      Path path) {
+    return Suppliers.memoize(
+        new Supplier<BytecodeBoundClass>() {
+          @Override
+          public BytecodeBoundClass get() {
+            return new BytecodeBoundClass(sym, bytes, env, path.toString());
+          }
+        });
+  }
 
   private final ClassSymbol sym;
   private final Env<ClassSymbol, BytecodeBoundClass> env;

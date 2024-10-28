@@ -17,7 +17,6 @@
 package com.google.turbine.binder;
 
 import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBinder;
@@ -35,7 +34,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /** Sets up an environment for symbols on the classpath. */
@@ -55,33 +53,31 @@ public final class ClassPathBinder {
 
   /** Creates an environment containing symbols in the given classpath. */
   public static ClassPath bindClasspath(Collection<Path> paths) throws IOException {
-    // TODO(cushon): this is going to require an env eventually,
-    // e.g. to look up type parameters in enclosing declarations
-    Map<ClassSymbol, BytecodeBoundClass> transitive = new LinkedHashMap<>();
-    Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
+    Map<ClassSymbol, Supplier<BytecodeBoundClass>> transitive = new LinkedHashMap<>();
+    Map<ClassSymbol, Supplier<BytecodeBoundClass>> map = new HashMap<>();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
     Map<String, Supplier<byte[]>> resources = new HashMap<>();
-    Env<ClassSymbol, BytecodeBoundClass> benv =
+    Env<ClassSymbol, BytecodeBoundClass> env =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
           public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
-            return map.get(sym);
+            Supplier<BytecodeBoundClass> supplier = map.get(sym);
+            return supplier == null ? null : supplier.get();
           }
         };
     for (Path path : paths) {
       try {
-        bindJar(path, map, modules, benv, transitive, resources);
+        bindJar(path, map, modules, env, transitive, resources);
       } catch (IOException e) {
         throw new IOException("error reading " + path, e);
       }
     }
-    for (Map.Entry<ClassSymbol, BytecodeBoundClass> entry : transitive.entrySet()) {
+    for (Map.Entry<ClassSymbol, Supplier<BytecodeBoundClass>> entry : transitive.entrySet()) {
       ClassSymbol symbol = entry.getKey();
       map.putIfAbsent(symbol, entry.getValue());
     }
-    SimpleEnv<ClassSymbol, BytecodeBoundClass> env = new SimpleEnv<>(ImmutableMap.copyOf(map));
     SimpleEnv<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.copyOf(modules));
-    TopLevelIndex index = SimpleTopLevelIndex.of(env.asMap().keySet());
+    TopLevelIndex index = SimpleTopLevelIndex.of(map.keySet());
     return new ClassPath() {
       @Override
       public Env<ClassSymbol, BytecodeBoundClass> env() {
@@ -107,10 +103,10 @@ public final class ClassPathBinder {
 
   private static void bindJar(
       Path path,
-      Map<ClassSymbol, BytecodeBoundClass> env,
+      Map<ClassSymbol, Supplier<BytecodeBoundClass>> env,
       Map<ModuleSymbol, ModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> benv,
-      Map<ClassSymbol, BytecodeBoundClass> transitive,
+      Map<ClassSymbol, Supplier<BytecodeBoundClass>> transitive,
       Map<String, Supplier<byte[]>> resources)
       throws IOException {
     // TODO(cushon): don't leak file descriptors
@@ -124,40 +120,21 @@ public final class ClassPathBinder {
             new ClassSymbol(
                 name.substring(
                     TRANSITIVE_PREFIX.length(), name.length() - TRANSITIVE_SUFFIX.length()));
-        transitive.computeIfAbsent(
-            sym,
-            new Function<ClassSymbol, BytecodeBoundClass>() {
-              @Override
-              public BytecodeBoundClass apply(ClassSymbol sym) {
-                return new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString());
-              }
-            });
+        transitive.putIfAbsent(sym, BytecodeBoundClass.lazy(sym, ze, benv, path));
         continue;
       }
       if (!name.endsWith(".class")) {
-        resources.put(name, toByteArrayOrDie(ze));
+        resources.put(name, ze);
         continue;
       }
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.class")) {
-        ModuleInfo moduleInfo =
-            BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(ze));
+        ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(path.toString(), ze);
         modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
-      env.putIfAbsent(
-          sym, new BytecodeBoundClass(sym, toByteArrayOrDie(ze), benv, path.toString()));
+      env.putIfAbsent(sym, BytecodeBoundClass.lazy(sym, ze, benv, path));
     }
-  }
-
-  private static Supplier<byte[]> toByteArrayOrDie(Zip.Entry ze) {
-    return Suppliers.memoize(
-        new Supplier<byte[]>() {
-          @Override
-          public byte[] get() {
-            return ze.data();
-          }
-        });
   }
 
   private ClassPathBinder() {}
