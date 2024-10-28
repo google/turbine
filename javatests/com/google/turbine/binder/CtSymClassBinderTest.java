@@ -31,12 +31,14 @@ public class CtSymClassBinderTest {
   public void formatReleaseVersion() {
     ImmutableList.of(5, 6, 7, 8, 9)
         .forEach(
-            x -> assertThat(CtSymClassBinder.formatReleaseVersion(x)).isEqualTo(String.valueOf(x)));
+            x ->
+                assertThat(Character.toString(CtSymClassBinder.formatReleaseVersion(x)))
+                    .isEqualTo(String.valueOf(x)));
     ImmutableMap.of(
-            10, "A",
-            11, "B",
-            12, "C",
-            35, "Z")
+            10, 'A',
+            11, 'B',
+            12, 'C',
+            35, 'Z')
         .forEach((k, v) -> assertThat(CtSymClassBinder.formatReleaseVersion(k)).isEqualTo(v));
     ImmutableList.of(4, 36)
         .forEach(

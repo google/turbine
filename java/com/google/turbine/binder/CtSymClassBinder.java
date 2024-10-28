@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder;
 
-import static com.google.common.base.Ascii.toUpperCase;
 import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
 import static java.util.Objects.requireNonNull;
 
@@ -70,10 +69,7 @@ public final class CtSymClassBinder {
             return map.get(sym);
           }
         };
-    // ct.sym contains directories whose names are the concatentation of a list of target versions
-    // formatted as a single character 0-9 or A-Z (e.g. 789A) and which contain interface class
-    // files with a .sig extension.
-    String releaseString = formatReleaseVersion(version);
+    char releaseChar = formatReleaseVersion(version);
     for (Zip.Entry ze : new Zip.ZipIterable(ctSym)) {
       String name = ze.name();
       if (!name.endsWith(".sig")) {
@@ -84,7 +80,7 @@ public final class CtSymClassBinder {
         continue;
       }
       // check if the directory matches the desired release
-      if (!ze.name().substring(0, idx).contains(releaseString)) {
+      if (ze.name().substring(0, idx).indexOf(releaseChar) == -1) {
         continue;
       }
       // JDK >= 12 includes the module name as a prefix
@@ -138,12 +134,21 @@ public final class CtSymClassBinder {
         });
   }
 
+  // ct.sym contains directories whose names are the concatenation of a list of target versions
+  // formatted as a single character 0-9 or A-Z (e.g. 789A) and which contain interface class
+  // files with a .sig extension.
+  // This was updated to use 36 as a radix in https://bugs.openjdk.org/browse/JDK-8245544,
+  // it's not clear what the plan is for JDK 36.
   @VisibleForTesting
-  static String formatReleaseVersion(int n) {
+  static char formatReleaseVersion(int n) {
     if (n <= 4 || n >= 36) {
       throw new IllegalArgumentException("invalid release version: " + n);
     }
-    return toUpperCase(Integer.toString(n, 36));
+    if (n < 10) {
+      return (char) ('0' + n);
+    } else {
+      return (char) ('A' + n - 10);
+    }
   }
 
   private CtSymClassBinder() {}
