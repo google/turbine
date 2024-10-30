@@ -78,6 +78,10 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
   /** A builder for {@link TopLevelIndex}es. */
   public static class Builder {
 
+    // If there are a lot of strings, we'll skip the first few map sizes. If not, 1K of memory
+    // isn't significant.
+    private final StringCache stringCache = new StringCache(1024);
+
     public TopLevelIndex build() {
       // Freeze the index. The immutability of nodes is enforced by making insert private, doing
       // a deep copy here isn't necessary.
@@ -94,7 +98,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
       int end = binaryName.indexOf('/');
       Node curr = root;
       while (end != -1) {
-        String simpleName = binaryName.substring(start, end);
+        String simpleName = stringCache.getSubstring(binaryName, start, end);
         curr = curr.insert(simpleName, null);
         // If we've already inserted something with the current name (either a package or another
         // symbol), bail out. When inserting elements from the classpath, this results in the
@@ -105,6 +109,7 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
         start = end + 1;
         end = binaryName.indexOf('/', start);
       }
+      // Classname strings are probably unique so not worth caching.
       String simpleName = binaryName.substring(start);
       curr = curr.insert(simpleName, sym);
       if (curr == null || !Objects.equals(curr.sym, sym)) {
