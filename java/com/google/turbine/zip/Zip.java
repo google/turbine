@@ -342,10 +342,9 @@ public final class Zip {
         byte[] bytes = new byte[(int) size];
         fc.get(bytes);
         if (deflate) {
-          bytes =
-              new InflaterInputStream(
-                      new ByteArrayInputStream(bytes), new Inflater(/* nowrap= */ true))
-                  .readAllBytes();
+          Inflater inf = new Inflater(/* nowrap= */ true);
+          bytes = new InflaterInputStream(new ByteArrayInputStream(bytes), inf).readAllBytes();
+          inf.end();
         }
         return bytes;
       } catch (IOException e) {
