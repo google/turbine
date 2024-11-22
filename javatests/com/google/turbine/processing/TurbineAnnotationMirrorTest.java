@@ -21,7 +21,6 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.auto.common.AnnotationValues;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
@@ -165,41 +164,40 @@ public class TurbineAnnotationMirrorTest {
   public void test() throws Exception {
     TestInput input =
         TestInput.parse(
-            Joiner.on('\n')
-                .join(
-                    "=== Test.java ===",
-                    "import java.lang.annotation.ElementType;",
-                    "import java.lang.annotation.Retention;",
-                    "import java.lang.annotation.RetentionPolicy;",
-                    "import java.lang.annotation.Target;",
-                    "import java.util.Map;",
-                    "import java.util.Map.Entry;",
-                    "@Retention(RetentionPolicy.RUNTIME)",
-                    "@interface A {",
-                    "  int x() default 0;",
-                    "  int y() default 1;",
-                    "  int[] z() default {};",
-                    "}",
-                    "@interface B {",
-                    "  Class<?> c() default String.class;",
-                    "  ElementType e() default ElementType.TYPE_USE;",
-                    "  A f() default @A;",
-                    "}",
-                    "@Retention(RetentionPolicy.RUNTIME)",
-                    "@Target(ElementType.TYPE_USE)",
-                    "@interface T {}",
-                    "@Target(ElementType.TYPE_USE)",
-                    "@interface V {}",
-                    "",
-                    "@A(y = 42, z = {43})",
-                    "@B",
-                    "class Test {",
-                    "  class I {}",
-                    "  @T Test. @V I f;",
-                    "  Map. @T Entry g;",
-                    "  @T Entry h;",
-                    "}",
-                    ""));
+            """
+            === Test.java ===
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+            import java.util.Map;
+            import java.util.Map.Entry;
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface A {
+              int x() default 0;
+              int y() default 1;
+              int[] z() default {};
+            }
+            @interface B {
+              Class<?> c() default String.class;
+              ElementType e() default ElementType.TYPE_USE;
+              A f() default @A;
+            }
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE_USE)
+            @interface T {}
+            @Target(ElementType.TYPE_USE)
+            @interface V {}
+
+            @A(y = 42, z = {43})
+            @B
+            class Test {
+              class I {}
+              @T Test. @V I f;
+              Map. @T Entry g;
+              @T Entry h;
+            }
+            """);
 
     Binder.BindingResult bound =
         IntegrationTestSupport.turbineAnalysis(

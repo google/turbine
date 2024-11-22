@@ -27,7 +27,6 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
 import static javax.lang.model.util.ElementFilter.typesIn;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -106,10 +105,11 @@ public class ProcessingIntegrationTest {
   public void crash() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== Test.java ===", //
-            "@Deprecated",
-            "class Test extends NoSuch {",
-            "}");
+            """
+            === Test.java ===
+            @Deprecated
+            class Test extends NoSuch {}
+            """);
     TurbineError e = runProcessors(units, new CrashingProcessor());
     ImmutableList<String> messages =
         e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
@@ -153,10 +153,11 @@ public class ProcessingIntegrationTest {
   public void warnings() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== Test.java ===", //
-            "@Deprecated",
-            "class Test {",
-            "}");
+            """
+            === Test.java ===
+            @Deprecated
+            class Test {}
+            """);
     TurbineError e = runProcessors(units, new WarningProcessor());
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
@@ -209,10 +210,11 @@ public class ProcessingIntegrationTest {
   public void resources() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== Test.java ===", //
-            "@Deprecated",
-            "class Test {",
-            "}");
+            """
+            === Test.java ===
+            @Deprecated
+            class Test {}
+            """);
     BindingResult bound =
         Binder.bind(
             units,
@@ -239,16 +241,18 @@ public class ProcessingIntegrationTest {
   public void getAllAnnotations() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== A.java ===", //
-            "import java.lang.annotation.Inherited;",
-            "@Inherited",
-            "@interface A {}",
-            "=== B.java ===", //
-            "@interface B {}",
-            "=== One.java ===", //
-            "@A @B class One {}",
-            "=== Two.java ===", //
-            "class Two extends One {}");
+            """
+            === A.java ===
+            import java.lang.annotation.Inherited;
+            @Inherited
+            @interface A {}
+            === B.java ===
+            @interface B {}
+            === One.java ===
+            @A @B class One {}
+            === Two.java ===
+            class Two extends One {}
+            """);
     BindingResult bound =
         Binder.bind(
             units,
@@ -383,10 +387,11 @@ public class ProcessingIntegrationTest {
   public void errorsAndFinalRound() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== Test.java ===", //
-            "@Deprecated",
-            "class Test {",
-            "}");
+            """
+            === Test.java ===
+            @Deprecated
+            class Test {}
+            """);
     TurbineError e = runProcessors(units, new ErrorProcessor(), new FinalRoundErrorProcessor());
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
@@ -423,10 +428,11 @@ public class ProcessingIntegrationTest {
   public void superType() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
-            "@Deprecated",
-            "class T extends S {",
-            "}");
+            """
+            === T.java ===
+            @Deprecated
+            class T extends S {}
+            """);
     TurbineError e = runProcessors(units, new SuperTypeProcessor());
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
@@ -464,13 +470,15 @@ public class ProcessingIntegrationTest {
   public void generatedAnnotationDefinition() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
-            "@interface B {",
-            "  A value() default @A;",
-            "}",
-            "@B(value = @A)",
-            "class T {",
-            "}");
+            """
+            === T.java ===
+            @interface B {
+              A value() default @A;
+            }
+
+            @B(value = @A)
+            class T {}
+            """);
     BindingResult bound =
         Binder.bind(
             units,
@@ -506,9 +514,10 @@ public class ProcessingIntegrationTest {
   public void qualifiedErrorType() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
-            "class T extends G.I {",
-            "}");
+            """
+            === T.java ===
+            class T extends G.I {}
+            """);
     TurbineError e = runProcessors(units, new GenerateQualifiedProcessor());
     assertThat(
             e.diagnostics().stream()
@@ -545,8 +554,10 @@ public class ProcessingIntegrationTest {
   public void badElementValue() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
-            "@Deprecated(noSuch = 42) class T {}");
+            """
+            === T.java ===
+            @Deprecated(noSuch = 42) class T {}
+            """);
     TurbineError e = runProcessors(units, new ElementValueInspector());
     assertThat(
             e.diagnostics().stream()
@@ -587,8 +598,10 @@ public class ProcessingIntegrationTest {
   public void recordProcessing() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== R.java ===", //
-            "record R<T>(@Deprecated T x, int... y) {}");
+            """
+            === R.java ===
+            record R<T>(@Deprecated T x, int... y) {}
+            """);
     TurbineError e = runProcessors(units, new RecordProcessor());
     assertThat(
             e.diagnostics().stream()
@@ -610,9 +623,11 @@ public class ProcessingIntegrationTest {
   public void missingElementValue() {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
-            "import java.lang.annotation.Retention;",
-            "@Retention() @interface T {}");
+            """
+            === T.java ===
+            import java.lang.annotation.Retention;
+            @Retention() @interface T {}
+            """);
     TurbineError e =
         runProcessors(
             units,
@@ -623,11 +638,8 @@ public class ProcessingIntegrationTest {
         .containsExactly("missing required annotation argument: value");
   }
 
-  private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {
-    return IntegrationTestSupport.TestInput.parse(Joiner.on('\n').join(lines))
-        .sources
-        .entrySet()
-        .stream()
+  private static ImmutableList<Tree.CompUnit> parseUnit(String input) {
+    return IntegrationTestSupport.TestInput.parse(input).sources.entrySet().stream()
         .map(e -> new SourceFile(e.getKey(), e.getValue()))
         .map(Parser::parse)
         .collect(toImmutableList());
@@ -678,25 +690,30 @@ public class ProcessingIntegrationTest {
   public void bound() {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== A.java ===", //
-            "import java.util.List;",
-            "class A<T> {",
-            "  <U extends T> U f(List<U> list) {",
-            "    return list.get(0);",
-            "  }",
-            "}",
-            "class B extends A<String> {",
-            "  @Override",
-            "  <U extends String> U f(List<U> list) {",
-            "    return super.f(list);",
-            "  }",
-            "}",
-            "class C extends A<Object> {",
-            "  @Override",
-            "  <U> U f(List<U> list) {",
-            "    return super.f(list);",
-            "  }",
-            "}");
+            """
+            === A.java ===
+            import java.util.List;
+
+            class A<T> {
+              <U extends T> U f(List<U> list) {
+                return list.get(0);
+              }
+            }
+
+            class B extends A<String> {
+              @Override
+              <U extends String> U f(List<U> list) {
+                return super.f(list);
+              }
+            }
+
+            class C extends A<Object> {
+              @Override
+              <U> U f(List<U> list) {
+                return super.f(list);
+              }
+            }
+            """);
     TurbineError e = runProcessors(units, new AllMethodsProcessor());
     assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly(
@@ -741,8 +758,10 @@ public class ProcessingIntegrationTest {
   public void uriProcessing() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
-            "class T {}");
+            """
+            === T.java ===
+            class T {}
+            """);
     TurbineError e = runProcessors(units, new URIProcessor());
     assertThat(
             e.diagnostics().stream()
@@ -784,10 +803,14 @@ public class ProcessingIntegrationTest {
     Map<String, byte[]> library =
         IntegrationTestSupport.runTurbine(
             ImmutableMap.of(
-                "A.java", //
-                "@interface A {}",
+                "A.java",
+                """
+                @interface A {}
+                """,
                 "T.java",
-                "@A class T {}"),
+                """
+                @A class T {}
+                """),
             ImmutableList.of());
     Path libJar = temporaryFolder.newFile("lib.jar").toPath();
     try (OutputStream os = Files.newOutputStream(libJar);
@@ -799,8 +822,10 @@ public class ProcessingIntegrationTest {
 
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== Y.java ===", //
-            "class Y {}");
+            """
+            === Y.java ===
+            class Y {}
+            """);
 
     TurbineLog log = new TurbineLog();
     BindingResult bound =
@@ -855,14 +880,16 @@ public class ProcessingIntegrationTest {
   public void recordComponents() {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== C.java ===", //
-            "abstract class C {",
-            "  abstract int x();",
-            "  abstract int t();",
-            "}",
-            "=== R.java ===", //
-            "record R(int x, @Deprecated int y) {",
-            "}");
+            """
+            === C.java ===
+            abstract class C {
+              abstract int x();
+
+              abstract int t();
+            }
+            === R.java ===
+            record R(int x, @Deprecated int y) {}
+            """);
     TurbineError e = runProcessors(units, new RecordComponentProcessor());
     assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly(
@@ -892,9 +919,11 @@ public class ProcessingIntegrationTest {
   public void modifiers() {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== I.java ===", //
-            "sealed interface I {}",
-            "non-sealed interface J {}");
+            """
+            === I.java ===
+            sealed interface I {}
+            non-sealed interface J {}
+            """);
     TurbineError e = runProcessors(units, new ModifiersProcessor());
     assertThat(e.diagnostics().stream().map(d -> d.message()))
         .containsExactly("I [abstract, sealed]", "J [abstract, non-sealed]");
@@ -923,10 +952,12 @@ public class ProcessingIntegrationTest {
   public void permits() {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== I.java ===", //
-            "interface I permits J, K {}",
-            "interface J {}",
-            "interface K {}");
+            """
+            === I.java ===
+            interface I permits J, K {}
+            interface J {}
+            interface K {}
+            """);
     TurbineError e1 = runProcessors(units, new PermitsProcessor());
     TurbineError e = e1;
     assertThat(e.diagnostics().stream().map(d -> d.message()))
@@ -979,8 +1010,8 @@ public class ProcessingIntegrationTest {
   public void missingParamterizedType() throws IOException {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
-            "=== T.java ===", //
             """
+            === T.java ===
             class T extends M<N> {
               A a;
               B<C, D> b;
