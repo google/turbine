@@ -33,6 +33,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
 import com.google.turbine.binder.sym.ParamSymbol;
+import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
@@ -42,6 +43,7 @@ import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.ConstTu
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.EnumConstValue;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue.Kind;
 import com.google.turbine.bytecode.ClassFile.MethodInfo.ParameterInfo;
+import com.google.turbine.bytecode.ClassFile.RecordInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TargetType;
 import com.google.turbine.bytecode.ClassReader;
@@ -612,9 +614,38 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return methods.get();
   }
 
+  private final Supplier<ImmutableList<RecordComponentInfo>> components =
+      Suppliers.memoize(
+          new Supplier<ImmutableList<RecordComponentInfo>>() {
+            @Override
+            public ImmutableList<RecordComponentInfo> get() {
+              var record = classFile.get().record();
+              if (record == null) {
+                return ImmutableList.of();
+              }
+              ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
+              for (RecordInfo.RecordComponentInfo component : record.recordComponents()) {
+                Type type =
+                    BytecodeBinder.bindTy(
+                        new SigParser(firstNonNull(component.signature(), component.descriptor()))
+                            .parseType(),
+                        makeScope(env, sym, ImmutableMap.of()),
+                        typeAnnotationsForTarget(component.typeAnnotations(), TargetType.FIELD));
+                result.add(
+                    new RecordComponentInfo(
+                        new RecordComponentSymbol(sym, component.name()),
+                        type,
+                        BytecodeBinder.bindAnnotations(
+                            component.annotations(), makeScope(env, sym, ImmutableMap.of())),
+                        /* access= */ 0));
+              }
+              return result.build();
+            }
+          });
+
   @Override
   public ImmutableList<RecordComponentInfo> components() {
-    return ImmutableList.of();
+    return components.get();
   }
 
   private final Supplier<@Nullable AnnotationMetadata> annotationMetadata =

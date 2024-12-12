@@ -27,6 +27,8 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
 import static javax.lang.model.util.ElementFilter.typesIn;
 import static org.junit.Assert.assertThrows;
 
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -72,6 +74,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
@@ -604,6 +607,77 @@ public class ProcessingIntegrationTest {
             "METHOD equals(java.lang.Object)",
             "METHOD x()",
             "METHOD y()");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class RecordFromADistanceProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      processingEnv
+          .getMessager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              roundEnv
+                  .getElementsAnnotatedWith(processingEnv.getElementUtils().getTypeElement("foo.R"))
+                  .stream()
+                  .flatMap(e -> processingEnv.getElementUtils().getAllAnnotationMirrors(e).stream())
+                  .flatMap(a -> a.getElementValues().values().stream())
+                  .flatMap(
+                      x ->
+                          MoreElements.asType(
+                              MoreTypes.asDeclared((TypeMirror) x.getValue()).asElement())
+                              .getRecordComponents()
+                              .stream())
+                  .map(x -> x.getSimpleName())
+                  .collect(toImmutableList())
+                  .toString());
+      return false;
+    }
+  }
+
+  @Test
+  public void bytecodeRecord_componentsAvailable() throws IOException {
+    Map<String, byte[]> library =
+        IntegrationTestSupport.runTurbine(
+            ImmutableMap.of(
+                "MyRecord.java", "package foo; public record MyRecord(int x, int y) {}"),
+            ImmutableList.of());
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("foo/MyRecord.class"));
+      jos.write(requireNonNull(library.get("foo/MyRecord")));
+    }
+
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== Y.java ===", //
+            "package foo;",
+            "@interface R { Class<? extends Record> value(); }",
+            "@R(MyRecord.class)",
+            "class Y {}");
+
+    TurbineLog log = new TurbineLog();
+    BindingResult unused =
+        Binder.bind(
+            log,
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+            ProcessorInfo.create(
+                ImmutableList.of(new RecordFromADistanceProcessor()),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+    ImmutableList<String> messages =
+        log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
+    assertThat(messages).contains("[x, y]");
   }
 
   @Test

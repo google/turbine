@@ -36,6 +36,7 @@ import com.google.turbine.bytecode.ClassFile.ModuleInfo.OpenInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.ProvideInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.RequireInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.UseInfo;
+import com.google.turbine.bytecode.ClassFile.RecordInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
@@ -112,6 +113,7 @@ public class ClassReader {
     ImmutableList.Builder<ClassFile.TypeAnnotationInfo> typeAnnotations = ImmutableList.builder();
     ClassFile.ModuleInfo module = null;
     String transitiveJar = null;
+    RecordInfo record = null;
     int attributesCount = reader.u2();
     for (int j = 0; j < attributesCount; j++) {
       int attributeNameIndex = reader.u2();
@@ -141,6 +143,9 @@ public class ClassReader {
         case "TurbineTransitiveJar":
           transitiveJar = readTurbineTransitiveJar(constantPool);
           break;
+        case "Record":
+          record = readRecord(constantPool);
+          break;
         default:
           reader.skip(reader.u4());
           break;
@@ -163,7 +168,7 @@ public class ClassReader {
         module,
         /* nestHost= */ null,
         /* nestMembers= */ ImmutableList.of(),
-        /* record= */ null,
+        record,
         transitiveJar);
   }
 
@@ -687,5 +692,48 @@ public class ClassReader {
   private String readTurbineTransitiveJar(ConstantPoolReader constantPool) {
     int unusedLength = reader.u4();
     return constantPool.utf8(reader.u2());
+  }
+
+  private RecordInfo readRecord(ConstantPoolReader constantPool) {
+    int unusedLength = reader.u4();
+    int componentsCount = reader.u2();
+
+    ImmutableList.Builder<RecordInfo.RecordComponentInfo> components = ImmutableList.builder();
+    for (int i = 0; i < componentsCount; i++) {
+      String name = constantPool.utf8(reader.u2());
+      String descriptor = constantPool.utf8(reader.u2());
+
+      int attributesCount = reader.u2();
+      ImmutableList.Builder<ClassFile.AnnotationInfo> annotations = ImmutableList.builder();
+      ImmutableList.Builder<ClassFile.TypeAnnotationInfo> typeAnnotations = ImmutableList.builder();
+      String signature = null;
+      for (int j = 0; j < attributesCount; j++) {
+        String attributeName = constantPool.utf8(reader.u2());
+        switch (attributeName) {
+          case "RuntimeInvisibleAnnotations":
+            readAnnotations(annotations, constantPool, RuntimeVisibility.INVISIBLE);
+            break;
+          case "RuntimeVisibleAnnotations":
+            readAnnotations(annotations, constantPool, RuntimeVisibility.VISIBLE);
+            break;
+          case "RuntimeInvisibleTypeAnnotations":
+            readTypeAnnotations(typeAnnotations, constantPool, RuntimeVisibility.INVISIBLE);
+            break;
+          case "RuntimeVisibleTypeAnnotations":
+            readTypeAnnotations(typeAnnotations, constantPool, RuntimeVisibility.VISIBLE);
+            break;
+          case "Signature":
+            signature = readSignature(constantPool);
+            break;
+          default:
+            reader.skip(reader.u4());
+            break;
+        }
+      }
+      components.add(
+          new RecordInfo.RecordComponentInfo(
+              name, descriptor, signature, annotations.build(), typeAnnotations.build()));
+    }
+    return new RecordInfo(components.build());
   }
 }
