@@ -19,7 +19,6 @@ package com.google.turbine.processing;
 import static com.google.common.collect.Iterables.getLast;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Ascii;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
@@ -101,11 +100,6 @@ public abstract class TurbineTypeMirror implements TypeMirror {
   static class TurbinePrimitiveType extends TurbineTypeMirror implements PrimitiveType {
 
     @Override
-    public String toString() {
-      return Ascii.toLowerCase(type.primkind().toString());
-    }
-
-    @Override
     public Type asTurbineType() {
       return type;
     }
@@ -180,11 +174,6 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     TurbineDeclaredType(ModelFactory factory, ClassTy type) {
       super(factory);
       this.type = type;
-    }
-
-    @Override
-    public String toString() {
-      return type.toString();
     }
 
     final Supplier<Element> element =
@@ -340,11 +329,6 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     public List<? extends TypeMirror> getTypeArguments() {
       return factory.asTypeMirrors(type.targs());
     }
-
-    @Override
-    public String toString() {
-      return type.toString();
-    }
   }
 
   /** A 'package type' implementation backed by a {@link PackageSymbol}. */
@@ -414,11 +398,6 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
       return v.visitNoType(this, p);
-    }
-
-    @Override
-    public String toString() {
-      return "none";
     }
 
     @Override
@@ -528,11 +507,6 @@ public abstract class TurbineTypeMirror implements TypeMirror {
       return info().lowerBound() != null
           ? factory.asTypeMirror(info().lowerBound())
           : factory.nullType();
-    }
-
-    @Override
-    public String toString() {
-      return type.toString();
     }
 
     @Override
@@ -693,11 +667,6 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
   /** An {@link ExecutableType} implementation backed by a {@link MethodTy}. */
   public static class TurbineExecutableType extends TurbineTypeMirror implements ExecutableType {
-
-    @Override
-    public String toString() {
-      return type.toString();
-    }
 
     @Override
     public MethodTy asTurbineType() {

@@ -105,6 +105,9 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
       case "@p.Test0.A int @p.Test0.B []":
         expected = "int[]";
         break;
+      case "@p.Test0.A int":
+        expected = "int";
+        break;
       default: // fall out
     }
     assertWithMessage("erasure(`%s`) = erasure(`%s`)", javacA, turbineA)

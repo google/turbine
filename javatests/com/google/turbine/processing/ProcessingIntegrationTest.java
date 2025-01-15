@@ -71,6 +71,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
@@ -1096,6 +1097,70 @@ public class ProcessingIntegrationTest {
             "a supertype: A, arguments: [], enclosing: none",
             "b supertype: B<C,D>, arguments: [C, D], enclosing: none",
             "c supertype: B.E<F>, arguments: [F], enclosing: none");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class TypeAnnotationFieldType extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!first) {
+        return false;
+      }
+      first = false;
+      for (Element root : roundEnv.getRootElements()) {
+        for (VariableElement field : ElementFilter.fieldsIn(root.getEnclosedElements())) {
+          TypeMirror type = field.asType();
+          processingEnv
+              .getMessager()
+              .printMessage(
+                  Diagnostic.Kind.ERROR,
+                  String.format(
+                      "field %s with annotations %s, type '%s' with annotations %s",
+                      field, field.getAnnotationMirrors(), type, type.getAnnotationMirrors()));
+        }
+      }
+      return false;
+    }
+  }
+
+  // Ensure that type annotations are included in the string representation of primtive types
+  @Test
+  public void fieldTypeToString() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === T.java ===
+            class T {
+              private final @A int f;
+              private final @A Object g;
+              private final @A int[] h;
+            }
+            === A.java ===
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+            @Retention(RetentionPolicy.SOURCE)
+            @Target({ElementType.TYPE_PARAMETER, ElementType.TYPE_USE})
+            public @interface A {
+            }
+            """);
+    TurbineError e = runProcessors(units, new TypeAnnotationFieldType());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            "field f with annotations [], type '@A int' with annotations [@A]",
+            "field g with annotations [], type 'java.lang.@A Object' with annotations [@A]",
+            "field h with annotations [], type '@A int[]' with annotations []");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
