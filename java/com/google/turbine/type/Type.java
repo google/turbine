@@ -308,6 +308,8 @@ public interface Type {
   }
 
   /** A primitive type. */
+  // TODO: cushon - consider renaming this, since it models things like String and null that can
+  // appear as constants and not primitives.
   @AutoValue
   abstract class PrimTy implements Type {
 

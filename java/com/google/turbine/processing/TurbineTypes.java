@@ -413,7 +413,8 @@ public class TurbineTypes implements Types {
   // https://docs.oracle.com/javase/specs/jls/se11/html/jls-4.html#jls-4.10.1
   private static boolean isPrimSubtype(PrimTy a, Type other) {
     if (other.tyKind() != TyKind.PRIM_TY) {
-      return false;
+      // The null reference can always be assigned or cast to any reference type, see JLS 4.1
+      return a.primkind() == TurbineConstantTypeKind.NULL && isReferenceType(other);
     }
     PrimTy b = (PrimTy) other;
     switch (a.primkind()) {
@@ -483,7 +484,7 @@ public class TurbineTypes implements Types {
       case BOOLEAN:
         return a.primkind() == b.primkind();
       case NULL:
-        break;
+        return isReferenceType(other);
     }
     throw new AssertionError(a.primkind());
   }
@@ -672,8 +673,12 @@ public class TurbineTypes implements Types {
   private boolean isAssignable(Type t1, Type t2) {
     switch (t1.tyKind()) {
       case PRIM_TY:
+        TurbineConstantTypeKind primkind = ((PrimTy) t1).primkind();
+        if (primkind == TurbineConstantTypeKind.NULL) {
+          return isReferenceType(t2);
+        }
         if (t2.tyKind() == TyKind.CLASS_TY) {
-          ClassSymbol boxed = boxedClass(((PrimTy) t1).primkind());
+          ClassSymbol boxed = boxedClass(primkind);
           t1 = ClassTy.asNonParametricClassTy(boxed);
         }
         break;
@@ -698,6 +703,14 @@ public class TurbineTypes implements Types {
 
   private static boolean isObjectType(Type type) {
     return type.tyKind() == TyKind.CLASS_TY && ((ClassTy) type).sym().equals(ClassSymbol.OBJECT);
+  }
+
+  private static boolean isReferenceType(Type type) {
+    return switch (type.tyKind()) {
+      case CLASS_TY, ARRAY_TY, TY_VAR, WILD_TY, INTERSECTION_TY, ERROR_TY -> true;
+      case PRIM_TY -> ((PrimTy) type).primkind() == TurbineConstantTypeKind.NULL;
+      case NONE_TY, METHOD_TY, VOID_TY -> false;
+    };
   }
 
   @Override

@@ -527,7 +527,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     public TypeMirror getLowerBound() {
       return info().lowerBound() != null
           ? factory.asTypeMirror(info().lowerBound())
-          : factory.noType();
+          : factory.nullType();
     }
 
     @Override

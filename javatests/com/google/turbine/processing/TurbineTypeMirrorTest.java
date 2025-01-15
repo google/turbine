@@ -226,7 +226,7 @@ public class TurbineTypeMirrorTest {
                         .getTypeParameters())
                 .asType();
     assertThat(t.getKind()).isEqualTo(TypeKind.TYPEVAR);
-    assertThat(t.getLowerBound().getKind()).isEqualTo(TypeKind.NONE);
+    assertThat(t.getLowerBound().getKind()).isEqualTo(TypeKind.NULL);
     assertThat(t.getUpperBound().toString()).isEqualTo("java.lang.Comparable<? super T>");
   }
 

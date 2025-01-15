@@ -27,7 +27,7 @@ public enum TurbineConstantTypeKind {
   BOOLEAN("boolean"),
   BYTE("byte"),
   STRING("String"),
-  NULL("null");
+  NULL("<nulltype>");
 
   private final String name;
 
