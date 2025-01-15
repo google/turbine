@@ -436,6 +436,23 @@ public class ProcessingIntegrationTest {
     assertThat(diags).containsExactly("could not resolve S", "S [S]").inOrder();
   }
 
+  @Test
+  public void superTypeInterfaces() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== T.java ===", //
+            "abstract class T implements NoSuch, java.util.List<String> {",
+            "}");
+    TurbineError e = runProcessors(units, new SuperTypeProcessor());
+    ImmutableList<String> diags =
+        e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
+    assertThat(diags)
+        .containsExactly(
+            "could not resolve NoSuch",
+            "java.lang.Object [java.lang.Object, java.util.List<java.lang.String>]")
+        .inOrder();
+  }
+
   @SupportedAnnotationTypes("*")
   public static class GenerateAnnotationProcessor extends AbstractProcessor {
 

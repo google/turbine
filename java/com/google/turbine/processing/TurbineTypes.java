@@ -877,7 +877,10 @@ public class TurbineTypes implements Types {
       builder.add(ClassTy.OBJECT);
     }
     for (Type interfaceType : info.interfaceTypes()) {
-      builder.add(raw ? erasure(interfaceType) : subst(interfaceType, mapping));
+      // ErrorTypes are not included in directSupertypes for compatibility with javac
+      if (interfaceType.tyKind() == TyKind.CLASS_TY) {
+        builder.add(raw ? erasure(interfaceType) : subst(interfaceType, mapping));
+      }
     }
     return builder.build();
   }
