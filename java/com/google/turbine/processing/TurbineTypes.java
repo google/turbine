@@ -110,6 +110,9 @@ public class TurbineTypes implements Types {
   }
 
   private boolean isSameType(Type a, Type b) {
+    if (b.tyKind() == TyKind.ERROR_TY) {
+      return true;
+    }
     switch (a.tyKind()) {
       case PRIM_TY:
         return b.tyKind() == TyKind.PRIM_TY && ((PrimTy) a).primkind() == ((PrimTy) b).primkind();
@@ -132,7 +135,7 @@ public class TurbineTypes implements Types {
       case METHOD_TY:
         return b.tyKind() == TyKind.METHOD_TY && isSameMethodType((MethodTy) a, (MethodTy) b);
       case ERROR_TY:
-        return false;
+        return true;
     }
     throw new AssertionError(a.tyKind());
   }
@@ -328,6 +331,9 @@ public class TurbineTypes implements Types {
    *     conversions.
    */
   private boolean isSubtype(Type a, Type b, boolean strict) {
+    if (a.tyKind() == TyKind.ERROR_TY || b.tyKind() == TyKind.ERROR_TY) {
+      return true;
+    }
     if (b.tyKind() == TyKind.INTERSECTION_TY) {
       for (Type bound : getBounds((IntersectionTy) b)) {
         // TODO(cushon): javac rejects e.g. `|List| isAssignable Serializable&ArrayList<?>`,
@@ -671,6 +677,9 @@ public class TurbineTypes implements Types {
   }
 
   private boolean isAssignable(Type t1, Type t2) {
+    if (t1.tyKind() == TyKind.ERROR_TY || t2.tyKind() == TyKind.ERROR_TY) {
+      return true;
+    }
     switch (t1.tyKind()) {
       case PRIM_TY:
         TurbineConstantTypeKind primkind = ((PrimTy) t1).primkind();
@@ -725,6 +734,9 @@ public class TurbineTypes implements Types {
   // See JLS 4.5.1, 'type containment'
   // https://docs.oracle.com/javase/specs/jls/se11/html/jls-4.html#jls-4.5.1
   private boolean containedBy(Type t1, Type t2, boolean strict) {
+    if (t1.tyKind() == TyKind.ERROR_TY) {
+      return true;
+    }
     if (t1.tyKind() == TyKind.WILD_TY) {
       WildTy w1 = (WildTy) t1;
       Type t;
