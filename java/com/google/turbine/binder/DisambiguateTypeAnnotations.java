@@ -309,9 +309,6 @@ public final class DisambiguateTypeAnnotations {
         }
         ClassSymbol container = info.annotationMetadata().repeatable();
         if (container == null) {
-          if (isKotlinRepeatable(info)) {
-            continue;
-          }
           AnnoInfo anno = infos.iterator().next();
           throw TurbineError.format(
               anno.source(), anno.position(), ErrorKind.NONREPEATABLE_ANNOTATION, symbol);
@@ -327,20 +324,6 @@ public final class DisambiguateTypeAnnotations {
       }
     }
     return result.build();
-  }
-
-  // Work-around for https://youtrack.jetbrains.net/issue/KT-34189.
-  // Kotlin stubs include repeated annotations that are valid in Kotlin (i.e. meta-annotated with
-  // @kotlin.annotation.Repeatable), even though they are invalid Java.
-  // TODO(b/142002426): kill this with fire
-  static boolean isKotlinRepeatable(TypeBoundClass info) {
-    for (AnnoInfo metaAnno : info.annotations()) {
-      if (metaAnno.sym() != null
-          && metaAnno.sym().binaryName().equals("kotlin/annotation/Repeatable")) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private DisambiguateTypeAnnotations() {}
