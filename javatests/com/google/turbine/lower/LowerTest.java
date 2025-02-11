@@ -38,6 +38,7 @@ import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.bytecode.ByteReader;
 import com.google.turbine.bytecode.ConstantPoolReader;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
@@ -749,6 +750,44 @@ public class LowerTest {
             },
             0);
     assertThat(fields).containsExactly("y");
+  }
+
+  @Test
+  public void repeatedTypeAnnotationError() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    new SourceFile(
+                        "Test.java",
+                        """
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Target;
+                        import java.util.List;
+                        @Target({ElementType.TYPE_USE}) @interface Anno {}
+                        class Test {
+                          List<@Anno @Anno Integer> xs;
+                          }
+                        """))),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    TurbineError turbineError =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Lower.lowerAll(
+                    Lower.LowerOptions.createDefault(),
+                    bound.units(),
+                    bound.modules(),
+                    bound.classPathEnv()));
+    assertThat(turbineError)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "Test.java:6: error: Anno is not @Repeatable",
+                "  List<@Anno @Anno Integer> xs;",
+                "       ^"));
   }
 
   static String lines(String... lines) {

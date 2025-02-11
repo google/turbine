@@ -1024,6 +1024,23 @@ public class BinderErrorTest {
           "                                      ^",
         },
       },
+      {
+        {
+          "@interface Anno {}", //
+          "class Test {",
+          "  @Anno @Anno int x;",
+          "  @Anno @Anno int y;",
+          "}",
+        },
+        {
+          "<>:3: error: Anno is not @Repeatable",
+          "  @Anno @Anno int x;",
+          "  ^",
+          "<>:4: error: Anno is not @Repeatable",
+          "  @Anno @Anno int y;",
+          "  ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

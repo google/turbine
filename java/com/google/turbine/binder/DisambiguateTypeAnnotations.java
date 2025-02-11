@@ -33,8 +33,8 @@ import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.type.AnnoInfo;
@@ -67,17 +67,20 @@ import java.util.Map;
  * and move it to the appropriate location.
  */
 public final class DisambiguateTypeAnnotations {
+
   public static SourceTypeBoundClass bind(
-      SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env) {
+      SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env, TurbineLog log) {
+
+    DisambiguateTypeAnnotations binder = new DisambiguateTypeAnnotations(env, log);
     return new SourceTypeBoundClass(
         base.interfaceTypes(),
         base.permits(),
         base.superClassType(),
         base.typeParameterTypes(),
         base.access(),
-        bindComponents(env, base.components(), TurbineElementType.RECORD_COMPONENT),
-        bindMethods(env, base.methods()),
-        bindFields(env, base.fields()),
+        binder.bindComponents(base.components(), TurbineElementType.RECORD_COMPONENT),
+        binder.bindMethods(base.methods()),
+        binder.bindFields(base.fields()),
         base.owner(),
         base.kind(),
         base.children(),
@@ -86,25 +89,31 @@ public final class DisambiguateTypeAnnotations {
         base.scope(),
         base.memberImports(),
         base.annotationMetadata(),
-        groupRepeated(env, base.annotations()),
+        binder.groupRepeated(base.annotations()),
         base.source(),
         base.decl());
   }
 
-  private static ImmutableList<MethodInfo> bindMethods(
-      Env<ClassSymbol, TypeBoundClass> env, ImmutableList<MethodInfo> fields) {
+  private final Env<ClassSymbol, TypeBoundClass> env;
+  private final TurbineLog log;
+
+  private DisambiguateTypeAnnotations(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log) {
+    this.env = env;
+    this.log = log;
+  }
+
+  private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> fields) {
     ImmutableList.Builder<MethodInfo> result = ImmutableList.builder();
     for (MethodInfo field : fields) {
-      result.add(bindMethod(env, field));
+      result.add(bindMethod(field));
     }
     return result.build();
   }
 
-  private static MethodInfo bindMethod(Env<ClassSymbol, TypeBoundClass> env, MethodInfo base) {
+  private MethodInfo bindMethod(MethodInfo base) {
     ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
     Type returnType =
         disambiguate(
-            env,
             base.name().equals("<init>")
                 ? TurbineElementType.CONSTRUCTOR
                 : TurbineElementType.METHOD,
@@ -115,51 +124,39 @@ public final class DisambiguateTypeAnnotations {
         base.sym(),
         base.tyParams(),
         returnType,
-        bindParameters(env, base.parameters(), TurbineElementType.PARAMETER),
+        bindParameters(base.parameters(), TurbineElementType.PARAMETER),
         base.exceptions(),
         base.access(),
         base.defaultValue(),
         base.decl(),
         declarationAnnotations.build(),
-        base.receiver() != null
-            ? bindParam(env, base.receiver(), TurbineElementType.PARAMETER)
-            : null);
+        base.receiver() != null ? bindParam(base.receiver(), TurbineElementType.PARAMETER) : null);
   }
 
-  private static ImmutableList<ParamInfo> bindParameters(
-      Env<ClassSymbol, TypeBoundClass> env,
-      ImmutableList<ParamInfo> params,
-      TurbineElementType declarationTarget) {
+  private ImmutableList<ParamInfo> bindParameters(
+      ImmutableList<ParamInfo> params, TurbineElementType declarationTarget) {
     ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
     for (ParamInfo param : params) {
-      result.add(bindParam(env, param, declarationTarget));
+      result.add(bindParam(param, declarationTarget));
     }
     return result.build();
   }
 
-  private static ParamInfo bindParam(
-      Env<ClassSymbol, TypeBoundClass> env, ParamInfo base, TurbineElementType declarationTarget) {
+  private ParamInfo bindParam(ParamInfo base, TurbineElementType declarationTarget) {
     ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
     Type type =
-        disambiguate(
-            env, declarationTarget, base.type(), base.annotations(), declarationAnnotations);
+        disambiguate(declarationTarget, base.type(), base.annotations(), declarationAnnotations);
     return new ParamInfo(base.sym(), type, declarationAnnotations.build(), base.access());
   }
 
-  private static ImmutableList<RecordComponentInfo> bindComponents(
-      Env<ClassSymbol, TypeBoundClass> env,
-      ImmutableList<RecordComponentInfo> components,
-      TurbineElementType declarationTarget) {
+  private ImmutableList<RecordComponentInfo> bindComponents(
+      ImmutableList<RecordComponentInfo> components, TurbineElementType declarationTarget) {
     ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
     for (RecordComponentInfo component : components) {
       ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
       Type type =
           disambiguate(
-              env,
-              declarationTarget,
-              component.type(),
-              component.annotations(),
-              declarationAnnotations);
+              declarationTarget, component.type(), component.annotations(), declarationAnnotations);
       result.add(
           new RecordComponentInfo(
               component.sym(), type, declarationAnnotations.build(), component.access()));
@@ -171,18 +168,17 @@ public final class DisambiguateTypeAnnotations {
    * Moves type annotations in {@code annotations} to {@code type}, and adds any declaration
    * annotations on {@code type} to {@code declarationAnnotations}.
    */
-  private static Type disambiguate(
-      Env<ClassSymbol, TypeBoundClass> env,
+  private Type disambiguate(
       TurbineElementType declarationTarget,
       Type type,
       ImmutableList<AnnoInfo> annotations,
       ImmutableList.Builder<AnnoInfo> declarationAnnotations) {
     // desugar @Repeatable annotations before disambiguating: annotation containers may target
     // a subset of the types targeted by their element annotation
-    annotations = groupRepeated(env, annotations);
+    annotations = groupRepeated(annotations);
     ImmutableList.Builder<AnnoInfo> typeAnnotations = ImmutableList.builder();
     for (AnnoInfo anno : annotations) {
-      ImmutableSet<TurbineElementType> target = getTarget(env, anno);
+      ImmutableSet<TurbineElementType> target = getTarget(anno);
       if (target.contains(TurbineElementType.TYPE_USE)) {
         typeAnnotations.add(anno);
       }
@@ -193,8 +189,7 @@ public final class DisambiguateTypeAnnotations {
     return addAnnotationsToType(type, typeAnnotations.build());
   }
 
-  private static ImmutableSet<TurbineElementType> getTarget(
-      Env<ClassSymbol, TypeBoundClass> env, AnnoInfo anno) {
+  private ImmutableSet<TurbineElementType> getTarget(AnnoInfo anno) {
     ClassSymbol sym = anno.sym();
     if (sym == null) {
       return AnnotationMetadata.DEFAULT_TARGETS;
@@ -210,20 +205,19 @@ public final class DisambiguateTypeAnnotations {
     return metadata.target();
   }
 
-  private static ImmutableList<FieldInfo> bindFields(
-      Env<ClassSymbol, TypeBoundClass> env, ImmutableList<FieldInfo> fields) {
+  private ImmutableList<FieldInfo> bindFields(ImmutableList<FieldInfo> fields) {
     ImmutableList.Builder<FieldInfo> result = ImmutableList.builder();
     for (FieldInfo field : fields) {
-      result.add(bindField(env, field));
+      result.add(bindField(field));
     }
     return result.build();
   }
 
-  private static FieldInfo bindField(Env<ClassSymbol, TypeBoundClass> env, FieldInfo base) {
+  private FieldInfo bindField(FieldInfo base) {
     ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
     Type type =
         disambiguate(
-            env, TurbineElementType.FIELD, base.type(), base.annotations(), declarationAnnotations);
+            TurbineElementType.FIELD, base.type(), base.annotations(), declarationAnnotations);
     return new FieldInfo(
         base.sym(), type, base.access(), declarationAnnotations.build(), base.decl(), base.value());
   }
@@ -284,7 +278,11 @@ public final class DisambiguateTypeAnnotations {
    * here, but it would require another rewrite pass.
    */
   public static ImmutableList<AnnoInfo> groupRepeated(
-      Env<ClassSymbol, TypeBoundClass> env, ImmutableList<AnnoInfo> annotations) {
+      Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, ImmutableList<AnnoInfo> annotations) {
+    return new DisambiguateTypeAnnotations(env, log).groupRepeated(annotations);
+  }
+
+  private ImmutableList<AnnoInfo> groupRepeated(ImmutableList<AnnoInfo> annotations) {
     Multimap<ClassSymbol, AnnoInfo> repeated =
         MultimapBuilder.linkedHashKeys().arrayListValues().build();
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
@@ -310,8 +308,9 @@ public final class DisambiguateTypeAnnotations {
         ClassSymbol container = info.annotationMetadata().repeatable();
         if (container == null) {
           AnnoInfo anno = infos.iterator().next();
-          throw TurbineError.format(
-              anno.source(), anno.position(), ErrorKind.NONREPEATABLE_ANNOTATION, symbol);
+          log.withSource(anno.source())
+              .error(anno.position(), ErrorKind.NONREPEATABLE_ANNOTATION, symbol);
+          continue;
         }
         result.add(
             new AnnoInfo(
@@ -325,6 +324,4 @@ public final class DisambiguateTypeAnnotations {
     }
     return result.build();
   }
-
-  private DisambiguateTypeAnnotations() {}
 }

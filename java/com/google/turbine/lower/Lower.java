@@ -66,6 +66,7 @@ import com.google.turbine.bytecode.sig.SigWriter;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -148,23 +149,25 @@ public class Lower {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     // Output Java 8 bytecode at minimum, for type annotations
     int majorVersion = max(options.languageVersion().majorVersion(), 52);
+    TurbineLog log = new TurbineLog();
     for (ClassSymbol sym : units.keySet()) {
       result.put(
           sym.binaryName(),
-          lower(units.get(sym), env, sym, symbols, majorVersion, options.emitPrivateFields()));
+          lower(units.get(sym), env, log, sym, symbols, majorVersion, options.emitPrivateFields()));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
-      result.put("module-info", lower(getOnlyElement(modules), env, symbols, majorVersion));
+      result.put("module-info", lower(getOnlyElement(modules), env, log, symbols, majorVersion));
     } else {
       // multi-module mode: the output module-info.class are in a directory corresponding to their
       // package
       for (SourceModuleInfo module : modules) {
         result.put(
             module.name().replace('.', '/') + "/module-info",
-            lower(module, env, symbols, majorVersion));
+            lower(module, env, log, symbols, majorVersion));
       }
     }
+    log.maybeThrow();
     return Lowered.create(result.buildOrThrow(), ImmutableSet.copyOf(symbols));
   }
 
@@ -172,26 +175,30 @@ public class Lower {
   private static byte[] lower(
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
+      TurbineLog log,
       ClassSymbol sym,
       Set<ClassSymbol> symbols,
       int majorVersion,
       boolean emitPrivateFields) {
-    return new Lower(env).lower(info, sym, symbols, majorVersion, emitPrivateFields);
+    return new Lower(env, log).lower(info, sym, symbols, majorVersion, emitPrivateFields);
   }
 
   private static byte[] lower(
       SourceModuleInfo module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      TurbineLog log,
       Set<ClassSymbol> symbols,
       int majorVersion) {
-    return new Lower(env).lower(module, symbols, majorVersion);
+    return new Lower(env, log).lower(module, symbols, majorVersion);
   }
 
   private final LowerSignature sig = new LowerSignature();
   private final Env<ClassSymbol, TypeBoundClass> env;
+  private final TurbineLog log;
 
-  public Lower(Env<ClassSymbol, TypeBoundClass> env) {
+  public Lower(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log) {
     this.env = env;
+    this.log = log;
   }
 
   private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols, int majorVersion) {
@@ -794,7 +801,7 @@ public class Lower {
       TargetType boundTargetType) {
     int typeParameterIndex = 0;
     for (TyVarInfo p : typeParameters) {
-      for (AnnoInfo anno : groupRepeated(env, p.annotations())) {
+      for (AnnoInfo anno : groupRepeated(env, log, p.annotations())) {
         AnnotationInfo info = lowerAnnotation(anno);
         if (info == null) {
           continue;
@@ -880,7 +887,7 @@ public class Lower {
 
     /** Lower a list of type annotations. */
     private void lowerTypeAnnotations(ImmutableList<AnnoInfo> annos, TypePath path) {
-      for (AnnoInfo anno : groupRepeated(env, annos)) {
+      for (AnnoInfo anno : groupRepeated(env, log, annos)) {
         AnnotationInfo info = lowerAnnotation(anno);
         if (info == null) {
           continue;
