@@ -19,10 +19,14 @@ package com.google.turbine.processing;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.Value;
@@ -34,9 +38,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.MirroredTypesException;
 import javax.lang.model.type.TypeMirror;
+import org.jspecify.annotations.Nullable;
 
 /** An {@link InvocationHandler} for reflectively accessing annotations. */
 class TurbineAnnotationProxy implements InvocationHandler {
@@ -66,6 +72,52 @@ class TurbineAnnotationProxy implements InvocationHandler {
     this.loader = loader;
     this.annotationType = annotationType;
     this.anno = anno;
+  }
+
+  static <A extends Annotation> @Nullable A getAnnotation(
+      ModelFactory factory, ImmutableList<AnnoInfo> annos, Class<A> annotationType) {
+    ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
+    TypeBoundClass info = factory.getSymbol(sym);
+    if (info == null) {
+      return null;
+    }
+    for (AnnoInfo anno : annos) {
+      if (sym.equals(anno.sym())) {
+        return create(factory, annotationType, anno);
+      }
+    }
+    return null;
+  }
+
+  static final <A extends Annotation> A @Nullable [] getAnnotationsByType(
+      ModelFactory factory, ImmutableList<AnnoInfo> annos, Class<A> annotationType) {
+    ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
+    TypeBoundClass info = factory.getSymbol(sym);
+    if (info == null) {
+      return null;
+    }
+    AnnotationMetadata metadata = info.annotationMetadata();
+    if (metadata == null) {
+      return null;
+    }
+    List<A> result = new ArrayList<>();
+    for (AnnoInfo anno : annos) {
+      if (sym.equals(anno.sym())) {
+        result.add(TurbineAnnotationProxy.create(factory, annotationType, anno));
+        continue;
+      }
+      if (Objects.equals(anno.sym(), metadata.repeatable())) {
+        // requireNonNull is safe because java.lang.annotation.Repeatable declares `value`.
+        Const.ArrayInitValue arrayValue =
+            (Const.ArrayInitValue) requireNonNull(anno.values().get("value"));
+        for (Const element : arrayValue.elements()) {
+          result.add(
+              TurbineAnnotationProxy.create(
+                  factory, annotationType, ((TurbineAnnotationValue) element).info()));
+        }
+      }
+    }
+    return Iterables.toArray(result, annotationType);
   }
 
   @Override

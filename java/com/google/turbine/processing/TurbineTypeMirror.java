@@ -81,12 +81,12 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
   @Override
   public final <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-    throw new AssertionError();
+    return TurbineAnnotationProxy.getAnnotation(factory, annos(), annotationType);
   }
 
   @Override
   public final <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-    throw new AssertionError();
+    return TurbineAnnotationProxy.getAnnotationsByType(factory, annos(), annotationType);
   }
 
   public abstract Type asTurbineType();

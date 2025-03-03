@@ -25,11 +25,8 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -47,8 +44,6 @@ import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
-import com.google.turbine.model.Const;
-import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.VarDecl;
@@ -59,7 +54,6 @@ import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.ErrorTy;
 import java.lang.annotation.Annotation;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -133,46 +127,12 @@ public abstract class TurbineElement implements Element {
 
   @Override
   public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-    ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
-    TypeBoundClass info = factory.getSymbol(sym);
-    if (info == null) {
-      return null;
-    }
-    AnnoInfo anno = getAnnotation(annos(), sym);
-    if (anno == null) {
-      return null;
-    }
-    return TurbineAnnotationProxy.create(factory, annotationType, anno);
+    return TurbineAnnotationProxy.getAnnotation(factory, annos(), annotationType);
   }
 
   @Override
   public final <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-    ClassSymbol sym = new ClassSymbol(annotationType.getName().replace('.', '/'));
-    TypeBoundClass info = factory.getSymbol(sym);
-    if (info == null) {
-      return null;
-    }
-    AnnotationMetadata metadata = info.annotationMetadata();
-    if (metadata == null) {
-      return null;
-    }
-    List<A> result = new ArrayList<>();
-    for (AnnoInfo anno : annos()) {
-      if (anno.sym().equals(sym)) {
-        result.add(TurbineAnnotationProxy.create(factory, annotationType, anno));
-        continue;
-      }
-      if (anno.sym().equals(metadata.repeatable())) {
-        // requireNonNull is safe because java.lang.annotation.Repeatable declares `value`.
-        ArrayInitValue arrayValue = (ArrayInitValue) requireNonNull(anno.values().get("value"));
-        for (Const element : arrayValue.elements()) {
-          result.add(
-              TurbineAnnotationProxy.create(
-                  factory, annotationType, ((TurbineAnnotationValue) element).info()));
-        }
-      }
-    }
-    return Iterables.toArray(result, annotationType);
+    return TurbineAnnotationProxy.getAnnotationsByType(factory, annos(), annotationType);
   }
 
   @Override
