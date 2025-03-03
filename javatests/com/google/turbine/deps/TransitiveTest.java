@@ -34,6 +34,7 @@ import com.google.turbine.main.Main;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.proto.DepsProto.Dependency.Kind;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -196,7 +197,11 @@ public class TransitiveTest {
     // liba is recorded as an explicit dep, even thought it's only present as a transitive class
     // repackaged in lib
     assertThat(readDeps(libcDeps))
-        .containsExactly(liba.toString(), Kind.EXPLICIT, libb.toString(), Kind.EXPLICIT);
+        .containsExactly(
+            liba.toString().replace(File.separatorChar, '/'),
+            Kind.EXPLICIT,
+            libb.toString().replace(File.separatorChar, '/'),
+            Kind.EXPLICIT);
   }
 
   private static ImmutableMap<String, Kind> readDeps(Path libcDeps) throws IOException {
