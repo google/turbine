@@ -39,6 +39,7 @@ import com.google.turbine.proto.DepsProto;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +76,8 @@ public final class Dependencies {
     for (String jarFile : jars) {
       deps.addDependency(
           DepsProto.Dependency.newBuilder()
-              .setPath(jarFile)
+              // Ensure that the path is written with forward slashes on all platforms.
+              .setPath(jarFile.replace(File.separatorChar, '/'))
               .setKind(DepsProto.Dependency.Kind.EXPLICIT));
     }
     // we don't current write jdeps for failed compilations
