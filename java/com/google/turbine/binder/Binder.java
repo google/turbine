@@ -456,7 +456,7 @@ public final class Binder {
         if (((Type.ClassTy) field.type()).sym().equals(ClassSymbol.STRING)) {
           break;
         }
-        // fall through
+      // fall through
       default:
         return false;
     }

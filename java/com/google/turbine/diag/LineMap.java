@@ -40,13 +40,13 @@ public class LineMap {
     for (int idx = 0; idx < source.length(); idx++) {
       char ch = source.charAt(idx);
       switch (ch) {
-          // handle CR line endings
+        // handle CR line endings
         case '\r':
           // ...and CRLF
           if (idx + 1 < source.length() && source.charAt(idx + 1) == '\n') {
             idx++;
           }
-          // falls through
+        // falls through
         case '\n':
           builder.put(Range.closedOpen(last, idx + 1), line++);
           last = idx + 1;

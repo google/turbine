@@ -226,7 +226,7 @@ public class Parser {
               break;
             }
           }
-          // fall through
+        // fall through
         default:
           throw error(token);
       }
@@ -750,7 +750,7 @@ public class Parser {
             annos = ImmutableList.builder();
             break;
           }
-          // fall through
+        // fall through
         case BOOLEAN:
         case BYTE:
         case SHORT:

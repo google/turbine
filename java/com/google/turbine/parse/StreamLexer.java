@@ -432,7 +432,7 @@ public class StreamLexer implements Lexer {
                   if (reader.done()) {
                     return Token.EOF;
                   }
-                  // falls through
+                // falls through
                 default:
                   sb.appendCodePoint(ch);
                   eat();
@@ -512,7 +512,7 @@ public class StreamLexer implements Lexer {
           if (reader.done()) {
             return Token.EOF;
           }
-          // falls through
+        // falls through
         default:
           sb.appendCodePoint(ch);
           eat();
@@ -670,7 +670,7 @@ public class StreamLexer implements Lexer {
       case '2':
       case '3':
         zeroToThree = true;
-        // falls through
+      // falls through
       case '4':
       case '5':
       case '6':
@@ -708,7 +708,7 @@ public class StreamLexer implements Lexer {
                   }
                 }
               }
-              // fall through
+            // fall through
             default:
               return value;
           }

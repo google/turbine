@@ -487,7 +487,7 @@ public class ConstExpressionParser {
     switch (token) {
       case EOF:
       case SEMI:
-        // TODO(cushon): only allow in annotations?
+      // TODO(cushon): only allow in annotations?
       case COMMA:
       case RPAREN:
         return result;

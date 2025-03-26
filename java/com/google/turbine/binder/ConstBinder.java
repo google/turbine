@@ -298,7 +298,7 @@ public class ConstBinder {
         if (((Type.ClassTy) type).sym().equals(ClassSymbol.STRING)) {
           break;
         }
-        // falls through
+      // falls through
       default:
         return null;
     }
