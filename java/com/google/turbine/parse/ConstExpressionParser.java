@@ -204,11 +204,11 @@ public class ConstExpressionParser {
         eat();
         return castTail(TurbineConstantTypeKind.FLOAT);
       default:
-        return notCast();
+        return notPrimitiveCast();
     }
   }
 
-  private @Nullable Expression notCast() {
+  private @Nullable Expression notPrimitiveCast() {
     Expression expr = expression(null);
     if (expr == null) {
       return null;
@@ -231,7 +231,7 @@ public class ConstExpressionParser {
         case IDENT:
           Expression expression = primary(false);
           if (expression == null) {
-            throw error(ErrorKind.EXPRESSION_ERROR);
+            return null;
           }
           return new Tree.TypeCast(position, asClassTy(cvar.position(), cvar.name()), expression);
         default:

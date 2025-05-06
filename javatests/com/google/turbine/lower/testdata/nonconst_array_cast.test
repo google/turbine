@@ -1,0 +1,17 @@
+=== Z.java ===
+
+public class Z {
+
+  static class S {}
+
+  static final S[] MS = {};
+
+  static final class K {}
+
+  abstract static class KS extends S {
+    abstract K[] g();
+  }
+
+  private static final K M = ((KS) MS[0]).g()[0];
+}
+

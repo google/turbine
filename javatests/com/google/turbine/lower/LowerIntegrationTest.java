@@ -266,6 +266,7 @@ public class LowerIntegrationTest {
       "non_const.test",
       "noncanon.test",
       "noncanon_static_wild.test",
+      "nonconst_array_cast.test",
       "nonconst_unary_expression.test",
       "one.test",
       "outer.test",
