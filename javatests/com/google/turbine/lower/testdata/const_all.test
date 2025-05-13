@@ -40,4 +40,9 @@ public class B {
   public static final int TERNARY = true ? 1 : 0;
 
   public static final int PAREN = (1 + 2);
+
+  public static final String STRING1 = "hello";
+  public static final String STRING2 = (String) "hello";
+  public static final String STRING3 = (String) STRING2;
+  public static final String STRING4 = (String) (STRING3);
 }

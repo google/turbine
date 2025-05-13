@@ -204,11 +204,11 @@ public class ConstExpressionParser {
         eat();
         return castTail(TurbineConstantTypeKind.FLOAT);
       default:
-        return notPrimitiveCast();
+        return maybeStringCast();
     }
   }
 
-  private @Nullable Expression notPrimitiveCast() {
+  private @Nullable Expression maybeStringCast() {
     Expression expr = expression(null);
     if (expr == null) {
       return null;
@@ -220,15 +220,9 @@ public class ConstExpressionParser {
     if (expr.kind() == Tree.Kind.CONST_VAR_NAME) {
       Tree.ConstVarName cvar = (Tree.ConstVarName) expr;
       switch (token) {
-        case INT_LITERAL:
-        case FLOAT_LITERAL:
-        case TRUE:
-        case FALSE:
-        case CHAR_LITERAL:
         case STRING_LITERAL:
-        case NOT:
-        case TILDE:
         case IDENT:
+        case LPAREN:
           Expression expression = primary(false);
           if (expression == null) {
             return null;

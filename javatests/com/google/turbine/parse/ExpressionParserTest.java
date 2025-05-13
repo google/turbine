@@ -61,7 +61,7 @@ public class ExpressionParserTest {
             "((1 + 2) + 1)", "((1 + 2) + 1)",
           },
           {
-            "((Object) 1 + 2)", "((Object) 1 + 2)",
+            "((Object) 1 + 2)", null,
           },
           {
             "(1) + 1 + 2", "(1 + 1 + 2)",
@@ -97,13 +97,13 @@ public class ExpressionParserTest {
             "(String) - \"\"", "(String - \"\")",
           },
           {
-            "(String) ~ \"\"", "(String) ~\"\"",
+            "(String) ~ \"\"", null,
           },
           {
-            "(String) ! \"\"", "(String) !\"\"",
+            "(String) ! \"\"", null,
           },
           {
-            "((MyType) 42 + c)", "((MyType) 42 + c)",
+            "((MyType) 42 + c)", null,
           },
           {
             "true || false ? 1 + 2 : 3 + 4", "((true || false) ? (1 + 2) : (3 + 4))",
@@ -135,6 +135,20 @@ public class ExpressionParserTest {
           {
             "Foo.class", "Foo.class",
           },
+          {"(String) new Foo()", null},
+          {"(String) null", null},
+          {"(String) ++x", null},
+          {"(String) --x", null},
+          {"(String) switch (x) { default -> 0; }", null},
+          {"(String) 0", null},
+          {"(String) 0L", null},
+          {"(String) 0f", null},
+          {"(String) 0.0", null},
+          {"(String) 'c'", null},
+          {"(String) true", null},
+          {"(String) false", null},
+          {"(String) !true", null},
+          {"(String) ~0", null},
         });
   }
 

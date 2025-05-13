@@ -304,7 +304,7 @@ public class ParseErrorTest {
             lines(
                 "<>:1: error: invalid annotation argument",
                 "@j(@truetugt^(oflur)!%t",
-                "                     ^"));
+                "                    ^"));
   }
 
   @Test
