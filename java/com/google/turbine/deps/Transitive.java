@@ -70,7 +70,7 @@ public final class Transitive {
     // drop non-constant fields
     ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : cf.fields()) {
-      if (f.value() != null) {
+      if (keepField(f)) {
         fields.add(f);
       }
     }
@@ -113,6 +113,18 @@ public final class Transitive {
         /* nestMembers= */ ImmutableList.of(),
         /* record= */ null,
         /* transitiveJar= */ transitiveJar);
+  }
+
+  private static boolean keepField(FieldInfo f) {
+    if (f.value() != null) {
+      // keep compile-time constant fields
+      return true;
+    }
+    if ((f.access() & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
+      // keep enum constants, which can be used as annotation values
+      return true;
+    }
+    return false;
   }
 
   private static Set<ClassSymbol> superClosure(BindingResult bound) {

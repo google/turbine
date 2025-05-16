@@ -360,4 +360,70 @@ public class TransitiveTest {
             .build());
     return out;
   }
+
+  @Test
+  public void enumConstants() throws Exception {
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/S.java", //
+                    """
+                    package a;
+                    public class S {
+                      public enum E {
+                        ONE,
+                        TWO
+                      }
+                    }
+                    """)
+                .build(),
+            ImmutableList.of());
+
+    Path libb =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/A.java", //
+                    """
+                    package a;
+                    import static java.lang.annotation.RetentionPolicy.RUNTIME;
+                    import java.lang.annotation.Retention;
+                    public class A extends S {
+                      @Retention(RUNTIME)
+                      public @interface I {
+                        E e();
+                      }
+                    }
+                    """)
+                .build(),
+            ImmutableList.of(liba));
+
+    Path libc =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "b/B.java",
+                    """
+                    package b;
+                    import a.A;
+                    public class B extends A {
+                      @I(e = E.ONE)
+                      public void f() {}
+                    }
+                    """)
+                .build(),
+            ImmutableList.of(libb));
+
+    assertThat(readJar(libc).keySet())
+        .containsExactly(
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/a/A.turbine",
+            "META-INF/TRANSITIVE/a/S.turbine",
+            "META-INF/TRANSITIVE/a/A$I.turbine",
+            "META-INF/TRANSITIVE/a/S$E.turbine",
+            "b/B.class")
+        .inOrder();
+  }
 }
