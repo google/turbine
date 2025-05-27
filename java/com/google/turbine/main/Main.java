@@ -82,6 +82,7 @@ public final class Main {
   static final String MANIFEST_NAME = JarFile.MANIFEST_NAME;
   static final Attributes.Name TARGET_LABEL = new Attributes.Name("Target-Label");
   static final Attributes.Name INJECTING_RULE_KIND = new Attributes.Name("Injecting-Rule-Kind");
+  static final Attributes.Name ORIGINAL_JAR_PATH = new Attributes.Name("Original-Jar-Path");
 
   public static void main(String[] args) {
     boolean ok;
@@ -191,6 +192,7 @@ public final class Main {
     }
 
     if (options.outputDeps().isPresent()
+        || options.headerCompilationOutput().isPresent()
         || options.output().isPresent()
         || options.outputManifest().isPresent()) {
       // TODO(cushon): parallelize
@@ -218,8 +220,14 @@ public final class Main {
         }
       }
       if (options.output().isPresent()) {
+        // TODO: b/417791104 - omit transitive outputs if headerCompilationOutput is configured
         ImmutableMap<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
+      }
+      if (options.headerCompilationOutput().isPresent()) {
+        ImmutableMap<String, byte[]> trimmed = Transitive.trimOutput(lowered.bytes());
+        ImmutableMap<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
+        writeHeaderCompilationOutput(options, trimmed, transitive);
       }
       if (options.outputManifest().isPresent()) {
         writeManifestProto(options, bound.units(), bound.generatedSources());
@@ -430,6 +438,31 @@ public final class Main {
       }
       for (Map.Entry<String, byte[]> entry : generated.entrySet()) {
         addEntry(jos, entry.getKey(), entry.getValue());
+      }
+    }
+  }
+
+  private static void writeHeaderCompilationOutput(
+      TurbineOptions options, Map<String, byte[]> trimmed, Map<String, byte[]> transitive)
+      throws IOException {
+    Path path = Paths.get(options.headerCompilationOutput().get());
+    try (OutputStream os = Files.newOutputStream(path);
+        BufferedOutputStream bos = new BufferedOutputStream(os, BUFFER_SIZE);
+        JarOutputStream jos = new JarOutputStream(bos)) {
+      Manifest manifest = manifest();
+      Attributes attributes = manifest.getMainAttributes();
+      if (options.output().isPresent()) {
+        attributes.put(ORIGINAL_JAR_PATH, options.output().get());
+      }
+      writeManifest(jos, manifest);
+      for (Map.Entry<String, byte[]> entry : transitive.entrySet()) {
+        addEntry(
+            jos,
+            ClassPathBinder.TRANSITIVE_PREFIX + entry.getKey() + ClassPathBinder.TRANSITIVE_SUFFIX,
+            entry.getValue());
+      }
+      for (Map.Entry<String, byte[]> entry : trimmed.entrySet()) {
+        addEntry(jos, entry.getKey() + ".class", entry.getValue());
       }
     }
   }

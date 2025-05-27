@@ -70,6 +70,9 @@ public abstract class TurbineOptions {
   /** The output jar. */
   public abstract Optional<String> output();
 
+  /** The header compilation output jar. */
+  public abstract Optional<String> headerCompilationOutput();
+
   /** Paths to annotation processor artifacts. */
   public abstract ImmutableList<String> processorPath();
 
@@ -169,6 +172,8 @@ public abstract class TurbineOptions {
     public abstract Builder setSourceJars(ImmutableList<String> sourceJars);
 
     public abstract Builder setOutputDeps(String outputDeps);
+
+    public abstract Builder setHeaderCompilationOutput(String headerCompilationOutput);
 
     public abstract Builder setOutputManifest(String outputManifest);
 

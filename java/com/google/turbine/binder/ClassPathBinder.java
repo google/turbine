@@ -28,12 +28,15 @@ import com.google.turbine.binder.lookup.TopLevelIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import org.jspecify.annotations.Nullable;
 
 /** Sets up an environment for symbols on the classpath. */
@@ -50,6 +53,8 @@ public final class ClassPathBinder {
    * com.google.turbine.deps.Transitive}.
    */
   public static final String TRANSITIVE_SUFFIX = ".turbine";
+
+  private static final Attributes.Name ORIGINAL_JAR_PATH = new Attributes.Name("Original-Jar-Path");
 
   /** Creates an environment containing symbols in the given classpath. */
   public static ClassPath bindClasspath(Collection<Path> paths) throws IOException {
@@ -112,6 +117,17 @@ public final class ClassPathBinder {
     // TODO(cushon): don't leak file descriptors
     for (Zip.Entry ze : new Zip.ZipIterable(path)) {
       String name = ze.name();
+      if (name.equals("META-INF/MANIFEST.MF")) {
+        Manifest manifest = new Manifest(new ByteArrayInputStream(ze.data()));
+        // If the classpath jar is a header jar, look up the name of the corresponding regular
+        // jar. This path will end up in jdeps and be used for classpath reduced of downstream
+        // javac invocations, which need the path of regular compile jar and not the header jar.
+        String originalJarPath = (String) manifest.getMainAttributes().get(ORIGINAL_JAR_PATH);
+        if (originalJarPath != null) {
+          path = Path.of(originalJarPath);
+        }
+        continue;
+      }
       if (name.startsWith(TRANSITIVE_PREFIX)) {
         if (!name.endsWith(TRANSITIVE_SUFFIX)) {
           continue;

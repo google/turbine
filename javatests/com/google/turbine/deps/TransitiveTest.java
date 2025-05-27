@@ -31,9 +31,11 @@ import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.InnerClass;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.main.Main;
+import com.google.turbine.options.TurbineOptions;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.proto.DepsProto.Dependency.Kind;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,9 +46,12 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -350,14 +355,21 @@ public class TransitiveTest {
 
   private Path runTurbine(ImmutableList<Path> sources, ImmutableList<Path> classpath)
       throws IOException {
+    return runTurbine(sources, classpath, /* headerOutput= */ Optional.empty());
+  }
+
+  private Path runTurbine(
+      ImmutableList<Path> sources, ImmutableList<Path> classpath, Optional<Path> headerOutput)
+      throws IOException {
     Path out = temporaryFolder.newFolder().toPath().resolve("out.jar");
-    Main.compile(
+    TurbineOptions.Builder options =
         optionsWithBootclasspath()
             .setSources(sources.stream().map(Path::toString).collect(toImmutableList()))
             .setClassPath(classpath.stream().map(Path::toString).collect(toImmutableList()))
             .setOutput(out.toString())
-            .setTargetLabel("//foo:foo")
-            .build());
+            .setTargetLabel("//foo:foo");
+    headerOutput.map(Path::toString).ifPresent(options::setHeaderCompilationOutput);
+    Main.compile(options.build());
     return out;
   }
 
@@ -425,5 +437,72 @@ public class TransitiveTest {
             "META-INF/TRANSITIVE/a/S$E.turbine",
             "b/B.class")
         .inOrder();
+  }
+
+  @Test
+  public void headerCompilationOutput() throws Exception {
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/A.java",
+                    """
+                    package a;
+                    import java.util.Map;
+                    public class A {
+                      public @interface Anno {
+                        int x() default 42;
+                      }
+                      public static class Inner {}
+                      public static final int CONST = 42;
+                      public int mutable = 42;
+                      public Map.Entry<String, String> f(Map<String, String> m) {
+                        return m.entrySet().iterator().next();
+                      }
+                    }
+                    """)
+                .build(),
+            ImmutableList.of());
+
+    Path headerOutput = temporaryFolder.newFolder().toPath().resolve("header.jar");
+
+    Path libb =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines("b/B.java", "package b;", "public class B extends a.A {}")
+                .build(),
+            ImmutableList.of(liba),
+            Optional.of(headerOutput));
+
+    // If --header_compilation_output is set, transitive jars are omitted from the regular output
+    // jar, and all classes in the header output are trimmed.
+
+    assertThat(readJar(libb).keySet())
+        .containsExactly(
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/a/A.turbine",
+            "META-INF/TRANSITIVE/a/A$Anno.turbine",
+            "META-INF/TRANSITIVE/a/A$Inner.turbine",
+            "b/B.class")
+        .inOrder();
+    assertThat(ClassReader.read(null, readJar(libb).get("b/B.class")).methods()).isNotEmpty();
+
+    assertThat(readJar(headerOutput).keySet())
+        .containsExactly(
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/a/A.turbine",
+            "META-INF/TRANSITIVE/a/A$Anno.turbine",
+            "META-INF/TRANSITIVE/a/A$Inner.turbine",
+            "b/B.class")
+        .inOrder();
+    assertThat(ClassReader.read(null, readJar(headerOutput).get("b/B.class")).methods()).isEmpty();
+
+    // The header jar's manifest records the corresponding regular output jar
+    Manifest manifest =
+        new Manifest(new ByteArrayInputStream(readJar(headerOutput).get("META-INF/MANIFEST.MF")));
+    assertThat(manifest.getMainAttributes().get(new Attributes.Name("Original-Jar-Path")))
+        .isEqualTo(libb.toString());
   }
 }

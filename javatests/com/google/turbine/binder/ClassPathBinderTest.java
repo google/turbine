@@ -51,8 +51,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
@@ -61,6 +63,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 
 @RunWith(Parameterized.class)
 public class ClassPathBinderTest {
@@ -247,5 +251,28 @@ public class ClassPathBinderTest {
     ClassPath classPath = FileManagerClassBinder.adapt(fileManager, StandardLocation.CLASS_PATH);
     assertThat(new String(classPath.resource("foo/bar/hello.txt").get(), UTF_8)).isEqualTo("hello");
     assertThat(classPath.resource("foo/bar/NoSuch.class")).isNull();
+  }
+
+  @Test
+  public void originalJarFile() throws Exception {
+    Path path = temporaryFolder.newFile("tmp.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      jos.putNextEntry(new JarEntry("META-INF/MANIFEST.MF"));
+      Manifest manifest = new Manifest();
+      Attributes attributes = manifest.getMainAttributes();
+      attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+      attributes.put(new Attributes.Name("Original-Jar-Path"), "original.jar");
+      manifest.write(jos);
+
+      jos.putNextEntry(new JarEntry("foo/bar/Baz.class"));
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(52, Opcodes.ACC_PUBLIC, "foo/bar/Baz", null, "java/lang/Object", new String[] {});
+      byte[] bytes = cw.toByteArray();
+      jos.write(bytes);
+    }
+    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
+    assertThat(baz).isNotNull();
+    assertThat(baz.jarFile()).isEqualTo("original.jar");
   }
 }

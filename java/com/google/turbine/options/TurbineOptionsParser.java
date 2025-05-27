@@ -94,6 +94,9 @@ public final class TurbineOptionsParser {
         case "--output_deps":
           builder.setOutputDeps(readOne(next, argumentDeque));
           break;
+        case "--header_compilation_output":
+          builder.setHeaderCompilationOutput(readOne(next, argumentDeque));
+          break;
         case "--output_manifest_proto":
           builder.setOutputManifest(readOne(next, argumentDeque));
           break;
