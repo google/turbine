@@ -220,10 +220,8 @@ public final class Main {
         }
       }
       if (options.output().isPresent()) {
-        ImmutableMap<String, byte[]> transitive =
-            options.headerCompilationOutput().isPresent()
-                ? ImmutableMap.of()
-                : Transitive.collectDeps(bootclasspath, bound);
+        // TODO: b/417791104 - omit transitive outputs if headerCompilationOutput is configured
+        ImmutableMap<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
       }
       if (options.headerCompilationOutput().isPresent()) {
