@@ -478,13 +478,7 @@ public class TransitiveTest {
     // jar, and all classes in the header output are trimmed.
 
     assertThat(readJar(libb).keySet())
-        .containsExactly(
-            "META-INF/",
-            "META-INF/MANIFEST.MF",
-            "META-INF/TRANSITIVE/a/A.turbine",
-            "META-INF/TRANSITIVE/a/A$Anno.turbine",
-            "META-INF/TRANSITIVE/a/A$Inner.turbine",
-            "b/B.class")
+        .containsExactly("META-INF/", "META-INF/MANIFEST.MF", "b/B.class")
         .inOrder();
     assertThat(ClassReader.read(null, readJar(libb).get("b/B.class")).methods()).isNotEmpty();
 
