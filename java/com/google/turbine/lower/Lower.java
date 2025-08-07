@@ -101,6 +101,8 @@ public class Lower {
 
     public abstract boolean emitPrivateFields();
 
+    public abstract boolean methodParameters();
+
     public static LowerOptions createDefault() {
       return builder().build();
     }
@@ -108,7 +110,8 @@ public class Lower {
     public static Builder builder() {
       return new AutoValue_Lower_LowerOptions.Builder()
           .languageVersion(LanguageVersion.createDefault())
-          .emitPrivateFields(false);
+          .emitPrivateFields(false)
+          .methodParameters(true);
     }
 
     /** Builder for {@link LowerOptions}. */
@@ -117,6 +120,8 @@ public class Lower {
       public abstract Builder languageVersion(LanguageVersion languageVersion);
 
       public abstract Builder emitPrivateFields(boolean emitPrivateFields);
+
+      public abstract Builder methodParameters(boolean methodParameters);
 
       public abstract LowerOptions build();
     }
@@ -152,19 +157,19 @@ public class Lower {
     TurbineLog log = new TurbineLog();
     for (ClassSymbol sym : units.keySet()) {
       result.put(
-          sym.binaryName(),
-          lower(units.get(sym), env, log, sym, symbols, majorVersion, options.emitPrivateFields()));
+          sym.binaryName(), lower(units.get(sym), env, log, sym, symbols, majorVersion, options));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
-      result.put("module-info", lower(getOnlyElement(modules), env, log, symbols, majorVersion));
+      result.put(
+          "module-info", lower(getOnlyElement(modules), env, log, symbols, majorVersion, options));
     } else {
       // multi-module mode: the output module-info.class are in a directory corresponding to their
       // package
       for (SourceModuleInfo module : modules) {
         result.put(
             module.name().replace('.', '/') + "/module-info",
-            lower(module, env, log, symbols, majorVersion));
+            lower(module, env, log, symbols, majorVersion, options));
       }
     }
     log.maybeThrow();
@@ -179,8 +184,8 @@ public class Lower {
       ClassSymbol sym,
       Set<ClassSymbol> symbols,
       int majorVersion,
-      boolean emitPrivateFields) {
-    return new Lower(env, log).lower(info, sym, symbols, majorVersion, emitPrivateFields);
+      LowerOptions lowerOptions) {
+    return new Lower(env, log, lowerOptions).lower(info, sym, symbols, majorVersion);
   }
 
   private static byte[] lower(
@@ -188,17 +193,20 @@ public class Lower {
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       TurbineLog log,
       Set<ClassSymbol> symbols,
-      int majorVersion) {
-    return new Lower(env, log).lower(module, symbols, majorVersion);
+      int majorVersion,
+      LowerOptions lowerOptions) {
+    return new Lower(env, log, lowerOptions).lower(module, symbols, majorVersion);
   }
 
   private final LowerSignature sig = new LowerSignature();
   private final Env<ClassSymbol, TypeBoundClass> env;
   private final TurbineLog log;
+  private final LowerOptions lowerOptions;
 
-  public Lower(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log) {
+  public Lower(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, LowerOptions lowerOptions) {
     this.env = env;
     this.log = log;
+    this.lowerOptions = lowerOptions;
   }
 
   private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols, int majorVersion) {
@@ -284,11 +292,7 @@ public class Lower {
   }
 
   private byte[] lower(
-      SourceTypeBoundClass info,
-      ClassSymbol sym,
-      Set<ClassSymbol> symbols,
-      int majorVersion,
-      boolean emitPrivateFields) {
+      SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols, int majorVersion) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info, env);
@@ -323,7 +327,8 @@ public class Lower {
 
     ImmutableList.Builder<ClassFile.FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : info.fields()) {
-      if (!emitPrivateFields && (f.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
+      if (!lowerOptions.emitPrivateFields()
+          && (f.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
         continue;
       }
       fields.add(lowerField(f));
@@ -401,7 +406,8 @@ public class Lower {
 
     ImmutableList<TypeAnnotationInfo> typeAnnotations = methodTypeAnnotations(m);
 
-    ImmutableList<ClassFile.MethodInfo.ParameterInfo> parameters = methodParameters(m);
+    ImmutableList<ClassFile.MethodInfo.ParameterInfo> parameters =
+        lowerOptions.methodParameters() ? methodParameters(m) : ImmutableList.of();
 
     return new ClassFile.MethodInfo(
         access,

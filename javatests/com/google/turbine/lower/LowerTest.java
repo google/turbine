@@ -57,6 +57,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +74,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
 
@@ -788,6 +790,94 @@ public class LowerTest {
                 "Test.java:6: error: Anno is not @Repeatable",
                 "  List<@Anno @Anno Integer> xs;",
                 "       ^"));
+  }
+
+  @Test
+  public void methodParameters() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    "class Test {\n" //
+                        + "  void f(int x, int y) {}\n"
+                        + "}")),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    Map<String, Map<String, Integer>> methodParameters = new HashMap<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public MethodVisitor visitMethod(
+                  int access,
+                  String methodName,
+                  String descriptor,
+                  String signature,
+                  String[] exceptions) {
+                return new MethodVisitor(Opcodes.ASM9) {
+                  @Override
+                  public void visitParameter(String name, int access) {
+                    methodParameters
+                        .computeIfAbsent(methodName, k -> new HashMap<>())
+                        .put(name, access);
+                  }
+                };
+              }
+            },
+            0);
+    assertThat(methodParameters.get("f")).containsExactly("x", 0, "y", 0);
+  }
+
+  @Test
+  public void noMethodParameters() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    "class Test {\n" //
+                        + "  void f(int x, int y) {}\n"
+                        + "}")),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.builder().methodParameters(false).build(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    Map<String, Map<String, Integer>> methodParameters = new HashMap<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public MethodVisitor visitMethod(
+                  int access,
+                  String methodName,
+                  String descriptor,
+                  String signature,
+                  String[] exceptions) {
+                return new MethodVisitor(Opcodes.ASM9) {
+                  @Override
+                  public void visitParameter(String name, int access) {
+                    methodParameters
+                        .computeIfAbsent(methodName, k -> new HashMap<>())
+                        .put(name, access);
+                  }
+                };
+              }
+            },
+            0);
+    assertThat(methodParameters).isEmpty();
   }
 
   static String lines(String... lines) {
