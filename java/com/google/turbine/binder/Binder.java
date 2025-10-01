@@ -18,7 +18,6 @@ package com.google.turbine.binder;
 
 import static java.util.Objects.requireNonNull;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -480,25 +479,22 @@ public final class Binder {
     return builder.build();
   }
 
-  /** Statistics about annotation processing. */
-  @AutoValue
-  public abstract static class Statistics {
-
-    /**
-     * The total elapsed time spent in {@link Processor#init} and {@link Processor#process} across
-     * all rounds for each annotation processor.
-     */
-    public abstract ImmutableMap<String, Duration> processingTime();
-
-    /**
-     * Serialized protos containing processor-specific metrics. Currently only supported for Dagger.
-     */
-    public abstract ImmutableMap<String, byte[]> processorMetrics();
+  /**
+   * Statistics about annotation processing.
+   *
+   * @param processingTime The total elapsed time spent in {@link Processor#init} and {@link
+   *     Processor#process} across all rounds for each annotation processor.
+   * @param processorMetrics Serialized protos containing processor-specific metrics. Currently only
+   *     supported for Dagger.
+   */
+  public record Statistics(
+      ImmutableMap<String, Duration> processingTime,
+      ImmutableMap<String, byte[]> processorMetrics) {
 
     public static Statistics create(
         ImmutableMap<String, Duration> processingTime,
         ImmutableMap<String, byte[]> processorMetrics) {
-      return new AutoValue_Binder_Statistics(processingTime, processorMetrics);
+      return new Statistics(processingTime, processorMetrics);
     }
 
     public static Statistics empty() {

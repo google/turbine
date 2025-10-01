@@ -745,9 +745,11 @@ public class ClassFile {
      *
      * <p>Represented as an immutable linked-list of nodes, which is built out by {@code Lower}
      * while recursively searching for type annotations to process.
+     *
+     * @param typeArgumentIndex The type argument index; set only if the kind is {@code
+     *     TYPE_ARGUMENT}.
      */
-    @AutoValue
-    public abstract static class TypePath {
+    public record TypePath(int typeArgumentIndex, @Nullable Kind kind, @Nullable TypePath parent) {
 
       /** The root type_path_kind, used for initialization. */
       public static TypePath root() {
@@ -788,13 +790,6 @@ public class ClassFile {
         }
       }
 
-      /** The type argument index; set only if the kind is {@code TYPE_ARGUMENT}. */
-      public abstract int typeArgumentIndex();
-
-      public abstract @Nullable Kind kind();
-
-      public abstract @Nullable TypePath parent();
-
       private static TypePath create(TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
         // JVMS 4.7.20.2: type_argument_index is 0 if the bound kind is not TYPE_ARGUMENT
         return create(0, kind, parent);
@@ -802,7 +797,7 @@ public class ClassFile {
 
       private static TypePath create(
           int index, TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
-        return new AutoValue_ClassFile_TypeAnnotationInfo_TypePath(index, kind, parent);
+        return new TypePath(index, kind, parent);
       }
 
       /** The JVMS 4.7.20.2-A serialized value of the type_path_kind. */

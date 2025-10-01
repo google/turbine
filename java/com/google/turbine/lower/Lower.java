@@ -21,7 +21,7 @@ import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeate
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -94,28 +94,22 @@ import org.jspecify.annotations.Nullable;
 public class Lower {
 
   /** Lowering options. */
-  @AutoValue
-  public abstract static class LowerOptions {
-
-    public abstract LanguageVersion languageVersion();
-
-    public abstract boolean emitPrivateFields();
-
-    public abstract boolean methodParameters();
+  public record LowerOptions(
+      LanguageVersion languageVersion, boolean emitPrivateFields, boolean methodParameters) {
 
     public static LowerOptions createDefault() {
       return builder().build();
     }
 
     public static Builder builder() {
-      return new AutoValue_Lower_LowerOptions.Builder()
+      return new AutoBuilder_Lower_LowerOptions_Builder()
           .languageVersion(LanguageVersion.createDefault())
           .emitPrivateFields(false)
           .methodParameters(true);
     }
 
     /** Builder for {@link LowerOptions}. */
-    @AutoValue.Builder
+    @AutoBuilder
     public abstract static class Builder {
       public abstract Builder languageVersion(LanguageVersion languageVersion);
 
@@ -127,18 +121,17 @@ public class Lower {
     }
   }
 
-  /** The lowered compilation output. */
-  @AutoValue
-  public abstract static class Lowered {
-    /** Returns the bytecode for classes in the compilation. */
-    public abstract ImmutableMap<String, byte[]> bytes();
-
-    /** Returns the set of all referenced symbols in the compilation. */
-    public abstract ImmutableSet<ClassSymbol> symbols();
+  /**
+   * The lowered compilation output.
+   *
+   * @param bytes Returns the bytecode for classes in the compilation.
+   * @param symbols Returns the set of all referenced symbols in the compilation.
+   */
+  public record Lowered(ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
 
     public static Lowered create(
         ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
-      return new AutoValue_Lower_Lowered(bytes, symbols);
+      return new Lowered(bytes, symbols);
     }
   }
 

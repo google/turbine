@@ -275,12 +275,7 @@ public class Processing {
     return result.buildOrThrow();
   }
 
-  @AutoValue
-  abstract static class SupportedAnnotationTypes {
-
-    abstract boolean everything();
-
-    abstract Pattern pattern();
+  record SupportedAnnotationTypes(boolean everything, Pattern pattern) {
 
     static SupportedAnnotationTypes create(Processor processor) {
       List<String> patterns = new ArrayList<>();
@@ -293,7 +288,7 @@ public class Processing {
           patterns.add(supportedAnnotationType);
         }
       }
-      return new AutoValue_Processing_SupportedAnnotationTypes(
+      return new SupportedAnnotationTypes(
           everything, Pattern.compile(Joiner.on('|').join(patterns)));
     }
   }

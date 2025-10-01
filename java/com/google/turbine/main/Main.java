@@ -20,7 +20,6 @@ import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_V
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
@@ -99,29 +98,27 @@ public final class Main {
     System.exit(ok ? 0 : 1);
   }
 
-  /** The result of a turbine invocation. */
-  @AutoValue
-  public abstract static class Result {
-    /** Returns {@code true} if transitive classpath fallback occurred. */
-    public abstract boolean transitiveClasspathFallback();
-
-    /** The length of the transitive classpath. */
-    public abstract int transitiveClasspathLength();
-
-    /**
-     * The length of the reduced classpath, or {@link #transitiveClasspathLength} if classpath
-     * reduction is not supported.
-     */
-    public abstract int reducedClasspathLength();
-
-    public abstract Statistics processorStatistics();
+  /**
+   * The result of a turbine invocation.
+   *
+   * @param transitiveClasspathFallback Returns {@code true} if transitive classpath fallback
+   *     occurred.
+   * @param transitiveClasspathLength The length of the transitive classpath.
+   * @param reducedClasspathLength The length of the reduced classpath, or {@link
+   *     #transitiveClasspathLength} if classpath reduction is not supported.
+   */
+  public record Result(
+      boolean transitiveClasspathFallback,
+      int transitiveClasspathLength,
+      int reducedClasspathLength,
+      Statistics processorStatistics) {
 
     static Result create(
         boolean transitiveClasspathFallback,
         int transitiveClasspathLength,
         int reducedClasspathLength,
         Statistics processorStatistics) {
-      return new AutoValue_Main_Result(
+      return new Result(
           transitiveClasspathFallback,
           transitiveClasspathLength,
           reducedClasspathLength,

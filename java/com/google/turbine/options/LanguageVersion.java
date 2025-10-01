@@ -16,7 +16,7 @@
 
 package com.google.turbine.options;
 
-import com.google.auto.value.AutoValue;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import java.util.Iterator;
@@ -26,23 +26,14 @@ import javax.lang.model.SourceVersion;
 /**
  * The language version being compiled, corresponding to javac's {@code -source}, {@code -target},
  * and {@code --release} flags.
+ *
+ * @param source The source version.
+ * @param target The target version.
+ * @param release The release version.
+ *     <p>If set, system APIs will be resolved from the host JDK's ct.sym instead of using the
+ *     provided {@code --bootclasspath}.
  */
-@AutoValue
-public abstract class LanguageVersion {
-
-  /** The source version. */
-  public abstract int source();
-
-  /** The target version. */
-  public abstract int target();
-
-  /**
-   * The release version.
-   *
-   * <p>If set, system APIs will be resolved from the host JDK's ct.sym instead of using the
-   * provided {@code --bootclasspath}.
-   */
-  public abstract OptionalInt release();
+public record LanguageVersion(int source, int target, OptionalInt release) {
 
   /** The class file major version corresponding to the {@link #target}. */
   public int majorVersion() {
@@ -58,7 +49,7 @@ public abstract class LanguageVersion {
   }
 
   private static LanguageVersion create(int source, int target, OptionalInt release) {
-    return new AutoValue_LanguageVersion(source, target, release);
+    return new LanguageVersion(source, target, release);
   }
 
   /** The default language version. Currently Java 8. */
