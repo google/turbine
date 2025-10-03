@@ -315,13 +315,11 @@ public class LowerTest {
     for (int j = 0; j < attributesCount; j++) {
       String attributeName = pool.utf8(reader.u2());
       switch (attributeName) {
-        case "Signature":
+        case "Signature" -> {
           int unusedLength = reader.u4();
           signature = pool.utf8(reader.u2());
-          break;
-        default:
-          reader.skip(reader.u4());
-          break;
+        }
+        default -> reader.skip(reader.u4());
       }
     }
     assertThat(signature).isEqualTo("LA<[*>.I;");

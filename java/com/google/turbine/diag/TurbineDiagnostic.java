@@ -96,16 +96,13 @@ public class TurbineDiagnostic {
       SourceFile source,
       int position) {
     switch (kind) {
-      case SYMBOL_NOT_FOUND:
-        {
+      case SYMBOL_NOT_FOUND ->
           checkArgument(
               args.size() == 1 && getOnlyElement(args) instanceof ClassSymbol,
               "diagnostic (%s) has invalid argument %s",
               kind,
               args);
-          break;
-        }
-      default: // fall out
+      default -> {}
     }
     return new TurbineDiagnostic(severity, kind, args, source, position);
   }

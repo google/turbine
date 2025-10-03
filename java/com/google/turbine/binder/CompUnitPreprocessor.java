@@ -172,14 +172,10 @@ public final class CompUnitPreprocessor {
     for (TurbineModifier m : mods) {
       access |= m.flag();
     }
-    switch (decl.tykind()) {
-      case CLASS:
-        access |= TurbineFlag.ACC_SUPER;
-        break;
-      case INTERFACE:
-        access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE;
-        break;
-      case ENUM:
+    return switch (decl.tykind()) {
+      case CLASS -> access | TurbineFlag.ACC_SUPER;
+      case INTERFACE -> access | TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE;
+      case ENUM -> {
         // Assuming all enums are non-abstract is safe, because nothing outside
         // the compilation unit can extend abstract enums, and refactoring an
         // existing enum to implement methods in the container class instead
@@ -188,15 +184,15 @@ public final class CompUnitPreprocessor {
         if (isEnumFinal(decl.members())) {
           access |= TurbineFlag.ACC_FINAL;
         }
-        break;
-      case ANNOTATION:
-        access |= TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION;
-        break;
-      case RECORD:
-        access |= TurbineFlag.ACC_SUPER | TurbineFlag.ACC_FINAL;
-        break;
-    }
-    return access;
+        yield access;
+      }
+      case ANNOTATION ->
+          access
+              | TurbineFlag.ACC_ABSTRACT
+              | TurbineFlag.ACC_INTERFACE
+              | TurbineFlag.ACC_ANNOTATION;
+      case RECORD -> access | TurbineFlag.ACC_SUPER | TurbineFlag.ACC_FINAL;
+    };
   }
 
   /**
@@ -230,17 +226,12 @@ public final class CompUnitPreprocessor {
     // Nested enums, interfaces, and annotations, and any types nested within interfaces and
     // annotations (JLS 9.5) are implicitly static.
     switch (decl.tykind()) {
-      case INTERFACE:
-      case ENUM:
-      case ANNOTATION:
-      case RECORD:
-        access |= TurbineFlag.ACC_STATIC;
-        break;
-      case CLASS:
+      case INTERFACE, ENUM, ANNOTATION, RECORD -> access |= TurbineFlag.ACC_STATIC;
+      case CLASS -> {
         if ((enclosing & (TurbineFlag.ACC_INTERFACE | TurbineFlag.ACC_ANNOTATION)) != 0) {
           access |= TurbineFlag.ACC_STATIC;
         }
-        break;
+      }
     }
 
     // propagate strictfp to nested types

@@ -21,7 +21,7 @@ import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeate
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
-import com.google.auto.value.AutoBuilder;
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -94,22 +94,28 @@ import org.jspecify.annotations.Nullable;
 public class Lower {
 
   /** Lowering options. */
-  public record LowerOptions(
-      LanguageVersion languageVersion, boolean emitPrivateFields, boolean methodParameters) {
+  @AutoValue
+  public abstract static class LowerOptions {
+
+    public abstract LanguageVersion languageVersion();
+
+    public abstract boolean emitPrivateFields();
+
+    public abstract boolean methodParameters();
 
     public static LowerOptions createDefault() {
       return builder().build();
     }
 
     public static Builder builder() {
-      return new AutoBuilder_Lower_LowerOptions_Builder()
+      return new AutoValue_Lower_LowerOptions.Builder()
           .languageVersion(LanguageVersion.createDefault())
           .emitPrivateFields(false)
           .methodParameters(true);
     }
 
     /** Builder for {@link LowerOptions}. */
-    @AutoBuilder
+    @AutoValue.Builder
     public abstract static class Builder {
       public abstract Builder languageVersion(LanguageVersion languageVersion);
 
@@ -121,17 +127,18 @@ public class Lower {
     }
   }
 
-  /**
-   * The lowered compilation output.
-   *
-   * @param bytes Returns the bytecode for classes in the compilation.
-   * @param symbols Returns the set of all referenced symbols in the compilation.
-   */
-  public record Lowered(ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
+  /** The lowered compilation output. */
+  @AutoValue
+  public abstract static class Lowered {
+    /** Returns the bytecode for classes in the compilation. */
+    public abstract ImmutableMap<String, byte[]> bytes();
+
+    /** Returns the set of all referenced symbols in the compilation. */
+    public abstract ImmutableSet<ClassSymbol> symbols();
 
     public static Lowered create(
         ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
-      return new Lowered(bytes, symbols);
+      return new AutoValue_Lower_Lowered(bytes, symbols);
     }
   }
 
@@ -658,15 +665,11 @@ public class Lower {
   private @Nullable RuntimeVisibility getVisibility(ClassSymbol sym) {
     RetentionPolicy retention =
         requireNonNull(env.getNonNull(sym).annotationMetadata()).retention();
-    switch (retention) {
-      case CLASS:
-        return RuntimeVisibility.INVISIBLE;
-      case RUNTIME:
-        return RuntimeVisibility.VISIBLE;
-      case SOURCE:
-        return null;
-    }
-    throw new AssertionError(retention);
+    return switch (retention) {
+      case CLASS -> RuntimeVisibility.INVISIBLE;
+      case RUNTIME -> RuntimeVisibility.VISIBLE;
+      case SOURCE -> null;
+    };
   }
 
   private ImmutableMap<String, ElementValue> annotationValues(ImmutableMap<String, Const> values) {
@@ -678,45 +681,39 @@ public class Lower {
   }
 
   private ElementValue annotationValue(Const value) {
-    switch (value.kind()) {
-      case CLASS_LITERAL:
-        {
-          TurbineClassValue classValue = (TurbineClassValue) value;
-          return new ElementValue.ConstTurbineClassValue(
-              SigWriter.type(sig.signature(classValue.type())));
+    return switch (value.kind()) {
+      case CLASS_LITERAL -> {
+        TurbineClassValue classValue = (TurbineClassValue) value;
+        yield new ElementValue.ConstTurbineClassValue(
+            SigWriter.type(sig.signature(classValue.type())));
+      }
+      case ENUM_CONSTANT -> {
+        EnumConstantValue enumValue = (EnumConstantValue) value;
+        yield new ElementValue.EnumConstValue(
+            sig.objectType(enumValue.sym().owner()), enumValue.sym().name());
+      }
+      case ARRAY -> {
+        Const.ArrayInitValue arrayValue = (Const.ArrayInitValue) value;
+        List<ElementValue> values = new ArrayList<>();
+        for (Const element : arrayValue.elements()) {
+          values.add(annotationValue(element));
         }
-      case ENUM_CONSTANT:
-        {
-          EnumConstantValue enumValue = (EnumConstantValue) value;
-          return new ElementValue.EnumConstValue(
-              sig.objectType(enumValue.sym().owner()), enumValue.sym().name());
+        yield new ElementValue.ArrayValue(values);
+      }
+      case ANNOTATION -> {
+        TurbineAnnotationValue annotationValue = (TurbineAnnotationValue) value;
+        RuntimeVisibility visibility = getVisibility(annotationValue.sym());
+        if (visibility == null) {
+          visibility = RuntimeVisibility.VISIBLE;
         }
-      case ARRAY:
-        {
-          Const.ArrayInitValue arrayValue = (Const.ArrayInitValue) value;
-          List<ElementValue> values = new ArrayList<>();
-          for (Const element : arrayValue.elements()) {
-            values.add(annotationValue(element));
-          }
-          return new ElementValue.ArrayValue(values);
-        }
-      case ANNOTATION:
-        {
-          TurbineAnnotationValue annotationValue = (TurbineAnnotationValue) value;
-          RuntimeVisibility visibility = getVisibility(annotationValue.sym());
-          if (visibility == null) {
-            visibility = RuntimeVisibility.VISIBLE;
-          }
-          return new ElementValue.ConstTurbineAnnotationValue(
-              new AnnotationInfo(
-                  sig.objectType(annotationValue.sym()),
-                  visibility,
-                  annotationValues(annotationValue.values())));
-        }
-      case PRIMITIVE:
-        return new ElementValue.ConstValue((Const.Value) value);
-    }
-    throw new AssertionError(value.kind());
+        yield new ElementValue.ConstTurbineAnnotationValue(
+            new AnnotationInfo(
+                sig.objectType(annotationValue.sym()),
+                visibility,
+                annotationValues(annotationValue.values())));
+      }
+      case PRIMITIVE -> new ElementValue.ConstValue((Const.Value) value);
+    };
   }
 
   /** Lower type annotations in a class declaration's signature. */
@@ -862,25 +859,13 @@ public class Lower {
      */
     private void lowerTypeAnnotations(Type type, TypePath path) {
       switch (type.tyKind()) {
-        case TY_VAR:
-          lowerTypeAnnotations(((TyVar) type).annos(), path);
-          break;
-        case CLASS_TY:
-          lowerClassTypeTypeAnnotations((ClassTy) type, path);
-          break;
-        case ARRAY_TY:
-          lowerArrayTypeAnnotations((ArrayTy) type, path);
-          break;
-        case WILD_TY:
-          lowerWildTyTypeAnnotations((WildTy) type, path);
-          break;
-        case PRIM_TY:
-          lowerTypeAnnotations(((Type.PrimTy) type).annos(), path);
-          break;
-        case VOID_TY:
-          break;
-        default:
-          throw new AssertionError(type.tyKind());
+        case TY_VAR -> lowerTypeAnnotations(((TyVar) type).annos(), path);
+        case CLASS_TY -> lowerClassTypeTypeAnnotations((ClassTy) type, path);
+        case ARRAY_TY -> lowerArrayTypeAnnotations((ArrayTy) type, path);
+        case WILD_TY -> lowerWildTyTypeAnnotations((WildTy) type, path);
+        case PRIM_TY -> lowerTypeAnnotations(((Type.PrimTy) type).annos(), path);
+        case VOID_TY -> {}
+        default -> throw new AssertionError(type.tyKind());
       }
     }
 
@@ -897,14 +882,11 @@ public class Lower {
 
     private void lowerWildTyTypeAnnotations(WildTy type, TypePath path) {
       switch (type.boundKind()) {
-        case NONE:
-          lowerTypeAnnotations(type.annotations(), path);
-          break;
-        case UPPER:
-        case LOWER:
+        case NONE -> lowerTypeAnnotations(type.annotations(), path);
+        case UPPER, LOWER -> {
           lowerTypeAnnotations(type.annotations(), path);
           lowerTypeAnnotations(type.bound(), path.wild());
-          break;
+        }
       }
     }
 

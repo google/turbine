@@ -661,17 +661,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
               ClassSymbol repeatable = null;
               for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
                 switch (annotation.typeName()) {
-                  case "Ljava/lang/annotation/Retention;":
-                    retention = bindRetention(annotation);
-                    break;
-                  case "Ljava/lang/annotation/Target;":
-                    target = bindTarget(annotation);
-                    break;
-                  case "Ljava/lang/annotation/Repeatable;":
-                    repeatable = bindRepeatable(annotation);
-                    break;
-                  default:
-                    break;
+                  case "Ljava/lang/annotation/Retention;" -> retention = bindRetention(annotation);
+                  case "Ljava/lang/annotation/Target;" -> target = bindTarget(annotation);
+                  case "Ljava/lang/annotation/Repeatable;" ->
+                      repeatable = bindRepeatable(annotation);
+                  default -> {}
                 }
               }
               return new AnnotationMetadata(retention, target, repeatable);
@@ -698,18 +692,15 @@ public class BytecodeBoundClass implements TypeBoundClass {
     ElementValue val = annotation.elementValuePairs().get("value");
     requireNonNull(val);
     switch (val.kind()) {
-      case ARRAY:
+      case ARRAY -> {
         for (ElementValue element : ((ArrayValue) val).elements()) {
           if (element.kind() == Kind.ENUM) {
             bindTargetElement(result, (EnumConstValue) element);
           }
         }
-        break;
-      case ENUM:
-        bindTargetElement(result, (EnumConstValue) val);
-        break;
-      default:
-        break;
+      }
+      case ENUM -> bindTargetElement(result, (EnumConstValue) val);
+      default -> {}
     }
     return result.build();
   }
@@ -726,14 +717,13 @@ public class BytecodeBoundClass implements TypeBoundClass {
     if (val == null) {
       return null;
     }
-    switch (val.kind()) {
-      case CLASS:
+    return switch (val.kind()) {
+      case CLASS -> {
         String className = ((ConstTurbineClassValue) val).className();
-        return new ClassSymbol(className.substring(1, className.length() - 1));
-      default:
-        break;
-    }
-    return null;
+        yield new ClassSymbol(className.substring(1, className.length() - 1));
+      }
+      default -> null;
+    };
   }
 
   @Override

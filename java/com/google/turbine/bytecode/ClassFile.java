@@ -608,30 +608,19 @@ public class ClassFile {
        * null} for target_type values that do not correspond to API elements (see JVMS 4.7.20-B).
        */
       static @Nullable TargetType forTag(int targetType) {
-        switch (targetType) {
-          case 0x00:
-            return CLASS_TYPE_PARAMETER;
-          case 0x01:
-            return METHOD_TYPE_PARAMETER;
-          case 0x10:
-            return SUPERTYPE;
-          case 0x11:
-            return CLASS_TYPE_PARAMETER_BOUND;
-          case 0x12:
-            return METHOD_TYPE_PARAMETER_BOUND;
-          case 0x13:
-            return FIELD;
-          case 0x14:
-            return METHOD_RETURN;
-          case 0x15:
-            return METHOD_RECEIVER_PARAMETER;
-          case 0x16:
-            return METHOD_FORMAL_PARAMETER;
-          case 0x17:
-            return METHOD_THROWS;
-          default:
-            return null;
-        }
+        return switch (targetType) {
+          case 0x00 -> CLASS_TYPE_PARAMETER;
+          case 0x01 -> METHOD_TYPE_PARAMETER;
+          case 0x10 -> SUPERTYPE;
+          case 0x11 -> CLASS_TYPE_PARAMETER_BOUND;
+          case 0x12 -> METHOD_TYPE_PARAMETER_BOUND;
+          case 0x13 -> FIELD;
+          case 0x14 -> METHOD_RETURN;
+          case 0x15 -> METHOD_RECEIVER_PARAMETER;
+          case 0x16 -> METHOD_FORMAL_PARAMETER;
+          case 0x17 -> METHOD_THROWS;
+          default -> null;
+        };
       }
     }
 
@@ -745,11 +734,9 @@ public class ClassFile {
      *
      * <p>Represented as an immutable linked-list of nodes, which is built out by {@code Lower}
      * while recursively searching for type annotations to process.
-     *
-     * @param typeArgumentIndex The type argument index; set only if the kind is {@code
-     *     TYPE_ARGUMENT}.
      */
-    public record TypePath(int typeArgumentIndex, @Nullable Kind kind, @Nullable TypePath parent) {
+    @AutoValue
+    public abstract static class TypePath {
 
       /** The root type_path_kind, used for initialization. */
       public static TypePath root() {
@@ -790,6 +777,13 @@ public class ClassFile {
         }
       }
 
+      /** The type argument index; set only if the kind is {@code TYPE_ARGUMENT}. */
+      public abstract int typeArgumentIndex();
+
+      public abstract @Nullable Kind kind();
+
+      public abstract @Nullable TypePath parent();
+
       private static TypePath create(TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
         // JVMS 4.7.20.2: type_argument_index is 0 if the bound kind is not TYPE_ARGUMENT
         return create(0, kind, parent);
@@ -797,7 +791,7 @@ public class ClassFile {
 
       private static TypePath create(
           int index, TypePath.@Nullable Kind kind, @Nullable TypePath parent) {
-        return new TypePath(index, kind, parent);
+        return new AutoValue_ClassFile_TypeAnnotationInfo_TypePath(index, kind, parent);
       }
 
       /** The JVMS 4.7.20.2-A serialized value of the type_path_kind. */

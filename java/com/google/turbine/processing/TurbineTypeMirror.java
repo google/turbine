@@ -116,28 +116,18 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public TypeKind getKind() {
-      switch (type.primkind()) {
-        case CHAR:
-          return TypeKind.CHAR;
-        case SHORT:
-          return TypeKind.SHORT;
-        case INT:
-          return TypeKind.INT;
-        case LONG:
-          return TypeKind.LONG;
-        case FLOAT:
-          return TypeKind.FLOAT;
-        case DOUBLE:
-          return TypeKind.DOUBLE;
-        case BOOLEAN:
-          return TypeKind.BOOLEAN;
-        case BYTE:
-          return TypeKind.BYTE;
-        case NULL:
-          return TypeKind.NULL;
-        case STRING:
-      }
-      throw new AssertionError(type.primkind());
+      return switch (type.primkind()) {
+        case CHAR -> TypeKind.CHAR;
+        case SHORT -> TypeKind.SHORT;
+        case INT -> TypeKind.INT;
+        case LONG -> TypeKind.LONG;
+        case FLOAT -> TypeKind.FLOAT;
+        case DOUBLE -> TypeKind.DOUBLE;
+        case BOOLEAN -> TypeKind.BOOLEAN;
+        case BYTE -> TypeKind.BYTE;
+        case NULL -> TypeKind.NULL;
+        case STRING -> throw new AssertionError(type.primkind());
+      };
     }
 
     @Override

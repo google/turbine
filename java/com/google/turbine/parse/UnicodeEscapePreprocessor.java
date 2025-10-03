@@ -89,37 +89,13 @@ public class UnicodeEscapePreprocessor {
 
   /** Consumes a hex digit. */
   private int hexDigit(int d) {
-    switch (d) {
-      case '0':
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9':
-        return (d - '0');
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-      case 'E':
-      case 'F':
-        return ((d - 'A') + 10);
-      case 'a':
-      case 'b':
-      case 'c':
-      case 'd':
-      case 'e':
-      case 'f':
-        return ((d - 'a') + 10);
-      case ASCII_SUB:
-        throw error(ErrorKind.UNEXPECTED_EOF);
-      default:
-        throw error(ErrorKind.INVALID_UNICODE);
-    }
+    return switch (d) {
+      case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> (d - '0');
+      case 'A', 'B', 'C', 'D', 'E', 'F' -> ((d - 'A') + 10);
+      case 'a', 'b', 'c', 'd', 'e', 'f' -> ((d - 'a') + 10);
+      case ASCII_SUB -> throw error(ErrorKind.UNEXPECTED_EOF);
+      default -> throw error(ErrorKind.INVALID_UNICODE);
+    };
   }
 
   /**

@@ -75,21 +75,13 @@ public class HierarchyBinder {
         log.error(decl.xtnds().get().position(), ErrorKind.CYCLIC_HIERARCHY, origin);
       }
     } else {
-      switch (decl.tykind()) {
-        case ENUM:
-          superclass = ClassSymbol.ENUM;
-          break;
-        case INTERFACE:
-        case ANNOTATION:
-        case CLASS:
-          superclass = !origin.equals(ClassSymbol.OBJECT) ? ClassSymbol.OBJECT : null;
-          break;
-        case RECORD:
-          superclass = ClassSymbol.RECORD;
-          break;
-        default:
-          throw new AssertionError(decl.tykind());
-      }
+      superclass =
+          switch (decl.tykind()) {
+            case ENUM -> ClassSymbol.ENUM;
+            case INTERFACE, ANNOTATION, CLASS ->
+                !origin.equals(ClassSymbol.OBJECT) ? ClassSymbol.OBJECT : null;
+            case RECORD -> ClassSymbol.RECORD;
+          };
     }
 
     ImmutableList.Builder<ClassSymbol> interfaces = ImmutableList.builder();

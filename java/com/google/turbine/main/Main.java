@@ -20,6 +20,7 @@ import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_V
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
@@ -98,27 +99,29 @@ public final class Main {
     System.exit(ok ? 0 : 1);
   }
 
-  /**
-   * The result of a turbine invocation.
-   *
-   * @param transitiveClasspathFallback Returns {@code true} if transitive classpath fallback
-   *     occurred.
-   * @param transitiveClasspathLength The length of the transitive classpath.
-   * @param reducedClasspathLength The length of the reduced classpath, or {@link
-   *     #transitiveClasspathLength} if classpath reduction is not supported.
-   */
-  public record Result(
-      boolean transitiveClasspathFallback,
-      int transitiveClasspathLength,
-      int reducedClasspathLength,
-      Statistics processorStatistics) {
+  /** The result of a turbine invocation. */
+  @AutoValue
+  public abstract static class Result {
+    /** Returns {@code true} if transitive classpath fallback occurred. */
+    public abstract boolean transitiveClasspathFallback();
+
+    /** The length of the transitive classpath. */
+    public abstract int transitiveClasspathLength();
+
+    /**
+     * The length of the reduced classpath, or {@link #transitiveClasspathLength} if classpath
+     * reduction is not supported.
+     */
+    public abstract int reducedClasspathLength();
+
+    public abstract Statistics processorStatistics();
 
     static Result create(
         boolean transitiveClasspathFallback,
         int transitiveClasspathLength,
         int reducedClasspathLength,
         Statistics processorStatistics) {
-      return new Result(
+      return new AutoValue_Main_Result(
           transitiveClasspathFallback,
           transitiveClasspathLength,
           reducedClasspathLength,
@@ -152,15 +155,13 @@ public final class Main {
     int transitiveClasspathLength = classPath.size();
     int reducedClasspathLength = classPath.size();
     switch (reducedClasspathMode) {
-      case NONE:
-        bound = bind(options, units, bootclasspath, classPath);
-        break;
-      case BAZEL_FALLBACK:
+      case NONE -> bound = bind(options, units, bootclasspath, classPath);
+      case BAZEL_FALLBACK -> {
         reducedClasspathLength = options.reducedClasspathLength();
         bound = bind(options, units, bootclasspath, classPath);
         transitiveClasspathFallback = true;
-        break;
-      case JAVABUILDER_REDUCED:
+      }
+      case JAVABUILDER_REDUCED -> {
         Collection<String> reducedClasspath =
             Dependencies.reduceClasspath(classPath, options.directJars(), options.depsArtifacts());
         reducedClasspathLength = reducedClasspath.size();
@@ -170,8 +171,8 @@ public final class Main {
           bound = fallback(options, units, bootclasspath, classPath);
           transitiveClasspathFallback = true;
         }
-        break;
-      case BAZEL_REDUCED:
+      }
+      case BAZEL_REDUCED -> {
         transitiveClasspathLength = options.fullClasspathLength();
         try {
           bound = bind(options, units, bootclasspath, classPath);
@@ -183,9 +184,8 @@ public final class Main {
               /* reducedClasspathLength= */ reducedClasspathLength,
               Statistics.empty());
         }
-        break;
-      default:
-        throw new AssertionError(reducedClasspathMode);
+      }
+      default -> throw new AssertionError(reducedClasspathMode);
     }
 
     if (options.outputDeps().isPresent()

@@ -98,26 +98,17 @@ public class Canonicalize {
   }
 
   private Type canonicalize(ClassSymbol base, Type type) {
-    switch (type.tyKind()) {
-      case PRIM_TY:
-      case VOID_TY:
-      case TY_VAR:
-      case ERROR_TY:
-        return type;
-      case WILD_TY:
-        return canonicalizeWildTy(base, (WildTy) type);
-      case ARRAY_TY:
-        {
-          Type.ArrayTy arrayTy = (Type.ArrayTy) type;
-          return Type.ArrayTy.create(canonicalize(base, arrayTy.elementType()), arrayTy.annos());
-        }
-      case CLASS_TY:
-        return canonicalizeClassTy(base, (ClassTy) type);
-      case INTERSECTION_TY:
-        return canonicalizeIntersectionTy(base, (IntersectionTy) type);
-      default:
-        throw new AssertionError(type.tyKind());
-    }
+    return switch (type.tyKind()) {
+      case PRIM_TY, VOID_TY, TY_VAR, ERROR_TY -> type;
+      case WILD_TY -> canonicalizeWildTy(base, (WildTy) type);
+      case ARRAY_TY -> {
+        Type.ArrayTy arrayTy = (Type.ArrayTy) type;
+        yield Type.ArrayTy.create(canonicalize(base, arrayTy.elementType()), arrayTy.annos());
+      }
+      case CLASS_TY -> canonicalizeClassTy(base, (ClassTy) type);
+      case INTERSECTION_TY -> canonicalizeIntersectionTy(base, (IntersectionTy) type);
+      default -> throw new AssertionError(type.tyKind());
+    };
   }
 
   private ClassTy canon(ClassSymbol base, ClassTy ty) {
@@ -288,42 +279,34 @@ public class Canonicalize {
     if (type == null) {
       return null;
     }
-    switch (type.tyKind()) {
-      case WILD_TY:
-        return instantiateWildTy(mapping, (WildTy) type);
-      case PRIM_TY:
-      case VOID_TY:
-      case ERROR_TY:
-        return type;
-      case CLASS_TY:
-        return instantiateClassTy(mapping, (ClassTy) type);
-      case ARRAY_TY:
+    return switch (type.tyKind()) {
+      case WILD_TY -> instantiateWildTy(mapping, (WildTy) type);
+      case PRIM_TY, VOID_TY, ERROR_TY -> type;
+      case CLASS_TY -> instantiateClassTy(mapping, (ClassTy) type);
+      case ARRAY_TY -> {
         ArrayTy arrayTy = (ArrayTy) type;
         Type elem = instantiate(mapping, arrayTy.elementType());
-        return ArrayTy.create(elem, arrayTy.annos());
-      case TY_VAR:
+        yield ArrayTy.create(elem, arrayTy.annos());
+      }
+      case TY_VAR -> {
         TyVar tyVar = (TyVar) type;
         if (mapping.containsKey(tyVar.sym())) {
-          return instantiate(mapping, mapping.get(tyVar.sym()));
+          yield instantiate(mapping, mapping.get(tyVar.sym()));
         }
-        return type;
-      default:
-        throw new AssertionError(type.tyKind());
-    }
+        yield type;
+      }
+      default -> throw new AssertionError(type.tyKind());
+    };
   }
 
   private static Type instantiateWildTy(Map<TyVarSymbol, Type> mapping, WildTy type) {
-    switch (type.boundKind()) {
-      case NONE:
-        return type;
-      case UPPER:
-        return Type.WildUpperBoundedTy.create(
-            instantiate(mapping, type.bound()), type.annotations());
-      case LOWER:
-        return Type.WildLowerBoundedTy.create(
-            instantiate(mapping, type.bound()), type.annotations());
-    }
-    throw new AssertionError(type.boundKind());
+    return switch (type.boundKind()) {
+      case NONE -> type;
+      case UPPER ->
+          Type.WildUpperBoundedTy.create(instantiate(mapping, type.bound()), type.annotations());
+      case LOWER ->
+          Type.WildLowerBoundedTy.create(instantiate(mapping, type.bound()), type.annotations());
+    };
   }
 
   private static Type instantiateClassTy(Map<TyVarSymbol, Type> mapping, ClassTy type) {
@@ -369,15 +352,13 @@ public class Canonicalize {
   }
 
   private Type canonicalizeWildTy(ClassSymbol base, WildTy type) {
-    switch (type.boundKind()) {
-      case NONE:
-        return type;
-      case LOWER:
-        return Type.WildLowerBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
-      case UPPER:
-        return Type.WildUpperBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
-    }
-    throw new AssertionError(type.boundKind());
+    return switch (type.boundKind()) {
+      case NONE -> type;
+      case LOWER ->
+          Type.WildLowerBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
+      case UPPER ->
+          Type.WildUpperBoundedTy.create(canonicalize(base, type.bound()), type.annotations());
+    };
   }
 
   private Type canonicalizeIntersectionTy(ClassSymbol base, IntersectionTy type) {

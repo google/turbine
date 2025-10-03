@@ -187,20 +187,19 @@ public class TurbineElements implements Elements {
       for (Element el : factory.typeElement(superType).getEnclosedElements()) {
         Symbol sym = asSymbol(el);
         switch (sym.symKind()) {
-          case METHOD:
+          case METHOD -> {
             TurbineExecutableElement m = (TurbineExecutableElement) el;
             if (shouldAdd(s, from, methods, m)) {
               methods.put(m.info().name(), m);
               results.add(el);
             }
-            break;
-          case FIELD:
+          }
+          case FIELD -> {
             if (shouldAdd(s, from, (TurbineFieldElement) el)) {
               results.add(el);
             }
-            break;
-          default:
-            results.add(el);
+          }
+          default -> results.add(el);
         }
       }
     }
@@ -274,13 +273,13 @@ public class TurbineElements implements Elements {
   private static boolean isVisible(
       PackageSymbol from, PackageSymbol to, TurbineVisibility visibility) {
     switch (visibility) {
-      case PUBLIC:
-      case PROTECTED:
-        break;
-      case PACKAGE:
+      case PUBLIC, PROTECTED -> {}
+      case PACKAGE -> {
         return from.equals(to);
-      case PRIVATE:
+      }
+      case PRIVATE -> {
         return false;
+      }
     }
     return true;
   }
@@ -359,17 +358,12 @@ public class TurbineElements implements Elements {
   private static boolean isVisibleForHiding(TurbineElement hider, TurbineElement hidden) {
     int access;
     switch (hidden.sym().symKind()) {
-      case CLASS:
-        access = ((TurbineTypeElement) hidden).info().access();
-        break;
-      case FIELD:
-        access = ((TurbineFieldElement) hidden).info().access();
-        break;
-      case METHOD:
-        access = ((TurbineExecutableElement) hidden).info().access();
-        break;
-      default:
+      case CLASS -> access = ((TurbineTypeElement) hidden).info().access();
+      case FIELD -> access = ((TurbineFieldElement) hidden).info().access();
+      case METHOD -> access = ((TurbineExecutableElement) hidden).info().access();
+      default -> {
         return false;
+      }
     }
     return isVisible(
         packageSymbol(asSymbol(hider)),

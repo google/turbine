@@ -286,25 +286,25 @@ public final class Zip {
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);
       int compression = cd.getChar(cdindex + CENHOW);
-      switch (compression) {
-        case 0x8:
-          return getBytes(
-              offset,
-              nameLength,
-              extLength,
-              UnsignedInts.toLong(cd.getInt(cdindex + CENSIZ)),
-              /* deflate= */ true);
-        case 0x0:
-          return getBytes(
-              offset,
-              nameLength,
-              extLength,
-              UnsignedInts.toLong(cd.getInt(cdindex + CENLEN)),
-              /* deflate= */ false);
-        default:
-          throw new AssertionError(
-              String.format("unsupported compression mode: 0x%x", compression));
-      }
+      return switch (compression) {
+        case 0x8 ->
+            getBytes(
+                offset,
+                nameLength,
+                extLength,
+                UnsignedInts.toLong(cd.getInt(cdindex + CENSIZ)),
+                /* deflate= */ true);
+        case 0x0 ->
+            getBytes(
+                offset,
+                nameLength,
+                extLength,
+                UnsignedInts.toLong(cd.getInt(cdindex + CENLEN)),
+                /* deflate= */ false);
+        default ->
+            throw new AssertionError(
+                String.format("unsupported compression mode: 0x%x", compression));
+      };
     }
 
     /**

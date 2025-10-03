@@ -220,19 +220,15 @@ public abstract class TurbineElement implements Element {
               @Override
               public TypeMirror get() {
                 TypeBoundClass info = infoNonNull();
-                switch (info.kind()) {
-                  case CLASS:
-                  case ENUM:
-                  case RECORD:
+                return switch (info.kind()) {
+                  case CLASS, ENUM, RECORD -> {
                     if (info.superClassType() != null) {
-                      return factory.asTypeMirror(info.superClassType());
+                      yield factory.asTypeMirror(info.superClassType());
                     }
-                    return factory.noType();
-                  case INTERFACE:
-                  case ANNOTATION:
-                    return factory.noType();
-                }
-                throw new AssertionError(info.kind());
+                    yield factory.noType();
+                  }
+                  case INTERFACE, ANNOTATION -> factory.noType();
+                };
               }
             });
 
@@ -318,19 +314,13 @@ public abstract class TurbineElement implements Element {
     @Override
     public ElementKind getKind() {
       TypeBoundClass info = infoNonNull();
-      switch (info.kind()) {
-        case CLASS:
-          return ElementKind.CLASS;
-        case INTERFACE:
-          return ElementKind.INTERFACE;
-        case ENUM:
-          return ElementKind.ENUM;
-        case ANNOTATION:
-          return ElementKind.ANNOTATION_TYPE;
-        case RECORD:
-          return RECORD.get();
-      }
-      throw new AssertionError(info.kind());
+      return switch (info.kind()) {
+        case CLASS -> ElementKind.CLASS;
+        case INTERFACE -> ElementKind.INTERFACE;
+        case ENUM -> ElementKind.ENUM;
+        case ANNOTATION -> ElementKind.ANNOTATION_TYPE;
+        case RECORD -> RECORD.get();
+      };
     }
 
     private static final Supplier<ElementKind> RECORD =
@@ -981,12 +971,10 @@ public abstract class TurbineElement implements Element {
     }
     if ((access & TurbineFlag.ACC_TRANSIENT) == TurbineFlag.ACC_TRANSIENT) {
       switch (modifierOwner) {
-        case METHOD:
-        case PARAMETER:
+        case METHOD, PARAMETER -> {
           // varargs and transient use the same bits
-          break;
-        default:
-          modifiers.add(Modifier.TRANSIENT);
+        }
+        default -> modifiers.add(Modifier.TRANSIENT);
       }
     }
     if ((access & TurbineFlag.ACC_VOLATILE) == TurbineFlag.ACC_VOLATILE) {

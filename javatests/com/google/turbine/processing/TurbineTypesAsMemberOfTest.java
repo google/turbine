@@ -64,13 +64,10 @@ public class TurbineTypesAsMemberOfTest extends AbstractTurbineTypesBiFunctionTe
   }
 
   private static Element element(TypeMirror rhs) {
-    switch (rhs.getKind()) {
-      case TYPEVAR:
-        return ((TypeVariable) rhs).asElement();
-      case DECLARED:
-        return ((DeclaredType) rhs).asElement();
-      default:
-        throw new AssertionError(rhs.getKind());
-    }
+    return switch (rhs.getKind()) {
+      case TYPEVAR -> ((TypeVariable) rhs).asElement();
+      case DECLARED -> ((DeclaredType) rhs).asElement();
+      default -> throw new AssertionError(rhs.getKind());
+    };
   }
 }

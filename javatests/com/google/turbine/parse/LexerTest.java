@@ -355,26 +355,16 @@ public class LexerTest {
       token = lexer.next();
       // Just check that javadoc handling doesn't crash
       String unused = lexer.javadoc();
-      String tokenString;
-      switch (token) {
-        case IDENT:
-        case INT_LITERAL:
-        case LONG_LITERAL:
-        case FLOAT_LITERAL:
-        case DOUBLE_LITERAL:
-          tokenString = String.format("%s(%s)", token.name(), lexer.stringValue());
-          break;
-        case CHAR_LITERAL:
-        case STRING_LITERAL:
-          tokenString =
-              String.format(
-                  "%s(%s)",
-                  token.name(), SourceCodeEscapers.javaCharEscaper().escape(lexer.stringValue()));
-          break;
-        default:
-          tokenString = token.name();
-          break;
-      }
+      String tokenString =
+          switch (token) {
+            case IDENT, INT_LITERAL, LONG_LITERAL, FLOAT_LITERAL, DOUBLE_LITERAL ->
+                String.format("%s(%s)", token.name(), lexer.stringValue());
+            case CHAR_LITERAL, STRING_LITERAL ->
+                String.format(
+                    "%s(%s)",
+                    token.name(), SourceCodeEscapers.javaCharEscaper().escape(lexer.stringValue()));
+            default -> token.name();
+          };
       tokens.add(tokenString);
     } while (token != Token.EOF);
     return tokens;
