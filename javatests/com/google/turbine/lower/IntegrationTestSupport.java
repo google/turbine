@@ -435,12 +435,11 @@ public final class IntegrationTestSupport {
   private static void collectTypesFromAnnotationValue(Set<String> types, Object v) {
     if (v instanceof List) {
       collectTypesFromAnnotationValues(types, (List<?>) v);
-    } else if (v instanceof Type) {
-      collectTypesFromSignature(types, ((Type) v).getDescriptor());
-    } else if (v instanceof AnnotationNode) {
-      collectTypesFromAnnotation(types, (AnnotationNode) v);
-    } else if (v instanceof String[]) {
-      String[] enumValue = (String[]) v;
+    } else if (v instanceof Type type) {
+      collectTypesFromSignature(types, type.getDescriptor());
+    } else if (v instanceof AnnotationNode annotationNode) {
+      collectTypesFromAnnotation(types, annotationNode);
+    } else if (v instanceof String[] enumValue) {
       collectTypesFromSignature(types, enumValue[0]);
     }
   }

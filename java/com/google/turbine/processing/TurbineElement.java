@@ -431,15 +431,16 @@ public abstract class TurbineElement implements Element {
     @Override
     public String javadoc() {
       TypeBoundClass info = info();
-      if (!(info instanceof SourceTypeBoundClass)) {
+      if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      return ((SourceTypeBoundClass) info).decl().javadoc();
+      return sourceTypeBoundClass.decl().javadoc();
     }
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbineTypeElement && sym.equals(((TurbineTypeElement) obj).sym);
+      return obj instanceof TurbineTypeElement turbineTypeElement
+          && sym.equals(turbineTypeElement.sym);
     }
 
     @Override
@@ -569,8 +570,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbineTypeParameterElement
-          && sym.equals(((TurbineTypeParameterElement) obj).sym);
+      return obj instanceof TurbineTypeParameterElement turbineTypeParameterElement
+          && sym.equals(turbineTypeParameterElement.sym);
     }
 
     private final TyVarSymbol sym;
@@ -701,8 +702,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbineExecutableElement
-          && sym.equals(((TurbineExecutableElement) obj).sym);
+      return obj instanceof TurbineExecutableElement turbineExecutableElement
+          && sym.equals(turbineExecutableElement.sym);
     }
 
     @Override
@@ -849,7 +850,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbineFieldElement && sym.equals(((TurbineFieldElement) obj).sym);
+      return obj instanceof TurbineFieldElement turbineFieldElement
+          && sym.equals(turbineFieldElement.sym);
     }
 
     @Override
@@ -1085,7 +1087,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbinePackageElement && sym.equals(((TurbinePackageElement) obj).sym);
+      return obj instanceof TurbinePackageElement turbinePackageElement
+          && sym.equals(turbinePackageElement.sym);
     }
 
     private final Supplier<ImmutableList<AnnoInfo>> annos =
@@ -1130,8 +1133,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbineParameterElement
-          && sym.equals(((TurbineParameterElement) obj).sym);
+      return obj instanceof TurbineParameterElement turbineParameterElement
+          && sym.equals(turbineParameterElement.sym);
     }
 
     private final ParamSymbol sym;
@@ -1235,8 +1238,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbineRecordComponentElement
-          && sym.equals(((TurbineRecordComponentElement) obj).sym);
+      return obj instanceof TurbineRecordComponentElement turbineRecordComponentElement
+          && sym.equals(turbineRecordComponentElement.sym);
     }
 
     private final RecordComponentSymbol sym;

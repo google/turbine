@@ -76,10 +76,10 @@ public class TurbineTypes implements Types {
   }
 
   private static Type asTurbineType(TypeMirror typeMirror) {
-    if (!(typeMirror instanceof TurbineTypeMirror)) {
+    if (!(typeMirror instanceof TurbineTypeMirror turbineTypeMirror)) {
       throw new IllegalArgumentException(typeMirror.toString());
     }
-    return ((TurbineTypeMirror) typeMirror).asTurbineType();
+    return turbineTypeMirror.asTurbineType();
   }
 
   @Override

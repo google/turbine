@@ -204,10 +204,9 @@ public interface Type {
 
     @Override
     public final boolean equals(@Nullable Object obj) {
-      if (!(obj instanceof ClassTy)) {
+      if (!(obj instanceof ClassTy that)) {
         return false;
       }
-      ClassTy that = (ClassTy) obj;
       int i = this.classes().size() - 1;
       int j = that.classes().size() - 1;
       for (; i >= 0 && j >= 0; i--, j--) {

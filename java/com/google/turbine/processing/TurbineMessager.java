@@ -106,10 +106,10 @@ public class TurbineMessager implements Messager {
   private @Nullable SourceFile getSource(Symbol sym) {
     ClassSymbol encl = ModelFactory.enclosingClass(sym);
     TypeBoundClass info = factory.getSymbol(encl);
-    if (!(info instanceof SourceTypeBoundClass)) {
+    if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
       return null;
     }
-    return ((SourceTypeBoundClass) info).source();
+    return sourceTypeBoundClass.source();
   }
 
   /**
@@ -163,10 +163,10 @@ public class TurbineMessager implements Messager {
 
   private int classPosition(ClassSymbol owner) {
     TypeBoundClass symbol = factory.getSymbol(owner);
-    if (!(symbol instanceof SourceTypeBoundClass)) {
+    if (!(symbol instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
       return -1;
     }
-    return ((SourceTypeBoundClass) symbol).decl().position();
+    return sourceTypeBoundClass.decl().position();
   }
 
   private int tyParamPosition(TyVarSymbol sym) {

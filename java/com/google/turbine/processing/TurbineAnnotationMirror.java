@@ -153,8 +153,8 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
 
   @Override
   public boolean equals(@Nullable Object obj) {
-    return obj instanceof TurbineAnnotationMirror
-        && anno.equals(((TurbineAnnotationMirror) obj).anno);
+    return obj instanceof TurbineAnnotationMirror turbineAnnotationMirror
+        && anno.equals(turbineAnnotationMirror.anno);
   }
 
   @Override
@@ -339,8 +339,8 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
 
     @Override
     public boolean equals(@Nullable Object obj) {
-      return obj instanceof TurbinePrimitiveConstant
-          && value.equals(((TurbinePrimitiveConstant) obj).value);
+      return obj instanceof TurbinePrimitiveConstant turbinePrimitiveConstant
+          && value.equals(turbinePrimitiveConstant.value);
     }
 
     @Override

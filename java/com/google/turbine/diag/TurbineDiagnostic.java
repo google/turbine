@@ -145,10 +145,9 @@ public class TurbineDiagnostic {
 
   @Override
   public boolean equals(@Nullable Object obj) {
-    if (!(obj instanceof TurbineDiagnostic)) {
+    if (!(obj instanceof TurbineDiagnostic that)) {
       return false;
     }
-    TurbineDiagnostic that = (TurbineDiagnostic) obj;
     return severity.equals(that.severity)
         && kind.equals(that.kind)
         && args.equals(that.args)

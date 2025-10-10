@@ -161,10 +161,9 @@ class TurbineAnnotationProxy implements InvocationHandler {
       return false;
     }
     InvocationHandler handler = Proxy.getInvocationHandler(other);
-    if (!(handler instanceof TurbineAnnotationProxy)) {
+    if (!(handler instanceof TurbineAnnotationProxy that)) {
       return false;
     }
-    TurbineAnnotationProxy that = (TurbineAnnotationProxy) handler;
     return anno.equals(that.anno);
   }
 

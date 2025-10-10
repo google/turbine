@@ -484,10 +484,10 @@ public class ConstExpressionParser {
   }
 
   private @Nullable Expression assign(Expression term1, TurbineOperatorKind op) {
-    if (!(term1 instanceof Tree.ConstVarName)) {
+    if (!(term1 instanceof Tree.ConstVarName constVarName)) {
       return null;
     }
-    ImmutableList<Ident> names = ((Tree.ConstVarName) term1).name();
+    ImmutableList<Ident> names = constVarName.name();
     if (names.size() > 1) {
       return null;
     }
@@ -533,11 +533,11 @@ public class ConstExpressionParser {
     }
     eat();
     int pos = position;
-    Expression constVarName = qualIdent();
-    if (!(constVarName instanceof Tree.ConstVarName)) {
+    Expression qualIdent = qualIdent();
+    if (!(qualIdent instanceof Tree.ConstVarName constVarName)) {
       return null;
     }
-    ImmutableList<Ident> name = ((Tree.ConstVarName) constVarName).name();
+    ImmutableList<Ident> name = constVarName.name();
     ImmutableList.Builder<Tree.Expression> args = ImmutableList.builder();
     if (token == Token.LPAREN) {
       eat();
