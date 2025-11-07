@@ -319,18 +319,9 @@ public abstract class TurbineElement implements Element {
         case INTERFACE -> ElementKind.INTERFACE;
         case ENUM -> ElementKind.ENUM;
         case ANNOTATION -> ElementKind.ANNOTATION_TYPE;
-        case RECORD -> RECORD.get();
+        case RECORD -> ElementKind.RECORD;
       };
     }
-
-    private static final Supplier<ElementKind> RECORD =
-        Suppliers.memoize(
-            new Supplier<ElementKind>() {
-              @Override
-              public ElementKind get() {
-                return ElementKind.valueOf("RECORD");
-              }
-            });
 
     @Override
     public Set<Modifier> getModifiers() {
