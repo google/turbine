@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.model.TurbineJavadoc;
 import org.jspecify.annotations.Nullable;
 
 /** A {@link Lexer} that streams input from a {@link UnicodeEscapePreprocessor}. */
@@ -45,7 +46,7 @@ public class StreamLexer implements Lexer {
   private String value = null;
 
   /** A saved javadoc comment. */
-  private String javadoc = null;
+  private TurbineJavadoc javadoc = null;
 
   public StreamLexer(UnicodeEscapePreprocessor reader) {
     this.reader = reader;
@@ -69,14 +70,13 @@ public class StreamLexer implements Lexer {
   }
 
   @Override
-  public @Nullable String javadoc() {
-    String result = javadoc;
+  public @Nullable TurbineJavadoc javadoc() {
+    TurbineJavadoc result = javadoc;
     javadoc = null;
     if (result == null) {
       return null;
     }
-    verify(result.endsWith("*"), result);
-    return result.substring(0, result.length() - "*".length());
+    return result.normalize();
   }
 
   @Override
@@ -152,9 +152,10 @@ public class StreamLexer implements Lexer {
                     if (sawStar) {
                       if (isJavadoc) {
                         // Save the comment, excluding the leading `/**` and including
-                        // the trailing `/*`. The comment is trimmed and normalized later.
-                        javadoc = stringValue();
-                        verify(javadoc.endsWith("*"), javadoc);
+                        // the trailing `/`. The comment is trimmed and normalized later.
+                        String value = stringValue();
+                        verify(value.endsWith("*"), value);
+                        javadoc = new TurbineJavadoc(position, value);
                       }
                       eat();
                       continue OUTER;

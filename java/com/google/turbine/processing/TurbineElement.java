@@ -45,6 +45,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineJavadoc;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.type.AnnoInfo;
@@ -420,12 +421,16 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
+    public @Nullable String javadoc() {
       TypeBoundClass info = info();
       if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      return sourceTypeBoundClass.decl().javadoc();
+      TurbineJavadoc javadoc = sourceTypeBoundClass.decl().javadoc();
+      if (javadoc == null) {
+        return null;
+      }
+      return javadoc.value();
     }
 
     @Override
@@ -681,9 +686,16 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
+    public @Nullable String javadoc() {
       MethDecl decl = info().decl();
-      return decl != null ? decl.javadoc() : null;
+      if (decl == null) {
+        return null;
+      }
+      TurbineJavadoc javadoc = decl.javadoc();
+      if (javadoc == null) {
+        return null;
+      }
+      return javadoc.value();
     }
 
     @Override
@@ -858,9 +870,16 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
+    public @Nullable String javadoc() {
       VarDecl decl = info().decl();
-      return decl != null ? decl.javadoc() : null;
+      if (decl == null) {
+        return null;
+      }
+      TurbineJavadoc javadoc = decl.javadoc();
+      if (javadoc == null) {
+        return null;
+      }
+      return javadoc.value();
     }
 
     private final Supplier<FieldInfo> info =

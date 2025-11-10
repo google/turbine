@@ -354,7 +354,7 @@ public class LexerTest {
     do {
       token = lexer.next();
       // Just check that javadoc handling doesn't crash
-      String unused = lexer.javadoc();
+      var unused = lexer.javadoc();
       String tokenString =
           switch (token) {
             case IDENT, INT_LITERAL, LONG_LITERAL, FLOAT_LITERAL, DOUBLE_LITERAL ->

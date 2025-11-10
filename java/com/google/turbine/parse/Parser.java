@@ -34,6 +34,7 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.model.TurbineJavadoc;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Anno;
@@ -254,7 +255,7 @@ public class Parser {
   }
 
   private TyDecl recordDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     int pos = position;
     Ident name = eatIdent();
     ImmutableList<TyParam> typarams;
@@ -295,7 +296,7 @@ public class Parser {
   }
 
   private TyDecl interfaceDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     eat(Token.INTERFACE);
     int pos = position;
     Ident name = eatIdent();
@@ -340,7 +341,7 @@ public class Parser {
   }
 
   private TyDecl annotationDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     eat(Token.INTERFACE);
     int pos = position;
     Ident name = eatIdent();
@@ -363,7 +364,7 @@ public class Parser {
   }
 
   private TyDecl enumDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     eat(Token.ENUM);
     int pos = position;
     Ident name = eatIdent();
@@ -545,7 +546,7 @@ public class Parser {
     while (true) {
       switch (token) {
         case IDENT -> {
-          String javadoc = lexer.javadoc();
+          TurbineJavadoc javadoc = lexer.javadoc();
           Ident name = eatIdent();
           if (token == Token.LPAREN) {
             dropParens();
@@ -594,7 +595,7 @@ public class Parser {
   }
 
   private TyDecl classDeclaration(EnumSet<TurbineModifier> access, ImmutableList<Anno> annos) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     eat(Token.CLASS);
     int pos = position;
     Ident name = eatIdent();
@@ -841,7 +842,7 @@ public class Parser {
       case LBRACE -> {
         dropBlocks();
         name = new Ident(position, CTOR_NAME);
-        String javadoc = lexer.javadoc();
+        TurbineJavadoc javadoc = lexer.javadoc();
         access.add(TurbineModifier.COMPACT_CTOR);
         return ImmutableList.<Tree>of(
             new MethDecl(
@@ -948,7 +949,7 @@ public class Parser {
       ImmutableList<Anno> annos,
       Tree.Type baseTy,
       Ident name) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     ImmutableList.Builder<Tree> result = ImmutableList.builder();
     VariableInitializerParser initializerParser = new VariableInitializerParser(token, lexer);
     List<List<SavedToken>> bits = initializerParser.parseInitializers();
@@ -990,7 +991,7 @@ public class Parser {
       ImmutableList<TyParam> typaram,
       Tree.Type result,
       Ident name) {
-    String javadoc = lexer.javadoc();
+    TurbineJavadoc javadoc = lexer.javadoc();
     eat(Token.LPAREN);
     ImmutableList.Builder<VarDecl> formals = ImmutableList.builder();
     formalParams(formals, access);
