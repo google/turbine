@@ -476,7 +476,7 @@ public abstract class Tree {
     }
   }
 
-  /** A JLS 6.5.6.1 simple name that refers to a JSL 4.12.4 constant variable. */
+  /** A JLS 4.12.4 constant variable. */
   public static class ConstVarName extends Expression {
     private final ImmutableList<Ident> name;
 
