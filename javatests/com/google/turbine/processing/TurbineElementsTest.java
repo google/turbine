@@ -96,6 +96,7 @@ public class TurbineElementsTest {
                   "package com.pkg;",
                   "@interface P {}",
                   "=== com/pkg/package-info.java ===",
+                  "/* This is not javadoc. */",
                   "/** This is package javadoc. */",
                   "@P",
                   "package com.pkg;",
