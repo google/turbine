@@ -96,6 +96,7 @@ public class TurbineElementsTest {
                   "package com.pkg;",
                   "@interface P {}",
                   "=== com/pkg/package-info.java ===",
+                  "/** This is package javadoc. */",
                   "@P",
                   "package com.pkg;",
                   "=== Const.java ===",
@@ -333,6 +334,9 @@ public class TurbineElementsTest {
                 + "for\n"
                 + "two with extra *\n"
                 + "");
+
+    assertThat(turbineElements.getDocComment(turbineElements.getPackageElement("com.pkg")))
+        .isEqualTo(" This is package javadoc. ");
   }
 
   @Test

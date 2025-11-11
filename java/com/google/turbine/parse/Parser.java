@@ -1419,7 +1419,8 @@ public class Parser {
   }
 
   private PkgDecl packageDeclaration(ImmutableList<Anno> annos) {
-    PkgDecl result = new PkgDecl(position, qualIdent(), annos);
+    TurbineJavadoc javadoc = lexer.javadoc();
+    PkgDecl result = new PkgDecl(position, qualIdent(), annos, javadoc);
     eat(Token.SEMI);
     return result;
   }

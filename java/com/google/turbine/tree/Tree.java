@@ -1071,11 +1071,17 @@ public abstract class Tree {
   public static class PkgDecl extends Tree {
     private final ImmutableList<Ident> name;
     private final ImmutableList<Anno> annos;
+    private final TurbineJavadoc javadoc;
 
-    public PkgDecl(int position, ImmutableList<Ident> name, ImmutableList<Anno> annos) {
+    public PkgDecl(
+        int position,
+        ImmutableList<Ident> name,
+        ImmutableList<Anno> annos,
+        TurbineJavadoc javadoc) {
       super(position);
       this.name = name;
       this.annos = annos;
+      this.javadoc = javadoc;
     }
 
     @Override
@@ -1095,6 +1101,10 @@ public abstract class Tree {
 
     public ImmutableList<Anno> annos() {
       return annos;
+    }
+
+    public TurbineJavadoc javadoc() {
+      return javadoc;
     }
   }
 

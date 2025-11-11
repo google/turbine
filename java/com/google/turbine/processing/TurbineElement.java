@@ -1086,8 +1086,16 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
-      return null;
+    public @Nullable String javadoc() {
+      TypeBoundClass info = info();
+      if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
+        return null;
+      }
+      TurbineJavadoc javadoc = sourceTypeBoundClass.decl().javadoc();
+      if (javadoc == null) {
+        return null;
+      }
+      return javadoc.value();
     }
 
     @Override
@@ -1101,13 +1109,25 @@ public abstract class TurbineElement implements Element {
           && sym.equals(turbinePackageElement.sym);
     }
 
+    private final Supplier<TypeBoundClass> info =
+        memoize(
+            new Supplier<TypeBoundClass>() {
+              @Override
+              public TypeBoundClass get() {
+                return factory.getSymbol(new ClassSymbol(sym.binaryName() + "/package-info"));
+              }
+            });
+
+    @Nullable TypeBoundClass info() {
+      return info.get();
+    }
+
     private final Supplier<ImmutableList<AnnoInfo>> annos =
         memoize(
             new Supplier<ImmutableList<AnnoInfo>>() {
               @Override
               public ImmutableList<AnnoInfo> get() {
-                TypeBoundClass info =
-                    factory.getSymbol(new ClassSymbol(sym.binaryName() + "/package-info"));
+                TypeBoundClass info = info();
                 return info != null ? info.annotations() : ImmutableList.of();
               }
             });

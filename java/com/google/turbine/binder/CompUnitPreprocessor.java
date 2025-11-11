@@ -253,7 +253,7 @@ public final class CompUnitPreprocessor {
         ImmutableList.of(),
         ImmutableList.of(),
         TurbineTyKind.INTERFACE,
-        /* javadoc= */ null);
+        pkgDecl.javadoc());
   }
 
   private CompUnitPreprocessor() {}
