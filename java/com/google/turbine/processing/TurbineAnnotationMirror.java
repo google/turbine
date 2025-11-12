@@ -17,7 +17,6 @@
 package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.getLast;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
@@ -86,7 +85,7 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
                 if (anno.sym() == null) {
                   return (ErrorType)
                       factory.asTypeMirror(
-                          ErrorTy.create(getLast(anno.tree().name()).value(), ImmutableList.of()));
+                          ErrorTy.create(anno.tree().name().getLast().value(), ImmutableList.of()));
                 }
                 return (DeclaredType) factory.typeElement(anno.sym()).asType();
               }

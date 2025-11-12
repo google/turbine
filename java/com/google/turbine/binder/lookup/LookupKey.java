@@ -35,7 +35,7 @@ public class LookupKey {
 
   /** The first simple name in the qualified type name. */
   public Ident first() {
-    return simpleNames.get(0);
+    return simpleNames.getFirst();
   }
 
   boolean hasNext() {

@@ -17,7 +17,6 @@
 package com.google.turbine.binder;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
@@ -178,7 +177,7 @@ public class ClassPathBinderTest {
             c.interfaceTypes().stream()
                 .filter(i -> ((ClassTy) i).sym().equals(new ClassSymbol("java/util/List")))
                 .collect(onlyElement());
-    assertThat(getLast(listInterface.classes()).targs()).hasSize(1);
+    assertThat(listInterface.classes().getLast().targs()).hasSize(1);
   }
 
   @Test

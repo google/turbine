@@ -16,7 +16,6 @@
 
 package com.google.turbine.binder;
 
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
@@ -530,7 +529,7 @@ public class TypeBinder {
     int access = visibility.flag();
     access |= (base.access() & TurbineFlag.ACC_STRICT);
     if (!formals.isEmpty()
-        && (getLast(formals).access() & TurbineFlag.ACC_VARARGS) == TurbineFlag.ACC_VARARGS) {
+        && (formals.getLast().access() & TurbineFlag.ACC_VARARGS) == TurbineFlag.ACC_VARARGS) {
       access |= TurbineFlag.ACC_VARARGS;
     }
     return new MethodInfo(
@@ -934,7 +933,7 @@ public class TypeBinder {
     // resolve the prefix to a symbol
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
-      log.error(names.get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
+      log.error(names.getFirst().position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
       return Type.ErrorTy.create(names, bindTyArgs(scope, t.tyargs()));
     }
     Symbol sym = result.sym();

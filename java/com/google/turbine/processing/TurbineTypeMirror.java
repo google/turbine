@@ -16,7 +16,6 @@
 
 package com.google.turbine.processing;
 
-import static com.google.common.collect.Iterables.getLast;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
@@ -211,7 +210,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
             new Supplier<ImmutableList<TypeMirror>>() {
               @Override
               public ImmutableList<TypeMirror> get() {
-                return factory.asTypeMirrors(getLast(type.classes()).targs());
+                return factory.asTypeMirrors(type.classes().getLast().targs());
               }
             });
 
@@ -236,7 +235,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     protected ImmutableList<AnnoInfo> annos() {
-      return getLast(type.classes()).annos();
+      return type.classes().getLast().annos();
     }
   }
 

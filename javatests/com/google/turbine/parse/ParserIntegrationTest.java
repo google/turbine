@@ -95,7 +95,7 @@ public class ParserIntegrationTest {
       result = CharStreams.toString(in);
     }
     List<String> pieces = Splitter.onPattern("===+").splitToList(result);
-    String input = pieces.get(0).trim();
+    String input = pieces.getFirst().trim();
     String expected = pieces.size() > 1 ? pieces.get(1).trim() : input;
     Tree.CompUnit unit = Parser.parse(input);
     assertThat(unit.toString().trim()).isEqualTo(expected);

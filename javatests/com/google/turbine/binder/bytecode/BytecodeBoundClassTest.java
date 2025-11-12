@@ -16,14 +16,12 @@
 
 package com.google.turbine.binder.bytecode;
 
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -64,21 +62,24 @@ public class BytecodeBoundClassTest {
     assertThat(noInterfaces.interfaceTypes()).isEmpty();
 
     assertThat(rawInterfaces.interfaceTypes()).hasSize(1);
-    assertThat(((ClassTy) rawInterfaces.interfaceTypes().get(0)).sym())
+    assertThat(((ClassTy) rawInterfaces.interfaceTypes().getFirst()).sym())
         .isEqualTo(new ClassSymbol("java/io/Serializable"));
-    assertThat(getLast(((ClassTy) rawInterfaces.interfaceTypes().get(0)).classes()).targs())
+    assertThat(((ClassTy) rawInterfaces.interfaceTypes().getFirst()).classes().getLast().targs())
         .isEmpty();
 
     assertThat(genericInterfaces.interfaceTypes()).hasSize(1);
-    assertThat(((ClassTy) genericInterfaces.interfaceTypes().get(0)).sym())
+    assertThat(((ClassTy) genericInterfaces.interfaceTypes().getFirst()).sym())
         .isEqualTo(new ClassSymbol("java/util/List"));
-    assertThat(getLast(((ClassTy) genericInterfaces.interfaceTypes().get(0)).classes()).targs())
+    assertThat(
+            ((ClassTy) genericInterfaces.interfaceTypes().getFirst()).classes().getLast().targs())
         .hasSize(1);
     assertThat(
             ((ClassTy)
-                    getLast(((ClassTy) genericInterfaces.interfaceTypes().get(0)).classes())
+                    ((ClassTy) genericInterfaces.interfaceTypes().getFirst())
+                        .classes()
+                        .getLast()
                         .targs()
-                        .get(0))
+                        .getFirst())
                 .sym())
         .isEqualTo(new ClassSymbol("java/lang/String"));
   }
@@ -104,8 +105,8 @@ public class BytecodeBoundClassTest {
             .collect(onlyElement());
 
     assertThat(m.tyParams()).hasSize(3);
-    assertThat(m.parameters().get(0).annotations()).hasSize(1);
-    assertThat(m.parameters().get(0).name()).isEqualTo("bar");
+    assertThat(m.parameters().getFirst().annotations()).hasSize(1);
+    assertThat(m.parameters().getFirst().name()).isEqualTo("bar");
     assertThat(m.exceptions()).hasSize(2);
 
     MethodInfo b =
@@ -126,7 +127,7 @@ public class BytecodeBoundClassTest {
     BytecodeBoundClass c = getBytecodeBoundClass(VoidAnno.class);
 
     assertThat(c.methods()).hasSize(2);
-    assertThat(((TurbineClassValue) c.methods().get(0).defaultValue()).type().tyKind())
+    assertThat(((TurbineClassValue) c.methods().getFirst().defaultValue()).type().tyKind())
         .isEqualTo(Type.TyKind.VOID_TY);
     assertThat(((TurbineClassValue) c.methods().get(1).defaultValue()).type().tyKind())
         .isEqualTo(Type.TyKind.ARRAY_TY);
@@ -143,7 +144,7 @@ public class BytecodeBoundClassTest {
             .filter(x -> x.name().equals("foo"))
             .collect(onlyElement());
 
-    assertThat(Iterables.getLast(((ClassTy) f.type()).classes()).targs()).hasSize(1);
+    assertThat(((ClassTy) f.type()).classes().getLast().targs()).hasSize(1);
     assertThat(f.annotations()).hasSize(1);
   }
 

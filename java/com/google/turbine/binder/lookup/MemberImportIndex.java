@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder.lookup;
 
-import static com.google.common.collect.Iterables.getLast;
-
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -69,7 +67,7 @@ public class MemberImportIndex {
                 }));
       } else {
         cache.put(
-            getLast(i.type()).value(),
+            i.type().getLast().value(),
             Suppliers.memoize(
                 new Supplier<@Nullable ClassSymbol>() {
                   @Override

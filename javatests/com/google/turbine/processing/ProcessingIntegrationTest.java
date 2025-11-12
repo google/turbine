@@ -118,7 +118,7 @@ public class ProcessingIntegrationTest {
     ImmutableList<String> messages =
         e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
     assertThat(messages).hasSize(2);
-    assertThat(messages.get(0)).contains("could not resolve NoSuch");
+    assertThat(messages.getFirst()).contains("could not resolve NoSuch");
     assertThat(messages.get(1)).contains("crash!");
   }
 
@@ -165,7 +165,7 @@ public class ProcessingIntegrationTest {
     ImmutableList<String> diags =
         e.diagnostics().stream().map(d -> d.message()).collect(toImmutableList());
     assertThat(diags).hasSize(2);
-    assertThat(diags.get(0)).contains("proc warning");
+    assertThat(diags.getFirst()).contains("proc warning");
     assertThat(diags.get(1)).contains("proc error");
   }
 
@@ -774,7 +774,7 @@ public class ProcessingIntegrationTest {
             "import java.util.List;",
             "class A<T> {",
             "  <U extends T> U f(List<U> list) {",
-            "    return list.get(0);",
+            "    return list.getFirst();",
             "  }",
             "}",
             "class B extends A<String> {",

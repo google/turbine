@@ -86,13 +86,13 @@ public class CommentParserTest {
             "A", "\n   * This is\n   * class A\n   ",
             "C", "\n   * This is\n   * class C\n   ",
             "E", " This is an enum. ");
-    TyDecl a = (TyDecl) decl.members().get(0);
-    MethDecl f = (MethDecl) a.members().get(0);
+    TyDecl a = (TyDecl) decl.members().getFirst();
+    MethDecl f = (MethDecl) a.members().getFirst();
     assertThat(f.javadoc().value()).isEqualTo(" This is a method ");
     VarDecl g = (VarDecl) a.members().get(1);
     assertThat(g.javadoc().value()).isEqualTo(" This is a field ");
     TyDecl e = (TyDecl) decl.members().get(3);
-    VarDecl h = (VarDecl) e.members().get(0);
+    VarDecl h = (VarDecl) e.members().getFirst();
     assertThat(h.javadoc().value()).isEqualTo(" This is H. ");
     VarDecl i = (VarDecl) e.members().get(1);
     assertThat(i.javadoc().value()).isEqualTo(" This is I. ");

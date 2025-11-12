@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder.lookup;
 
-import static com.google.common.collect.Iterables.getLast;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -66,7 +64,7 @@ public class ImportIndex implements ImportScope {
         continue;
       }
       thunks.put(
-          getLast(i.type()).value(),
+          i.type().getLast().value(),
           Suppliers.memoize(
               new Supplier<@Nullable ImportScope>() {
                 @Override
@@ -81,7 +79,7 @@ public class ImportIndex implements ImportScope {
       if (!i.stat() || i.wild()) {
         continue;
       }
-      String last = getLast(i.type()).value();
+      String last = i.type().getLast().value();
       thunks.putIfAbsent(
           last,
           Suppliers.memoize(

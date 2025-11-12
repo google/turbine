@@ -240,7 +240,7 @@ public final class DisambiguateTypeAnnotations {
       }
       case CLASS_TY -> {
         ClassTy classTy = (ClassTy) type;
-        SimpleClassTy base = classTy.classes().get(0);
+        SimpleClassTy base = classTy.classes().getFirst();
         SimpleClassTy simple =
             SimpleClassTy.create(base.sym(), base.targs(), appendAnnotations(base.annos(), extra));
         yield Type.ClassTy.create(

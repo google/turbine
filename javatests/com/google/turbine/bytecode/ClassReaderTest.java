@@ -102,7 +102,7 @@ public class ClassReaderTest {
 
     assertThat(classFile.methods()).hasSize(3);
 
-    ClassFile.MethodInfo f = classFile.methods().get(0);
+    ClassFile.MethodInfo f = classFile.methods().getFirst();
     assertThat(f.access()).isEqualTo(TurbineFlag.ACC_PUBLIC);
     assertThat(f.name()).isEqualTo("f");
     assertThat(f.descriptor()).isEqualTo("(Ljava/lang/String;)Ljava/lang/String;");
@@ -112,8 +112,8 @@ public class ClassReaderTest {
     assertThat(f.parameterAnnotations()).isEmpty();
     assertThat(f.defaultValue()).isNull();
     assertThat(f.parameters()).hasSize(1);
-    assertThat(f.parameters().get(0).name()).isEqualTo("parameterName");
-    assertThat(f.parameters().get(0).access()).isEqualTo(42);
+    assertThat(f.parameters().getFirst().name()).isEqualTo("parameterName");
+    assertThat(f.parameters().getFirst().access()).isEqualTo(42);
 
     ClassFile.MethodInfo g = classFile.methods().get(1);
     assertThat(g.access()).isEqualTo(TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC);
@@ -195,7 +195,7 @@ public class ClassReaderTest {
 
     assertThat(classFile.fields()).hasSize(3);
 
-    ClassFile.FieldInfo x = classFile.fields().get(0);
+    ClassFile.FieldInfo x = classFile.fields().getFirst();
     assertThat(x.access()).isEqualTo(TurbineFlag.ACC_PUBLIC);
     assertThat(x.name()).isEqualTo("x");
     assertThat(x.descriptor()).isEqualTo("I");
@@ -235,7 +235,7 @@ public class ClassReaderTest {
 
     assertThat(classFile.innerClasses()).hasSize(2);
 
-    ClassFile.InnerClass a = classFile.innerClasses().get(0);
+    ClassFile.InnerClass a = classFile.innerClasses().getFirst();
     assertThat(a.access()).isEqualTo(TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PRIVATE);
     assertThat(a.innerName()).isEqualTo("Inner");
     assertThat(a.innerClass()).isEqualTo("test/Hello$Inner");
@@ -321,7 +321,7 @@ public class ClassReaderTest {
     assertThat(module.version()).isEqualTo("mod-ver");
 
     assertThat(module.requires()).hasSize(3);
-    RequireInfo r1 = module.requires().get(0);
+    RequireInfo r1 = module.requires().getFirst();
     assertThat(r1.moduleName()).isEqualTo("r1");
     assertThat(r1.flags()).isEqualTo(Opcodes.ACC_TRANSITIVE);
     assertThat(r1.version()).isEqualTo("r1-ver");
@@ -335,7 +335,7 @@ public class ClassReaderTest {
     assertThat(r3.version()).isEqualTo("r3-ver");
 
     assertThat(module.exports()).hasSize(3);
-    ExportInfo e1 = module.exports().get(0);
+    ExportInfo e1 = module.exports().getFirst();
     assertThat(e1.moduleName()).isEqualTo("e1");
     assertThat(e1.flags()).isEqualTo(Opcodes.ACC_SYNTHETIC);
     assertThat(e1.modules()).containsExactly("e1m1", "e1m2", "e1m3").inOrder();
@@ -349,7 +349,7 @@ public class ClassReaderTest {
     assertThat(e3.modules()).containsExactly("e3m1").inOrder();
 
     assertThat(module.opens()).hasSize(3);
-    OpenInfo o1 = module.opens().get(0);
+    OpenInfo o1 = module.opens().getFirst();
     assertThat(o1.moduleName()).isEqualTo("o1");
     assertThat(o1.flags()).isEqualTo(Opcodes.ACC_SYNTHETIC);
     assertThat(o1.modules()).containsExactly("o1m1", "o1m2", "o1m3").inOrder();
@@ -367,7 +367,7 @@ public class ClassReaderTest {
         .inOrder();
 
     assertThat(module.provides()).hasSize(2);
-    ProvideInfo p1 = module.provides().get(0);
+    ProvideInfo p1 = module.provides().getFirst();
     assertThat(p1.descriptor()).isEqualTo("p1");
     assertThat(p1.implDescriptors()).containsExactly("p1i1", "p1i2");
     ProvideInfo p2 = module.provides().get(1);

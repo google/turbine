@@ -129,9 +129,9 @@ class AbstractTurbineTypesTest {
               Lists.cartesianProduct(bx, bx).stream(),
               (a, b) ->
                   new Object[] {
-                    a.get(0) + " " + a.get(1),
-                    new TypesBiFunctionInput(typeParameters.javacTypes, a.get(0), a.get(1)),
-                    new TypesBiFunctionInput(typeParameters.turbineTypes, b.get(0), b.get(1)),
+                    a.getFirst() + " " + a.get(1),
+                    new TypesBiFunctionInput(typeParameters.javacTypes, a.getFirst(), a.get(1)),
+                    new TypesBiFunctionInput(typeParameters.turbineTypes, b.getFirst(), b.get(1)),
                   })
           .forEachOrdered(params::add);
     }

@@ -22,7 +22,6 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
@@ -215,7 +214,7 @@ public class ConstEvaluator {
   }
 
   @Nullable FieldInfo resolveField(ConstVarName t) {
-    Ident simpleName = t.name().get(0);
+    Ident simpleName = t.name().getFirst();
     FieldInfo field = lexicalField(env, owner, simpleName);
     if (field != null) {
       return field;
@@ -267,7 +266,7 @@ public class ConstEvaluator {
         return null;
       }
     }
-    return Resolve.resolveField(env, origin, sym, Iterables.getLast(result.remaining()));
+    return Resolve.resolveField(env, origin, sym, result.remaining().getLast());
   }
 
   /** Search for constant variables in lexically enclosing scopes. */
@@ -1022,7 +1021,7 @@ public class ConstEvaluator {
     LookupResult result = scope.lookup(new LookupKey(t.name()));
     if (result == null) {
       log.error(
-          t.name().get(0).position(), ErrorKind.CANNOT_RESOLVE, Joiner.on(".").join(t.name()));
+          t.name().getFirst().position(), ErrorKind.CANNOT_RESOLVE, Joiner.on(".").join(t.name()));
       return null;
     }
     ClassSymbol sym = (ClassSymbol) result.sym();

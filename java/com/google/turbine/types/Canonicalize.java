@@ -118,7 +118,8 @@ public class Canonicalize {
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
     // for the enclosing declarations
     Iterator<ClassTy.SimpleClassTy> it = ty.classes().iterator();
-    Collection<ClassTy.SimpleClassTy> lexicalBase = lexicalBase(ty.classes().get(0).sym(), base);
+    Collection<ClassTy.SimpleClassTy> lexicalBase =
+        lexicalBase(ty.classes().getFirst().sym(), base);
     ClassTy canon =
         !lexicalBase.isEmpty()
             ? ClassTy.create(lexicalBase)

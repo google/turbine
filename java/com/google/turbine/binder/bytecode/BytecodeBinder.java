@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
@@ -88,7 +87,7 @@ public final class BytecodeBinder {
       sb.append(sig.pkg()).append('/');
     }
     boolean first = true;
-    Map<ClassSymbol, Sig.SimpleClassTySig> syms = new LinkedHashMap<>();
+    LinkedHashMap<ClassSymbol, Sig.SimpleClassTySig> syms = new LinkedHashMap<>();
     for (Sig.SimpleClassTySig s : sig.classes()) {
       if (!first) {
         sb.append('$');
@@ -99,7 +98,7 @@ public final class BytecodeBinder {
       first = false;
     }
     ArrayDeque<ClassSymbol> outers = new ArrayDeque<>();
-    for (ClassSymbol curr = Iterables.getLast(syms.keySet());
+    for (ClassSymbol curr = syms.sequencedKeySet().getLast();
         curr != null;
         curr = scope.outer(curr)) {
       outers.addFirst(curr);
