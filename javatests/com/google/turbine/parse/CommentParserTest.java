@@ -98,7 +98,7 @@ public class CommentParserTest {
     assertThat(i.javadoc().value()).isEqualTo(" This is I. ");
     for (TyDecl t : documented) {
       TurbineJavadoc javadoc = t.javadoc();
-      int position = javadoc.position();
+      int position = javadoc.startPosition();
       int endIndex = position + javadoc.value().length();
       String actual = source.substring(position, endIndex + "/***/".length());
       String expected = "/**" + javadoc.value() + "*/";

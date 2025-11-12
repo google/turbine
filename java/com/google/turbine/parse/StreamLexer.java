@@ -16,7 +16,6 @@
 
 package com.google.turbine.parse;
 
-import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.turbine.parse.UnicodeEscapePreprocessor.ASCII_SUB;
 import static java.lang.Math.min;
@@ -76,7 +75,7 @@ public class StreamLexer implements Lexer {
     if (result == null) {
       return null;
     }
-    return result.normalize();
+    return result;
   }
 
   @Override
@@ -151,11 +150,8 @@ public class StreamLexer implements Lexer {
                   case '/' -> {
                     if (sawStar) {
                       if (isJavadoc) {
-                        // Save the comment, excluding the leading `/**` and including
-                        // the trailing `/`. The comment is trimmed and normalized later.
-                        String value = stringValue();
-                        verify(value.endsWith("*"), value);
-                        javadoc = new TurbineJavadoc(position, value);
+                        javadoc =
+                            new TurbineJavadoc(position, reader.position(), source().source());
                       }
                       eat();
                       continue OUTER;

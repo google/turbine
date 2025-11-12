@@ -16,22 +16,21 @@
 
 package com.google.turbine.model;
 
-import static com.google.common.base.Verify.verify;
-
-import org.jspecify.annotations.Nullable;
-
 /**
  * A token representing a javadoc comment.
  *
- * @param position the start position of the leading {@code /**} for the javadoc
- * @param value the value of the javadoc comment, excluding the leading {@code /**} and trailing
- *     {@code *}{@code /}
+ * @param startPosition the position of the leading {@code /**} for the javadoc
+ * @param endPosition the position of the trailing {@code *}{@code /} for the javadoc
+ * @param source the source file containing the javadoc comment
  */
 // TODO: b/459423956 - add support for markdown javadoc comments
-public record TurbineJavadoc(int position, String value) {
+public record TurbineJavadoc(int startPosition, int endPosition, String source) {
 
-  public @Nullable TurbineJavadoc normalize() {
-    verify(value.endsWith("*"), "%s", value);
-    return new TurbineJavadoc(position, value.substring(0, value.length() - "*".length()));
+  /**
+   * Returns the value of the javadoc comment, excluding the leading {@code /**} and trailing {@code
+   * *}{@code /}
+   */
+  public String value() {
+    return source.substring(startPosition + "/**".length(), endPosition - "*".length());
   }
 }
