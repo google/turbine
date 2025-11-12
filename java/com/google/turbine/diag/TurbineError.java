@@ -57,8 +57,8 @@ public class TurbineError extends Error {
     BAD_MODULE_INFO("unexpected declaration found in module-info"),
     UNCLOSED_COMMENT("unclosed comment"),
     UNEXPECTED_TYPE("unexpected type %s"),
-    EXPECTED_INTERFACE("expected interface type"),
-    UNEXPECTED_INTERFACE("unexpected interface type"),
+    EXPECTED_INTERFACE("expected interface type: %s"),
+    UNEXPECTED_INTERFACE("unexpected interface type: %s"),
     UNEXPECTED_MODIFIER("unexpected modifier: %s"),
     PROC("%s");
 

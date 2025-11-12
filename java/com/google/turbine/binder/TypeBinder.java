@@ -451,7 +451,8 @@ public class TypeBinder {
     if (type.tyKind().equals(Type.TyKind.ERROR_TY)) {
       return type;
     }
-    HeaderBoundClass info = env.getNonNull(((Type.ClassTy) type).sym());
+    ClassSymbol sym = ((Type.ClassTy) type).sym();
+    HeaderBoundClass info = env.getNonNull(sym);
     boolean isInterface =
         switch (info.kind()) {
           case INTERFACE, ANNOTATION -> true;
@@ -460,7 +461,8 @@ public class TypeBinder {
     if (expectInterface != isInterface) {
       log.error(
           tree.position(),
-          expectInterface ? ErrorKind.EXPECTED_INTERFACE : ErrorKind.UNEXPECTED_INTERFACE);
+          expectInterface ? ErrorKind.EXPECTED_INTERFACE : ErrorKind.UNEXPECTED_INTERFACE,
+          sym);
     }
     return type;
   }
