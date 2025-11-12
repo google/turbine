@@ -46,6 +46,7 @@ public class TurbineError extends Error {
     INVALID_ANNOTATION_ARGUMENT("invalid annotation argument"),
     MISSING_ANNOTATION_ARGUMENT("missing required annotation argument: %s"),
     CANNOT_RESOLVE("could not resolve %s"),
+    CANNOT_RESOLVE_FIELD("could not resolve field %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
     OPERAND_TYPE("bad operand type %s"),
     TYPE_CONVERSION("value %s of type %s cannot be converted to %s"),

@@ -322,6 +322,9 @@ public class BinderErrorTest {
           "<>:5: error: could not resolve field NO_SUCH", //
           "  @Anno(value=Test.NO_SUCH) int x;",
           "              ^",
+          "<>:5: error: could not evaluate constant expression",
+          "  @Anno(value=Test.NO_SUCH) int x;",
+          "              ^",
         },
       },
       {
@@ -404,6 +407,9 @@ public class BinderErrorTest {
           "<>:5: error: could not resolve field Entry", //
           "  @Anno(value={java.util.Map.Entry}) int x;",
           "               ^",
+          "<>:5: error: could not evaluate constant expression",
+          "  @Anno(value={java.util.Map.Entry}) int x;",
+          "              ^",
         },
       },
       {
@@ -419,6 +425,9 @@ public class BinderErrorTest {
           "<>:5: error: could not resolve field Object", //
           "  @Anno(value={java.lang.Object}) int x;",
           "               ^",
+          "<>:5: error: could not evaluate constant expression",
+          "  @Anno(value={java.lang.Object}) int x;",
+          "              ^",
         },
       },
       {
@@ -534,6 +543,9 @@ public class BinderErrorTest {
           "<>:4: error: could not resolve RUNTIME",
           "@Retention(@RetentionPolicy.RUNTIME)",
           "                            ^",
+          "<>:4: error: could not evaluate constant expression",
+          "@Retention(@RetentionPolicy.RUNTIME)",
+          "            ^",
         },
       },
       {
@@ -587,6 +599,9 @@ public class BinderErrorTest {
           "<>:7: error: could not resolve NoSuch", //
           "@One.A(b = {@One.NoSuch})",
           "                 ^",
+          "<>:7: error: could not evaluate constant expression",
+          "@One.A(b = {@One.NoSuch})",
+          "           ^",
         },
       },
       {

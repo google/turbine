@@ -392,32 +392,7 @@ public final class Binder {
         if (!isConst(field)) {
           continue;
         }
-        completers.put(
-            field.sym(),
-            new LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>() {
-              @Override
-              public Const.@Nullable Value complete(
-                  Env<FieldSymbol, Const.Value> env1, FieldSymbol k) {
-                try {
-                  return new ConstEvaluator(
-                          sym,
-                          sym,
-                          info.memberImports(),
-                          info.source(),
-                          info.scope(),
-                          env1,
-                          baseEnv,
-                          log.withSource(info.source()))
-                      .evalFieldInitializer(
-                          // we're processing fields bound from sources in the compilation
-                          requireNonNull(field.decl()).init().get(), field.type());
-                } catch (LazyEnv.LazyBindingError e) {
-                  // fields initializers are allowed to reference the field being initialized,
-                  // but if they do they aren't constants
-                  return null;
-                }
-              }
-            });
+        completers.put(field.sym(), new LazyConstCompleter(sym, info, baseEnv, field, log));
       }
     }
 
@@ -435,6 +410,60 @@ public final class Binder {
           sym, new ConstBinder(constenv, sym, baseEnv, base, log.withSource(base.source())).bind());
     }
     return builder.build();
+  }
+
+  private static class LazyConstCompleter
+      implements LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value> {
+    private final ClassSymbol sym;
+    private final SourceTypeBoundClass info;
+    private final CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv;
+    private final FieldInfo field;
+    private final TurbineLog log;
+
+    LazyConstCompleter(
+        ClassSymbol sym,
+        SourceTypeBoundClass info,
+        CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
+        FieldInfo field,
+        TurbineLog log) {
+      this.sym = sym;
+      this.info = info;
+      this.baseEnv = baseEnv;
+      this.field = field;
+      this.log = log;
+    }
+
+    @Override
+    public Const.@Nullable Value complete(Env<FieldSymbol, Const.Value> env, FieldSymbol k) {
+      TurbineLog fieldBinderLog = new TurbineLog();
+      Const.Value value;
+      try {
+        value =
+            new ConstEvaluator(
+                    sym,
+                    sym,
+                    info.memberImports(),
+                    info.source(),
+                    info.scope(),
+                    env,
+                    baseEnv,
+                    fieldBinderLog.withSource(info.source()))
+                .evalFieldInitializer(
+                    // we're processing fields bound from sources in the compilation
+                    requireNonNull(field.decl()).init().get(), field.type());
+      } catch (LazyEnv.LazyBindingError e) {
+        // fields initializers are allowed to reference the field being initialized,
+        // but if they do they aren't constants
+        return null;
+      }
+      // assume any fields that couldn't be resolved weren't constants
+      for (TurbineDiagnostic diagnostic : fieldBinderLog.diagnostics()) {
+        if (!diagnostic.kind().equals(ErrorKind.CANNOT_RESOLVE_FIELD)) {
+          log.add(diagnostic);
+        }
+      }
+      return value;
+    }
   }
 
   static boolean isConst(FieldInfo field) {

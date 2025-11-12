@@ -39,7 +39,6 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
@@ -215,7 +214,7 @@ public class ConstEvaluator {
     return values.get(field.sym());
   }
 
-  FieldInfo resolveField(ConstVarName t) {
+  @Nullable FieldInfo resolveField(ConstVarName t) {
     Ident simpleName = t.name().get(0);
     FieldInfo field = lexicalField(env, owner, simpleName);
     if (field != null) {
@@ -245,10 +244,8 @@ public class ConstEvaluator {
       }
       return field;
     }
-    throw error(
-        t.position(),
-        ErrorKind.CANNOT_RESOLVE,
-        String.format("field %s", Iterables.getLast(t.name())));
+    log.error(t.position(), ErrorKind.CANNOT_RESOLVE_FIELD, t.name().getLast());
+    return null;
   }
 
   private @Nullable FieldInfo resolveQualifiedField(ConstVarName t) {
@@ -1032,7 +1029,8 @@ public class ConstEvaluator {
     for (Ident name : result.remaining()) {
       sym = Resolve.resolve(env, sym, sym, name);
       if (sym == null) {
-        throw error(name.position(), ErrorKind.CANNOT_RESOLVE, name.value());
+        log.error(name.position(), ErrorKind.CANNOT_RESOLVE, name.value());
+        return null;
       }
     }
     if (sym == null) {
@@ -1105,17 +1103,6 @@ public class ConstEvaluator {
         return null;
       }
       return (Const.Value) cast(expression.position(), type, value);
-    } catch (TurbineError error) {
-      for (TurbineDiagnostic diagnostic : error.diagnostics()) {
-        switch (diagnostic.kind()) {
-          case CANNOT_RESOLVE -> {
-            // assume this wasn't a constant
-            return null;
-          }
-          default -> {}
-        }
-      }
-      throw error;
     } catch (Const.ConstCastError error) {
       return null;
     }

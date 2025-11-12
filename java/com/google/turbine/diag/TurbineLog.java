@@ -76,6 +76,10 @@ public class TurbineLog {
     diagnostics.add(TurbineDiagnostic.format(severity, ErrorKind.PROC, message));
   }
 
+  public void add(TurbineDiagnostic diagnostic) {
+    diagnostics.add(diagnostic);
+  }
+
   /** A log for a specific source file. */
   public class TurbineLogWithSource {
 
