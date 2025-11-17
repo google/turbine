@@ -200,7 +200,7 @@ public final class Zip {
       if (totalEntries == ZIP64_MAGICCOUNT
           || cdsize == ZIP64_MAGICVAL
           || cdoffset == ZIP64_MAGICVAL) {
-        // Assume the zip64 EOCD has the usual size; we don't support zip64 extensible data sectors.
+        // Check for a zip64 EOCD at a fixed offset, without a zip64 extensible data sector.
         long zip64eocdOffset = size - ENDHDR - ZIP64_LOCHDR - ZIP64_ENDHDR;
         // Note that zip reading is necessarily best-effort, since an archive could contain 0xFFFF
         // entries and the last entry's data could contain a ZIP64_ENDSIG. Some implementations
