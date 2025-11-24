@@ -76,7 +76,8 @@ public class TurbineElements implements Elements {
 
   @Override
   public PackageElement getPackageElement(CharSequence name) {
-    ImmutableList<String> packageName = ImmutableList.copyOf(Splitter.on('.').split(name));
+    ImmutableList<String> packageName =
+        name.isEmpty() ? ImmutableList.of() : ImmutableList.copyOf(Splitter.on('.').split(name));
     if (factory.tli().lookupPackage(packageName) == null) {
       return null;
     }

@@ -1059,7 +1059,9 @@ public abstract class TurbineElement implements Element {
     @Override
     public List<TurbineTypeElement> getEnclosedElements() {
       ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
-      PackageScope scope = factory.tli().lookupPackage(Splitter.on('/').split(sym.binaryName()));
+      // omitEmptyStrings() to return an empty Iterable for the default package
+      PackageScope scope =
+          factory.tli().lookupPackage(Splitter.on('/').omitEmptyStrings().split(sym.binaryName()));
       requireNonNull(scope); // the current package exists
       for (ClassSymbol key : scope.classes()) {
         if (key.binaryName().contains("$") && factory.getSymbol(key).owner() != null) {

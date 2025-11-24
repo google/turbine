@@ -69,6 +69,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -1161,6 +1162,49 @@ public class ProcessingIntegrationTest {
             "field f with annotations [], type '@A int' with annotations [@A]",
             "field g with annotations [], type 'java.lang.@A Object' with annotations [@A]",
             "field h with annotations [], type '@A int[]' with annotations []");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class UnnamedPackageProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!first) {
+        return false;
+      }
+      first = false;
+      PackageElement p = processingEnv.getElementUtils().getPackageElement("");
+      for (Element e : p.getEnclosedElements()) {
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.ERROR, String.format("package '%s' contains %s", p, e), e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void unnamedPackage() {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === T.java ===
+            class A {}
+            class B {}
+            """);
+    TurbineError e = runProcessors(units, new UnnamedPackageProcessor());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly("package '' contains A", "package '' contains B");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {

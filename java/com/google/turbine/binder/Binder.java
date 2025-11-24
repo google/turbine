@@ -257,6 +257,7 @@ public final class Binder {
     }
     CompoundScope topLevel = CompoundScope.base(tli.scope()).append(javaLang);
     for (PreprocessedCompUnit unit : units) {
+      // omitEmptyStrings() to return an empty Iterable for the default package
       ImmutableList<String> packagename =
           ImmutableList.copyOf(Splitter.on('/').omitEmptyStrings().split(unit.packageName()));
       Scope packageScope = tli.lookupPackage(packagename);
