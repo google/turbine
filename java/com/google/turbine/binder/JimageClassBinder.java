@@ -19,7 +19,6 @@ package com.google.turbine.binder;
 import static com.google.common.base.StandardSystemProperty.JAVA_HOME;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.HashBasedTable;
@@ -214,8 +213,12 @@ public class JimageClassBinder {
     }
 
     @Override
-    public @Nullable PackageScope lookupPackage(Iterable<String> name) {
-      String packageName = Joiner.on('/').join(name);
+    public @Nullable PackageScope lookupPackage(Iterable<String> packageName) {
+      return lookupPackage(String.join("/", packageName));
+    }
+
+    @Override
+    public @Nullable PackageScope lookupPackage(String packageName) {
       if (!initPackage(packageName)) {
         return null;
       }

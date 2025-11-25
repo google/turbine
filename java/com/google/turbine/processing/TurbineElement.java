@@ -19,7 +19,6 @@ package com.google.turbine.processing;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -1059,9 +1058,7 @@ public abstract class TurbineElement implements Element {
     @Override
     public List<TurbineTypeElement> getEnclosedElements() {
       ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
-      // omitEmptyStrings() to return an empty Iterable for the default package
-      PackageScope scope =
-          factory.tli().lookupPackage(Splitter.on('/').omitEmptyStrings().split(sym.binaryName()));
+      PackageScope scope = factory.tli().lookupPackage(sym.binaryName());
       requireNonNull(scope); // the current package exists
       for (ClassSymbol key : scope.classes()) {
         if (key.binaryName().contains("$") && factory.getSymbol(key).owner() != null) {
