@@ -259,7 +259,10 @@ public class TypeBinder {
               .build();
     }
 
-    ImmutableList<FieldInfo> fields = bindFields(scope, base.decl().members());
+    ImmutableList<FieldInfo> fields =
+        base.kind().equals(TurbineTyKind.RECORD)
+            ? recordFields(components)
+            : bindFields(scope, base.decl().members());
 
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
@@ -395,6 +398,21 @@ public class TypeBinder {
               null));
     }
     return methods.build();
+  }
+
+  private ImmutableList<FieldInfo> recordFields(ImmutableList<RecordComponentInfo> components) {
+    ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
+    for (RecordComponentInfo c : components) {
+      fields.add(
+          new FieldInfo(
+              new FieldSymbol(owner, c.name()),
+              c.type(),
+              TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_FINAL,
+              c.annotations(),
+              /* decl= */ null,
+              /* value= */ null));
+    }
+    return fields.build();
   }
 
   private MethodInfo defaultRecordConstructor(
