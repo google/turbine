@@ -29,8 +29,6 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CharsetDecoder;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
@@ -111,7 +109,6 @@ public final class Zip {
     private final Path path;
     private int cdindex = 0;
     private final MappedByteBuffer cd;
-    private final CharsetDecoder decoder = UTF_8.newDecoder();
 
     ZipIterator(Path path, FileChannel chan, MappedByteBuffer cd) {
       this.path = path;
@@ -138,15 +135,15 @@ public final class Zip {
     }
 
     public String string(ByteBuffer buf, int offset, int length) {
+      // TODO: cushon - switch to FFM on JDK 22+
+      // MemorySegment.copy(MemorySegment.ofBuffer(buf), JAVA_BYTE, offset, bytes, 0, length);
+      // TODO: cushon - switch to MemorySegment#getString on JDK 27(?)+
+      // MemorySegment.ofBuffer(buf).getString(offset, UTF_8, length);
       buf = buf.duplicate();
       buf.position(offset);
-      buf.limit(offset + length);
-      decoder.reset();
-      try {
-        return decoder.decode(buf).toString();
-      } catch (CharacterCodingException e) {
-        throw new IOError(e);
-      }
+      byte[] bytes = new byte[length];
+      buf.get(bytes);
+      return new String(bytes, UTF_8);
     }
   }
 
