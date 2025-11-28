@@ -16,8 +16,6 @@
 
 package com.google.turbine.binder;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -64,7 +62,7 @@ public final class CanonicalTypeBinder {
     ImmutableList<RecordComponentInfo> components =
         components(base.source(), env, sym, pos, base.components());
     ImmutableList<MethodInfo> methods = methods(base.source(), pos, env, sym, base.methods());
-    ImmutableList<FieldInfo> fields = fields(base.source(), env, sym, base.fields());
+    ImmutableList<FieldInfo> fields = fields(base.source(), pos, env, sym, base.fields());
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
         base.permits(),
@@ -89,6 +87,7 @@ public final class CanonicalTypeBinder {
 
   private static ImmutableList<FieldInfo> fields(
       SourceFile source,
+      int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       ImmutableList<FieldInfo> fields) {
@@ -99,8 +98,7 @@ public final class CanonicalTypeBinder {
               base.sym(),
               Canonicalize.canonicalize(
                   source,
-                  // we're processing fields bound from sources in the compilation
-                  requireNonNull(base.decl()).position(),
+                  base.decl() != null ? base.decl().position() : position,
                   env,
                   sym,
                   base.type()),
