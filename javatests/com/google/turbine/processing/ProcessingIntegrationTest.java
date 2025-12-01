@@ -625,7 +625,9 @@ public class ProcessingIntegrationTest {
             "METHOD hashCode()",
             "METHOD equals(java.lang.Object)",
             "METHOD x()",
-            "METHOD y()");
+            "METHOD y()",
+            "FIELD x",
+            "FIELD y");
   }
 
   @SupportedAnnotationTypes("*")
@@ -1205,6 +1207,110 @@ public class ProcessingIntegrationTest {
                 .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
                 .map(d -> d.message()))
         .containsExactly("package '' contains A", "package '' contains B");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class RecordMembers extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!roundEnv.processingOver()) {
+        return false;
+      }
+      for (Element e :
+          processingEnv.getElementUtils().getTypeElement("Person").getEnclosedElements()) {
+        processingEnv.getMessager().printError(e + " " + e.getKind(), e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void recordMembers() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === Person.java ===
+            public record Person(String name) {
+            }
+            """);
+    TurbineError e = runProcessors(units, new RecordMembers());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            "name RECORD_COMPONENT",
+            "name FIELD",
+            "Person(java.lang.String) CONSTRUCTOR",
+            "toString() METHOD",
+            "hashCode() METHOD",
+            "equals(java.lang.Object) METHOD",
+            "name() METHOD");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class RecordFields extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!roundEnv.processingOver()) {
+        return false;
+      }
+      for (VariableElement e :
+          fieldsIn(
+              processingEnv.getElementUtils().getTypeElement("Person").getEnclosedElements())) {
+        processingEnv
+            .getMessager()
+            .printError(
+                String.format(
+                    "%s: modifiers %s, type %s, annotations %s",
+                    e.getSimpleName(), e.getModifiers(), e.asType(), e.getAnnotationMirrors()),
+                e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void recordFields() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === A.java ===
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Target;
+            @Target({ElementType.FIELD, ElementType.TYPE_USE})
+            public @interface A {}
+            === B.java ===
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Target;
+            @Target({ElementType.PARAMETER})
+            public @interface B {}
+            === Person.java ===
+            import java.util.List;
+            public record Person(String name, List<@A String> b, final @A int c, @B int d) {
+            }
+            """);
+    TurbineError e = runProcessors(units, new RecordFields());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            "name: modifiers [private, final], type java.lang.String, annotations []",
+            "b: modifiers [private, final], type java.util.List<java.lang.@A String>, annotations"
+                + " []",
+            "c: modifiers [private, final], type @A int, annotations [@A]",
+            "d: modifiers [private, final], type int, annotations []");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
