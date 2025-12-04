@@ -610,7 +610,11 @@ public class ProcessingIntegrationTest {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
             "=== R.java ===", //
-            "record R<T>(@Deprecated T x, int... y) {}");
+            """
+            record R<T>(@Deprecated T x, int... y) {
+              static final int Z = 42;
+            }
+            """);
     TurbineError e = runProcessors(units, new RecordProcessor());
     assertThat(
             e.diagnostics().stream()
@@ -620,14 +624,16 @@ public class ProcessingIntegrationTest {
             "RECORD R java.lang.Record",
             "RECORD_COMPONENT x",
             "RECORD_COMPONENT y",
-            "CONSTRUCTOR R(T,int[])",
+            "FIELD x",
+            "FIELD y",
+            "FIELD Z",
+            "CONSTRUCTOR R(T,int[])", // javac puts the constructor before FIELD Z
             "METHOD toString()",
             "METHOD hashCode()",
             "METHOD equals(java.lang.Object)",
             "METHOD x()",
-            "METHOD y()",
-            "FIELD x",
-            "FIELD y");
+            "METHOD y()")
+        .inOrder();
   }
 
   @SupportedAnnotationTypes("*")

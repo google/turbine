@@ -1,0 +1,6 @@
+=== R.java ===
+
+record R(int x, int y) {
+  static final int X = 42;
+  static final R r = new R(0, 1);
+}

@@ -56,6 +56,7 @@ public class LowerIntegrationTest {
   private static final ImmutableMap<String, Integer> SOURCE_VERSION =
       ImmutableMap.ofEntries(
           entry("record.test", 16),
+          entry("record_fields.test", 16),
           entry("record2.test", 16),
           entry("record_tostring.test", 16),
           entry("record_ctor.test", 16),
@@ -291,6 +292,7 @@ public class LowerIntegrationTest {
       "record.test",
       "record2.test",
       "record_ctor.test",
+      "record_fields.test",
       "record_getter_override.test",
       "record_tostring.test",
       "rek.test",

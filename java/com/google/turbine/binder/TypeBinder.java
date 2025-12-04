@@ -259,10 +259,18 @@ public class TypeBinder {
               .build();
     }
 
-    ImmutableList<FieldInfo> fields =
-        base.kind().equals(TurbineTyKind.RECORD)
-            ? recordFields(components)
-            : bindFields(scope, base.decl().members());
+    ImmutableList<FieldInfo> boundFields = bindFields(scope, base.decl().members());
+    ImmutableList<FieldInfo> fields;
+    if (base.kind().equals(TurbineTyKind.RECORD)) {
+      fields =
+          ImmutableList.<FieldInfo>builder()
+              // Implicit record fields will be output before any declared fields.
+              .addAll(recordFields(components))
+              .addAll(boundFields)
+              .build();
+    } else {
+      fields = boundFields;
+    }
 
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
