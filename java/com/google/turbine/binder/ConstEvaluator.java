@@ -806,8 +806,10 @@ public class ConstEvaluator {
   private Const.Value bitwiseAnd(int position, Const.Value a, Const.Value b) {
     switch (a.constantTypeKind()) {
       case BOOLEAN -> {
+        // We're evaluating constants and aren't required to report errors, so using
+        // short-circuiting operators is faster and not answer changing.
         return new Const.BooleanValue(
-            asBoolean(position, a).value() & asBoolean(position, b).value());
+            asBoolean(position, a).value() && asBoolean(position, b).value());
       }
       default -> {}
     }
@@ -824,8 +826,10 @@ public class ConstEvaluator {
   private Const.Value bitwiseOr(int position, Const.Value a, Const.Value b) {
     switch (a.constantTypeKind()) {
       case BOOLEAN -> {
+        // We're evaluating constants and aren't required to report errors, so using
+        // short-circuiting operators is faster and not answer changing.
         return new Const.BooleanValue(
-            asBoolean(position, a).value() | asBoolean(position, b).value());
+            asBoolean(position, a).value() || asBoolean(position, b).value());
       }
       default -> {}
     }
