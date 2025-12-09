@@ -60,7 +60,6 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.types.Deannotate;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -942,14 +941,7 @@ public class TypeBinder {
 
   private Type bindClassTy(CompoundScope scope, Tree.ClassTy t) {
     // flatten the components of a qualified class type
-    ArrayList<Tree.ClassTy> flat;
-    {
-      ArrayDeque<Tree.ClassTy> builder = new ArrayDeque<>();
-      for (Tree.ClassTy curr = t; curr != null; curr = curr.base().orElse(null)) {
-        builder.addFirst(curr);
-      }
-      flat = new ArrayList<>(builder);
-    }
+    ImmutableList<Tree.ClassTy> flat = t.flatten();
     // the simple names of all classes in the qualified name
     ImmutableList.Builder<Tree.Ident> nameBuilder = ImmutableList.builder();
     for (Tree.ClassTy curr : flat) {
@@ -982,7 +974,7 @@ public class TypeBinder {
 
   private Type bindClassTyRest(
       CompoundScope scope,
-      ArrayList<ClassTy> flat,
+      ImmutableList<ClassTy> flat,
       ImmutableList<Tree.Ident> bits,
       LookupResult result,
       ClassSymbol sym,

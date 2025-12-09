@@ -307,6 +307,32 @@ public abstract class Tree {
     public ImmutableList<Type> tyargs() {
       return tyargs;
     }
+
+    public ImmutableList<ClassTy> flatten() {
+      ImmutableList.Builder<ClassTy> builder = ImmutableList.builder();
+      flatten(builder);
+      return builder.build();
+    }
+
+    private void flatten(ImmutableList.Builder<ClassTy> builder) {
+      if (base.isPresent()) {
+        base.get().flatten(builder);
+      }
+      builder.add(this);
+    }
+
+    public ImmutableList<Ident> qualifiedName() {
+      ImmutableList.Builder<Ident> builder = ImmutableList.builder();
+      qualifiedName(builder);
+      return builder.build();
+    }
+
+    private void qualifiedName(ImmutableList.Builder<Ident> builder) {
+      if (base.isPresent()) {
+        base.get().qualifiedName(builder);
+      }
+      builder.add(name());
+    }
   }
 
   /** A JLS 3.10 literal expression. */

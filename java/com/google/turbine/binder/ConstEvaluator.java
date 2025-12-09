@@ -61,7 +61,6 @@ import com.google.turbine.tree.Tree.Unary;
 import com.google.turbine.tree.TurbineOperatorKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
-import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -170,11 +169,8 @@ public class ConstEvaluator {
    * isn't completed during the hierarchy phase).
    */
   private Type resolveClass(ClassTy classTy) {
-    ArrayDeque<Ident> flat = new ArrayDeque<>();
-    for (ClassTy curr = classTy; curr != null; curr = curr.base().orElse(null)) {
-      flat.addFirst(curr.name());
-    }
-    LookupResult result = scope.lookup(new LookupKey(ImmutableList.copyOf(flat)));
+    ImmutableList<Ident> flat = classTy.qualifiedName();
+    LookupResult result = scope.lookup(new LookupKey(flat));
     if (result == null) {
       log.error(classTy.position(), ErrorKind.CANNOT_RESOLVE, flat.getFirst());
       return Type.ErrorTy.create(flat, ImmutableList.of());
