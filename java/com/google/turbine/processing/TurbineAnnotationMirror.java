@@ -79,29 +79,23 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
     this.anno = value.info();
     this.type =
         factory.memoize(
-            new Supplier<DeclaredType>() {
-              @Override
-              public DeclaredType get() {
-                if (anno.sym() == null) {
-                  return (ErrorType)
-                      factory.asTypeMirror(
-                          ErrorTy.create(anno.tree().name().getLast().value(), ImmutableList.of()));
-                }
-                return (DeclaredType) factory.typeElement(anno.sym()).asType();
+            () -> {
+              if (anno.sym() == null) {
+                return (ErrorType)
+                    factory.asTypeMirror(
+                        ErrorTy.create(anno.tree().name().getLast().value(), ImmutableList.of()));
               }
+              return (DeclaredType) factory.typeElement(anno.sym()).asType();
             });
     this.elements =
         factory.memoize(
-            new Supplier<ImmutableMap<String, MethodInfo>>() {
-              @Override
-              public ImmutableMap<String, MethodInfo> get() {
-                ImmutableMap.Builder<String, MethodInfo> result = ImmutableMap.builder();
-                for (MethodInfo m : factory.getSymbol(anno.sym()).methods()) {
-                  checkState(m.parameters().isEmpty());
-                  result.put(m.name(), m);
-                }
-                return result.buildOrThrow();
+            () -> {
+              ImmutableMap.Builder<String, MethodInfo> result = ImmutableMap.builder();
+              for (MethodInfo m : factory.getSymbol(anno.sym()).methods()) {
+                checkState(m.parameters().isEmpty());
+                result.put(m.name(), m);
               }
+              return result.buildOrThrow();
             });
     this.elementValues =
         factory.memoize(
@@ -125,23 +119,20 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
             });
     this.elementValuesWithDefaults =
         factory.memoize(
-            new Supplier<ImmutableMap<ExecutableElement, AnnotationValue>>() {
-              @Override
-              public ImmutableMap<ExecutableElement, AnnotationValue> get() {
-                Map<ExecutableElement, AnnotationValue> result = new LinkedHashMap<>();
-                result.putAll(getElementValues());
-                for (MethodInfo method : elements.get().values()) {
-                  if (method.defaultValue() == null) {
-                    continue;
-                  }
-                  TurbineExecutableElement element = factory.executableElement(method.sym());
-                  if (result.containsKey(element)) {
-                    continue;
-                  }
-                  result.put(element, annotationValue(factory, method.defaultValue()));
+            () -> {
+              Map<ExecutableElement, AnnotationValue> result = new LinkedHashMap<>();
+              result.putAll(getElementValues());
+              for (MethodInfo method : elements.get().values()) {
+                if (method.defaultValue() == null) {
+                  continue;
                 }
-                return ImmutableMap.copyOf(result);
+                TurbineExecutableElement element = factory.executableElement(method.sym());
+                if (result.containsKey(element)) {
+                  continue;
+                }
+                result.put(element, annotationValue(factory, method.defaultValue()));
               }
+              return ImmutableMap.copyOf(result);
             });
   }
 
@@ -204,15 +195,12 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
       this.value = value;
       this.elements =
           factory.memoize(
-              new Supplier<ImmutableList<AnnotationValue>>() {
-                @Override
-                public ImmutableList<AnnotationValue> get() {
-                  ImmutableList.Builder<AnnotationValue> values = ImmutableList.builder();
-                  for (Const element : value.elements()) {
-                    values.add(annotationValue(factory, element));
-                  }
-                  return values.build();
+              () -> {
+                ImmutableList.Builder<AnnotationValue> values = ImmutableList.builder();
+                for (Const element : value.elements()) {
+                  values.add(annotationValue(factory, element));
                 }
+                return values.build();
               });
     }
 

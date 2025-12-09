@@ -46,7 +46,7 @@ public class ImportIndex implements ImportScope {
    * A map from simple names of imported symbols to an {@link ImportScope} for a named (possibly
    * static) import; e.g. {@code `Map` -> ImportScope(`import java.util.Map;`)}.
    */
-  private final Map<String, Supplier<ImportScope>> thunks;
+  private final ImmutableMap<String, Supplier<ImportScope>> thunks;
 
   public ImportIndex(TurbineLogWithSource log, ImmutableMap<String, Supplier<ImportScope>> thunks) {
     this.thunks = thunks;
@@ -65,13 +65,7 @@ public class ImportIndex implements ImportScope {
       }
       thunks.put(
           i.type().getLast().value(),
-          Suppliers.memoize(
-              new Supplier<@Nullable ImportScope>() {
-                @Override
-                public @Nullable ImportScope get() {
-                  return namedImport(log, cpi, i, resolve);
-                }
-              }));
+          Suppliers.<@Nullable ImportScope>memoize(() -> namedImport(log, cpi, i, resolve)));
     }
     // Process static imports as a separate pass. If a static and non-static named import share a
     // simple name the non-static import wins.
@@ -81,14 +75,7 @@ public class ImportIndex implements ImportScope {
       }
       String last = i.type().getLast().value();
       thunks.putIfAbsent(
-          last,
-          Suppliers.memoize(
-              new Supplier<@Nullable ImportScope>() {
-                @Override
-                public @Nullable ImportScope get() {
-                  return staticNamedImport(log, cpi, i);
-                }
-              }));
+          last, Suppliers.<@Nullable ImportScope>memoize(() -> staticNamedImport(log, cpi, i)));
     }
     return new ImportIndex(log, ImmutableMap.copyOf(thunks));
   }

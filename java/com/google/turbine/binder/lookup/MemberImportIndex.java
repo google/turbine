@@ -50,20 +50,17 @@ public class MemberImportIndex {
       }
       if (i.wild()) {
         packageScopes.add(
-            Suppliers.memoize(
-                new Supplier<@Nullable ClassSymbol>() {
-                  @Override
-                  public @Nullable ClassSymbol get() {
-                    LookupResult result = tli.scope().lookup(new LookupKey(i.type()));
-                    if (result == null) {
-                      return null;
-                    }
-                    ClassSymbol sym = (ClassSymbol) result.sym();
-                    for (Tree.Ident bit : result.remaining()) {
-                      sym = resolveNext(resolve, source, i.position(), sym, bit);
-                    }
-                    return sym;
+            Suppliers.<@Nullable ClassSymbol>memoize(
+                () -> {
+                  LookupResult result = tli.scope().lookup(new LookupKey(i.type()));
+                  if (result == null) {
+                    return null;
                   }
+                  ClassSymbol sym = (ClassSymbol) result.sym();
+                  for (Tree.Ident bit : result.remaining()) {
+                    sym = resolveNext(resolve, source, i.position(), sym, bit);
+                  }
+                  return sym;
                 }));
       } else {
         cache.put(
@@ -125,7 +122,7 @@ public class MemberImportIndex {
   private static class WildcardSymbols implements Iterator<ClassSymbol> {
     private final Iterator<Supplier<ClassSymbol>> it;
 
-    public WildcardSymbols(Iterator<Supplier<ClassSymbol>> it) {
+    private WildcardSymbols(Iterator<Supplier<ClassSymbol>> it) {
       this.it = it;
     }
 

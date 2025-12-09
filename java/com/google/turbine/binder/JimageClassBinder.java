@@ -166,14 +166,11 @@ public class JimageClassBinder {
 
   private static Supplier<byte[]> toByteArrayOrDie(Path path) {
     return Suppliers.memoize(
-        new Supplier<byte[]>() {
-          @Override
-          public byte[] get() {
-            try {
-              return Files.readAllBytes(path);
-            } catch (IOException e) {
-              throw new UncheckedIOException(e);
-            }
+        () -> {
+          try {
+            return Files.readAllBytes(path);
+          } catch (IOException e) {
+            throw new UncheckedIOException(e);
           }
         });
   }

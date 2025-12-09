@@ -80,13 +80,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
       Supplier<byte[]> bytes,
       Env<ClassSymbol, BytecodeBoundClass> env,
       Path path) {
-    return Suppliers.memoize(
-        new Supplier<BytecodeBoundClass>() {
-          @Override
-          public BytecodeBoundClass get() {
-            return new BytecodeBoundClass(sym, bytes, env, path.toString());
-          }
-        });
+    return Suppliers.memoize(() -> new BytecodeBoundClass(sym, bytes, env, path.toString()));
   }
 
   private final ClassSymbol sym;
@@ -104,37 +98,31 @@ public class BytecodeBoundClass implements TypeBoundClass {
     this.jarFile = jarFile;
     this.classFile =
         Suppliers.memoize(
-            new Supplier<ClassFile>() {
-              @Override
-              public ClassFile get() {
-                ClassFile cf = ClassReader.read(jarFile + "!" + sym.binaryName(), bytes.get());
-                verify(
-                    cf.name().equals(sym.binaryName()),
-                    "expected class data for %s, saw %s instead",
-                    sym.binaryName(),
-                    cf.name());
-                return cf;
-              }
+            () -> {
+              ClassFile cf = ClassReader.read(jarFile + "!" + sym.binaryName(), bytes.get());
+              verify(
+                  cf.name().equals(sym.binaryName()),
+                  "expected class data for %s, saw %s instead",
+                  sym.binaryName(),
+                  cf.name());
+              return cf;
             });
   }
 
   private final Supplier<TurbineTyKind> kind =
       Suppliers.memoize(
-          new Supplier<TurbineTyKind>() {
-            @Override
-            public TurbineTyKind get() {
-              int access = access();
-              if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
-                return TurbineTyKind.ANNOTATION;
-              }
-              if ((access & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE) {
-                return TurbineTyKind.INTERFACE;
-              }
-              if ((access & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
-                return TurbineTyKind.ENUM;
-              }
-              return TurbineTyKind.CLASS;
+          () -> {
+            int access = access();
+            if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
+              return TurbineTyKind.ANNOTATION;
             }
+            if ((access & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE) {
+              return TurbineTyKind.INTERFACE;
+            }
+            if ((access & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
+              return TurbineTyKind.ENUM;
+            }
+            return TurbineTyKind.CLASS;
           });
 
   @Override

@@ -50,7 +50,6 @@ import com.google.turbine.types.Erasure;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
@@ -822,14 +821,7 @@ public class TurbineTypes implements Types {
   }
 
   private Type erasure(Type type) {
-    return Erasure.erase(
-        type,
-        new Function<TyVarSymbol, TyVarInfo>() {
-          @Override
-          public TyVarInfo apply(TyVarSymbol input) {
-            return factory.getTyVarInfo(input);
-          }
-        });
+    return Erasure.erase(type, (TyVarSymbol input) -> factory.getTyVarInfo(input));
   }
 
   @Override
