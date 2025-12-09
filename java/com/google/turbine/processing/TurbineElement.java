@@ -760,13 +760,17 @@ public abstract class TurbineElement implements Element {
         sb.append(info.sym().name());
       }
       sb.append('(');
-      boolean first = true;
-      for (ParamInfo p : info.parameters()) {
-        if (!first) {
+      ImmutableList<ParamInfo> params = info.parameters();
+      for (int i = 0; i < params.size(); i++) {
+        if (i > 0) {
           sb.append(',');
         }
-        sb.append(p.type());
-        first = false;
+        Type t = params.get(i).type();
+        if (i == params.size() - 1 && isVarArgs() && t instanceof Type.ArrayTy arrayTy) {
+          sb.append(arrayTy.elementType()).append("...");
+        } else {
+          sb.append(t);
+        }
       }
       sb.append(')');
       return sb.toString();

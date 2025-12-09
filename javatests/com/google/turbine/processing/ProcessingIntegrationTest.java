@@ -627,7 +627,7 @@ public class ProcessingIntegrationTest {
             "FIELD x",
             "FIELD y",
             "FIELD Z",
-            "CONSTRUCTOR R(T,int[])", // javac puts the constructor before FIELD Z
+            "CONSTRUCTOR R(T,int...)", // javac puts the constructor before FIELD Z
             "METHOD toString()",
             "METHOD hashCode()",
             "METHOD equals(java.lang.Object)",
