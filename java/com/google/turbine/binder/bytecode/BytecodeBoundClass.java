@@ -111,18 +111,24 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   private final Supplier<TurbineTyKind> kind =
       Suppliers.memoize(
-          () -> {
-            int access = access();
-            if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
-              return TurbineTyKind.ANNOTATION;
+          new Supplier<TurbineTyKind>() {
+            @Override
+            public TurbineTyKind get() {
+              int access = access();
+              if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
+                return TurbineTyKind.ANNOTATION;
+              }
+              if ((access & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE) {
+                return TurbineTyKind.INTERFACE;
+              }
+              if ((access & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
+                return TurbineTyKind.ENUM;
+              }
+              if (classFile.get().record() != null) {
+                return TurbineTyKind.RECORD;
+              }
+              return TurbineTyKind.CLASS;
             }
-            if ((access & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE) {
-              return TurbineTyKind.INTERFACE;
-            }
-            if ((access & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
-              return TurbineTyKind.ENUM;
-            }
-            return TurbineTyKind.CLASS;
           });
 
   @Override

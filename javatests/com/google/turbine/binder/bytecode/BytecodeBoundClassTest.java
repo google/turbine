@@ -30,6 +30,7 @@ import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import java.io.IOException;
@@ -191,6 +192,13 @@ public class BytecodeBoundClassTest {
                     & TurbineFlag.ACC_DEFAULT)
                 == TurbineFlag.ACC_DEFAULT)
         .isTrue();
+  }
+
+  record R(int x, int y) {}
+
+  @Test
+  public void recordKind() {
+    assertThat(getBytecodeBoundClass(R.class).kind()).isEqualTo(TurbineTyKind.RECORD);
   }
 
   private static byte[] toByteArrayOrDie(InputStream is) {
