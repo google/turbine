@@ -18,7 +18,6 @@ package com.google.turbine.types;
 
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
@@ -27,6 +26,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -69,35 +69,43 @@ public class Canonicalize {
 
   /** Canonicalizes the given type. */
   public static Type canonicalize(
+      TurbineLogWithSource log,
       SourceFile source,
       int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       Type type) {
-    return new Canonicalize(source, position, env).canonicalize(sym, type);
+    return new Canonicalize(log, source, position, env).canonicalize(sym, type);
   }
 
   /** Canonicalize a qualified class type, excluding type arguments. */
   public static ClassTy canonicalizeClassTy(
+      TurbineLogWithSource log,
       SourceFile source,
       int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol owner,
       ClassTy classTy) {
-    return new Canonicalize(source, position, env).canonicalizeClassTy(owner, classTy);
+    return new Canonicalize(log, source, position, env).canonicalizeClassTy(owner, classTy);
   }
 
+  private final TurbineLogWithSource log;
   private final SourceFile source;
   private final int position;
   private final Env<ClassSymbol, TypeBoundClass> env;
 
-  public Canonicalize(SourceFile source, int position, Env<ClassSymbol, TypeBoundClass> env) {
+  public Canonicalize(
+      TurbineLogWithSource log,
+      SourceFile source,
+      int position,
+      Env<ClassSymbol, TypeBoundClass> env) {
+    this.log = log;
     this.source = source;
     this.position = position;
     this.env = env;
   }
 
-  private Type canonicalize(ClassSymbol base, Type type) {
+  public Type canonicalize(ClassSymbol base, Type type) {
     return switch (type.tyKind()) {
       case PRIM_TY, VOID_TY, TY_VAR, ERROR_TY -> type;
       case WILD_TY -> canonicalizeWildTy(base, (WildTy) type);
@@ -243,7 +251,15 @@ public class Canonicalize {
       return;
     }
     // otherwise, it is an instantiated generic type
-    Verify.verify(symbols.size() == simpleType.targs().size());
+    if (symbols.size() != simpleType.targs().size()) {
+      log.error(
+          position,
+          ErrorKind.INVALID_TYPE_ARGUMENTS,
+          symbols.size(),
+          simpleType.sym(),
+          simpleType.targs().size());
+      return;
+    }
     Iterator<Type> typeArguments = simpleType.targs().iterator();
     for (TyVarSymbol sym : symbols) {
       Type argument = typeArguments.next();

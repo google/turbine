@@ -185,7 +185,10 @@ public final class Binder {
             log);
     tenv =
         canonicalizeTypes(
-            syms, tenv, CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv));
+            syms,
+            tenv,
+            CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
+            log);
 
     ImmutableList<SourceModuleInfo> boundModules =
         bindModules(
@@ -325,11 +328,12 @@ public final class Binder {
   private static Env<ClassSymbol, SourceTypeBoundClass> canonicalizeTypes(
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> stenv,
-      Env<ClassSymbol, TypeBoundClass> tenv) {
+      Env<ClassSymbol, TypeBoundClass> tenv,
+      TurbineLog log) {
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass base = stenv.getNonNull(sym);
-      builder.put(sym, CanonicalTypeBinder.bind(sym, base, tenv));
+      builder.put(sym, CanonicalTypeBinder.bind(log.withSource(base.source()), sym, base, tenv));
     }
     return builder.build();
   }

@@ -61,6 +61,7 @@ public class TurbineError extends Error {
     EXPECTED_INTERFACE("expected interface type: %s"),
     UNEXPECTED_INTERFACE("unexpected interface type: %s"),
     UNEXPECTED_MODIFIER("unexpected modifier: %s"),
+    INVALID_TYPE_ARGUMENTS("expected %d type arguments for %s, got %d"),
     PROC("%s");
 
     private final String message;

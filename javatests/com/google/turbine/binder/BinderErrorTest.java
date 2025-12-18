@@ -1056,6 +1056,34 @@ public class BinderErrorTest {
           "  ^",
         },
       },
+      {
+        {
+          "class B<X, Y> {",
+          "  class J<A, B> {}",
+          "}",
+          "class A<T> extends B<T> {",
+          "  class I<X> extends J<X> {}",
+          "}",
+          "class Test {",
+          "  A<String>.J<String, Integer> a;",
+          "}",
+        },
+        // The diagnostic positions here are at locations where a type is being canonicalized,
+        // and a referenced type has a mismatch between the actual and expected type arguments.
+        // It would be clearer to report this at the type declaration instead of the type use,
+        // but then we'd have to unconditionally valid all declarations instead of just noticing
+        // the errors that affect canonicalization, so we do less work and produce slightly worse
+        // diagnostics. Hopefully including the type name in the diagnostic is clear enough. This
+        // could be revisited if there are reports that these diagnostics are confusing.
+        {
+          "<>:5: error: expected 2 type arguments for B, got 1",
+          "  class I<X> extends J<X> {}",
+          "        ^",
+          "<>:8: error: expected 2 type arguments for B, got 1",
+          "  A<String>.J<String, Integer> a;",
+          "                               ^",
+        },
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
