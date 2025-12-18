@@ -1071,8 +1071,8 @@ public class BinderErrorTest {
         // The diagnostic positions here are at locations where a type is being canonicalized,
         // and a referenced type has a mismatch between the actual and expected type arguments.
         // It would be clearer to report this at the type declaration instead of the type use,
-        // but then we'd have to unconditionally valid all declarations instead of just noticing
-        // the errors that affect canonicalization, so we do less work and produce slightly worse
+        // but then we'd have to unconditionally validate all declarations instead of just noticing
+        // the errors that affect canonicalization. So we do less work and produce slightly worse
         // diagnostics. Hopefully including the type name in the diagnostic is clear enough. This
         // could be revisited if there are reports that these diagnostics are confusing.
         {
