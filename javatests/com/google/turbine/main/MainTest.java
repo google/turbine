@@ -46,7 +46,6 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -218,12 +217,8 @@ public class MainTest {
               "Manifest-Version", "1.0",
               "Target-Label", "//foo:foo",
               "Injecting-Rule-Kind", "foo_library");
-      assertThat(
-              requireNonNull(jarFile.getEntry(JarFile.MANIFEST_NAME))
-                  .getLastModifiedTime()
-                  .toInstant())
-          .isEqualTo(
-              LocalDateTime.of(2010, 1, 1, 0, 0, 0).atZone(ZoneId.systemDefault()).toInstant());
+      assertThat(requireNonNull(jarFile.getEntry(JarFile.MANIFEST_NAME)).getTimeLocal())
+          .isEqualTo(LocalDateTime.of(2010, 1, 1, 0, 0, 0, 0));
       // JarInputStream#getManifest only checks the first two entries for the manifest, so ensure
       // that turbine writes jars with the manifest at the beginning
       assertThat(jarFile.stream().limit(2).map(JarEntry::getName))
