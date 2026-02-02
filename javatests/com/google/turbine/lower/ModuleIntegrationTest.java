@@ -17,9 +17,10 @@
 package com.google.turbine.lower;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.turbine.testing.TestResources.getResource;
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.stream;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
@@ -52,7 +53,7 @@ public class ModuleIntegrationTest {
       "module-requires-static-transitive.test",
       "module-requires-transitive-static.test",
     };
-    return ImmutableList.copyOf(testCases).stream().map(x -> new Object[] {x}).collect(toList());
+    return stream(testCases).map(x -> new Object[] {x}).collect(toImmutableList());
   }
 
   final String test;

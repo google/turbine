@@ -16,6 +16,7 @@
 
 package com.google.turbine.deps;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
@@ -38,14 +39,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -120,7 +119,7 @@ public class DependenciesTest {
 
   private Map<Path, DepsProto.Dependency.Kind> depsMap(DepsProto.Dependencies deps) {
     return deps.getDependencyList().stream()
-        .collect(Collectors.toMap(d -> Paths.get(d.getPath()), DepsProto.Dependency::getKind));
+        .collect(toImmutableMap(d -> Path.of(d.getPath()), DepsProto.Dependency::getKind));
   }
 
   @Test

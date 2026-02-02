@@ -23,7 +23,6 @@ import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -133,7 +132,7 @@ public final class TurbineOptionsParser {
       if (arg.startsWith("@@")) {
         argumentDeque.addLast(arg.substring(1));
       } else if (arg.startsWith("@")) {
-        Path paramsPath = Paths.get(arg.substring(1));
+        Path paramsPath = Path.of(arg.substring(1));
         if (!Files.exists(paramsPath)) {
           throw new AssertionError("params file does not exist: " + paramsPath);
         }

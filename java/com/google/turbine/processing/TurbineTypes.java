@@ -790,7 +790,7 @@ public class TurbineTypes implements Types {
               ImmutableList.of(ClassTy.OBJECT, ClassTy.SERIALIZABLE, ClassTy.CLONEABLE)));
     }
     ImmutableList<Type> ex = directSupertypes(elem);
-    return ImmutableList.of(ArrayTy.create(ex.iterator().next(), ImmutableList.of()));
+    return ImmutableList.of(ArrayTy.create(ex.get(0), ImmutableList.of()));
   }
 
   private ImmutableList<Type> directSupertypes(ClassTy t) {
@@ -821,7 +821,7 @@ public class TurbineTypes implements Types {
   }
 
   private Type erasure(Type type) {
-    return Erasure.erase(type, (TyVarSymbol input) -> factory.getTyVarInfo(input));
+    return Erasure.erase(type, factory::getTyVarInfo);
   }
 
   @Override

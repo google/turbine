@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
@@ -49,7 +50,6 @@ import com.google.turbine.type.Type.ClassTy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -76,7 +76,7 @@ public class ClassPathBinderTest {
           ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, ENGLISH, UTF_8),
           StandardLocation.PLATFORM_CLASS_PATH),
     };
-    return Arrays.stream(testCases).map(x -> new Object[] {x}).collect(toImmutableList());
+    return stream(testCases).map(x -> new Object[] {x}).collect(toImmutableList());
   }
 
   private final ClassPath classPath;

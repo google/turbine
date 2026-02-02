@@ -79,7 +79,7 @@ public class TurbineDiagnostic {
       requireNonNull(source); // line and column imply source is non-null
       sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position)))
           .append(System.lineSeparator());
-      sb.append(" ".repeat(column() - 1)).append('^');
+      sb.repeat(" ", column() - 1).append('^');
     }
     return sb.toString();
   }

@@ -17,16 +17,17 @@
 package com.google.turbine.options;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.EnumSet;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -202,7 +203,7 @@ public class TurbineOptionsTest {
                 "-Aconnector.opt=with,space, here",
                 "--"));
     Path params = tmpFolder.newFile("params.txt").toPath();
-    Files.write(params, paramsArgs, StandardCharsets.UTF_8);
+    Files.write(params, paramsArgs, UTF_8);
 
     // @ is a prefix for external repository targets, and the prefix for params files. Targets
     // are disambiguated by prepending an extra @.
@@ -351,7 +352,7 @@ public class TurbineOptionsTest {
 
   @Test
   public void reducedClasspathMode() throws Exception {
-    for (ReducedClasspathMode mode : ReducedClasspathMode.values()) {
+    for (ReducedClasspathMode mode : EnumSet.allOf(ReducedClasspathMode.class)) {
       TurbineOptions options =
           TurbineOptionsParser.parse(
               Iterables.concat(

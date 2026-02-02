@@ -470,11 +470,11 @@ public final class IntegrationTestSupport {
             new SignatureVisitor(Opcodes.ASM9) {
               private final Set<String> classes = classes1;
               // class signatures may contain type arguments that contain class signatures
-              Deque<List<String>> pieces = new ArrayDeque<>();
+              final Deque<List<String>> pieces = new ArrayDeque<>();
 
               @Override
               public void visitInnerClassType(String name) {
-                pieces.element().add(name);
+                pieces.getFirst().add(name);
               }
 
               @Override
@@ -585,7 +585,7 @@ public final class IntegrationTestSupport {
         setupJavac(sources, classpath, options, collector, fs, out, ImmutableList.of());
 
     if (!task.call()) {
-      fail(collector.getDiagnostics().stream().map(d -> d.toString()).collect(joining("\n")));
+      fail(collector.getDiagnostics().stream().map(Object::toString).collect(joining("\n")));
     }
 
     List<Path> classes = new ArrayList<>();

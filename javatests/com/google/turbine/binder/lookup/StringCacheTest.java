@@ -102,7 +102,7 @@ public final class StringCacheTest {
     String cacheNulnul1 = cache.getSubstring(nulnulnul0, 1, 3);
     String cacheNulnulnul0 = cache.get(nulnulnul0);
 
-    assertThat(cacheEpsilon0).isEqualTo("");
+    assertThat(cacheEpsilon0).isEmpty();
     assertThat(cacheEpsilon0.hashCode()).isEqualTo(0);
     assertThat(cacheEpsilon0).isSameInstanceAs(cacheEpsilon1);
     assertThat(cacheEpsilon0).isSameInstanceAs(cacheEpsilon2);

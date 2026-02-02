@@ -17,7 +17,6 @@
 package com.google.turbine.tree;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -68,7 +67,7 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
     if (c == '\n') {
       newLine = true;
     } else if (newLine) {
-      sb.append(Strings.repeat(" ", indent * 2));
+      sb.repeat(" ", indent * 2);
       newLine = false;
     }
     sb.append(c);
@@ -78,7 +77,7 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
   @CanIgnoreReturnValue
   Pretty append(String s) {
     if (newLine) {
-      sb.append(Strings.repeat(" ", indent * 2));
+      sb.repeat(" ", indent * 2);
       newLine = false;
     }
     sb.append(s);

@@ -189,9 +189,8 @@ public class BytecodeBoundClassTest {
   public void defaultMethods() {
     assertThat(
             (getOnlyElement(getBytecodeBoundClass(D.class).methods()).access()
-                    & TurbineFlag.ACC_DEFAULT)
-                == TurbineFlag.ACC_DEFAULT)
-        .isTrue();
+                & TurbineFlag.ACC_DEFAULT))
+        .isEqualTo(TurbineFlag.ACC_DEFAULT);
   }
 
   record R(int x, int y) {}

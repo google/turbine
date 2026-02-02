@@ -52,6 +52,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -181,8 +182,7 @@ public class TransitiveTest {
     Main.compile(
         optionsWithBootclasspath()
             .setSources(sources)
-            .setClassPath(
-                ImmutableList.of(libb).stream().map(Path::toString).collect(toImmutableList()))
+            .setClassPath(Stream.of(libb).map(Path::toString).collect(toImmutableList()))
             .setOutput(libc.toString())
             .setOutputDeps(libcDeps.toString())
             .setTargetLabel("//foo:foo")

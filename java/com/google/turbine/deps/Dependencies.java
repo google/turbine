@@ -44,7 +44,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -196,7 +196,7 @@ public final class Dependencies {
     Set<String> reduced = new HashSet<>(directJars);
     for (String path : depsArtifacts) {
       DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
-      try (InputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(path)))) {
+      try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(path)))) {
         deps.mergeFrom(is);
       } catch (IOException e) {
         throw new IOError(e);

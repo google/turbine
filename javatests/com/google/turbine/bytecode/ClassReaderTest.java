@@ -16,7 +16,6 @@
 
 package com.google.turbine.bytecode;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
@@ -24,10 +23,8 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.io.ByteStreams;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo.ElementValue;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo;
 import com.google.turbine.bytecode.ClassFile.ModuleInfo.ExportInfo;
@@ -249,7 +246,7 @@ public class ClassReaderTest {
 
   @Test
   public void largeConstant() {
-    String jumbo = Strings.repeat("a", Short.MAX_VALUE + 1);
+    String jumbo = "a".repeat(Short.MAX_VALUE + 1);
 
     ClassWriter cw = new ClassWriter(0);
     cw.visit(52, Opcodes.ACC_SUPER, jumbo, null, "java/lang/Object", null);
@@ -346,7 +343,7 @@ public class ClassReaderTest {
     ExportInfo e3 = module.exports().get(2);
     assertThat(e3.moduleName()).isEqualTo("e3");
     assertThat(e3.flags()).isEqualTo(0);
-    assertThat(e3.modules()).containsExactly("e3m1").inOrder();
+    assertThat(e3.modules()).containsExactly("e3m1");
 
     assertThat(module.opens()).hasSize(3);
     OpenInfo o1 = module.opens().getFirst();
@@ -360,9 +357,9 @@ public class ClassReaderTest {
     OpenInfo o3 = module.opens().get(2);
     assertThat(o3.moduleName()).isEqualTo("o3");
     assertThat(o3.flags()).isEqualTo(0);
-    assertThat(o3.modules()).containsExactly("o3m1").inOrder();
+    assertThat(o3.modules()).containsExactly("o3m1");
 
-    assertThat(module.uses().stream().map(u -> u.descriptor()).collect(toImmutableList()))
+    assertThat(module.uses().stream().map(u -> u.descriptor()))
         .containsExactly("u1", "u2", "u3", "u4")
         .inOrder();
 
@@ -435,8 +432,9 @@ public class ClassReaderTest {
   @Test
   public void nonApiTypeAnnotations() throws Exception {
     byte[] bytes =
-        ByteStreams.toByteArray(
-            getClass().getResourceAsStream("/" + C.class.getName().replace('.', '/') + ".class"));
+        getClass()
+            .getResourceAsStream("/" + C.class.getName().replace('.', '/') + ".class")
+            .readAllBytes();
     ClassFile cf = ClassReader.read(null, bytes);
     ClassFile.MethodInfo m =
         cf.methods().stream().filter(x -> x.name().contains("f")).collect(onlyElement());

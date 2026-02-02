@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassReader;
 import java.io.File;
@@ -55,9 +54,9 @@ public class SigIntegrationTest {
 
   void forEachBootclass(Consumer<Path> consumer) throws IOException {
     ImmutableList<Path> bootclasspath =
-        Streams.stream(
-                CLASS_PATH_SPLITTER.split(
-                    Optional.ofNullable(System.getProperty("sun.boot.class.path")).orElse("")))
+        CLASS_PATH_SPLITTER
+            .splitToStream(
+                Optional.ofNullable(System.getProperty("sun.boot.class.path")).orElse(""))
             .map(Paths::get)
             .filter(Files::exists)
             .collect(toImmutableList());
