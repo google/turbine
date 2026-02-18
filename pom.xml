@@ -32,7 +32,7 @@
   <properties>
     <asm.version>9.7</asm.version>
     <guava.version>32.1.1-jre</guava.version>
-    <errorprone.version>2.45.0</errorprone.version>
+    <errorprone.version>2.47.0</errorprone.version>
     <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -189,6 +189,7 @@
             <arg>-parameters</arg>
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
+            <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
             <arg>-Xplugin:ErrorProne -Xep:EqualsIncompatibleType:ERROR -Xep:TruthIncompatibleType:ERROR</arg>
           </compilerArgs>
           <annotationProcessorPaths>
