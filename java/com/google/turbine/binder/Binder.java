@@ -67,6 +67,7 @@ import com.google.turbine.type.Type;
 import java.time.Duration;
 import java.util.Optional;
 import javax.annotation.processing.Processor;
+import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
 /** The entry point for analysis. */
@@ -251,13 +252,13 @@ public final class Binder {
 
     SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
     SimpleEnv.Builder<ModuleSymbol, PackageSourceBoundModule> modules = SimpleEnv.builder();
+    CompoundScope topLevel = CompoundScope.base(tli.scope());
     Scope javaLang = tli.lookupPackage(ImmutableList.of("java", "lang"));
     if (javaLang == null) {
-      // TODO(cushon): add support for diagnostics without a source position, and make this one
-      // of those
-      throw new IllegalArgumentException("Could not find java.lang on bootclasspath");
+      log.add(TurbineDiagnostic.format(Diagnostic.Kind.ERROR, ErrorKind.NO_JAVA_LANG));
+    } else {
+      topLevel = topLevel.append(javaLang);
     }
-    CompoundScope topLevel = CompoundScope.base(tli.scope()).append(javaLang);
     for (PreprocessedCompUnit unit : units) {
       Scope packageScope = tli.lookupPackage(unit.packageName());
       CanonicalSymbolResolver importResolver =

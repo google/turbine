@@ -111,6 +111,10 @@ public class TurbineDiagnostic {
     return create(severity, kind, ImmutableList.of(message), null, -1);
   }
 
+  public static TurbineDiagnostic format(Diagnostic.Kind severity, ErrorKind kind) {
+    return create(severity, kind, ImmutableList.of(), null, -1);
+  }
+
   /**
    * Formats a diagnostic.
    *

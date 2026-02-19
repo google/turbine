@@ -120,7 +120,7 @@ public class Canonicalize {
   }
 
   private ClassTy canon(ClassSymbol base, ClassTy ty) {
-    if (ty.sym().equals(ClassSymbol.ERROR)) {
+    if (ty.sym().equals(ClassSymbol.ERROR) || ty.sym().equals(ClassSymbol.OBJECT)) {
       return ty;
     }
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers

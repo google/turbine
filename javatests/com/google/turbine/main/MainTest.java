@@ -266,9 +266,9 @@ public class MainTest {
 
     Path output = temporaryFolder.newFile("output.jar").toPath();
 
-    IllegalArgumentException expected =
+    TurbineError expected =
         assertThrows(
-            IllegalArgumentException.class,
+            TurbineError.class,
             () ->
                 Main.compile(
                     TurbineOptions.builder()

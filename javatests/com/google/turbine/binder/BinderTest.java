@@ -26,10 +26,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.model.TurbineElementType;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree;
 import java.io.OutputStream;
@@ -280,6 +283,27 @@ public class BinderTest {
 
     SourceTypeBoundClass a = getBoundClass(bound, "C$A");
     assertThat(a.annotationMetadata().target()).containsExactly(TurbineElementType.TYPE_USE);
+  }
+
+  @Test
+  public void noJavaLang() throws Exception {
+    ImmutableList<Tree.CompUnit> units = ImmutableList.of(parseLines("class Test {}"));
+    TurbineLog log = new TurbineLog();
+    Binder.BindingResult br =
+        Binder.bind(
+            log,
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            Processing.ProcessorInfo.empty(),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            Optional.empty());
+    assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
+        .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = br.units();
+
+    SourceTypeBoundClass a = getBoundClass(bound, "Test");
+    assertThat(a.kind()).isEqualTo(TurbineTyKind.CLASS);
+    assertThat(a.superclass()).isEqualTo(ClassSymbol.OBJECT);
   }
 
   private Tree.CompUnit parseLines(String... lines) {
