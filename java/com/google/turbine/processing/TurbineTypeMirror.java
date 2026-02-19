@@ -307,11 +307,13 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public Element asElement() {
-      return factory.noElement(type.name());
+      return factory.noElement(type.qualifiedName());
     }
 
     @Override
     public TypeMirror getEnclosingType() {
+      // Return Type.NONE for the enclosing class of error types, for consistency with javac.
+      // See also https://bugs.openjdk.org/browse/JDK-8340694
       return factory.noType();
     }
 

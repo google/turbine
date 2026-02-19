@@ -263,7 +263,7 @@ public abstract class TurbineElement implements Element {
               Type asGenericType(ClassSymbol symbol) {
                 TypeBoundClass info = info();
                 if (info == null) {
-                  return ErrorTy.create(getQualifiedName().toString(), ImmutableList.of());
+                  return ErrorTy.create(getQualifiedName().toString());
                 }
                 Deque<Type.ClassTy.SimpleClassTy> simples = new ArrayDeque<>();
                 simples.addFirst(simple(symbol, info));

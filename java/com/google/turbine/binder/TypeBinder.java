@@ -952,7 +952,11 @@ public class TypeBinder {
     LookupResult result = scope.lookup(new LookupKey(names));
     if (result == null || result.sym() == null) {
       log.error(names.getFirst().position(), ErrorKind.CANNOT_RESOLVE, Joiner.on('.').join(names));
-      return Type.ErrorTy.create(names, bindTyArgs(scope, t.tyargs()));
+      ImmutableList.Builder<Type.ErrorTy.SimpleErrorTy> errorClasses = ImmutableList.builder();
+      for (Tree.ClassTy curr : flat) {
+        errorClasses.add(bindSimpleErrorTy(scope, curr));
+      }
+      return Type.ErrorTy.create(errorClasses.build());
     }
     Symbol sym = result.sym();
     int annoIdx = flat.size() - result.remaining().size() - 1;
@@ -964,7 +968,7 @@ public class TypeBinder {
       case TY_PARAM -> {
         if (!result.remaining().isEmpty()) {
           log.error(t.position(), ErrorKind.TYPE_PARAMETER_QUALIFIER);
-          yield Type.ErrorTy.create(names, ImmutableList.of());
+          yield Type.ErrorTy.create(names);
         }
         yield Type.TyVar.create((TyVarSymbol) sym, annos);
       }
@@ -987,16 +991,30 @@ public class TypeBinder {
     for (; idx < flat.size(); idx++) {
       Tree.ClassTy curr = flat.get(idx);
       ClassSymbol next = resolveNext(sym, curr.name());
-      ImmutableList<Type> targs = bindTyArgs(scope, curr.tyargs());
       if (next == null) {
-        return Type.ErrorTy.create(bits, targs);
+        ImmutableList.Builder<Type.ErrorTy.SimpleErrorTy> errorClasses = ImmutableList.builder();
+        for (Type.ClassTy.SimpleClassTy c : classes.build()) {
+          errorClasses.add(
+              new Type.ErrorTy.SimpleErrorTy(c.sym().simpleName(), c.targs(), c.annos()));
+        }
+        for (; idx < flat.size(); idx++) {
+          errorClasses.add(bindSimpleErrorTy(scope, flat.get(idx)));
+        }
+        return Type.ErrorTy.create(errorClasses.build());
       }
       sym = next;
 
+      ImmutableList<Type> targs = bindTyArgs(scope, curr.tyargs());
       annotations = bindAnnotations(scope, curr.annos());
       classes.add(Type.ClassTy.SimpleClassTy.create(sym, targs, annotations));
     }
     return Type.ClassTy.create(classes.build());
+  }
+
+  private Type.ErrorTy.SimpleErrorTy bindSimpleErrorTy(CompoundScope scope, Tree.ClassTy classTy) {
+    ImmutableList<Type> tyargs = bindTyArgs(scope, classTy.tyargs());
+    ImmutableList<AnnoInfo> annos = bindAnnotations(scope, classTy.annos());
+    return new Type.ErrorTy.SimpleErrorTy(classTy.name().value(), tyargs, annos);
   }
 
   private Type.PrimTy bindPrimTy(CompoundScope scope, PrimTy t) {
