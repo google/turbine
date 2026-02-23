@@ -310,6 +310,27 @@ public class BinderTest {
   }
 
   @Test
+  public void noJavaLangEnum() throws Exception {
+    ImmutableList<Tree.CompUnit> units = ImmutableList.of(parseLines("enum Foo { ONE }"));
+    TurbineLog log = new TurbineLog();
+    Binder.BindingResult br =
+        Binder.bind(
+            log,
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            Processing.ProcessorInfo.empty(),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            Optional.empty());
+    assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
+        .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = br.units();
+
+    SourceTypeBoundClass a = getBoundClass(bound, "Foo");
+    assertThat(a.kind()).isEqualTo(TurbineTyKind.ENUM);
+    assertThat(a.superclass()).isEqualTo(ClassSymbol.ENUM);
+  }
+
+  @Test
   public void genericErrorType() throws Exception {
     ImmutableList<Tree.CompUnit> units =
         ImmutableList.of(

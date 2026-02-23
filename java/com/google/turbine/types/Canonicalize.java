@@ -120,7 +120,10 @@ public class Canonicalize {
   }
 
   private ClassTy canon(ClassSymbol base, ClassTy ty) {
-    if (ty.sym().equals(ClassSymbol.ERROR) || ty.sym().equals(ClassSymbol.OBJECT)) {
+    if (ty.sym().binaryName().indexOf('$') == -1) {
+      // The binary name of an inner class will always contain $.
+      // Names that contain $ may not be inner classes, and will fall through to the full
+      // canonicalization logic below.
       return ty;
     }
     // if the first name is a simple name resolved inside a nested class, add explicit qualifiers
