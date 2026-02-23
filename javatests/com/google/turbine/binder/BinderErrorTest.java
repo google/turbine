@@ -1084,6 +1084,21 @@ public class BinderErrorTest {
           "                               ^",
         },
       },
+      {
+        {
+          "@interface Anno { NoSuch foo() default 0; }", //
+          "@Anno(42)",
+          "class T {}",
+        },
+        {
+          "<>:1: error: could not resolve NoSuch",
+          "@interface Anno { NoSuch foo() default 0; }",
+          "                  ^",
+          "<>:2: error: could not resolve element value() in Anno",
+          "@Anno(42)",
+          "      ^",
+        }
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

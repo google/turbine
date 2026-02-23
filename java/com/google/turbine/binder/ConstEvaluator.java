@@ -1070,7 +1070,7 @@ public class ConstEvaluator {
         }
         yield coerce(tree.position(), constValue, ((Type.PrimTy) ty).primkind());
       }
-      case CLASS_TY, TY_VAR -> value;
+      case CLASS_TY, TY_VAR, ERROR_TY -> value;
       case ARRAY_TY -> {
         Type elementType = ((Type.ArrayTy) ty).elementType();
         ImmutableList<Const> elements =
