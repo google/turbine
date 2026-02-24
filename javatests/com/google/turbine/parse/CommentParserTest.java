@@ -125,4 +125,81 @@ public class CommentParserTest {
             .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().value()));
     assertThat(javadoc).containsExactly("x", " multivariable ", "y", " multivariable ");
   }
+
+  @Test
+  public void dropComments() {
+    String source =
+        """
+        package p;
+        class Test {
+          Runnable r = new Runnable() {
+            /** Foo */
+            public void run() {}
+          };
+
+          public void f() {}
+
+          private static void helper() {
+            /** Bar */
+            class Local {}
+          }
+
+          public void g() {}
+        }
+        """;
+    Tree.CompUnit unit = Parser.parse(source);
+    TyDecl decl = getOnlyElement(unit.decls());
+    ImmutableMap<String, Tree.MethDecl> methods =
+        decl.members().stream()
+            .filter(m -> m.kind() == Tree.Kind.METH_DECL)
+            .map(m -> (MethDecl) m)
+            .collect(toImmutableMap(m -> m.name().value(), m -> m));
+    assertThat(methods.get("f").javadoc()).isNull();
+    assertThat(methods.get("g").javadoc()).isNull();
+  }
+
+  @Test
+  public void extraSemi() {
+    String source =
+        """
+        class Test {
+          int x;;
+
+          /** y */
+          int y;
+        }
+        """;
+    Tree.CompUnit unit = Parser.parse(source);
+    TyDecl decl = getOnlyElement(unit.decls());
+    ImmutableMap<String, String> javadoc =
+        decl.members().stream()
+            .filter(m -> m.kind() == Tree.Kind.VAR_DECL)
+            .map(m -> (VarDecl) m)
+            .filter(m -> m.javadoc() != null)
+            .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().value()));
+    assertThat(javadoc).containsExactly("y", " y ");
+  }
+
+  @Test
+  public void enumConstant() {
+    String source =
+        """
+        enum E {
+          /** ONE */
+          ONE,
+          /** TWO */
+          @Deprecated
+          TWO
+        }
+        """;
+    Tree.CompUnit unit = Parser.parse(source);
+    TyDecl decl = getOnlyElement(unit.decls());
+    ImmutableMap<String, String> javadoc =
+        decl.members().stream()
+            .filter(m -> m.kind() == Tree.Kind.VAR_DECL)
+            .map(m -> (VarDecl) m)
+            .filter(m -> m.javadoc() != null)
+            .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().value().trim()));
+    assertThat(javadoc).containsExactly("ONE", "ONE", "TWO", "TWO");
+  }
 }

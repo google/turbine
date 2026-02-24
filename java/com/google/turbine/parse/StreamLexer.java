@@ -70,12 +70,7 @@ public class StreamLexer implements Lexer {
 
   @Override
   public @Nullable TurbineJavadoc javadoc() {
-    TurbineJavadoc result = javadoc;
-    javadoc = null;
-    if (result == null) {
-      return null;
-    }
-    return result;
+    return javadoc;
   }
 
   @Override
@@ -98,6 +93,7 @@ public class StreamLexer implements Lexer {
 
   @Override
   public Token next() {
+    javadoc = null;
     OUTER:
     while (true) {
       position = reader.position();
