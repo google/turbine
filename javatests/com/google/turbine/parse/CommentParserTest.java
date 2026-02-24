@@ -22,6 +22,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Expect;
 import com.google.turbine.model.TurbineJavadoc;
 import com.google.turbine.tree.Tree;
@@ -104,5 +105,24 @@ public class CommentParserTest {
       String expected = "/**" + javadoc.value() + "*/";
       expect.that(actual).isEqualTo(expected);
     }
+  }
+
+  @Test
+  public void multiVariable() {
+    String source =
+        """
+        class Test {
+          /** multivariable */
+          int x, y;
+        }
+        """;
+    Tree.CompUnit unit = Parser.parse(source);
+    TyDecl decl = getOnlyElement(unit.decls());
+    ImmutableMap<String, String> javadoc =
+        decl.members().stream()
+            .filter(m -> m.kind() == Tree.Kind.VAR_DECL)
+            .map(m -> (VarDecl) m)
+            .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().value()));
+    assertThat(javadoc).containsExactly("x", " multivariable ", "y", " multivariable ");
   }
 }
