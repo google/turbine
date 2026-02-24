@@ -1312,6 +1312,58 @@ public class ProcessingIntegrationTest {
             "d: modifiers [private, final], type int, annotations []");
   }
 
+  @SupportedAnnotationTypes("*")
+  public static class EnumConstants extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!roundEnv.processingOver()) {
+        return false;
+      }
+      for (VariableElement e :
+          fieldsIn(processingEnv.getElementUtils().getTypeElement("E").getEnclosedElements())) {
+        String javadoc = processingEnv.getElementUtils().getDocComment(e);
+        processingEnv
+            .getMessager()
+            .printError(String.format("%s: %s", e.getSimpleName(), javadoc.trim()), e);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void enumConstantPosition() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === E.java ===
+            enum E {
+                /** constant 1 */
+                CONSTANT1,
+                /** constant 2 */
+                @Deprecated
+                CONSTANT2;
+            }
+            """);
+    TurbineError e = runProcessors(units, new EnumConstants());
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            normalizeLineEndings(
+                """
+                E.java:3: error: CONSTANT1: constant 1
+                    CONSTANT1,
+                    ^
+                E.java:6: error: CONSTANT2: constant 2
+                    CONSTANT2;
+                    ^\
+                """));
+  }
+
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
     return assertThrows(
         TurbineError.class,
@@ -1326,5 +1378,9 @@ public class ProcessingIntegrationTest {
                     SourceVersion.latestSupported()),
                 TestClassPaths.TURBINE_BOOTCLASSPATH,
                 Optional.empty()));
+  }
+
+  private String normalizeLineEndings(String string) {
+    return string.lines().collect(joining(System.lineSeparator()));
   }
 }

@@ -547,6 +547,7 @@ public class Parser {
       switch (token) {
         case IDENT -> {
           TurbineJavadoc javadoc = lexer.javadoc();
+          int pos = position;
           Ident name = eatIdent();
           if (token == Token.LPAREN) {
             dropParens();
@@ -560,11 +561,11 @@ public class Parser {
           maybe(Token.COMMA);
           result.add(
               new VarDecl(
-                  position,
+                  pos,
                   access,
                   annos.build(),
                   new ClassTy(
-                      position,
+                      pos,
                       Optional.<ClassTy>empty(),
                       enumName,
                       ImmutableList.<Tree.Type>of(),
