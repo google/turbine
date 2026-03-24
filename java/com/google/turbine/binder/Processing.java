@@ -447,7 +447,7 @@ public class Processing {
     return urls;
   }
 
-  private static ImmutableMap<String, String> processorOptions(ImmutableList<String> javacopts) {
+  public static ImmutableMap<String, String> processorOptions(ImmutableList<String> javacopts) {
     Map<String, String> result = new LinkedHashMap<>(); // ImmutableMap.Builder rejects duplicates
     for (String javacopt : javacopts) {
       if (javacopt.startsWith("-A")) {
@@ -493,7 +493,7 @@ public class Processing {
       return new AutoValue_Processing_ProcessorInfo(processors, loader, options, sourceVersion);
     }
 
-    static ProcessorInfo empty() {
+    public static ProcessorInfo empty() {
       return create(
           /* processors= */ ImmutableList.of(),
           /* loader= */ null,
