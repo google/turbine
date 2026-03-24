@@ -519,7 +519,8 @@ public class TypeBinder {
               new RecordComponentSymbol(owner, p.name().value()),
               bindTy(scope, p.ty()),
               bindAnnotations(scope, p.annos()),
-              access);
+              access,
+              p);
       result.add(param);
     }
     return result.build();

@@ -172,7 +172,8 @@ public final class CanonicalTypeBinder {
               component.sym(),
               canonicalize(pos, component.type()),
               component.annotations(),
-              component.access()));
+              component.access(),
+              component.decl()));
     }
     return result.build();
   }

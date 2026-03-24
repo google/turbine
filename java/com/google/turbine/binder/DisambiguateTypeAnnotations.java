@@ -159,7 +159,11 @@ public final class DisambiguateTypeAnnotations {
               declarationTarget, component.type(), component.annotations(), declarationAnnotations);
       result.add(
           new RecordComponentInfo(
-              component.sym(), type, declarationAnnotations.build(), component.access()));
+              component.sym(),
+              type,
+              declarationAnnotations.build(),
+              component.access(),
+              component.decl()));
     }
     return result.build();
   }

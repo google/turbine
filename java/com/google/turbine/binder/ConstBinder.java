@@ -176,7 +176,9 @@ public class ConstBinder {
     ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
     for (RecordComponentInfo base : components) {
       ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(base.annotations());
-      result.add(new RecordComponentInfo(base.sym(), bindType(base.type()), annos, base.access()));
+      result.add(
+          new RecordComponentInfo(
+              base.sym(), bindType(base.type()), annos, base.access(), base.decl()));
     }
     return result.build();
   }

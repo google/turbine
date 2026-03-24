@@ -631,7 +631,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
                         type,
                         BytecodeBinder.bindAnnotations(
                             component.annotations(), makeScope(env, sym, ImmutableMap.of())),
-                        /* access= */ 0));
+                        /* access= */ 0,
+                        /* decl= */ null));
               }
               return result.build();
             }

@@ -332,13 +332,19 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final Type type;
     private final int access;
     private final ImmutableList<AnnoInfo> annotations;
+    private final Tree.@Nullable VarDecl decl;
 
     public RecordComponentInfo(
-        RecordComponentSymbol sym, Type type, ImmutableList<AnnoInfo> annotations, int access) {
+        RecordComponentSymbol sym,
+        Type type,
+        ImmutableList<AnnoInfo> annotations,
+        int access,
+        Tree.@Nullable VarDecl decl) {
       this.sym = sym;
       this.type = type;
       this.access = access;
       this.annotations = annotations;
+      this.decl = decl;
     }
 
     /** The record component's symbol. */
@@ -364,6 +370,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** The Record component's modifiers. */
     public int access() {
       return access;
+    }
+
+    /** The component's declaration. */
+    public Tree.@Nullable VarDecl decl() {
+      return decl;
     }
   }
 }
