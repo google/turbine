@@ -50,26 +50,19 @@ class TurbineAnnotationProxy implements InvocationHandler {
   static <A extends Annotation> A create(
       ModelFactory factory, Class<A> annotationType, AnnoInfo anno) {
     ClassLoader loader = annotationType.getClassLoader();
-    if (loader == null) {
-      // annotation was loaded from the system classloader, e.g. java.lang.annotation.*
-      loader = factory.processorLoader();
-    }
     return annotationType.cast(
         Proxy.newProxyInstance(
             loader,
             new Class<?>[] {annotationType},
-            new TurbineAnnotationProxy(factory, loader, annotationType, anno)));
+            new TurbineAnnotationProxy(factory, annotationType, anno)));
   }
 
   private final ModelFactory factory;
-  private final ClassLoader loader;
   private final Class<?> annotationType;
   private final AnnoInfo anno;
 
-  TurbineAnnotationProxy(
-      ModelFactory factory, ClassLoader loader, Class<?> annotationType, AnnoInfo anno) {
+  TurbineAnnotationProxy(ModelFactory factory, Class<?> annotationType, AnnoInfo anno) {
     this.factory = factory;
-    this.loader = loader;
     this.annotationType = annotationType;
     this.anno = anno;
   }
@@ -143,11 +136,11 @@ class TurbineAnnotationProxy implements InvocationHandler {
     }
     Const value = anno.values().get(method.getName());
     if (value != null) {
-      return constValue(method.getReturnType(), factory, loader, value);
+      return constValue(method.getReturnType(), factory, value);
     }
     for (TypeBoundClass.MethodInfo m : factory.getSymbol(anno.sym()).methods()) {
       if (m.name().contentEquals(method.getName())) {
-        return constValue(method.getReturnType(), factory, loader, m.defaultValue());
+        return constValue(method.getReturnType(), factory, m.defaultValue());
       }
     }
     throw new NoSuchMethodError(method.getName());
@@ -167,19 +160,18 @@ class TurbineAnnotationProxy implements InvocationHandler {
     return anno.equals(that.anno);
   }
 
-  static Object constValue(
-      Class<?> returnType, ModelFactory factory, ClassLoader loader, Const value) {
+  static Object constValue(Class<?> clazz, ModelFactory factory, Const value) {
     return switch (value.kind()) {
       case PRIMITIVE -> ((Value) value).getValue();
-      case ARRAY -> constArrayValue(returnType, factory, loader, (Const.ArrayInitValue) value);
-      case ENUM_CONSTANT -> constEnumValue(loader, (EnumConstantValue) value);
-      case ANNOTATION -> constAnnotationValue(factory, loader, (TurbineAnnotationValue) value);
+      case ARRAY -> constArrayValue(clazz, factory, (Const.ArrayInitValue) value);
+      case ENUM_CONSTANT -> constEnumValue(clazz, (EnumConstantValue) value);
+      case ANNOTATION -> constAnnotationValue(clazz, factory, (TurbineAnnotationValue) value);
       case CLASS_LITERAL -> constClassValue(factory, (TurbineClassValue) value);
     };
   }
 
   private static Object constArrayValue(
-      Class<?> returnType, ModelFactory factory, ClassLoader loader, ArrayInitValue value) {
+      Class<?> returnType, ModelFactory factory, ArrayInitValue value) {
     Class<?> componentType = requireNonNull(returnType.getComponentType());
     if (componentType.equals(Class.class)) {
       List<TypeMirror> result = new ArrayList<>();
@@ -191,33 +183,22 @@ class TurbineAnnotationProxy implements InvocationHandler {
     Object result = Array.newInstance(componentType, value.elements().size());
     int idx = 0;
     for (Const element : value.elements()) {
-      Object v = constValue(returnType, factory, loader, element);
+      Object v = constValue(componentType, factory, element);
       Array.set(result, idx++, v);
     }
     return result;
   }
 
-  @SuppressWarnings("unchecked") // Enum.class
-  private static Object constEnumValue(ClassLoader loader, EnumConstantValue value) {
-    Class<?> clazz;
-    try {
-      clazz = loader.loadClass(value.sym().owner().toString());
-    } catch (ClassNotFoundException e) {
-      throw new LinkageError(e.getMessage(), e);
-    }
-    return Enum.valueOf(clazz.asSubclass(Enum.class), value.sym().name());
+  @SuppressWarnings({"unchecked", "rawtypes"}) // Enum.class
+  private static Object constEnumValue(Class<?> clazz, EnumConstantValue value) {
+    Class<? extends Enum> enumClass = clazz.asSubclass(Enum.class);
+    return Enum.valueOf(enumClass, value.sym().name());
   }
 
   private static Object constAnnotationValue(
-      ModelFactory factory, ClassLoader loader, TurbineAnnotationValue value) {
-    try {
-      String name = value.sym().binaryName().replace('/', '.');
-      Class<? extends Annotation> clazz =
-          Class.forName(name, false, loader).asSubclass(Annotation.class);
-      return create(factory, clazz, value.info());
-    } catch (ClassNotFoundException e) {
-      throw new LinkageError(e.getMessage(), e);
-    }
+      Class<?> clazz, ModelFactory factory, TurbineAnnotationValue value) {
+    Class<? extends Annotation> annotationClass = clazz.asSubclass(Annotation.class);
+    return create(factory, annotationClass, value.info());
   }
 
   private static Object constClassValue(ModelFactory factory, TurbineClassValue value) {

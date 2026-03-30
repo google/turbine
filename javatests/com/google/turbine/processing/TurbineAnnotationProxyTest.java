@@ -165,7 +165,7 @@ public class TurbineAnnotationProxyTest {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));
-    ModelFactory factory = new ModelFactory(env, ClassLoader.getSystemClassLoader(), bound.tli());
+    ModelFactory factory = new ModelFactory(env, bound.tli());
     TurbineTypeElement te = factory.typeElement(new ClassSymbol("Test"));
 
     A a = te.getAnnotation(A.class);
@@ -282,7 +282,7 @@ public class TurbineAnnotationProxyTest {
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(
                 ClassPathBinder.bindClasspath(ImmutableList.of(bindingLib)).env())
             .append(new SimpleEnv<>(bound.units()));
-    ModelFactory factory = new ModelFactory(env, ClassLoader.getSystemClassLoader(), bound.tli());
+    ModelFactory factory = new ModelFactory(env, bound.tli());
     TurbineTypeElement te = factory.typeElement(new ClassSymbol("Test"));
     VariableElement f = Iterables.getOnlyElement(ElementFilter.fieldsIn(te.getEnclosedElements()));
 

@@ -122,17 +122,12 @@ public class ModelFactory {
   private final HashMap<CharSequence, ClassSymbol> inferSymbolCache = new HashMap<>();
 
   private final ClassHierarchy cha;
-  private final ClassLoader processorLoader;
 
   private TopLevelIndex tli;
 
-  public ModelFactory(
-      Env<ClassSymbol, ? extends TypeBoundClass> env,
-      ClassLoader processorLoader,
-      TopLevelIndex tli) {
+  public ModelFactory(Env<ClassSymbol, ? extends TypeBoundClass> env, TopLevelIndex tli) {
     this.env = requireNonNull(env);
     this.cha = new ClassHierarchy(env);
-    this.processorLoader = requireNonNull(processorLoader);
     this.tli = requireNonNull(tli);
   }
 
@@ -371,10 +366,6 @@ public class ModelFactory {
 
   ClassHierarchy cha() {
     return cha;
-  }
-
-  ClassLoader processorLoader() {
-    return processorLoader;
   }
 
   TopLevelIndex tli() {

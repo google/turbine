@@ -105,7 +105,7 @@ public class Processing {
     Env<ClassSymbol, SourceTypeBoundClass> tenv = new SimpleEnv<>(result.units());
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
-    ModelFactory factory = new ModelFactory(env, processorInfo.loader(), result.tli());
+    ModelFactory factory = new ModelFactory(env, result.tli());
 
     Map<String, byte[]> statistics = new LinkedHashMap<>();
 

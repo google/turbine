@@ -71,7 +71,7 @@ public class TurbineTypesFactoryTest {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));
-    factory = new ModelFactory(env, getClass().getClassLoader(), bound.tli());
+    factory = new ModelFactory(env, bound.tli());
     turbineTypes = new TurbineTypes(factory);
     turbineElements = new TurbineElements(factory, turbineTypes);
   }
