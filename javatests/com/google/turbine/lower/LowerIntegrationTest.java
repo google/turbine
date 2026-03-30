@@ -446,7 +446,7 @@ public class LowerIntegrationTest {
     actual.forEach(
         (name, bytes) -> {
           ClassFile classFile = ClassReader.read(name, bytes);
-          bytecode.put(name, ClassWriter.writeClass(classFile));
+          bytecode.put(name + ".class", ClassWriter.writeClass(classFile));
         });
 
     assertThat(IntegrationTestSupport.dump(bytecode))

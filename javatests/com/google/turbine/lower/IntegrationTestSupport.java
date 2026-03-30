@@ -201,7 +201,7 @@ public final class IntegrationTestSupport {
     for (ClassNode n : classes) {
       ClassWriter cw = new ClassWriter(0);
       n.accept(cw);
-      out.put(n.name, cw.toByteArray());
+      out.put(n.name + ".class", cw.toByteArray());
     }
     return out;
   }
