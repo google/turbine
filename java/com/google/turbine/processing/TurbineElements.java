@@ -33,6 +33,7 @@ import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
+import com.google.turbine.processing.TurbineElement.TurbineNoTypeElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.type.AnnoInfo;
@@ -145,10 +146,12 @@ public class TurbineElements implements Elements {
 
   @Override
   public Name getBinaryName(TypeElement element) {
-    if (!(element instanceof TurbineTypeElement turbineTypeElement)) {
-      throw new IllegalArgumentException(element.toString());
-    }
-    return getName(turbineTypeElement.sym().binaryName().replace('/', '.'));
+    return switch (element) {
+      case TurbineNoTypeElement turbineNoTypeElement -> turbineNoTypeElement.getQualifiedName();
+      case TurbineTypeElement turbineTypeElement ->
+          getName(turbineTypeElement.sym().binaryName().replace('/', '.'));
+      default -> throw new IllegalArgumentException(element.toString());
+    };
   }
 
   /**

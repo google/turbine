@@ -297,11 +297,14 @@ public class TurbineElementsTest {
     assertThat(e.getSimpleName().toString()).isEqualTo("Foo");
     assertThat(e.getEnclosingElement().toString()).isEqualTo("com.google");
     assertThat(e.getEnclosingElement().getKind()).isEqualTo(ElementKind.PACKAGE);
+    assertThat(turbineElements.getBinaryName((TypeElement) e).toString())
+        .isEqualTo("com.google.Foo");
 
     e = factory.noElement("Foo");
     assertThat(e.getSimpleName().toString()).isEqualTo("Foo");
     assertThat(e.getEnclosingElement().toString()).isEmpty();
     assertThat(e.getEnclosingElement().getKind()).isEqualTo(ElementKind.PACKAGE);
+    assertThat(turbineElements.getBinaryName((TypeElement) e).toString()).isEqualTo("Foo");
   }
 
   @Test

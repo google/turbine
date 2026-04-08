@@ -1364,6 +1364,50 @@ public class ProcessingIntegrationTest {
                 """));
   }
 
+  @SupportedAnnotationTypes("*")
+  public static class ErrorBinaryNameProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      TypeElement element = processingEnv.getElementUtils().getTypeElement("T");
+      for (Element m : fieldsIn(element.getEnclosedElements())) {
+        TypeMirror t = m.asType();
+        processingEnv
+            .getMessager()
+            .printNote(
+                t.getKind()
+                    + " "
+                    + processingEnv.getElementUtils().getBinaryName(MoreTypes.asTypeElement(t)),
+                m);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void errorBinaryName() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === T.java ===
+            import java.util.Map;
+            class T {
+              NoSuch.Bar f;
+              Map.Entry s;
+            }
+            """);
+    TurbineError e = runProcessors(units, new ErrorBinaryNameProcessor());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.kind() == TurbineError.ErrorKind.PROC)
+                .map(d -> d.message()))
+        .containsExactly("ERROR NoSuch.Bar", "DECLARED java.util.Map$Entry");
+  }
+
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
     return assertThrows(
         TurbineError.class,
