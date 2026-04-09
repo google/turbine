@@ -30,6 +30,10 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SetMultimap;
 import com.google.common.io.MoreFiles;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
@@ -124,17 +128,97 @@ public final class IntegrationTestSupport {
       }
     }
 
-    HashSet<String> all = classes.stream().map(n -> n.name).collect(toCollection(HashSet::new));
     for (ClassNode n : classes) {
       removeImplementation(n);
-      removeUnusedInnerClassAttributes(infos, n);
-      makeEnumsNonAbstract(all, n);
-      sortAttributes(n);
-      undeprecate(n);
-      removePreviewVersion(n);
     }
 
-    return toByteCode(classes);
+    SetMultimap<String, ClassNode> byOutermostClass =
+        MultimapBuilder.hashKeys().hashSetValues().build();
+    for (ClassNode n : classes) {
+      byOutermostClass.put(outermostClass(n.name, infos), n);
+    }
+
+    List<ClassNode> result = new ArrayList<>();
+    for (Set<ClassNode> unit : Multimaps.asMap(byOutermostClass).values()) {
+      Map<String, ClassNode> remaining = pruneUnusedPrivateClasses(unit, infos);
+      Set<String> removed = new HashSet<>();
+      for (ClassNode n : unit) {
+        if (!remaining.containsKey(n.name)) {
+          removed.add(n.name);
+        }
+      }
+      for (ClassNode n : remaining.values()) {
+        removeUnusedInnerClassAttributes(infos, n, removed);
+        makeEnumsNonAbstract(remaining.keySet(), n);
+        sortAttributes(n);
+        undeprecate(n);
+        removePreviewVersion(n);
+      }
+      result.addAll(remaining.values());
+    }
+    return toByteCode(result);
+  }
+
+  private static Map<String, ClassNode> pruneUnusedPrivateClasses(
+      Set<ClassNode> classes, Map<String, InnerClassNode> infos) {
+    Set<String> declared = new HashSet<>();
+    for (ClassNode n : classes) {
+      declared.add(n.name);
+    }
+    SetMultimap<String, String> usages = MultimapBuilder.hashKeys().hashSetValues().build();
+    List<String> roots = new ArrayList<>();
+    for (ClassNode n : classes) {
+      if (!isPrivateMemberClass(n, infos)) {
+        roots.add(n.name);
+      }
+      for (String ref : getReferencedTypes(n, infos, /* includeNestMembers= */ false)) {
+        if (declared.contains(ref)) {
+          usages.put(n.name, ref);
+        }
+      }
+    }
+    Set<String> reachable = new HashSet<>();
+    for (String root : roots) {
+      closure(reachable, root, usages);
+    }
+    Map<String, ClassNode> pruned = new HashMap<>();
+    for (ClassNode n : classes) {
+      if (reachable.contains(n.name)) {
+        pruned.put(n.name, n);
+      }
+    }
+    return pruned;
+  }
+
+  static void closure(Set<String> reachable, String current, Multimap<String, String> usages) {
+    if (!reachable.add(current)) {
+      return;
+    }
+    for (String next : usages.get(current)) {
+      closure(reachable, next, usages);
+    }
+  }
+
+  private static ImmutableList<InnerClassNode> enclosingInnerClassNodes(
+      String className, Map<String, InnerClassNode> infos) {
+    ImmutableList.Builder<InnerClassNode> builder = ImmutableList.builder();
+    String curr = className;
+    while (infos.containsKey(curr)) {
+      InnerClassNode info = infos.get(curr);
+      builder.add(info);
+      curr = info.outerName;
+    }
+    return builder.build().reverse();
+  }
+
+  private static boolean isPrivateMemberClass(ClassNode n, Map<String, InnerClassNode> infos) {
+    return enclosingInnerClassNodes(n.name, infos).stream()
+        .anyMatch(info -> (info.access & Opcodes.ACC_PRIVATE) == Opcodes.ACC_PRIVATE);
+  }
+
+  private static String outermostClass(String className, Map<String, InnerClassNode> infos) {
+    ImmutableList<InnerClassNode> enclosing = enclosingInnerClassNodes(className, infos);
+    return enclosing.isEmpty() ? className : enclosing.getFirst().outerName;
   }
 
   public static Map<String, byte[]> removeUnsupportedAttributes(Map<String, byte[]> in) {
@@ -310,12 +394,9 @@ public final class IntegrationTestSupport {
             .thenComparing(a -> String.valueOf(a.values)));
   }
 
-  /**
-   * Remove InnerClass attributes that are no longer needed after member pruning. This requires
-   * visiting all descriptors and signatures in the bytecode to find references to inner classes.
-   */
-  private static void removeUnusedInnerClassAttributes(
-      Map<String, InnerClassNode> infos, ClassNode n) {
+  /** Visit all descriptors and signatures in the bytecode to find references to inner classes. */
+  private static Set<String> getReferencedTypes(
+      ClassNode n, Map<String, InnerClassNode> infos, boolean includeNestMembers) {
     Set<String> types = new HashSet<>();
     {
       types.add(n.name);
@@ -366,7 +447,7 @@ public final class IntegrationTestSupport {
       }
     }
 
-    if (n.nestMembers != null) {
+    if (includeNestMembers && n.nestMembers != null) {
       for (String member : n.nestMembers) {
         InnerClassNode i = infos.get(member);
         if (i.outerName != null) {
@@ -374,18 +455,29 @@ public final class IntegrationTestSupport {
         }
       }
     }
+    enclosingInnerClassNodes(n.name, infos).forEach(i -> types.add(i.name));
+    return types;
+  }
+
+  /** Remove InnerClass attributes that are no longer needed after member pruning. */
+  private static void removeUnusedInnerClassAttributes(
+      Map<String, InnerClassNode> infos, ClassNode n, Set<String> removed) {
+
+    Set<String> types = getReferencedTypes(n, infos, /* includeNestMembers= */ true);
 
     List<InnerClassNode> used = new ArrayList<>();
     for (InnerClassNode i : n.innerClasses) {
+      if (removed.contains(i.name)) {
+        continue;
+      }
       if (i.outerName != null && i.outerName.equals(n.name)) {
         // keep InnerClass attributes for any member classes
         used.add(i);
       } else if (types.contains(i.name)) {
         // otherwise, keep InnerClass attributes that were referenced in class or member signatures
-        addInnerChain(infos, used, i.name);
+        used.addAll(enclosingInnerClassNodes(i.name, infos));
       }
     }
-    addInnerChain(infos, used, n.name);
     n.innerClasses = used;
 
     if (n.nestMembers != null) {
@@ -444,19 +536,6 @@ public final class IntegrationTestSupport {
     }
   }
 
-  /**
-   * For each preserved InnerClass attribute, keep any information about transitive enclosing
-   * classes of the inner class.
-   */
-  private static void addInnerChain(
-      Map<String, InnerClassNode> infos, List<InnerClassNode> used, String i) {
-    while (infos.containsKey(i)) {
-      InnerClassNode info = infos.get(i);
-      used.add(info);
-      i = info.outerName;
-    }
-  }
-
   /** Save all class types referenced in a signature. */
   private static void collectTypesFromSignature(Set<String> classes, String signature) {
     if (signature == null) {
@@ -464,11 +543,9 @@ public final class IntegrationTestSupport {
     }
     // signatures for qualified generic class types are visited as name and type argument pieces,
     // so stitch them back together into a binary class name
-    final Set<String> classes1 = classes;
     new SignatureReader(signature)
         .accept(
             new SignatureVisitor(Opcodes.ASM9) {
-              private final Set<String> classes = classes1;
               // class signatures may contain type arguments that contain class signatures
               final Deque<List<String>> pieces = new ArrayDeque<>();
 

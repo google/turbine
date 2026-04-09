@@ -70,7 +70,6 @@ import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.options.LanguageVersion;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -101,6 +100,9 @@ public class Lower {
 
     public abstract boolean emitPrivateFields();
 
+    // TODO: b/496858305 - consider removing this after rolling out the feature
+    public abstract boolean emitAllPrivateMemberClasses();
+
     public abstract boolean methodParameters();
 
     public static LowerOptions createDefault() {
@@ -111,6 +113,7 @@ public class Lower {
       return new AutoValue_Lower_LowerOptions.Builder()
           .languageVersion(LanguageVersion.createDefault())
           .emitPrivateFields(false)
+          .emitAllPrivateMemberClasses(false)
           .methodParameters(true);
     }
 
@@ -120,6 +123,8 @@ public class Lower {
       public abstract Builder languageVersion(LanguageVersion languageVersion);
 
       public abstract Builder emitPrivateFields(boolean emitPrivateFields);
+
+      public abstract Builder emitAllPrivateMemberClasses(boolean emitAllPrivateMemberClasses);
 
       public abstract Builder methodParameters(boolean methodParameters);
 
@@ -155,9 +160,12 @@ public class Lower {
     // Output Java 8 bytecode at minimum, for type annotations
     int majorVersion = max(options.languageVersion().majorVersion(), 52);
     TurbineLog log = new TurbineLog();
-    for (ClassSymbol sym : units.keySet()) {
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
+        RemovePrivateMembers.process(env, units, options);
+    for (var entry : pruned.entrySet()) {
+      ClassSymbol sym = entry.getKey();
       result.put(
-          sym.binaryName(), lower(units.get(sym), env, log, sym, symbols, majorVersion, options));
+          sym.binaryName(), lower(entry.getValue(), env, log, sym, symbols, majorVersion, options));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
@@ -318,19 +326,11 @@ public class Lower {
 
     List<ClassFile.MethodInfo> methods = new ArrayList<>();
     for (MethodInfo m : info.methods()) {
-      if (TurbineVisibility.fromAccess(m.access()) == TurbineVisibility.PRIVATE) {
-        // TODO(cushon): drop private members earlier?
-        continue;
-      }
       methods.add(lowerMethod(m, sym));
     }
 
     ImmutableList.Builder<ClassFile.FieldInfo> fields = ImmutableList.builder();
     for (FieldInfo f : info.fields()) {
-      if (!lowerOptions.emitPrivateFields()
-          && (f.access() & TurbineFlag.ACC_PRIVATE) == TurbineFlag.ACC_PRIVATE) {
-        continue;
-      }
       fields.add(lowerField(f));
     }
 

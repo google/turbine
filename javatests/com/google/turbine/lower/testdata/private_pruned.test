@@ -1,0 +1,8 @@
+=== Test.java ===
+package p;
+class Test {
+  private static class A {}
+  private static class B {}
+
+  public static final A a = new A();
+}

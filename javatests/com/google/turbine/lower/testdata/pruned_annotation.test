@@ -1,0 +1,22 @@
+=== Test.java ===
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+class Test {
+  @Retention(RetentionPolicy.RUNTIME)
+  private @interface A {}
+
+  @Retention(RetentionPolicy.RUNTIME)
+  private @interface B {
+    Class<?> value();
+  }
+
+  private static class Inner {
+  }
+
+  @A
+  public static Object x;
+
+  @B(Inner.class)
+  public static Object y;
+}

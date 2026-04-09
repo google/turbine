@@ -16,6 +16,7 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
@@ -25,11 +26,14 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.objectweb.asm.Opcodes;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
@@ -64,6 +68,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Stream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -753,6 +758,98 @@ public class LowerTest {
   }
 
   @Test
+  public void privateFieldsPrivateMemberClasses() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class Test {
+                      private static class Inner {}
+                      private Inner x;
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.builder()
+                    .emitPrivateFields(true)
+                    .emitAllPrivateMemberClasses(false)
+                    .build(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<String> fields = new ArrayList<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String descriptor, String signature, Object value) {
+                fields.add(name);
+                return null;
+              }
+            },
+            0);
+    assertThat(fields).containsExactly("x");
+    // We would normally omit Test$Inner because it is a private member class and we have
+    // emitAllPrivateMemberClasses(false). But it is referenced as the type of a private field, and
+    // we have emitPrivateFields(true), so it should be included.
+    assertThat(lowered.keySet()).containsExactly("Test", "Test$Inner");
+  }
+
+  @Test
+  public void emitAllPrivateMemberClasses() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class Test {
+                      private static class Inner {}
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.builder().emitAllPrivateMemberClasses(true).build(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    assertThat(lowered.keySet()).containsExactly("Test", "Test$Inner");
+  }
+
+  @Test
+  public void noemitAllPrivateMemberClasses() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class Test {
+                      private static class Inner {}
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    assertThat(lowered.keySet()).containsExactly("Test");
+  }
+
+  @Test
   public void repeatedTypeAnnotationError() throws Exception {
     BindingResult bound =
         Binder.bind(
@@ -876,6 +973,149 @@ public class LowerTest {
             },
             0);
     assertThat(methodParameters).isEmpty();
+  }
+
+  @Test
+  public void sourceRetentionAnnotationFromClassPath() throws Exception {
+    Map<String, byte[]> classpath =
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of(
+                "Anno.java",
+                """
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                @Retention(RetentionPolicy.SOURCE)
+                public @interface Anno {
+                  Class<?> value();
+                }
+                """),
+            ImmutableList.of());
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
+      for (String name : classpath.keySet()) {
+        write(jos, classpath, name);
+      }
+    }
+    ImmutableMap<String, String> sources =
+        ImmutableMap.of(
+            "Test.java",
+            """
+            class Test {
+              private static class A {}
+              @Anno(A.class) public int x;
+            }
+            """);
+    Map<String, byte[]> lowered = IntegrationTestSupport.runTurbine(sources, ImmutableList.of(lib));
+    assertThat(lowered.keySet()).containsExactly("Test");
+  }
+
+  @Test
+  public void privateSealedClass() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    public class Test {
+                      public sealed interface S permits A, B {}
+                      private static final class A extends Test {}
+                      private static final class B extends Test {}
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    assertThat(lowered.keySet()).containsExactly("Test", "Test$S", "Test$B", "Test$A");
+
+    List<String> permitted = new ArrayList<>();
+    new ClassReader(lowered.get("Test$S"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public void visitPermittedSubclass(String permit) {
+                permitted.add(permit);
+              }
+            },
+            0);
+    assertThat(permitted).containsExactly("Test$B", "Test$A");
+  }
+
+  @Test
+  public void keepPermits() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    public class Test {
+                      public sealed interface S permits A, B {}
+                      private static final class A extends Test {}
+                      public static final class B extends Test {}
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                Lower.LowerOptions.createDefault(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    assertThat(lowered.keySet()).containsExactly("Test", "Test$S", "Test$B", "Test$A");
+
+    List<String> permitted = new ArrayList<>();
+    new ClassReader(lowered.get("Test$S"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public void visitPermittedSubclass(String permit) {
+                permitted.add(permit);
+              }
+            },
+            0);
+    assertThat(permitted).containsExactly("Test$B", "Test$A");
+  }
+
+  @Test
+  public void usagesInTopLevelClass() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class A {
+                      public B b;
+                      public A.I i;
+                      public static class I {}
+                    }
+                    class B { public A a; }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> unit =
+        Stream.of("A", "A$I")
+            .map(ClassSymbol::new)
+            .collect(toImmutableMap(sym -> sym, sym -> bound.units().get(sym)));
+    ImmutableSet<ClassSymbol> usages =
+        RemovePrivateMembers.usagesInTopLevelClass(
+            unit.get(new ClassSymbol("A")),
+            CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
+                .append(new SimpleEnv<>(bound.units())),
+            unit,
+            Lower.LowerOptions.createDefault());
+    // The usage graph should only include symbols with the same outermost enclosing class
+    assertThat(usages).containsExactly(new ClassSymbol("A$I"));
   }
 
   static String lines(String... lines) {
