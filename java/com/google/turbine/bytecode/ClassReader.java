@@ -114,6 +114,7 @@ public class ClassReader {
     ClassFile.ModuleInfo module = null;
     String transitiveJar = null;
     RecordInfo record = null;
+    ImmutableList.Builder<String> permits = ImmutableList.builder();
     int attributesCount = reader.u2();
     for (int j = 0; j < attributesCount; j++) {
       int attributeNameIndex = reader.u2();
@@ -132,6 +133,7 @@ public class ClassReader {
         case "Module" -> module = readModule(constantPool);
         case "TurbineTransitiveJar" -> transitiveJar = readTurbineTransitiveJar(constantPool);
         case "Record" -> record = readRecord(constantPool);
+        case "PermittedSubclasses" -> readPermits(permits, constantPool);
         default -> reader.skip(reader.u4());
       }
     }
@@ -143,7 +145,7 @@ public class ClassReader {
         signature,
         superClass,
         interfaces,
-        /* permits= */ ImmutableList.of(),
+        permits.build(),
         methodinfos,
         fieldinfos,
         annotations.build(),
@@ -318,7 +320,7 @@ public class ClassReader {
   }
 
   /**
-   * Extracts an {@link @Retention} or {@link ElementType} {@link ClassFile.AnnotationInfo}, or else
+   * Extracts an {@code @Retention} or {@code ElementType} {@link ClassFile.AnnotationInfo}, or else
    * skips over the annotation.
    */
   private ClassFile.AnnotationInfo readAnnotation(
@@ -648,5 +650,13 @@ public class ClassReader {
               name, descriptor, signature, annotations.build(), typeAnnotations.build()));
     }
     return new RecordInfo(components.build());
+  }
+
+  private void readPermits(ImmutableList.Builder<String> permits, ConstantPoolReader constantPool) {
+    int unusedLength = reader.u4();
+    int numberOfClasses = reader.u2();
+    for (int i = 0; i < numberOfClasses; i++) {
+      permits.add(constantPool.classInfo(reader.u2()));
+    }
   }
 }

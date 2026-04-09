@@ -226,9 +226,6 @@ public final class IntegrationTestSupport {
     for (ClassNode c : classes) {
       c.nestMembers = null;
       c.nestHostClass = null;
-      // TODO(b/307939333): class reading for sealed classes
-      c.permittedSubclasses = null;
-      // this is a synthetic access flag that ASM sets if recordComponents is present
     }
     return toByteCode(classes);
   }

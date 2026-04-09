@@ -55,6 +55,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -1406,6 +1407,97 @@ public class ProcessingIntegrationTest {
                 .filter(d -> d.kind() == TurbineError.ErrorKind.PROC)
                 .map(d -> d.message()))
         .containsExactly("ERROR NoSuch.Bar", "DECLARED java.util.Map$Entry");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class PermittedSubclasses extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!roundEnv.processingOver()) {
+        return false;
+      }
+      List<? extends TypeMirror> permits =
+          processingEnv.getElementUtils().getTypeElement("T").getPermittedSubclasses();
+      processingEnv
+          .getMessager()
+          .printError(
+              String.format(
+                  "permits %s", permits.stream().map(t -> t.toString()).collect(joining(", "))));
+      return false;
+    }
+  }
+
+  @Test
+  public void permittedSubclasses() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === T.java ===
+            sealed class T {
+               final static class A extends T {}
+               final static class B extends T {}
+               final static class C extends T {}
+            }
+            """);
+    TurbineError e = runProcessors(units, new PermittedSubclasses());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly("permits T.A, T.B, T.C");
+  }
+
+  @Test
+  public void bytecodePermittedSubclasses() throws IOException {
+    Map<String, byte[]> library =
+        IntegrationTestSupport.runTurbine(
+            ImmutableMap.of(
+                "T.java",
+                """
+                public sealed class T {
+                   final static class A extends T {}
+                   final static class B extends T {}
+                   final static class C extends T {}
+                }
+                """),
+            ImmutableList.of());
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("T.class"));
+      jos.write(requireNonNull(library.get("T")));
+    }
+
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== V.java ===",
+            """
+            class V {
+              T t;
+            }
+            """);
+
+    TurbineLog log = new TurbineLog();
+    BindingResult unused =
+        Binder.bind(
+            log,
+            units,
+            ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+            ProcessorInfo.create(
+                ImmutableList.of(new PermittedSubclasses()),
+                getClass().getClassLoader(),
+                ImmutableMap.of(),
+                SourceVersion.latestSupported()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+    ImmutableList<String> messages =
+        log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
+    assertThat(messages).contains("permits T.A, T.B, T.C");
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {
