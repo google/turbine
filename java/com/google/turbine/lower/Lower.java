@@ -122,6 +122,13 @@ public class Lower {
     public abstract static class Builder {
       public abstract Builder languageVersion(LanguageVersion languageVersion);
 
+      public Builder javacOpts(ImmutableList<String> javacOpts) {
+        return emitPrivateFields(javacOpts.contains("-XDturbine.emitPrivateFields"))
+            .emitAllPrivateMemberClasses(
+                javacOpts.contains("-XDturbine.emitAllPrivateMemberClasses"))
+            .methodParameters(!javacOpts.contains("-XDturbine.noMethodParameters"));
+      }
+
       public abstract Builder emitPrivateFields(boolean emitPrivateFields);
 
       public abstract Builder emitAllPrivateMemberClasses(boolean emitAllPrivateMemberClasses);

@@ -196,10 +196,7 @@ public final class Main {
           Lower.lowerAll(
               Lower.LowerOptions.builder()
                   .languageVersion(options.languageVersion())
-                  .emitPrivateFields(options.javacOpts().contains("-XDturbine.emitPrivateFields"))
-                  .emitAllPrivateMemberClasses(
-                      options.javacOpts().contains("-XDturbine.emitAllPrivateMemberClasses"))
-                  .methodParameters(!options.javacOpts().contains("-XDturbine.noMethodParameters"))
+                  .javacOpts(options.javacOpts())
                   .build(),
               bound.units(),
               bound.modules(),
