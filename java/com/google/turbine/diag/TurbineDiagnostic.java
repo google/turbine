@@ -73,10 +73,20 @@ public class TurbineDiagnostic {
     if (line() != -1) {
       sb.append(':').append(line());
     }
-    sb.append(": error: ");
-    sb.append(message()).append(System.lineSeparator());
+    String severity =
+        switch (severity()) {
+          case ERROR -> "error";
+          case WARNING, MANDATORY_WARNING -> "warning";
+          case NOTE -> "note";
+          case OTHER -> "";
+        };
+    if (!severity.isEmpty()) {
+      sb.append(": ").append(severity);
+    }
+    sb.append(": ").append(message());
     if (line() != -1 && column() != -1) {
       requireNonNull(source); // line and column imply source is non-null
+      sb.append(System.lineSeparator());
       sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position)))
           .append(System.lineSeparator());
       sb.repeat(" ", column() - 1).append('^');
