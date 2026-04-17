@@ -21,16 +21,15 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBinder;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
+import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.lookup.PackageScope;
@@ -47,11 +46,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 
 /** Constructs a platform {@link ClassPath} from the current JDK's jimage file using jrtfs. */
@@ -90,14 +85,15 @@ public class JimageClassBinder {
     return JimageClassBinder.create(fileSystem).new JimageClassPath();
   }
 
-  private final Multimap<String, String> packageMap;
+  private final ImmutableMultimap<String, String> packageMap;
   private final Path modulesRoot;
 
-  private final Set<String> loadedPackages = new HashSet<>();
-  private final Table<String, String, ClassSymbol> packageClassesBySimpleName =
-      HashBasedTable.create();
-  private final Map<String, ModuleInfo> moduleMap = new HashMap<>();
-  private final Map<ClassSymbol, BytecodeBoundClass> env = new HashMap<>();
+  record PackageInfo(
+      Env<ClassSymbol, BytecodeBoundClass> env,
+      ImmutableMap<String, ClassSymbol> packageClassesBySimpleName) {}
+
+  private final ConcurrentHashMap<String, PackageInfo> packages = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, ModuleInfo> moduleMap = new ConcurrentHashMap<>();
 
   public JimageClassBinder(ImmutableMultimap<String, String> packageMap, Path modules) {
     this.packageMap = packageMap;
@@ -110,33 +106,35 @@ public class JimageClassBinder {
   }
 
   @Nullable ModuleInfo module(String moduleName) {
-    ModuleInfo result = moduleMap.get(moduleName);
-    if (result == null) {
-      Path path = modulePath(moduleName);
-      if (path == null) {
-        return null;
-      }
-      path = path.resolve("module-info.class");
-      result = BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(path));
-      moduleMap.put(moduleName, result);
-    }
-    return result;
+    return moduleMap.computeIfAbsent(
+        moduleName,
+        k -> {
+          Path path = modulePath(moduleName);
+          if (path == null) {
+            return null;
+          }
+          path = path.resolve("module-info.class");
+          return BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(path));
+        });
   }
 
-  boolean initPackage(String packageName) {
-    Collection<String> moduleNames = packageMap.get(packageName);
+  @Nullable PackageInfo getPackage(String packageName) {
+    ImmutableCollection<String> moduleNames = packageMap.get(packageName);
     if (moduleNames.isEmpty()) {
-      return false;
+      return null;
     }
-    if (!loadedPackages.add(packageName)) {
-      return true;
-    }
+    return packages.computeIfAbsent(packageName, k -> createPackage(packageName, moduleNames));
+  }
+
+  private PackageInfo createPackage(String packageName, ImmutableCollection<String> moduleNames) {
+    ImmutableMap.Builder<ClassSymbol, BytecodeBoundClass> packageEnv = ImmutableMap.builder();
+    ImmutableMap.Builder<String, ClassSymbol> packageClassesBySimpleName = ImmutableMap.builder();
     Env<ClassSymbol, BytecodeBoundClass> env =
-        new Env<ClassSymbol, BytecodeBoundClass>() {
-          @Override
-          public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
-            return JimageClassBinder.this.env.get(sym);
-          }
+        sym -> {
+          // This env is used lazily by BytecodeBoundClass after createPackage is done, calling
+          // getPackage here shouldn't ever result in recursive computeIfAbsent calls.
+          PackageInfo packageInfo = getPackage(sym.packageName());
+          return packageInfo != null ? packageInfo.env().get(sym) : null;
         };
     for (String moduleName : moduleNames) {
       if (moduleName != null) {
@@ -152,8 +150,8 @@ public class JimageClassBinder {
             String binaryName = modulePath.relativize(path).toString();
             binaryName = binaryName.substring(0, binaryName.length() - ".class".length());
             ClassSymbol sym = new ClassSymbol(binaryName);
-            packageClassesBySimpleName.put(packageName, sym.simpleName(), sym);
-            JimageClassBinder.this.env.put(
+            packageClassesBySimpleName.put(sym.simpleName(), sym);
+            packageEnv.put(
                 sym, new BytecodeBoundClass(sym, toByteArrayOrDie(path), env, path.toString()));
           }
         } catch (IOException e) {
@@ -161,7 +159,8 @@ public class JimageClassBinder {
         }
       }
     }
-    return true;
+    return new PackageInfo(
+        new SimpleEnv<>(packageEnv.buildOrThrow()), packageClassesBySimpleName.buildOrThrow());
   }
 
   private static Supplier<byte[]> toByteArrayOrDie(Path path) {
@@ -216,19 +215,27 @@ public class JimageClassBinder {
 
     @Override
     public @Nullable PackageScope lookupPackage(String packageName) {
-      if (!initPackage(packageName)) {
+      if (!packageMap.containsKey(packageName)) {
         return null;
       }
       return new PackageScope() {
         @Override
         public @Nullable LookupResult lookup(LookupKey lookupKey) {
-          ClassSymbol sym = packageClassesBySimpleName.get(packageName, lookupKey.first().value());
+          PackageInfo packageInfo = getPackage(packageName);
+          if (packageInfo == null) {
+            return null;
+          }
+          ClassSymbol sym = packageInfo.packageClassesBySimpleName().get(lookupKey.first().value());
           return sym != null ? new LookupResult(sym, lookupKey) : null;
         }
 
         @Override
-        public Iterable<ClassSymbol> classes() {
-          return packageClassesBySimpleName.row(packageName).values();
+        public ImmutableCollection<ClassSymbol> classes() {
+          PackageInfo packageInfo = getPackage(packageName);
+          if (packageInfo == null) {
+            return ImmutableList.of();
+          }
+          return packageInfo.packageClassesBySimpleName().values();
         }
       };
     }
@@ -243,7 +250,8 @@ public class JimageClassBinder {
       return new Env<ClassSymbol, BytecodeBoundClass>() {
         @Override
         public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
-          return initPackage(sym.packageName()) ? env.get(sym) : null;
+          PackageInfo packageInfo = getPackage(sym.packageName());
+          return packageInfo != null ? packageInfo.env().get(sym) : null;
         }
       };
     }

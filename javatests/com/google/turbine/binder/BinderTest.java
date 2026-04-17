@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
@@ -76,6 +77,7 @@ public class BinderTest {
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
@@ -120,6 +122,7 @@ public class BinderTest {
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
@@ -159,6 +162,7 @@ public class BinderTest {
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
@@ -191,6 +195,7 @@ public class BinderTest {
             TurbineError.class,
             () ->
                 Binder.bind(
+                    newDirectExecutorService(),
                     units,
                     ClassPathBinder.bindClasspath(ImmutableList.of()),
                     TURBINE_BOOTCLASSPATH,
@@ -209,6 +214,7 @@ public class BinderTest {
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
@@ -238,6 +244,7 @@ public class BinderTest {
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
@@ -278,6 +285,7 @@ public class BinderTest {
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
         Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
                 TURBINE_BOOTCLASSPATH,
@@ -294,6 +302,7 @@ public class BinderTest {
     TurbineLog log = new TurbineLog();
     Binder.BindingResult br =
         Binder.bind(
+            newDirectExecutorService(),
             log,
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
@@ -315,6 +324,7 @@ public class BinderTest {
     TurbineLog log = new TurbineLog();
     Binder.BindingResult br =
         Binder.bind(
+            newDirectExecutorService(),
             log,
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
@@ -347,6 +357,7 @@ public class BinderTest {
     TurbineLog log = new TurbineLog();
     Binder.BindingResult br =
         Binder.bind(
+            newDirectExecutorService(),
             log,
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),

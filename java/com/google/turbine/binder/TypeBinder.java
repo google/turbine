@@ -527,7 +527,7 @@ public class TypeBinder {
   }
 
   /** Collect synthetic and implicit methods, including default constructors and enum methods. */
-  ImmutableList<MethodInfo> syntheticMethods(SyntheticMethods syntheticMethods) {
+  private ImmutableList<MethodInfo> syntheticMethods(SyntheticMethods syntheticMethods) {
     return switch (base.kind()) {
       case CLASS -> maybeDefaultConstructor(syntheticMethods);
       case ENUM -> syntheticEnumMethods(syntheticMethods);

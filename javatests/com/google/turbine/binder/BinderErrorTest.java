@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static org.junit.Assert.assertThrows;
 
@@ -1119,6 +1120,7 @@ public class BinderErrorTest {
             TurbineError.class,
             () ->
                 Binder.bind(
+                        newDirectExecutorService(),
                         ImmutableList.of(parseLines(source)),
                         ClassPathBinder.bindClasspath(ImmutableList.of()),
                         TURBINE_BOOTCLASSPATH,
@@ -1150,6 +1152,7 @@ public class BinderErrorTest {
             TurbineError.class,
             () ->
                 Binder.bind(
+                        newDirectExecutorService(),
                         ImmutableList.of(parseLines(source)),
                         ClassPathBinder.bindClasspath(ImmutableList.of()),
                         ProcessorInfo.create(
@@ -1160,6 +1163,7 @@ public class BinderErrorTest {
                         TURBINE_BOOTCLASSPATH,
                         /* moduleVersion= */ Optional.empty())
                     .units());
+
     assertThat(e).hasMessageThat().isEqualTo(lines(expected));
   }
 
