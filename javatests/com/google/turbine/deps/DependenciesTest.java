@@ -18,6 +18,7 @@ package com.google.turbine.deps;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -107,6 +108,7 @@ public class DependenciesTest {
 
       Lowered lowered =
           Lower.lowerAll(
+              newDirectExecutorService(),
               Lower.LowerOptions.createDefault(),
               bound.units(),
               bound.modules(),

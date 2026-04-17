@@ -18,6 +18,7 @@ package com.google.turbine.lower;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.MoreFiles.getFileExtension;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -587,6 +588,7 @@ public final class IntegrationTestSupport {
       throws IOException {
     BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
     return Lower.lowerAll(
+            newDirectExecutorService(),
             Lower.LowerOptions.builder()
                 .languageVersion(LanguageVersion.fromJavacopts(javacopts))
                 .build(),

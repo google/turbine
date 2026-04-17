@@ -24,6 +24,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.util.Arrays.stream;
 import static org.junit.Assert.fail;
 
@@ -276,6 +277,7 @@ public class TurbineTypeAnnotationMirrorTest {
         MultimapBuilder.linkedHashKeys().arrayListValues().build();
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.builder().build(),
                 bound.units(),
                 bound.modules(),

@@ -25,6 +25,10 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ExecutionError;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
@@ -154,63 +158,95 @@ public class Lower {
     }
   }
 
+  @SuppressWarnings("ArrayRecordComponent")
+  private static record TaskResult(
+      String name, byte[] bytes, ImmutableSet<ClassSymbol> symbols, TurbineLog log) {}
+
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
+      ListeningExecutorService executor,
       LowerOptions options,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       ImmutableList<SourceModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> classpath) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
-    ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
-    Set<ClassSymbol> symbols = new LinkedHashSet<>();
     // Output Java 8 bytecode at minimum, for type annotations
     int majorVersion = max(options.languageVersion().majorVersion(), 52);
-    TurbineLog log = new TurbineLog();
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
         RemovePrivateMembers.process(env, units, options);
+    List<ListenableFuture<TaskResult>> futures = new ArrayList<>();
     for (var entry : pruned.entrySet()) {
       ClassSymbol sym = entry.getKey();
-      result.put(
-          sym.binaryName(), lower(entry.getValue(), env, log, sym, symbols, majorVersion, options));
+      futures.add(
+          executor.submit(
+              () -> lower(sym.binaryName(), entry.getValue(), env, sym, majorVersion, options)));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
-      result.put(
-          "module-info", lower(getOnlyElement(modules), env, log, symbols, majorVersion, options));
+      futures.add(
+          executor.submit(
+              () -> lower("module-info", getOnlyElement(modules), env, majorVersion, options)));
     } else {
       // multi-module mode: the output module-info.class are in a directory corresponding to their
       // package
       for (SourceModuleInfo module : modules) {
-        result.put(
-            module.name().replace('.', '/') + "/module-info",
-            lower(module, env, log, symbols, majorVersion, options));
+        futures.add(
+            executor.submit(
+                () ->
+                    lower(
+                        module.name().replace('.', '/') + "/module-info",
+                        module,
+                        env,
+                        majorVersion,
+                        options)));
       }
+    }
+    ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
+    TurbineLog log = new TurbineLog();
+    Set<ClassSymbol> symbols = new LinkedHashSet<>();
+    try {
+      for (TaskResult lowered : Futures.getUnchecked(Futures.allAsList(futures))) {
+        result.put(lowered.name(), lowered.bytes());
+        symbols.addAll(lowered.symbols());
+        for (var diagnostic : lowered.log().diagnostics()) {
+          log.add(diagnostic);
+        }
+      }
+    } catch (ExecutionError e) {
+      if (e.getCause() instanceof TurbineError turbineError) {
+        throw new TurbineError(turbineError.diagnostics(), turbineError);
+      }
+      throw e;
     }
     log.maybeThrow();
     return Lowered.create(result.buildOrThrow(), ImmutableSet.copyOf(symbols));
   }
 
   /** Lowers a class to bytecode. */
-  private static byte[] lower(
+  private static TaskResult lower(
+      String name,
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
-      TurbineLog log,
       ClassSymbol sym,
-      Set<ClassSymbol> symbols,
       int majorVersion,
       LowerOptions lowerOptions) {
-    return new Lower(env, log, lowerOptions).lower(info, sym, symbols, majorVersion);
+    TurbineLog log = new TurbineLog();
+    Set<ClassSymbol> symbols = new LinkedHashSet<>();
+    byte[] bytes = new Lower(env, log, lowerOptions).lower(info, sym, symbols, majorVersion);
+    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols), log);
   }
 
-  private static byte[] lower(
+  private static TaskResult lower(
+      String name,
       SourceModuleInfo module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
-      TurbineLog log,
-      Set<ClassSymbol> symbols,
       int majorVersion,
       LowerOptions lowerOptions) {
-    return new Lower(env, log, lowerOptions).lower(module, symbols, majorVersion);
+    TurbineLog log = new TurbineLog();
+    Set<ClassSymbol> symbols = new LinkedHashSet<>();
+    byte[] bytes = new Lower(env, log, lowerOptions).lower(module, symbols, majorVersion);
+    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols), log);
   }
 
   private final LowerSignature sig = new LowerSignature();

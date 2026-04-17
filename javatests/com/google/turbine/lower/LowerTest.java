@@ -18,6 +18,7 @@ package com.google.turbine.lower;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.util.Objects.requireNonNull;
@@ -241,6 +242,7 @@ public class LowerTest {
 
     Map<String, byte[]> bytes =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
@@ -272,6 +274,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -350,6 +353,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -433,6 +437,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -659,6 +664,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.builder()
                     .languageVersion(
                         LanguageVersion.fromJavacopts(
@@ -702,6 +708,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.builder().emitPrivateFields(true).build(),
                 bound.units(),
                 bound.modules(),
@@ -737,6 +744,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -774,6 +782,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.builder()
                     .emitPrivateFields(true)
                     .emitAllPrivateMemberClasses(false)
@@ -817,6 +826,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.builder().emitAllPrivateMemberClasses(true).build(),
                 bound.units(),
                 bound.modules(),
@@ -841,6 +851,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -874,6 +885,7 @@ public class LowerTest {
             TurbineError.class,
             () ->
                 Lower.lowerAll(
+                    newDirectExecutorService(),
                     Lower.LowerOptions.createDefault(),
                     bound.units(),
                     bound.modules(),
@@ -901,6 +913,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -945,6 +958,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.builder().methodParameters(false).build(),
                 bound.units(),
                 bound.modules(),
@@ -1027,6 +1041,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -1065,6 +1080,7 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),

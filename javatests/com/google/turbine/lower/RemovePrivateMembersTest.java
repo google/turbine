@@ -17,6 +17,7 @@
 package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 
 import com.google.common.collect.ImmutableList;
@@ -351,6 +352,7 @@ public class RemovePrivateMembersTest {
 
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
+                newDirectExecutorService(),
                 Lower.LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),

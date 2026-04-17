@@ -103,6 +103,11 @@ public class TurbineError extends Error {
 
   private final ImmutableList<TurbineDiagnostic> diagnostics;
 
+  public TurbineError(ImmutableList<TurbineDiagnostic> diagnostics, TurbineError cause) {
+    super(cause);
+    this.diagnostics = diagnostics;
+  }
+
   public TurbineError(ImmutableList<TurbineDiagnostic> diagnostics) {
     this.diagnostics = diagnostics;
   }
