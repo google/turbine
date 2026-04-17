@@ -783,10 +783,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder()
-                    .emitPrivateFields(true)
-                    .emitAllPrivateMemberClasses(false)
-                    .build(),
+                Lower.LowerOptions.builder().emitPrivateFields(true).build(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -804,8 +801,8 @@ public class LowerTest {
             },
             0);
     assertThat(fields).containsExactly("x");
-    // We would normally omit Test$Inner because it is a private member class and we have
-    // emitAllPrivateMemberClasses(false). But it is referenced as the type of a private field, and
+    // We would normally omit Test$Inner because it is a private member class.
+    // But it is referenced as the type of a private field, and
     // we have emitPrivateFields(true), so it should be included.
     assertThat(lowered.keySet()).containsExactly("Test", "Test$Inner");
   }
@@ -826,7 +823,6 @@ public class LowerTest {
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
-                newDirectExecutorService(),
                 Lower.LowerOptions.builder().emitAllPrivateMemberClasses(true).build(),
                 bound.units(),
                 bound.modules(),
