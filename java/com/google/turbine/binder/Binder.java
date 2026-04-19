@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.turbine.binder.CompUnitPreprocessor.PreprocessedCompUnit;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.binder.Resolve.CanonicalResolver;
@@ -60,11 +62,15 @@ import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.parallel.Parallel;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.type.Type;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.processing.Processor;
 import javax.tools.Diagnostic;
@@ -75,28 +81,33 @@ public final class Binder {
 
   /** Binds symbols and types to the given compilation units. */
   public static @Nullable BindingResult bind(
+      ListeningExecutorService executor,
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
       Optional<String> moduleVersion) {
-    return bind(units, classpath, Processing.ProcessorInfo.empty(), bootclasspath, moduleVersion);
+    return bind(
+        executor, units, classpath, Processing.ProcessorInfo.empty(), bootclasspath, moduleVersion);
   }
 
   /** Binds symbols and types to the given compilation units. */
   public static @Nullable BindingResult bind(
+      ListeningExecutorService executor,
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ProcessorInfo processorInfo,
       ClassPath bootclasspath,
       Optional<String> moduleVersion) {
     TurbineLog log = new TurbineLog();
-    BindingResult br = bind(log, units, classpath, processorInfo, bootclasspath, moduleVersion);
+    BindingResult br =
+        bind(executor, log, units, classpath, processorInfo, bootclasspath, moduleVersion);
     log.maybeThrow();
     return br;
   }
 
   /** Binds symbols and types to the given compilation units. */
   public static @Nullable BindingResult bind(
+      ListeningExecutorService executor,
       TurbineLog log,
       ImmutableList<CompUnit> units,
       ClassPath classpath,
@@ -107,6 +118,7 @@ public final class Binder {
     try {
       br =
           bind(
+              executor,
               log,
               units,
               /* generatedSources= */ ImmutableMap.of(),
@@ -117,7 +129,7 @@ public final class Binder {
       if (!processorInfo.processors().isEmpty() && !units.isEmpty()) {
         br =
             Processing.process(
-                log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
+                executor, log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
       }
     } catch (TurbineError turbineError) {
       throw new TurbineError(
@@ -130,6 +142,7 @@ public final class Binder {
   }
 
   static BindingResult bind(
+      ListeningExecutorService executor,
       TurbineLog log,
       ImmutableList<CompUnit> units,
       ImmutableMap<String, SourceFile> generatedSources,
@@ -165,6 +178,7 @@ public final class Binder {
 
     Env<ClassSymbol, SourceTypeBoundClass> tenv =
         bindTypes(
+            executor,
             log,
             syms,
             henv,
@@ -180,12 +194,14 @@ public final class Binder {
             log);
     tenv =
         disambiguateTypeAnnotations(
+            executor,
             syms,
             tenv,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             log);
     tenv =
         canonicalizeTypes(
+            executor,
             syms,
             tenv,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
@@ -310,33 +326,52 @@ public final class Binder {
             }
           });
     }
-    return new LazyEnv<>(completers.buildOrThrow(), classPathEnv);
+    LazyEnv<ClassSymbol, HeaderBoundClass, SourceHeaderBoundClass> env =
+        new LazyEnv<>(completers.buildOrThrow(), classPathEnv);
+    // LazyEnv isn't thread-safe, so finish lazy completion here and return a thread-safe SimpleEnv.
+    ImmutableMap.Builder<ClassSymbol, SourceHeaderBoundClass> builder = ImmutableMap.builder();
+    for (ClassSymbol sym : syms) {
+      builder.put(sym, env.getNonNull(sym));
+    }
+    return new SimpleEnv<>(builder.buildOrThrow());
   }
 
   private static Env<ClassSymbol, SourceTypeBoundClass> bindTypes(
+      ListeningExecutorService executor,
       TurbineLog log,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
       Env<ClassSymbol, HeaderBoundClass> henv) {
-    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
+    List<ListenableFuture<Map.Entry<ClassSymbol, SourceTypeBoundClass>>> futures =
+        new ArrayList<>();
     for (ClassSymbol sym : syms) {
       SourceHeaderBoundClass base = shenv.getNonNull(sym);
-      builder.put(sym, TypeBinder.bind(log.withSource(base.source()), henv, sym, base));
+      futures.add(
+          executor.submit(
+              () ->
+                  Map.entry(sym, TypeBinder.bind(log.withSource(base.source()), henv, sym, base))));
     }
-    return builder.build();
+    return new SimpleEnv<>(Parallel.allAsMap(futures));
   }
 
   private static Env<ClassSymbol, SourceTypeBoundClass> canonicalizeTypes(
+      ListeningExecutorService executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> stenv,
       Env<ClassSymbol, TypeBoundClass> tenv,
       TurbineLog log) {
-    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
+    List<ListenableFuture<Map.Entry<ClassSymbol, SourceTypeBoundClass>>> futures =
+        new ArrayList<>();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass base = stenv.getNonNull(sym);
-      builder.put(sym, CanonicalTypeBinder.bind(log.withSource(base.source()), sym, base, tenv));
+      futures.add(
+          executor.submit(
+              () ->
+                  Map.entry(
+                      sym,
+                      CanonicalTypeBinder.bind(log.withSource(base.source()), sym, base, tenv))));
     }
-    return builder.build();
+    return new SimpleEnv<>(Parallel.allAsMap(futures));
   }
 
   private static ImmutableList<SourceModuleInfo> bindModules(
@@ -498,16 +533,19 @@ public final class Binder {
    * type annotations.
    */
   private static Env<ClassSymbol, SourceTypeBoundClass> disambiguateTypeAnnotations(
+      ListeningExecutorService executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> stenv,
       Env<ClassSymbol, TypeBoundClass> tenv,
       TurbineLog log) {
-    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
+    List<ListenableFuture<Map.Entry<ClassSymbol, SourceTypeBoundClass>>> futures =
+        new ArrayList<>();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass base = stenv.getNonNull(sym);
-      builder.put(sym, DisambiguateTypeAnnotations.bind(base, tenv, log));
+      futures.add(
+          executor.submit(() -> Map.entry(sym, DisambiguateTypeAnnotations.bind(base, tenv, log))));
     }
-    return builder.build();
+    return new SimpleEnv<>(Parallel.allAsMap(futures));
   }
 
   /**

@@ -18,6 +18,7 @@ package com.google.turbine.main;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_SPECIFICATION_VERSION;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -26,8 +27,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
-import com.google.common.util.concurrent.ExecutionError;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -50,6 +49,7 @@ import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.options.TurbineOptions;
 import com.google.turbine.options.TurbineOptions.ReducedClasspathMode;
 import com.google.turbine.options.TurbineOptionsParser;
+import com.google.turbine.parallel.Parallel;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.proto.ManifestProto;
@@ -145,7 +145,11 @@ public final class Main {
     usage(options);
 
     try (ListeningExecutorService executor =
-        listeningDecorator(newFixedThreadPool(Runtime.getRuntime().availableProcessors()))) {
+        listeningDecorator(
+            // an escape valve for thread-safety bugs
+            options.javacOpts().contains("-XDnoParallel")
+                ? newDirectExecutorService()
+                : newFixedThreadPool(Runtime.getRuntime().availableProcessors()))) {
       return compile(options, executor);
     }
   }
@@ -169,10 +173,10 @@ public final class Main {
     int transitiveClasspathLength = classPath.size();
     int reducedClasspathLength = classPath.size();
     switch (reducedClasspathMode) {
-      case NONE -> bound = bind(options, units, bootclasspath, classPath);
+      case NONE -> bound = bind(executor, options, units, bootclasspath, classPath);
       case BAZEL_FALLBACK -> {
         reducedClasspathLength = options.reducedClasspathLength();
-        bound = bind(options, units, bootclasspath, classPath);
+        bound = bind(executor, options, units, bootclasspath, classPath);
         transitiveClasspathFallback = true;
       }
       case JAVABUILDER_REDUCED -> {
@@ -180,16 +184,16 @@ public final class Main {
             Dependencies.reduceClasspath(classPath, options.directJars(), options.depsArtifacts());
         reducedClasspathLength = reducedClasspath.size();
         try {
-          bound = bind(options, units, bootclasspath, reducedClasspath);
+          bound = bind(executor, options, units, bootclasspath, reducedClasspath);
         } catch (TurbineError e) {
-          bound = fallback(options, units, bootclasspath, classPath);
+          bound = fallback(executor, options, units, bootclasspath, classPath);
           transitiveClasspathFallback = true;
         }
       }
       case BAZEL_REDUCED -> {
         transitiveClasspathLength = options.fullClasspathLength();
         try {
-          bound = bind(options, units, bootclasspath, classPath);
+          bound = bind(executor, options, units, bootclasspath, classPath);
         } catch (TurbineError e) {
           writeJdepsForFallback(options);
           return Result.create(
@@ -258,12 +262,13 @@ public final class Main {
 
   // don't inline this; we want it to show up in profiles
   private static BindingResult fallback(
+      ListeningExecutorService executor,
       TurbineOptions options,
       ImmutableList<CompUnit> units,
       ClassPath bootclasspath,
       ImmutableList<String> classPath)
       throws IOException {
-    return bind(options, units, bootclasspath, classPath);
+    return bind(executor, options, units, bootclasspath, classPath);
   }
 
   /**
@@ -283,12 +288,14 @@ public final class Main {
   }
 
   private static BindingResult bind(
+      ListeningExecutorService executor,
       TurbineOptions options,
       ImmutableList<CompUnit> units,
       ClassPath bootclasspath,
       Collection<String> classpath)
       throws IOException {
     return Binder.bind(
+        executor,
         units,
         ClassPathBinder.bindClasspath(toPaths(classpath)),
         Processing.initializeProcessors(
@@ -376,18 +383,7 @@ public final class Main {
     for (SourceFile sourceFile : sourceFiles) {
       futures.add(executor.submit(() -> Parser.parse(sourceFile)));
     }
-    ImmutableList.Builder<CompUnit> result = ImmutableList.builder();
-    for (ListenableFuture<CompUnit> future : futures) {
-      try {
-        result.add(Futures.getUnchecked(future));
-      } catch (ExecutionError e) {
-        if (e.getCause() instanceof TurbineError turbineError) {
-          throw new TurbineError(turbineError.diagnostics(), turbineError);
-        }
-        throw e;
-      }
-    }
-    return result.build();
+    return Parallel.allAsList(futures);
   }
 
   /** Writes source files generated by annotation processors. */

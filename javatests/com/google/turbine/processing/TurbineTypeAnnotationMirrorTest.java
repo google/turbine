@@ -259,6 +259,7 @@ public class TurbineTypeAnnotationMirrorTest {
             .collect(toImmutableList());
     Binder.BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             Processing.ProcessorInfo.create(
@@ -293,6 +294,7 @@ public class TurbineTypeAnnotationMirrorTest {
     ImmutableList<Path> classpathJar = ImmutableList.of(lib);
     Binder.BindingResult unused =
         Binder.bind(
+            newDirectExecutorService(),
             // Turbine requires sources to be present to do annotation processing.
             // The actual element that will be processed is still 'Test' from the classpath.
             ImmutableList.of(Parser.parse("class Hello {}")),

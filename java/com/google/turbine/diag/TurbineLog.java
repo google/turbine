@@ -18,6 +18,7 @@ package com.google.turbine.diag;
 
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.tools.Diagnostic;
@@ -25,14 +26,17 @@ import javax.tools.Diagnostic;
 /** A log that collects diagnostics. */
 public class TurbineLog {
 
-  private final Set<TurbineDiagnostic> diagnostics = new LinkedHashSet<>();
+  private final Set<TurbineDiagnostic> diagnostics =
+      Collections.synchronizedSet(new LinkedHashSet<>());
 
   public TurbineLogWithSource withSource(SourceFile source) {
     return new TurbineLogWithSource(source);
   }
 
   public ImmutableList<TurbineDiagnostic> diagnostics() {
-    return ImmutableList.copyOf(diagnostics);
+    synchronized (diagnostics) {
+      return ImmutableList.copyOf(diagnostics);
+    }
   }
 
   public void maybeThrow() {
@@ -42,12 +46,14 @@ public class TurbineLog {
   }
 
   public boolean anyErrors() {
-    for (TurbineDiagnostic error : diagnostics) {
-      if (error.severity().equals(Diagnostic.Kind.ERROR)) {
-        return true;
+    synchronized (diagnostics) {
+      for (TurbineDiagnostic error : diagnostics) {
+        if (error.severity().equals(Diagnostic.Kind.ERROR)) {
+          return true;
+        }
       }
+      return false;
     }
-    return false;
   }
 
   /**
@@ -58,17 +64,21 @@ public class TurbineLog {
    * code generated in later processing rounds.
    */
   public boolean errorRaised() {
-    for (TurbineDiagnostic error : diagnostics) {
-      if (error.kind().equals(ErrorKind.PROC) && error.severity().equals(Diagnostic.Kind.ERROR)) {
-        return true;
+    synchronized (diagnostics) {
+      for (TurbineDiagnostic error : diagnostics) {
+        if (error.kind().equals(ErrorKind.PROC) && error.severity().equals(Diagnostic.Kind.ERROR)) {
+          return true;
+        }
       }
+      return false;
     }
-    return false;
   }
 
   /** Reset the log between annotation processing rounds. */
   public void clear() {
-    diagnostics.removeIf(TurbineDiagnostic::isError);
+    synchronized (diagnostics) {
+      diagnostics.removeIf(TurbineDiagnostic::isError);
+    }
   }
 
   /** Reports an annotation processing diagnostic with no position information. */

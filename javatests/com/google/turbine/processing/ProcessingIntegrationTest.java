@@ -19,6 +19,7 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -221,6 +222,7 @@ public class ProcessingIntegrationTest {
             "}");
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             ProcessorInfo.create(
@@ -257,6 +259,7 @@ public class ProcessingIntegrationTest {
             "class Two extends One {}");
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             ProcessorInfo.create(
@@ -496,6 +499,7 @@ public class ProcessingIntegrationTest {
             "}");
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             ProcessorInfo.create(
@@ -693,6 +697,7 @@ public class ProcessingIntegrationTest {
     TurbineLog log = new TurbineLog();
     BindingResult unused =
         Binder.bind(
+            newDirectExecutorService(),
             log,
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
@@ -907,6 +912,7 @@ public class ProcessingIntegrationTest {
     TurbineLog log = new TurbineLog();
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             log,
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
@@ -1485,6 +1491,7 @@ public class ProcessingIntegrationTest {
     TurbineLog log = new TurbineLog();
     BindingResult unused =
         Binder.bind(
+            newDirectExecutorService(),
             log,
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
@@ -1505,6 +1512,7 @@ public class ProcessingIntegrationTest {
         TurbineError.class,
         () ->
             Binder.bind(
+                newDirectExecutorService(),
                 units,
                 ClassPathBinder.bindClasspath(ImmutableList.of()),
                 ProcessorInfo.create(
