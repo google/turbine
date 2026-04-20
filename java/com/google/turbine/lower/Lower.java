@@ -25,8 +25,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.ExecutionError;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.turbine.binder.bound.EnumConstantValue;
@@ -75,6 +73,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.options.LanguageVersion;
+import com.google.turbine.parallel.Parallel;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -159,8 +158,7 @@ public class Lower {
   }
 
   @SuppressWarnings("ArrayRecordComponent")
-  private static record TaskResult(
-      String name, byte[] bytes, ImmutableSet<ClassSymbol> symbols, TurbineLog log) {}
+  private static record TaskResult(String name, byte[] bytes, ImmutableSet<ClassSymbol> symbols) {}
 
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
@@ -175,18 +173,21 @@ public class Lower {
     int majorVersion = max(options.languageVersion().majorVersion(), 52);
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
         RemovePrivateMembers.process(env, units, options);
+    TurbineLog log = new TurbineLog();
     List<ListenableFuture<TaskResult>> futures = new ArrayList<>();
     for (var entry : pruned.entrySet()) {
       ClassSymbol sym = entry.getKey();
       futures.add(
           executor.submit(
-              () -> lower(sym.binaryName(), entry.getValue(), env, sym, majorVersion, options)));
+              () ->
+                  lower(sym.binaryName(), entry.getValue(), env, sym, majorVersion, options, log)));
     }
     if (modules.size() == 1) {
       // single module mode: the module-info.class file is at the root
       futures.add(
           executor.submit(
-              () -> lower("module-info", getOnlyElement(modules), env, majorVersion, options)));
+              () ->
+                  lower("module-info", getOnlyElement(modules), env, majorVersion, options, log)));
     } else {
       // multi-module mode: the output module-info.class are in a directory corresponding to their
       // package
@@ -199,28 +200,18 @@ public class Lower {
                         module,
                         env,
                         majorVersion,
-                        options)));
+                        options,
+                        log)));
       }
     }
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
-    TurbineLog log = new TurbineLog();
-    Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    try {
-      for (TaskResult lowered : Futures.getUnchecked(Futures.allAsList(futures))) {
-        result.put(lowered.name(), lowered.bytes());
-        symbols.addAll(lowered.symbols());
-        for (var diagnostic : lowered.log().diagnostics()) {
-          log.add(diagnostic);
-        }
-      }
-    } catch (ExecutionError e) {
-      if (e.getCause() instanceof TurbineError turbineError) {
-        throw new TurbineError(turbineError.diagnostics(), turbineError);
-      }
-      throw e;
+    ImmutableSet.Builder<ClassSymbol> symbols = ImmutableSet.builder();
+    for (TaskResult lowered : Parallel.allAsList(futures)) {
+      result.put(lowered.name(), lowered.bytes());
+      symbols.addAll(lowered.symbols());
     }
     log.maybeThrow();
-    return Lowered.create(result.buildOrThrow(), ImmutableSet.copyOf(symbols));
+    return Lowered.create(result.buildOrThrow(), symbols.build());
   }
 
   /** Lowers a class to bytecode. */
@@ -230,11 +221,11 @@ public class Lower {
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       int majorVersion,
-      LowerOptions lowerOptions) {
-    TurbineLog log = new TurbineLog();
+      LowerOptions lowerOptions,
+      TurbineLog log) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     byte[] bytes = new Lower(env, log, lowerOptions).lower(info, sym, symbols, majorVersion);
-    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols), log);
+    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
   }
 
   private static TaskResult lower(
@@ -242,11 +233,11 @@ public class Lower {
       SourceModuleInfo module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       int majorVersion,
-      LowerOptions lowerOptions) {
-    TurbineLog log = new TurbineLog();
+      LowerOptions lowerOptions,
+      TurbineLog log) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     byte[] bytes = new Lower(env, log, lowerOptions).lower(module, symbols, majorVersion);
-    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols), log);
+    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
   }
 
   private final LowerSignature sig = new LowerSignature();

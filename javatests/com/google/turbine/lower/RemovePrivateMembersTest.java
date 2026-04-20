@@ -345,6 +345,7 @@ public class RemovePrivateMembersTest {
   public void testPruning() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(Parser.parse(source)),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,

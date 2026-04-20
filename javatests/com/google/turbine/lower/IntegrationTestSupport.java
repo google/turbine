@@ -611,7 +611,11 @@ public final class IntegrationTestSupport {
             .collect(toImmutableList());
 
     return Binder.bind(
-        units, ClassPathBinder.bindClasspath(classpath), bootClassPath, moduleVersion);
+        newDirectExecutorService(),
+        units,
+        ClassPathBinder.bindClasspath(classpath),
+        bootClassPath,
+        moduleVersion);
   }
 
   public static JavacTask runJavacAnalysis(

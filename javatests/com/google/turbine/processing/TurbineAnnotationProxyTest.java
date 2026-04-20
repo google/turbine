@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.ElementType.TYPE_USE;
@@ -157,6 +158,7 @@ public class TurbineAnnotationProxyTest {
 
     Binder.BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of(lib)),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
@@ -273,6 +275,7 @@ public class TurbineAnnotationProxyTest {
 
     Binder.BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of(lib)),
             TestClassPaths.TURBINE_BOOTCLASSPATH,

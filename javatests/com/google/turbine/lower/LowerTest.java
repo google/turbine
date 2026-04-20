@@ -260,6 +260,7 @@ public class LowerTest {
   public void innerClassAttributeOrder() throws IOException {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     Joiner.on('\n')
@@ -337,6 +338,7 @@ public class LowerTest {
   public void typePath() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     Joiner.on('\n')
@@ -431,6 +433,7 @@ public class LowerTest {
   public void deprecated() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
@@ -658,6 +661,7 @@ public class LowerTest {
   public void minClassVersion() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(Parser.parse("class Test {}")),
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
@@ -697,6 +701,7 @@ public class LowerTest {
   public void privateFields() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
@@ -733,6 +738,7 @@ public class LowerTest {
   public void noPrivateFields() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
@@ -769,6 +775,7 @@ public class LowerTest {
   public void privateFieldsPrivateMemberClasses() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -814,6 +821,7 @@ public class LowerTest {
   public void emitAllPrivateMemberClasses() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -839,6 +847,7 @@ public class LowerTest {
   public void noemitAllPrivateMemberClasses() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -864,6 +873,7 @@ public class LowerTest {
   public void repeatedTypeAnnotationError() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     new SourceFile(
@@ -903,6 +913,7 @@ public class LowerTest {
   public void methodParameters() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
@@ -948,6 +959,7 @@ public class LowerTest {
   public void noMethodParameters() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
@@ -1027,6 +1039,7 @@ public class LowerTest {
   public void privateSealedClass() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1066,6 +1079,7 @@ public class LowerTest {
   public void keepPermits() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1105,6 +1119,7 @@ public class LowerTest {
   public void usagesInTopLevelClass() throws Exception {
     BindingResult bound =
         Binder.bind(
+            newDirectExecutorService(),
             ImmutableList.of(
                 Parser.parse(
                     """

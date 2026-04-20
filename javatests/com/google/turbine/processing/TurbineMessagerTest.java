@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
@@ -218,6 +219,7 @@ public class TurbineMessagerTest {
             TurbineError.class,
             () ->
                 Binder.bind(
+                    newDirectExecutorService(),
                     units,
                     ClassPathBinder.bindClasspath(ImmutableList.of()),
                     Processing.ProcessorInfo.create(

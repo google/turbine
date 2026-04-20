@@ -101,6 +101,7 @@ public class DependenciesTest {
     DepsProto.Dependencies run() throws IOException {
       BindingResult bound =
           Binder.bind(
+              newDirectExecutorService(),
               units.build(),
               ClassPathBinder.bindClasspath(classpath),
               TestClassPaths.TURBINE_BOOTCLASSPATH,
