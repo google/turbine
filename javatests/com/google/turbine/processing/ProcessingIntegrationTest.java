@@ -19,6 +19,7 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -51,6 +52,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,6 +81,7 @@ import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
@@ -1498,6 +1501,147 @@ public class ProcessingIntegrationTest {
     ImmutableList<String> messages =
         log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
     assertThat(messages).contains("permits T.A, T.B, T.C");
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class DocComment extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!roundEnv.processingOver()) {
+        return false;
+      }
+      for (Element e :
+          ElementFilter.fieldsIn(
+              processingEnv.getElementUtils().getTypeElement("T").getEnclosedElements())) {
+        String javadoc = processingEnv.getElementUtils().getDocComment(e);
+        processingEnv.getMessager().printError(e.getSimpleName() + "\n" + javadoc);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void markdownJavadoc() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === T.java ===
+            public class T {
+              /// hello
+              /// markdown
+
+              /// javadoc
+              public int f;
+
+              /// hello
+              ///  markdown
+              ///   javadoc
+              public int g;
+
+              ///    hello
+              ///     indented
+              ///      markdown
+              ///       javadoc
+              public int h;
+            }
+            """);
+    TurbineError e = runProcessors(units, new DocComment());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            """
+            f
+            javadoc\
+            """,
+            """
+            g
+            hello
+             markdown
+              javadoc\
+            """,
+            """
+            h
+            hello
+             indented
+              markdown
+               javadoc\
+            """);
+  }
+
+  @SupportedAnnotationTypes("*")
+  public static class DocCommentKind extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!roundEnv.processingOver()) {
+        return false;
+      }
+      Elements elements = ((TurbineElements) processingEnv.getElementUtils()).future();
+      for (Element f :
+          ElementFilter.fieldsIn(
+              processingEnv.getElementUtils().getTypeElement("T").getEnclosedElements())) {
+        String javadoc = elements.getDocComment(f);
+        Object kind;
+        try {
+          Method method = Elements.class.getMethod("getDocCommentKind", Element.class);
+          kind = method.invoke(elements, f);
+        } catch (ReflectiveOperationException e) {
+          throw new LinkageError(e.getMessage(), e);
+        }
+        processingEnv
+            .getMessager()
+            .printError(
+                String.format(
+                    "element: %s\nkind: %s\njavadoc: %s", f.getSimpleName(), kind, javadoc),
+                f);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void docCommentKind() throws Exception {
+    // getDocCommentKind is since 23
+    assume().that(Runtime.version().feature()).isAtLeast(23);
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === T.java ===
+            public class T {
+              /// markdown javadoc
+              public int f;
+
+              /** traditional javadoc */
+              public int g;
+            }
+            """);
+    TurbineError e = runProcessors(units, new DocCommentKind());
+    assertThat(
+            e.diagnostics().stream()
+                .filter(d -> d.severity().equals(Diagnostic.Kind.ERROR))
+                .map(d -> d.message()))
+        .containsExactly(
+            """
+            element: f
+            kind: END_OF_LINE
+            javadoc: markdown javadoc\
+            """,
+            """
+            element: g
+            kind: TRADITIONAL
+            javadoc:  traditional javadoc \
+            """);
   }
 
   private TurbineError runProcessors(ImmutableList<Tree.CompUnit> units, Processor... processors) {

@@ -16,8 +16,6 @@
 
 package com.google.turbine.parse;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import com.google.turbine.escape.SourceCodeEscapers;
 import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.parser.ScannerFactory;
@@ -32,20 +30,31 @@ public final class JavacLexer {
   static List<String> javacLex(final String input) {
     Context context = new Context();
     Scanner scanner =
-        ScannerFactory.instance(context).newScanner(input, /* keepDocComments= */ false);
+        ScannerFactory.instance(context).newScanner(input, /* keepDocComments= */ true);
     List<Tokens.Token> tokens = new ArrayList<>();
     do {
       scanner.nextToken();
       tokens.add(scanner.token());
     } while (scanner.token().kind != Tokens.TokenKind.EOF);
-    return Lists.transform(
-        tokens,
-        new Function<Tokens.Token, String>() {
-          @Override
-          public String apply(Tokens.Token token) {
-            return printToken(input, token);
-          }
-        });
+    List<String> result = new ArrayList<>();
+    for (Tokens.Token token : tokens) {
+      if (token.comments != null) {
+        token.comments.stream()
+            .filter(comment -> isJavadoc(comment))
+            .findFirst()
+            .ifPresent(comment -> result.add(String.format("JAVADOC(%s)", comment.getText())));
+      }
+      result.add(printToken(input, token));
+    }
+    return result;
+  }
+
+  // Handle both JDK 21 and JDK 25 APIs, Comment.CommentStyle changed for markdown javadoc
+  private static boolean isJavadoc(Tokens.Comment comment) {
+    return switch (comment.getStyle().name()) {
+      case "JAVADOC", "JAVADOC_BLOCK", "JAVADOC_LINE" -> true;
+      default -> false;
+    };
   }
 
   private static String printToken(String input, Tokens.Token token) {

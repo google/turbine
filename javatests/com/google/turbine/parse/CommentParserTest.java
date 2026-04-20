@@ -84,9 +84,38 @@ public class CommentParserTest {
             documented.stream()
                 .collect(toImmutableMap(c -> c.name().value(), c -> c.javadoc().value())))
         .containsExactly(
-            "A", "\n   * This is\n   * class A\n   ",
-            "C", "\n   * This is\n   * class C\n   ",
-            "E", " This is an enum. ");
+            "A",
+            """
+
+               * This is
+               * class A
+               \
+            """,
+            "C",
+            """
+
+               * This is
+               * class C
+               \
+            """,
+            "E",
+            " This is an enum. ");
+    assertThat(
+            documented.stream()
+                .collect(toImmutableMap(c -> c.name().value(), c -> c.javadoc().docComment())))
+        .containsExactly(
+            "A",
+            """
+             This is
+             class A
+            """,
+            "C",
+            """
+             This is
+             class C
+            """,
+            "E",
+            " This is an enum. ");
     TyDecl a = (TyDecl) decl.members().getFirst();
     MethDecl f = (MethDecl) a.members().getFirst();
     assertThat(f.javadoc().value()).isEqualTo(" This is a method ");
@@ -100,8 +129,8 @@ public class CommentParserTest {
     for (TyDecl t : documented) {
       TurbineJavadoc javadoc = t.javadoc();
       int position = javadoc.startPosition();
-      int endIndex = position + javadoc.value().length();
-      String actual = source.substring(position, endIndex + "/***/".length());
+      int endIndex = javadoc.endPosition();
+      String actual = source.substring(position, endIndex + "*".length());
       String expected = "/**" + javadoc.value() + "*/";
       expect.that(actual).isEqualTo(expected);
     }
@@ -199,7 +228,7 @@ public class CommentParserTest {
             .filter(m -> m.kind() == Tree.Kind.VAR_DECL)
             .map(m -> (VarDecl) m)
             .filter(m -> m.javadoc() != null)
-            .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().value().trim()));
+            .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().docComment().trim()));
     assertThat(javadoc).containsExactly("ONE", "ONE", "TWO", "TWO");
   }
 }

@@ -38,7 +38,7 @@ public class StreamLexer implements Lexer {
   /** The start position of the current token. */
   private int position;
 
-  /** The start position of the current numeric literal or identifier token. */
+  /** The start position of a numeric literal, identifier, or doc comment token. */
   private int readFrom;
 
   /** The value of the current string or character literal token. */
@@ -94,82 +94,29 @@ public class StreamLexer implements Lexer {
   @Override
   public Token next() {
     javadoc = null;
-    OUTER:
     while (true) {
       position = reader.position();
       switch (ch) {
-        case '\r', '\n', ' ', '\t', '\f' -> {
-          eat();
-          continue OUTER;
-        }
+        case '\r', '\n', ' ', '\t', '\f' -> eat();
         case '/' -> {
           eat();
           switch (ch) {
             case '/' -> {
-              while (true) {
-                eat();
-                switch (ch) {
-                  case '\n', '\r' -> {
-                    eat();
-                    continue OUTER;
-                  }
-                  case ASCII_SUB -> {
-                    if (reader.done()) {
-                      return Token.EOF;
-                    }
-                    eat();
-                  }
-                  default -> {}
-                }
-              }
-            }
-            case '*' -> {
               eat();
-              boolean sawStar = false;
-              boolean isJavadoc = false;
-              if (ch == '*') {
-                eat();
-                // handle empty non-javadoc comments: `/**/`
-                if (ch == '/') {
-                  eat();
-                  continue OUTER;
-                }
-                isJavadoc = true;
-                readFrom();
-              }
-              while (true) {
-                switch (ch) {
-                  case '*' -> {
-                    eat();
-                    sawStar = true;
-                  }
-                  case '/' -> {
-                    if (sawStar) {
-                      if (isJavadoc) {
-                        javadoc =
-                            new TurbineJavadoc(position, reader.position(), source().source());
-                      }
+              Token token =
+                  switch (ch) {
+                    case '/' -> {
                       eat();
-                      continue OUTER;
+                      yield markdownJavadoc();
                     }
-                    sawStar = false;
-                    eat();
-                  }
-                  case ASCII_SUB -> {
-                    if (reader.done()) {
-                      throw TurbineError.format(
-                          reader.source(), position, ErrorKind.UNCLOSED_COMMENT);
-                    }
-                    eat();
-                    sawStar = false;
-                  }
-                  default -> {
-                    eat();
-                    sawStar = false;
-                  }
-                }
+                    // a regular line comment (not markdown javadoc)
+                    default -> endOfLineComment();
+                  };
+              if (token != null) {
+                return token;
               }
             }
+            case '*' -> traditionalComment();
             default -> {
               if (ch == '=') {
                 eat();
@@ -404,6 +351,167 @@ public class StreamLexer implements Lexer {
     }
   }
 
+  // the current token prefix is /*, the token is a JLS 3.7 traditional comment
+  private void traditionalComment() {
+    eat();
+    boolean sawStar = false;
+    boolean isJavadoc = false;
+    if (ch == '*') {
+      eat();
+      // handle empty non-javadoc comments: `/**/`
+      if (ch == '/') {
+        eat();
+        return;
+      }
+      isJavadoc = true;
+      readFrom();
+    }
+    // find the */ at the end of the comment
+    while (true) {
+      switch (ch) {
+        case '*' -> {
+          eat();
+          sawStar = true;
+        }
+        case '/' -> {
+          if (sawStar) {
+            if (isJavadoc) {
+              javadoc = TurbineJavadoc.traditional(position, reader.position(), source().source());
+            }
+            eat();
+            return;
+          }
+          eat();
+          sawStar = false;
+        }
+        case ASCII_SUB -> {
+          if (reader.done()) {
+            throw TurbineError.format(reader.source(), position, ErrorKind.UNCLOSED_COMMENT);
+          }
+          eat();
+          sawStar = false;
+        }
+        default -> {
+          eat();
+          sawStar = false;
+        }
+      }
+    }
+  }
+
+  // the current token prefix is ///, the token is a markdown javadoc line comment
+  private @Nullable Token markdownJavadoc() {
+    int startPosition = position;
+    // the first line of a markdown javadoc comment
+    while (true) {
+      position = reader.position();
+      switch (ch) {
+        case '\n', '\r' -> {
+          eat();
+          saveMarkdownJavadoc(startPosition);
+        }
+        case ASCII_SUB -> {
+          if (reader.done()) {
+            saveMarkdownJavadoc(startPosition);
+            return Token.EOF;
+          }
+          eat();
+          continue;
+        }
+        default -> {
+          eat();
+          continue;
+        }
+      }
+      break;
+    }
+    // accumulate the rest of the lines of a markdown javadoc comment
+    while (true) {
+      position = reader.position();
+      switch (ch) {
+        case ' ', '\t', '\f' -> eat();
+        case '/' -> {
+          eat();
+          switch (ch) {
+            case '/' -> {
+              eat();
+              switch (ch) {
+                case '/' -> {
+                  eat();
+                  // an additional line of markdown javadoc
+                  while (true) {
+                    switch (ch) {
+                      case '\n', '\r' -> {
+                        eat();
+                        saveMarkdownJavadoc(startPosition);
+                      }
+                      case ASCII_SUB -> {
+                        if (reader.done()) {
+                          saveMarkdownJavadoc(startPosition);
+                          return Token.EOF;
+                        }
+                        eat();
+                        continue;
+                      }
+                      default -> {
+                        eat();
+                        continue;
+                      }
+                    }
+                    break;
+                  }
+                }
+                // a trailing non-markdown line comment
+                default -> {
+                  return endOfLineComment();
+                }
+              }
+            }
+            case '*' -> {
+              traditionalComment();
+              return null;
+            }
+            // the token started with / but wasn't a comment
+            default -> {
+              if (ch == '=') {
+                eat();
+                return Token.DIVEQ;
+              }
+              return Token.DIV;
+            }
+          }
+        }
+        default -> {
+          return null;
+        }
+      }
+    }
+  }
+
+  // the current token prefix is //, the token is a JLS 3.7 end of line comment
+  private @Nullable Token endOfLineComment() {
+    while (true) {
+      switch (ch) {
+        case '\n', '\r' -> {
+          eat();
+          return null;
+        }
+        case ASCII_SUB -> {
+          if (reader.done()) {
+            return Token.EOF;
+          }
+          eat();
+        }
+        default -> eat();
+      }
+    }
+  }
+
+  // Update `javadoc` to be the span of lines up to here.
+  private void saveMarkdownJavadoc(int startPosition) {
+    javadoc = TurbineJavadoc.markdown(startPosition, reader.position(), source().source());
+  }
+
   private Token textBlock() {
     OUTER:
     while (true) {
@@ -550,7 +658,6 @@ public class StreamLexer implements Lexer {
   }
 
   private String translateEscapes() {
-    readFrom();
     StringBuilder sb = new StringBuilder();
     OUTER:
     while (true) {

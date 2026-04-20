@@ -17,10 +17,12 @@
 package com.google.turbine.parse;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 
 import com.google.common.truth.Expect;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.escape.SourceCodeEscapers;
+import com.google.turbine.model.TurbineJavadoc;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -353,8 +355,10 @@ public class LexerTest {
     Token token;
     do {
       token = lexer.next();
-      // Just check that javadoc handling doesn't crash
-      var unused = lexer.javadoc();
+      TurbineJavadoc javadoc = lexer.javadoc();
+      if (javadoc != null) {
+        tokens.add(String.format("JAVADOC(%s)", javadoc.docComment()));
+      }
       String tokenString =
           switch (token) {
             case IDENT, INT_LITERAL, LONG_LITERAL, FLOAT_LITERAL, DOUBLE_LITERAL ->
@@ -409,5 +413,118 @@ public class LexerTest {
     Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
     assertThat(lexer.next()).isEqualTo(Token.EOF);
     assertThat(lexer.stringValue()).isEqualTo("\\");
+  }
+
+  @Test
+  public void markdownJavadoc() {
+    assume().that(Runtime.version().feature()).isAtLeast(23);
+    String[] inputs = {
+      """
+      /// hello markdown
+      class T {}
+      """,
+      """
+      /// markdown
+      ///  javadoc
+      class T {}
+      """,
+      """
+      /// markdown
+      ///  javadoc
+      """,
+      """
+      /// markdown
+      ///  javadoc\
+      """,
+      """
+      /// markdown\
+      """,
+      """
+      /// markdown
+      """,
+      """
+      /// markdown
+      // not markdown
+      class T {}
+      """,
+      """
+      /// markdown
+      /// markdown
+      // not markdown
+      class T {}
+      """,
+      """
+      /// markdown
+      /// markdown
+      /=
+      """,
+      """
+      /// markdown
+      /// markdown
+      /
+      """,
+      """
+      /// markdown
+      /=
+      """,
+      """
+      /// markdown
+      /
+      """,
+      """
+      /// markdown
+      x
+      """,
+      """
+      /// markdown
+      /// markdown
+      x
+      """,
+      """
+      // not markdown
+      """,
+      """
+      /
+      """,
+      """
+      /=
+      """,
+      """
+      /// markdown
+      /**
+       * traditional javadoc
+       */
+      class T {}
+      """,
+      """
+      /// markdown
+      /// markdown
+      /**
+       * traditional javadoc
+       */
+      class T {}
+      """,
+      """
+      /**
+       * traditional javadoc
+       */
+      /// markdown
+      class T {}
+      """,
+      """
+      /**
+       * traditional javadoc
+       */
+      /// markdown
+      /// markdown
+      class T {}
+      """,
+    };
+    for (String input : inputs) {
+      expect
+          .withMessage(input)
+          .that(lex(input))
+          .containsExactlyElementsIn(JavacLexer.javacLex(input));
+    }
   }
 }

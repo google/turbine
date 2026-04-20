@@ -85,7 +85,7 @@ public abstract class TurbineElement implements Element {
 
   public abstract Symbol sym();
 
-  public abstract String javadoc();
+  public abstract @Nullable TurbineJavadoc javadoc();
 
   @Override
   public abstract int hashCode();
@@ -392,16 +392,12 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public @Nullable String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       TypeBoundClass info = info();
       if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      TurbineJavadoc javadoc = sourceTypeBoundClass.decl().javadoc();
-      if (javadoc == null) {
-        return null;
-      }
-      return javadoc.value();
+      return sourceTypeBoundClass.decl().javadoc();
     }
 
     @Override
@@ -612,7 +608,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       return null;
     }
 
@@ -651,16 +647,12 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public @Nullable String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       MethDecl decl = info().decl();
       if (decl == null) {
         return null;
       }
-      TurbineJavadoc javadoc = decl.javadoc();
-      if (javadoc == null) {
-        return null;
-      }
-      return javadoc.value();
+      return decl.javadoc();
     }
 
     @Override
@@ -836,16 +828,12 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public @Nullable String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       VarDecl decl = info().decl();
       if (decl == null) {
         return null;
       }
-      TurbineJavadoc javadoc = decl.javadoc();
-      if (javadoc == null) {
-        return null;
-      }
-      return javadoc.value();
+      return decl.javadoc();
     }
 
     private final Supplier<FieldInfo> info =
@@ -1052,16 +1040,12 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public @Nullable String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       TypeBoundClass info = info();
       if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      TurbineJavadoc javadoc = sourceTypeBoundClass.decl().javadoc();
-      if (javadoc == null) {
-        return null;
-      }
-      return javadoc.value();
+      return sourceTypeBoundClass.decl().javadoc();
     }
 
     @Override
@@ -1115,7 +1099,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       return null;
     }
 
@@ -1213,7 +1197,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    public String javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       return null;
     }
 

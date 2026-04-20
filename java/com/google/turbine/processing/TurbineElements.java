@@ -18,7 +18,6 @@ package com.google.turbine.processing;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -30,6 +29,7 @@ import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineJavadoc;
 import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
@@ -39,6 +39,7 @@ import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.type.AnnoInfo;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.reflect.Proxy;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -104,31 +105,46 @@ public class TurbineElements implements Elements {
   }
 
   @Override
-  public String getDocComment(Element e) {
+  public @Nullable String getDocComment(Element e) {
     if (!(e instanceof TurbineElement turbineElement)) {
       throw new IllegalArgumentException(e.toString());
     }
-    String comment = turbineElement.javadoc();
-    if (comment == null) {
+    TurbineJavadoc javadoc = turbineElement.javadoc();
+    return javadoc != null ? javadoc.docComment() : null;
+  }
+
+  public Elements future() {
+    return (Elements)
+        Proxy.newProxyInstance(
+            TurbineElements.class.getClassLoader(),
+            new Class<?>[] {Elements.class},
+            (proxy, method, args) ->
+                switch (method.getName()) {
+                  case "getDocCommentKind" ->
+                      getDocCommentKind(
+                          method.getReturnType().asSubclass(Enum.class), (Element) args[0]);
+                  default -> method.invoke(TurbineElements.this, args);
+                });
+  }
+
+  // TODO: cushon - remove proxy and override getDocCommentKind for JDK 23+
+  @SuppressWarnings({"rawtypes", "unchecked"}) // Enum.class
+  private static @Nullable Enum getDocCommentKind(
+      Class<? extends Enum> kindClass, Element element) {
+    if (!(element instanceof TurbineElement turbineElement)) {
+      throw new IllegalArgumentException(element.toString());
+    }
+    TurbineJavadoc javadoc = turbineElement.javadoc();
+    TurbineJavadoc.Kind turbineKind = javadoc != null ? javadoc.kind() : null;
+    if (turbineKind == null) {
       return null;
     }
-    StringBuilder sb = new StringBuilder();
-    boolean first = true;
-    for (String line : Splitter.on('\n').split(comment)) {
-      int start = 0;
-      if (!first) {
-        sb.append('\n');
-        while (start < line.length() && CharMatcher.whitespace().matches(line.charAt(start))) {
-          start++;
-        }
-        while (start < line.length() && line.charAt(start) == '*') {
-          start++;
-        }
-      }
-      sb.append(line, start, line.length());
-      first = false;
-    }
-    return sb.toString();
+    return Enum.valueOf(
+        kindClass,
+        switch (turbineKind) {
+          case MARKDOWN -> "END_OF_LINE";
+          case TRADITIONAL -> "TRADITIONAL";
+        });
   }
 
   @Override
