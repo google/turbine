@@ -92,6 +92,8 @@ public final class TurbineOptionsParser {
             builder.setFullClasspathLength(Integer.parseInt(readOne(next, argumentDeque)));
         case "--reduced_classpath_length" ->
             builder.setReducedClasspathLength(Integer.parseInt(readOne(next, argumentDeque)));
+        case "--parallel" -> builder.setParallel(true);
+        case "--noparallel" -> builder.setParallel(false);
         case "--profile" -> builder.setProfile(readOne(next, argumentDeque));
         case "--generated_sources_output", "--gensrc_output" ->
             builder.setGensrcOutput(readOne(next, argumentDeque));

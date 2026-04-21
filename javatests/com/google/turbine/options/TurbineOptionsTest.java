@@ -402,4 +402,15 @@ public class TurbineOptionsTest {
                     Iterables.concat(BASE_ARGS, ImmutableList.of("--output", "--system"))));
     assertThat(e).hasMessageThat().contains("missing required argument for: --output");
   }
+
+  @Test
+  public void parallel() throws Exception {
+    TurbineOptions options =
+        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, ImmutableList.of("--parallel")));
+    assertThat(options.parallel()).isTrue();
+
+    options =
+        TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, ImmutableList.of("--noparallel")));
+    assertThat(options.parallel()).isFalse();
+  }
 }

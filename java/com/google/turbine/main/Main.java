@@ -144,12 +144,12 @@ public final class Main {
   public static Result compile(TurbineOptions options) throws IOException {
     usage(options);
 
+    boolean parallel = options.parallel() && !options.javacOpts().contains("-XDnoParallel");
     try (ListeningExecutorService executor =
         listeningDecorator(
-            // an escape valve for thread-safety bugs
-            options.javacOpts().contains("-XDnoParallel")
-                ? newDirectExecutorService()
-                : newFixedThreadPool(Runtime.getRuntime().availableProcessors()))) {
+            parallel
+                ? newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+                : newDirectExecutorService())) {
       return compile(options, executor);
     }
   }

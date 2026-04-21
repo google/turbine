@@ -78,7 +78,8 @@ public record TurbineOptions(
     Optional<String> gensrcOutput,
     Optional<String> resourceOutput,
     int fullClasspathLength,
-    int reducedClasspathLength) {
+    int reducedClasspathLength,
+    boolean parallel) {
   public TurbineOptions {
     requireNonNull(sources, "sources");
     requireNonNull(classPath, "classPath");
@@ -146,7 +147,8 @@ public record TurbineOptions(
         .setReducedClasspathMode(ReducedClasspathMode.NONE)
         .setHelp(false)
         .setFullClasspathLength(0)
-        .setReducedClasspathLength(0);
+        .setReducedClasspathLength(0)
+        .setParallel(true);
   }
 
   /** A {@link Builder} for {@link TurbineOptions}. */
@@ -207,6 +209,8 @@ public record TurbineOptions(
     public abstract Builder setFullClasspathLength(int fullClasspathLength);
 
     public abstract Builder setReducedClasspathLength(int reducedClasspathLength);
+
+    public abstract Builder setParallel(boolean parallel);
 
     public abstract TurbineOptions build();
   }
