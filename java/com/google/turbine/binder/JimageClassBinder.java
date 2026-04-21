@@ -105,11 +105,10 @@ public class JimageClassBinder {
     return Files.exists(path) ? path : null;
   }
 
-  @SuppressWarnings("nullness") // computeIfAbsent allows mappingFunction to return null
   @Nullable ModuleInfo module(String moduleName) {
-    return moduleMap.computeIfAbsent(
+    return moduleMap.compute(
         moduleName,
-        k -> {
+        (k, v) -> {
           Path path = modulePath(moduleName);
           if (path == null) {
             return null;
