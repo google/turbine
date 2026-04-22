@@ -18,8 +18,10 @@ package com.google.turbine.processing;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Expect;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog;
 import javax.tools.Diagnostic;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,5 +46,20 @@ public final class TurbineDiagnosticTest {
                 expect
                     .that(TurbineDiagnostic.format(kind, ErrorKind.PROC, "message").diagnostic())
                     .isEqualTo(formatted));
+  }
+
+  @Test
+  public void testLogPathSorting() {
+    SourceFile a = new SourceFile("A.java", "class A {}");
+    SourceFile b = new SourceFile("B.java", "class B {}");
+    TurbineLog log = new TurbineLog();
+
+    TurbineDiagnostic dB = TurbineDiagnostic.format(b, ErrorKind.PROC, "msg B");
+    TurbineDiagnostic dA = TurbineDiagnostic.format(a, ErrorKind.PROC, "msg A");
+
+    log.add(dB);
+    log.add(dA);
+
+    expect.that(log.diagnostics()).containsExactly(dA, dB).inOrder();
   }
 }

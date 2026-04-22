@@ -16,10 +16,12 @@
 
 package com.google.turbine.processing;
 
+import static com.google.common.collect.Comparators.emptiesFirst;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
@@ -232,7 +234,7 @@ public class TurbineMessagerTest {
     ImmutableList<String> turbineDiagnostics =
         e.diagnostics().stream()
             .sorted(
-                comparing(TurbineDiagnostic::path)
+                comparing(TurbineDiagnostic::path, emptiesFirst(naturalOrder()))
                     .thenComparing(TurbineDiagnostic::line)
                     .thenComparing(TurbineDiagnostic::column))
             .map(TurbineMessagerTest::formatDiagnostic)
@@ -241,7 +243,7 @@ public class TurbineMessagerTest {
   }
 
   private static String formatDiagnostic(TurbineDiagnostic d) {
-    return String.format("%s:%s:%s %s", d.path(), d.line(), d.column(), d.message());
+    return String.format("%s:%s:%s %s", d.path().orElse("<>"), d.line(), d.column(), d.message());
   }
 
   private static String formatDiagnostic(Diagnostic<? extends JavaFileObject> d) {

@@ -16,9 +16,14 @@
 
 package com.google.turbine.diag;
 
+import static com.google.common.collect.Comparators.emptiesLast;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.tools.Diagnostic;
@@ -35,9 +40,14 @@ public class TurbineLog {
     return new TurbineLogWithSource(source);
   }
 
+  private static final Comparator<TurbineDiagnostic> DIAGNOSTIC_COMPARATOR =
+      comparing((TurbineDiagnostic d) -> d.path(), emptiesLast(naturalOrder()));
+
   public ImmutableList<TurbineDiagnostic> diagnostics() {
     synchronized (lock) {
-      return ImmutableList.copyOf(diagnostics);
+      // Sort by path to handle parallel processing of different compilation units, but otherwise
+      // preserve logged diagnostic order.
+      return ImmutableList.sortedCopyOf(DIAGNOSTIC_COMPARATOR, diagnostics);
     }
   }
 

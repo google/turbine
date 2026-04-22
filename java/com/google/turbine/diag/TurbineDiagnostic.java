@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import java.util.Objects;
+import java.util.Optional;
 import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
@@ -69,7 +70,7 @@ public class TurbineDiagnostic {
 
   /** The diagnostic message. */
   public String diagnostic() {
-    StringBuilder sb = new StringBuilder(path());
+    StringBuilder sb = new StringBuilder(path().orElse("<>"));
     if (line() != -1) {
       sb.append(':').append(line());
     }
@@ -169,8 +170,8 @@ public class TurbineDiagnostic {
         && position == that.position;
   }
 
-  public String path() {
-    return source != null && source.path() != null ? source.path() : "<>";
+  public Optional<String> path() {
+    return Optional.ofNullable(source).map(value -> value.path());
   }
 
   @SuppressWarnings("nullness") // position != -1 implies source is non-null
