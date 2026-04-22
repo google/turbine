@@ -42,6 +42,7 @@ import java.util.Optional;
  * @param outputManifest Output manifest file.
  * @param directJars The direct dependencies.
  * @param targetLabel The label of the target being compiled.
+ * @param experimentalFixDepsTool The fix deps tool to use.
  * @param injectingRuleKind If present, the name of the rule that injected an aspect that compiles
  *     this target.
  *     <p>Note that this rule will have a completely different label to {@link #targetLabel} above.
@@ -69,6 +70,7 @@ public record TurbineOptions(
     Optional<String> outputManifest,
     ImmutableSet<String> directJars,
     Optional<String> targetLabel,
+    Optional<String> experimentalFixDepsTool,
     Optional<String> injectingRuleKind,
     ImmutableList<String> depsArtifacts,
     boolean help,
@@ -103,6 +105,7 @@ public record TurbineOptions(
     requireNonNull(profile, "profile");
     requireNonNull(gensrcOutput, "gensrcOutput");
     requireNonNull(resourceOutput, "resourceOutput");
+    requireNonNull(experimentalFixDepsTool, "experimentalFixDepsTool");
   }
 
   /**
@@ -211,6 +214,8 @@ public record TurbineOptions(
     public abstract Builder setReducedClasspathLength(int reducedClasspathLength);
 
     public abstract Builder setParallel(boolean parallel);
+
+    public abstract Builder setExperimentalFixDepsTool(String experimentalFixDepsTool);
 
     public abstract TurbineOptions build();
   }

@@ -99,7 +99,10 @@ public final class TurbineOptionsParser {
             builder.setGensrcOutput(readOne(next, argumentDeque));
         case "--resource_output" -> builder.setResourceOutput(readOne(next, argumentDeque));
         case "--help" -> builder.setHelp(true);
-        case "--experimental_fix_deps_tool", "--strict_java_deps", "--native_header_output" ->
+        case "--experimental_fix_deps_tool" -> {
+          builder.setExperimentalFixDepsTool(readOne(next, argumentDeque));
+        }
+        case "--strict_java_deps", "--native_header_output" ->
             // accepted (and ignored) for compatibility with JavaBuilder command lines
             readOne(next, argumentDeque);
         case "--post_processor" -> {
