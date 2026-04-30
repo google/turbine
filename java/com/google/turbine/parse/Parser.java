@@ -209,10 +209,11 @@ public class Parser {
           modifiers.reset();
           break;
         case EOF:
-          // TODO(cushon): check for dangling modifiers?
+          danglingModifiers(modifiers.build());
+          modifiers.reset();
           return new CompUnit(position, pkg, mod, imports.build(), decls.build(), lexer.source());
         case SEMI:
-          // TODO(cushon): check for dangling modifiers?
+          danglingModifiers(modifiers.build());
           next();
           modifiers.reset();
           continue;
@@ -263,6 +264,16 @@ public class Parser {
           throw error(token);
       }
     }
+  }
+
+  private void danglingModifiers(Modifiers modifiers) {
+    if (!modifiers.access().isEmpty()) {
+      throw error(ErrorKind.UNEXPECTED_MODIFIER, modifiers.access());
+    }
+    if (!modifiers.annos().isEmpty()) {
+      throw error(ErrorKind.UNEXPECTED_ANNOTATION, modifiers.annos());
+    }
+    // ignore dangling javadoc
   }
 
   // Handle the hypenated pseudo-keyword 'non-sealed'.

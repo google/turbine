@@ -61,6 +61,7 @@ public class TurbineError extends Error {
     EXPECTED_INTERFACE("expected interface type: %s"),
     UNEXPECTED_INTERFACE("unexpected interface type: %s"),
     UNEXPECTED_MODIFIER("unexpected modifier: %s"),
+    UNEXPECTED_ANNOTATION("unexpected annotation: %s"),
     INVALID_TYPE_ARGUMENTS("expected %d type arguments for %s, got %d"),
     NO_JAVA_LANG("could not find java.lang on bootclasspath"),
     PROC("%s");

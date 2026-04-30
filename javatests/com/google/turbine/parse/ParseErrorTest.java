@@ -491,6 +491,40 @@ public class ParseErrorTest {
                 "     ^"));
   }
 
+  @Test
+  public void danglingAnnotation() {
+    String input =
+        """
+        class T {}
+        @Dangling
+        """;
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:2: error: unexpected annotation: [@Dangling]", //
+                "@Dangling",
+                "         ^"));
+  }
+
+  @Test
+  public void danglingModifier() {
+    String input =
+        """
+        class T {}
+        public
+        """;
+    TurbineError e = assertThrows(TurbineError.class, () -> Parser.parse(input));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            lines(
+                "<>:2: error: unexpected modifier: [public]", //
+                "public",
+                "      ^"));
+  }
+
   private static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }
