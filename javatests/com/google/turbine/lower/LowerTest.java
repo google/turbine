@@ -735,6 +735,45 @@ public class LowerTest {
   }
 
   @Test
+  public void privateFieldsInRecords() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            newDirectExecutorService(),
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    record R(int x, int y) {
+                      private static final int z = 1;
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                newDirectExecutorService(),
+                Lower.LowerOptions.builder().emitPrivateFieldsInRecords(true).build(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<String> fields = new ArrayList<>();
+    new ClassReader(lowered.get("R"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public FieldVisitor visitField(
+                  int access, String name, String descriptor, String signature, Object value) {
+                fields.add(name);
+                return null;
+              }
+            },
+            0);
+    // private instance fields are preserved, static fields are still dropped
+    assertThat(fields).containsExactly("x", "y");
+  }
+
+  @Test
   public void noPrivateFields() throws Exception {
     BindingResult bound =
         Binder.bind(

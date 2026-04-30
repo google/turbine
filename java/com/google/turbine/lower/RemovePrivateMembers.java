@@ -36,6 +36,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
@@ -93,7 +94,7 @@ class RemovePrivateMembers {
       }
       ImmutableList.Builder<TypeBoundClass.FieldInfo> fields = ImmutableList.builder();
       for (TypeBoundClass.FieldInfo field : info.fields()) {
-        if (options.emitPrivateFields() || !isPrivate(field.access())) {
+        if (emitField(info, field, options)) {
           fields.add(field);
         }
       }
@@ -130,6 +131,22 @@ class RemovePrivateMembers {
               info.decl());
       result.put(sym, rewritten);
     }
+  }
+
+  private static boolean emitField(
+      SourceTypeBoundClass info, TypeBoundClass.FieldInfo field, Lower.LowerOptions options) {
+    if (!isPrivate(field.access())) {
+      return true;
+    }
+    if (options.emitPrivateFields()) {
+      return true;
+    }
+    if (info.kind() == TurbineTyKind.RECORD
+        && ((field.access() & TurbineFlag.ACC_STATIC) == 0)
+        && options.emitPrivateFieldsInRecords()) {
+      return true;
+    }
+    return false;
   }
 
   /**

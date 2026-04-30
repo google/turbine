@@ -103,6 +103,8 @@ public class Lower {
 
     public abstract boolean emitPrivateFields();
 
+    public abstract boolean emitPrivateFieldsInRecords();
+
     // TODO: b/496858305 - consider removing this after rolling out the feature
     public abstract boolean emitAllPrivateMemberClasses();
 
@@ -116,6 +118,7 @@ public class Lower {
       return new AutoValue_Lower_LowerOptions.Builder()
           .languageVersion(LanguageVersion.createDefault())
           .emitPrivateFields(false)
+          .emitPrivateFieldsInRecords(false)
           .emitAllPrivateMemberClasses(false)
           .methodParameters(true);
     }
@@ -127,12 +130,15 @@ public class Lower {
 
       public Builder javacOpts(ImmutableList<String> javacOpts) {
         return emitPrivateFields(javacOpts.contains("-XDturbine.emitPrivateFields"))
+            .emitPrivateFieldsInRecords(javacOpts.contains("-XDturbine.emitPrivateFieldsInRecords"))
             .emitAllPrivateMemberClasses(
                 javacOpts.contains("-XDturbine.emitAllPrivateMemberClasses"))
             .methodParameters(!javacOpts.contains("-XDturbine.noMethodParameters"));
       }
 
       public abstract Builder emitPrivateFields(boolean emitPrivateFields);
+
+      public abstract Builder emitPrivateFieldsInRecords(boolean emitPrivateFieldsInRecords);
 
       public abstract Builder emitAllPrivateMemberClasses(boolean emitAllPrivateMemberClasses);
 
