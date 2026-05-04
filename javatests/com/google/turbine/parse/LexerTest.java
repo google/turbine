@@ -387,9 +387,6 @@ public class LexerTest {
       "\n    hello\n     world\n     ",
       "\n    hello\nworld",
       "\n    hello\n     \nworld\n     ",
-      // closing-delim line indent < min content indent
-      "\n      content\n    ",
-      "\n      hello\n          inner\n    ",
     };
     Method stripIndent = String.class.getMethod("stripIndent");
     for (String input : inputs) {
@@ -416,6 +413,20 @@ public class LexerTest {
     Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
     assertThat(lexer.next()).isEqualTo(Token.EOF);
     assertThat(lexer.stringValue()).isEqualTo("\\");
+  }
+
+  // Closing """ outdented relative to content lines: per JLS 3.10.6 the
+  // closing-delimiter line participates in the min-indent calc even when
+  // it's whitespace-only.
+  @Test
+  public void textBlockOutdentedClosingDelimiter() {
+    String input =
+        "\"\"\"\n" //
+            + "      CONTENT\n"
+            + "          INNER\n"
+            + "    \"\"\"";
+    lexerComparisonTest(input);
+    assertThat(lex(input)).containsExactly("STRING_LITERAL(  CONTENT\\n      INNER\\n)", "EOF");
   }
 
   @Test
