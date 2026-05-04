@@ -387,6 +387,9 @@ public class LexerTest {
       "\n    hello\n     world\n     ",
       "\n    hello\nworld",
       "\n    hello\n     \nworld\n     ",
+      // closing-delim line indent < min content indent
+      "\n      content\n    ",
+      "\n      hello\n          inner\n    ",
     };
     Method stripIndent = String.class.getMethod("stripIndent");
     for (String input : inputs) {
