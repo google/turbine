@@ -600,7 +600,7 @@ public class StreamLexer implements Lexer {
       for (int i = 0; i < lines.size(); i++) {
         String line = lines.get(i);
         int nonWhitespaceStart = nonWhitespaceStart(line);
-        if (nonWhitespaceStart == line.length()) {
+        if (nonWhitespaceStart == line.length() && i != lines.size() - 1) {
           continue;
         }
         strip = min(strip, nonWhitespaceStart);
