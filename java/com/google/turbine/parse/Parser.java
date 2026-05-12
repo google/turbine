@@ -138,130 +138,123 @@ public class Parser {
     ImmutableList.Builder<TyDecl> decls = ImmutableList.builder();
     while (true) {
       switch (token) {
-        case PACKAGE:
-          {
-            next();
-            pkg = Optional.of(packageDeclaration(modifiers.build()));
-            modifiers.reset();
-            break;
+        case PACKAGE -> {
+          next();
+          pkg = Optional.of(packageDeclaration(modifiers.build()));
+          modifiers.reset();
+        }
+        case IMPORT -> {
+          next();
+          ImportDecl i = importDeclaration();
+          if (i == null) {
+            continue;
           }
-        case IMPORT:
-          {
-            next();
-            ImportDecl i = importDeclaration();
-            if (i == null) {
-              continue;
-            }
-            imports.add(i);
-            modifiers.reset();
-            break;
-          }
-        case PUBLIC:
+          imports.add(i);
+          modifiers.reset();
+        }
+        case PUBLIC -> {
           next();
           modifiers.access(PUBLIC);
-          break;
-        case PROTECTED:
+        }
+        case PROTECTED -> {
           next();
           modifiers.access(PROTECTED);
-          break;
-        case PRIVATE:
+        }
+        case PRIVATE -> {
           next();
           modifiers.access(TurbineModifier.PRIVATE);
-          break;
-        case STATIC:
+        }
+        case STATIC -> {
           next();
           modifiers.access(TurbineModifier.STATIC);
-          break;
-        case ABSTRACT:
+        }
+        case ABSTRACT -> {
           next();
           modifiers.access(TurbineModifier.ABSTRACT);
-          break;
-        case FINAL:
+        }
+        case FINAL -> {
           next();
           modifiers.access(TurbineModifier.FINAL);
-          break;
-        case STRICTFP:
+        }
+        case STRICTFP -> {
           next();
           modifiers.access(TurbineModifier.STRICTFP);
-          break;
-        case AT:
-          {
-            int pos = position;
-            next();
-            if (token == INTERFACE) {
-              decls.add(annotationDeclaration(modifiers.build()));
-              modifiers.reset();
-            } else {
-              modifiers.annos(annotation(pos));
-            }
-            break;
+        }
+        case AT -> {
+          int pos = position;
+          next();
+          if (token == INTERFACE) {
+            decls.add(annotationDeclaration(modifiers.build()));
+            modifiers.reset();
+          } else {
+            modifiers.annos(annotation(pos));
           }
-        case CLASS:
+        }
+        case CLASS -> {
           decls.add(classDeclaration(modifiers.build()));
           modifiers.reset();
-          break;
-        case INTERFACE:
+        }
+        case INTERFACE -> {
           decls.add(interfaceDeclaration(modifiers.build()));
           modifiers.reset();
-          break;
-        case ENUM:
+        }
+        case ENUM -> {
           decls.add(enumDeclaration(modifiers.build()));
           modifiers.reset();
-          break;
-        case EOF:
+        }
+        case EOF -> {
           danglingModifiers(modifiers.build());
           modifiers.reset();
           return new CompUnit(position, pkg, mod, imports.build(), decls.build(), lexer.source());
-        case SEMI:
+        }
+        case SEMI -> {
           danglingModifiers(modifiers.build());
           next();
           modifiers.reset();
           continue;
-        case IDENT:
-          {
-            Ident ident = ident();
-            if (ident.value().equals("record")) {
+        }
+        case IDENT -> {
+          Ident ident = ident();
+          switch (ident.value()) {
+            case "record" -> {
               next();
               decls.add(recordDeclaration(modifiers.build()));
               modifiers.reset();
-              break;
             }
-            if (ident.value().equals("sealed")) {
+            case "sealed" -> {
               next();
               modifiers.access(TurbineModifier.SEALED);
-              break;
             }
-            if (ident.value().equals("non")) {
+            case "non" -> {
               int start = position;
               next();
               eatNonSealed(start);
               next();
               modifiers.access(TurbineModifier.NON_SEALED);
-              break;
             }
-            if (modifiers.access.isEmpty()
-                && (ident.value().equals("module") || ident.value().equals("open"))) {
-              boolean open = false;
-              if (ident.value().equals("open")) {
-                next();
-                if (token != IDENT) {
+            case "module", "open" -> {
+              if (modifiers.access.isEmpty()) {
+                boolean open = false;
+                if (ident.value().equals("open")) {
+                  next();
+                  if (token != IDENT) {
+                    throw error(token);
+                  }
+                  ident = ident();
+                  open = true;
+                }
+                if (!ident.value().equals("module")) {
                   throw error(token);
                 }
-                ident = ident();
-                open = true;
+                next();
+                mod = Optional.of(moduleDeclaration(open, modifiers.build()));
+                modifiers.reset();
               }
-              if (!ident.value().equals("module")) {
-                throw error(token);
-              }
-              next();
-              mod = Optional.of(moduleDeclaration(open, modifiers.build()));
-              modifiers.reset();
-              break;
             }
+            default -> throw error(token);
           }
-        // fall through
-        default:
-          throw error(token);
+        }
+        default -> throw error(token);
       }
     }
   }
@@ -456,22 +449,12 @@ public class Parser {
           String ident = lexer.stringValue();
           next();
           switch (ident) {
-            case "requires":
-              directives.add(moduleRequires());
-              break;
-            case "exports":
-              directives.add(moduleExports());
-              break;
-            case "opens":
-              directives.add(moduleOpens());
-              break;
-            case "uses":
-              directives.add(moduleUses());
-              break;
-            case "provides":
-              directives.add(moduleProvides());
-              break;
-            default: // fall out
+            case "requires" -> directives.add(moduleRequires());
+            case "exports" -> directives.add(moduleExports());
+            case "opens" -> directives.add(moduleOpens());
+            case "uses" -> directives.add(moduleUses());
+            case "provides" -> directives.add(moduleProvides());
+            default -> {}
           }
         }
         case RBRACE -> {
@@ -696,132 +679,124 @@ public class Parser {
     ModifiersBuilder modifiers = new ModifiersBuilder();
     while (true) {
       switch (token) {
-        case PUBLIC:
+        case PUBLIC -> {
           next();
           modifiers.access(TurbineModifier.PUBLIC);
-          break;
-        case PROTECTED:
+        }
+        case PROTECTED -> {
           next();
           modifiers.access(TurbineModifier.PROTECTED);
-          break;
-        case PRIVATE:
+        }
+        case PRIVATE -> {
           next();
           modifiers.access(TurbineModifier.PRIVATE);
-          break;
-        case STATIC:
+        }
+        case STATIC -> {
           next();
           modifiers.access(TurbineModifier.STATIC);
-          break;
-        case ABSTRACT:
+        }
+        case ABSTRACT -> {
           next();
           modifiers.access(TurbineModifier.ABSTRACT);
-          break;
-        case FINAL:
+        }
+        case FINAL -> {
           next();
           modifiers.access(TurbineModifier.FINAL);
-          break;
-        case NATIVE:
+        }
+        case NATIVE -> {
           next();
           modifiers.access(TurbineModifier.NATIVE);
-          break;
-        case SYNCHRONIZED:
+        }
+        case SYNCHRONIZED -> {
           next();
           modifiers.access(TurbineModifier.SYNCHRONIZED);
-          break;
-        case TRANSIENT:
+        }
+        case TRANSIENT -> {
           next();
           modifiers.access(TurbineModifier.TRANSIENT);
-          break;
-        case VOLATILE:
+        }
+        case VOLATILE -> {
           next();
           modifiers.access(TurbineModifier.VOLATILE);
-          break;
-        case STRICTFP:
+        }
+        case STRICTFP -> {
           next();
           modifiers.access(TurbineModifier.STRICTFP);
-          break;
-        case DEFAULT:
+        }
+        case DEFAULT -> {
           next();
           modifiers.access(TurbineModifier.DEFAULT);
-          break;
-        case AT:
-          {
-            // TODO(cushon): de-dup with top-level parsing
-            int pos = position;
-            next();
-            if (token == INTERFACE) {
-              acc.add(annotationDeclaration(modifiers.build()));
-              modifiers.reset();
-            } else {
-              modifiers.annos(annotation(pos));
-            }
-            break;
-          }
-
-        case IDENT:
-          Ident ident = ident();
-          if (ident.value().equals("sealed")) {
-            next();
-            modifiers.access(TurbineModifier.SEALED);
-            break;
-          }
-          if (ident.value().equals("non")) {
-            int pos = position;
-            next();
-            if (token != MINUS) {
-              acc.addAll(member(modifiers.build(), ImmutableList.of(), pos, ident));
-              modifiers.reset();
-            } else {
-              eatNonSealed(pos);
-              next();
-              modifiers.access(TurbineModifier.NON_SEALED);
-            }
-            break;
-          }
-          if (ident.value().equals("record")) {
-            eat(IDENT);
-            acc.add(recordDeclaration(modifiers.build()));
+        }
+        case AT -> {
+          // TODO(cushon): de-dup with top-level parsing
+          int pos = position;
+          next();
+          if (token == INTERFACE) {
+            acc.add(annotationDeclaration(modifiers.build()));
             modifiers.reset();
-            break;
+          } else {
+            modifiers.annos(annotation(pos));
           }
-        // fall through
-        case BOOLEAN:
-        case BYTE:
-        case SHORT:
-        case INT:
-        case LONG:
-        case CHAR:
-        case DOUBLE:
-        case FLOAT:
-        case VOID:
-        case LT:
+        }
+        case IDENT -> {
+          Ident ident = ident();
+          switch (ident.value()) {
+            case "sealed" -> {
+              next();
+              modifiers.access(TurbineModifier.SEALED);
+            }
+            case "non" -> {
+              int pos = position;
+              next();
+              if (token != MINUS) {
+                acc.addAll(member(modifiers.build(), ImmutableList.of(), pos, ident));
+                modifiers.reset();
+              } else {
+                eatNonSealed(pos);
+                next();
+                modifiers.access(TurbineModifier.NON_SEALED);
+              }
+            }
+            case "record" -> {
+              eat(IDENT);
+              acc.add(recordDeclaration(modifiers.build()));
+              modifiers.reset();
+            }
+            default -> {
+              acc.addAll(classMember(modifiers.build()));
+              modifiers.reset();
+            }
+          }
+        }
+        case BOOLEAN, BYTE, SHORT, INT, LONG, CHAR, DOUBLE, FLOAT, VOID, LT -> {
           acc.addAll(classMember(modifiers.build()));
           modifiers.reset();
-          break;
-        case LBRACE:
+        }
+        case LBRACE -> {
           dropBlocks();
           modifiers.reset();
-          break;
-        case CLASS:
+        }
+        case CLASS -> {
           acc.add(classDeclaration(modifiers.build()));
           modifiers.reset();
-          break;
-        case INTERFACE:
+        }
+        case INTERFACE -> {
           acc.add(interfaceDeclaration(modifiers.build()));
           modifiers.reset();
-          break;
-        case ENUM:
+        }
+        case ENUM -> {
           acc.add(enumDeclaration(modifiers.build()));
           modifiers.reset();
-          break;
-        case RBRACE:
+        }
+        case RBRACE -> {
           return acc.build();
-        case SEMI:
+        }
+        case SEMI -> {
           next();
           modifiers.reset();
           continue;
-        default:
-          throw error(token);
+        }
+        default -> throw error(token);
       }
     }
   }
@@ -1262,19 +1237,19 @@ public class Parser {
         case COND -> {
           next();
           switch (token) {
-            case EXTENDS:
+            case EXTENDS -> {
               next();
               Tree.Type upper = referenceType(maybeAnnos());
               acc.add(
                   new WildTy(position, typeAnnos, Optional.of(upper), Optional.<Tree.Type>empty()));
-              break;
-            case SUPER:
+            }
+            case SUPER -> {
               next();
               Tree.Type lower = referenceType(maybeAnnos());
               acc.add(
                   new WildTy(position, typeAnnos, Optional.<Tree.Type>empty(), Optional.of(lower)));
-              break;
-            case COMMA:
+            }
+            case COMMA -> {
               acc.add(
                   new WildTy(
                       position,
@@ -1282,9 +1257,8 @@ public class Parser {
                       Optional.<Tree.Type>empty(),
                       Optional.<Tree.Type>empty()));
               continue OUTER;
-            case GT:
-            case GTGT:
-            case GTGTGT:
+            }
+            case GT, GTGT, GTGTGT -> {
               acc.add(
                   new WildTy(
                       position,
@@ -1292,8 +1266,8 @@ public class Parser {
                       Optional.<Tree.Type>empty(),
                       Optional.<Tree.Type>empty()));
               break OUTER;
-            default:
-              throw error(token);
+            }
+            default -> throw error(token);
           }
         }
         case IDENT, BOOLEAN, BYTE, SHORT, INT, LONG, CHAR, DOUBLE, FLOAT ->
