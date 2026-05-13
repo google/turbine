@@ -1,0 +1,4 @@
+=== Test.java ===
+public class Test {
+  public static final String S = false ? "a" : null;
+}

@@ -116,7 +116,12 @@ public class ConstEvaluator {
     this.log = log;
   }
 
-  /** Evaluates the given expression's value. */
+  /**
+   * Evaluates the given expression's value.
+   *
+   * <p>Returns {@code null} if the expression couldn't be evaluated as a compile-time constant,
+   * including if the expression was a literal {@code null} (which is not a compile-time constant).
+   */
   public @Nullable Const eval(Tree t) {
     return switch (t.kind()) {
       case LITERAL -> {
@@ -126,7 +131,8 @@ public class ConstEvaluator {
         }
         yield switch (a.constantTypeKind()) {
           case CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN, STRING -> a;
-          case SHORT, BYTE, NULL -> throw new AssertionError(a.constantTypeKind());
+          case NULL -> null;
+          case SHORT, BYTE -> throw new AssertionError(a.constantTypeKind());
         };
       }
       case VOID_TY -> throw new AssertionError(t.kind());
@@ -477,9 +483,54 @@ public class ConstEvaluator {
     if (condition == null) {
       return null;
     }
-    return asBoolean(t.position(), condition).value()
-        ? evalValue(t.iftrue())
-        : evalValue(t.iffalse());
+    Const.Value trueVal = evalValue(t.iftrue());
+    Const.Value falseVal = evalValue(t.iffalse());
+    boolean conditionVal = asBoolean(t.position(), condition).value();
+    Const.Value chosenVal = conditionVal ? trueVal : falseVal;
+    if (trueVal == null || falseVal == null) {
+      // null indicates something that failed to evaluate as a compile-time constant
+      return chosenVal;
+    }
+    requireNonNull(chosenVal);
+    TurbineConstantTypeKind trueKind = trueVal.constantTypeKind();
+    TurbineConstantTypeKind falseKind = falseVal.constantTypeKind();
+    if (trueKind == falseKind) {
+      return coerce(t.position(), chosenVal, trueKind);
+    }
+    if (charCoercion(trueVal, falseVal) || charCoercion(falseVal, trueVal)) {
+      return coerce(t.position(), chosenVal, TurbineConstantTypeKind.CHAR);
+    }
+    if (isNumeric(trueKind) && isNumeric(falseKind)) {
+      return coerce(t.position(), chosenVal, promoteBinary(t.position(), trueVal, falseVal));
+    }
+    return chosenVal;
+  }
+
+  // See JLS §5.6:
+  //
+  // Otherwise, if any expression is of type char, and every other expression is either of type char
+  // or a constant expression of type int with a value that is representable in the type char, then
+  // the promoted type is char, and the int expressions undergo narrowing primitive conversion to
+  // char.
+  private static boolean charCoercion(Const.Value v1, Const.Value v2) {
+    return v1.constantTypeKind() == TurbineConstantTypeKind.INT
+        && v2.constantTypeKind() == TurbineConstantTypeKind.CHAR
+        && fitsInChar(v1);
+  }
+
+  private static boolean fitsInChar(Const.Value constVal) {
+    if (constVal.constantTypeKind() != TurbineConstantTypeKind.INT) {
+      return false;
+    }
+    int v = ((Const.IntValue) constVal).value();
+    return (char) v == v;
+  }
+
+  private static boolean isNumeric(TurbineConstantTypeKind kind) {
+    return switch (kind) {
+      case BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE -> true;
+      default -> false;
+    };
   }
 
   private Const.@Nullable Value evalUnary(Unary t) {

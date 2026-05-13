@@ -1,0 +1,6 @@
+=== Test.java ===
+public class Test {
+  public static final byte B = 1;
+  public static final char C = 1;
+  public static final String S = "" + (false ? B : C);
+}
