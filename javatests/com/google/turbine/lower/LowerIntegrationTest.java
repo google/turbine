@@ -64,6 +64,7 @@ public class LowerIntegrationTest {
           entry("sealed_nested.test", 17),
           entry("textblock.test", 15),
           entry("textblock2.test", 15),
+          entry("textblock3.test", 15),
           entry("B306423115.test", 15),
           entry("permits.test", 17));
 
@@ -326,6 +327,7 @@ public class LowerIntegrationTest {
       "tbound.test",
       "textblock.test",
       "textblock2.test",
+      "textblock3.test",
       "tyanno_inner.test",
       "tyanno_varargs.test",
       "typaram.test",

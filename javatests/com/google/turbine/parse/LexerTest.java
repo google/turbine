@@ -415,6 +415,20 @@ public class LexerTest {
     assertThat(lexer.stringValue()).isEqualTo("\\");
   }
 
+  // Closing """ outdented relative to content lines: per JLS 3.10.6 the
+  // closing-delimiter line participates in the min-indent calc even when
+  // it's whitespace-only.
+  @Test
+  public void textBlockOutdentedClosingDelimiter() {
+    String input =
+        "\"\"\"\n" //
+            + "      CONTENT\n"
+            + "          INNER\n"
+            + "    \"\"\"";
+    lexerComparisonTest(input);
+    assertThat(lex(input)).containsExactly("STRING_LITERAL(  CONTENT\\n      INNER\\n)", "EOF");
+  }
+
   @Test
   public void markdownJavadoc() {
     assume().that(Runtime.version().feature()).isAtLeast(23);
