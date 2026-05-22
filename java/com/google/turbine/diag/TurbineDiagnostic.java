@@ -85,11 +85,10 @@ public class TurbineDiagnostic {
       sb.append(": ").append(severity);
     }
     sb.append(": ").append(message());
-    if (line() != -1 && column() != -1) {
-      requireNonNull(source); // line and column imply source is non-null
+    if (position != -1) {
       sb.append(System.lineSeparator());
-      sb.append(CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position)))
-          .append(System.lineSeparator());
+      sb.append(lineSource());
+      sb.append(System.lineSeparator());
       sb.repeat(" ", column() - 1).append('^');
     }
     return sb.toString();
@@ -174,14 +173,28 @@ public class TurbineDiagnostic {
     return Optional.ofNullable(source).map(value -> value.path());
   }
 
-  @SuppressWarnings("nullness") // position != -1 implies source is non-null
   public int line() {
-    return position != -1 ? source.lineMap().lineNumber(position) : -1;
+    if (position == -1) {
+      return -1;
+    }
+    requireNonNull(source); // position implies source is non-null
+    return source.lineMap().lineNumber(position);
   }
 
-  @SuppressWarnings("nullness") // position != -1 implies source is non-null
   public int column() {
-    return position != -1 ? source.lineMap().column(position) + 1 : -1;
+    if (position == -1) {
+      return -1;
+    }
+    requireNonNull(source); // position implies source is non-null
+    return source.lineMap().column(position) + 1;
+  }
+
+  public String lineSource() {
+    if (position == -1) {
+      return "";
+    }
+    requireNonNull(source); // position implies source is non-null
+    return CharMatcher.breakingWhitespace().trimTrailingFrom(source.lineMap().line(position));
   }
 
   public String message() {
