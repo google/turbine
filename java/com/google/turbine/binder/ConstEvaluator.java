@@ -289,7 +289,7 @@ public class ConstEvaluator {
   private Const cast(int position, Type ty, Const value) {
     checkNotNull(value);
     return switch (ty.tyKind()) {
-      case CLASS_TY, TY_VAR -> value;
+      case CLASS_TY, TY_VAR, ERROR_TY -> value;
       case PRIM_TY -> {
         if (!value.kind().equals(Const.Kind.PRIMITIVE)) {
           throw error(position, ErrorKind.EXPRESSION_ERROR);

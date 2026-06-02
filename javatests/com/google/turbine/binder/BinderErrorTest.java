@@ -19,6 +19,8 @@ package com.google.turbine.binder;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
@@ -1100,6 +1102,27 @@ public class BinderErrorTest {
           "      ^",
         }
       },
+      {
+        {
+          """
+          @interface Anno {
+            NoSuch[] value() default {};
+          }
+          @Anno(NoSuch.class)
+          class T {}
+          """
+        },
+        {
+          """
+          <>:2: error: could not resolve NoSuch
+            NoSuch[] value() default {};
+            ^
+          <>:4: error: could not resolve NoSuch
+          @Anno(NoSuch.class)
+                ^\
+          """
+        }
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
@@ -1172,6 +1195,6 @@ public class BinderErrorTest {
   }
 
   private static String lines(String... lines) {
-    return Joiner.on(System.lineSeparator()).join(lines);
+    return stream(lines).flatMap(line -> line.lines()).collect(joining(System.lineSeparator()));
   }
 }
