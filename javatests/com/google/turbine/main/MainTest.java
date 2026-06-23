@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.MoreFiles;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.turbine.diag.TurbineError;
-import com.google.turbine.options.LanguageVersion;
+import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.options.TurbineOptions;
 import com.google.turbine.proto.ManifestProto;
 import java.io.BufferedInputStream;
@@ -173,7 +173,7 @@ public class MainTest {
 
     Main.compile(
         TurbineOptions.builder()
-            .setLanguageVersion(LanguageVersion.fromJavacopts(ImmutableList.of("--release", "9")))
+            .setJavacOpts(TurbineJavacOptions.parse(ImmutableList.of("--release", "9")))
             .setSources(ImmutableList.of(src.toString()))
             .setSourceJars(ImmutableList.of(srcjar.toString()))
             .setOutput(output.toString())

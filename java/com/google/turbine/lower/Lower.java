@@ -72,7 +72,7 @@ import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.options.LanguageVersion;
+import com.google.turbine.options.LowerOptions;
 import com.google.turbine.parallel.Parallel;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -95,58 +95,7 @@ import org.jspecify.annotations.Nullable;
 /** Lowering from bound classes to bytecode. */
 public class Lower {
 
-  /** Lowering options. */
-  @AutoValue
-  public abstract static class LowerOptions {
 
-    public abstract LanguageVersion languageVersion();
-
-    public abstract boolean emitPrivateFields();
-
-    public abstract boolean emitPrivateFieldsInRecords();
-
-    // TODO: b/496858305 - consider removing this after rolling out the feature
-    public abstract boolean emitAllPrivateMemberClasses();
-
-    public abstract boolean methodParameters();
-
-    public static LowerOptions createDefault() {
-      return builder().build();
-    }
-
-    public static Builder builder() {
-      return new AutoValue_Lower_LowerOptions.Builder()
-          .languageVersion(LanguageVersion.createDefault())
-          .emitPrivateFields(false)
-          .emitPrivateFieldsInRecords(false)
-          .emitAllPrivateMemberClasses(false)
-          .methodParameters(true);
-    }
-
-    /** Builder for {@link LowerOptions}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
-      public abstract Builder languageVersion(LanguageVersion languageVersion);
-
-      public Builder javacOpts(ImmutableList<String> javacOpts) {
-        return emitPrivateFields(javacOpts.contains("-XDturbine.emitPrivateFields"))
-            .emitPrivateFieldsInRecords(javacOpts.contains("-XDturbine.emitPrivateFieldsInRecords"))
-            .emitAllPrivateMemberClasses(
-                javacOpts.contains("-XDturbine.emitAllPrivateMemberClasses"))
-            .methodParameters(!javacOpts.contains("-XDturbine.noMethodParameters"));
-      }
-
-      public abstract Builder emitPrivateFields(boolean emitPrivateFields);
-
-      public abstract Builder emitPrivateFieldsInRecords(boolean emitPrivateFieldsInRecords);
-
-      public abstract Builder emitAllPrivateMemberClasses(boolean emitAllPrivateMemberClasses);
-
-      public abstract Builder methodParameters(boolean methodParameters);
-
-      public abstract LowerOptions build();
-    }
-  }
 
   /** The lowered compilation output. */
   @AutoValue

@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.JimageClassBinder;
-import com.google.turbine.options.LanguageVersion;
+import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.options.TurbineOptions;
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public final class TestClassPaths {
   }
 
   /**
-   * Return an {@link TurbineOptions} builder, with either {@code --bootclasspath} or {@link
+   * Return an {@link TurbineOptions} builder, with either {@code --bootclasspath} or {@code
    * --release} set to a JDK 8 equivalent.
    */
   public static TurbineOptions.Builder optionsWithBootclasspath() {
@@ -69,7 +69,7 @@ public final class TestClassPaths {
       options.setBootClassPath(
           BOOTCLASSPATH.stream().map(Path::toString).collect(toImmutableList()));
     } else {
-      options.setLanguageVersion(LanguageVersion.fromJavacopts(ImmutableList.of("--release", "8")));
+      options.setJavacOpts(TurbineJavacOptions.parse(ImmutableList.of("--release", "8")));
     }
     return options;
   }

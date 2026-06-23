@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
+import com.google.turbine.options.LowerOptions;
 import com.google.turbine.parse.Parser;
 import java.util.Arrays;
 import java.util.List;
@@ -354,7 +355,7 @@ public class RemovePrivateMembersTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())

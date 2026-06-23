@@ -31,6 +31,7 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.lower.Lower.Lowered;
+import com.google.turbine.options.LowerOptions;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.testing.TestClassPaths;
@@ -110,7 +111,7 @@ public class DependenciesTest {
       Lowered lowered =
           Lower.lowerAll(
               newDirectExecutorService(),
-              Lower.LowerOptions.createDefault(),
+              LowerOptions.createDefault(),
               bound.units(),
               bound.modules(),
               bound.classPathEnv());

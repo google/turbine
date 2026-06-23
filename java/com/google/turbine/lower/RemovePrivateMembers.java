@@ -37,6 +37,7 @@ import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.options.LowerOptions;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
@@ -59,7 +60,7 @@ class RemovePrivateMembers {
   static ImmutableMap<ClassSymbol, SourceTypeBoundClass> process(
       Env<ClassSymbol, TypeBoundClass> env,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
-      Lower.LowerOptions options) {
+      LowerOptions options) {
     // Private member classes can only be referenced in the same top-level class, so first group
     // the inputs by outermost enclosing class to make search for usages faster.
     ImmutableTable<ClassSymbol, ClassSymbol, SourceTypeBoundClass> groups =
@@ -74,7 +75,7 @@ class RemovePrivateMembers {
   private static void process(
       Env<ClassSymbol, TypeBoundClass> env,
       Map<ClassSymbol, SourceTypeBoundClass> unit,
-      Lower.LowerOptions options,
+      LowerOptions options,
       ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result) {
     Set<ClassSymbol> reachableClasses =
         options.emitAllPrivateMemberClasses()
@@ -134,7 +135,7 @@ class RemovePrivateMembers {
   }
 
   private static boolean emitField(
-      SourceTypeBoundClass info, TypeBoundClass.FieldInfo field, Lower.LowerOptions options) {
+      SourceTypeBoundClass info, TypeBoundClass.FieldInfo field, LowerOptions options) {
     if (!isPrivate(field.access())) {
       return true;
     }
@@ -157,7 +158,7 @@ class RemovePrivateMembers {
   private static Set<ClassSymbol> reachableClasses(
       Env<ClassSymbol, TypeBoundClass> env,
       Map<ClassSymbol, SourceTypeBoundClass> unit,
-      Lower.LowerOptions options) {
+      LowerOptions options) {
     // A graph from class declarations in the current top level class to classes that they
     // reference in signatures of non-private APIs.
     Map<ClassSymbol, ImmutableSet<ClassSymbol>> usages = new HashMap<>();
@@ -182,7 +183,7 @@ class RemovePrivateMembers {
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
       Map<ClassSymbol, SourceTypeBoundClass> unit,
-      Lower.LowerOptions options) {
+      LowerOptions options) {
     ImmutableSet.Builder<ClassSymbol> usages = ImmutableSet.builder();
     for (ClassSymbol usage : UsageScanner.scan(info, env, options)) {
       if (!unit.containsKey(usage)) {
@@ -213,18 +214,16 @@ class RemovePrivateMembers {
   private static class UsageScanner {
 
     private final Env<ClassSymbol, TypeBoundClass> env;
-    private final Lower.LowerOptions options;
+    private final LowerOptions options;
     private final Set<ClassSymbol> usages = new HashSet<>();
 
-    private UsageScanner(Env<ClassSymbol, TypeBoundClass> env, Lower.LowerOptions options) {
+    private UsageScanner(Env<ClassSymbol, TypeBoundClass> env, LowerOptions options) {
       this.env = env;
       this.options = options;
     }
 
     private static Set<ClassSymbol> scan(
-        SourceTypeBoundClass info,
-        Env<ClassSymbol, TypeBoundClass> env,
-        Lower.LowerOptions options) {
+        SourceTypeBoundClass info, Env<ClassSymbol, TypeBoundClass> env, LowerOptions options) {
       UsageScanner scanner = new UsageScanner(env, options);
       scanner.visit(info);
       return scanner.usages;

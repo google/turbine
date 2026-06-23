@@ -40,6 +40,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineLog;
+import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.processing.ModelFactory;
 import com.google.turbine.processing.TurbineElements;
@@ -384,15 +385,15 @@ public class Processing {
 
   public static ProcessorInfo initializeProcessors(
       SourceVersion sourceVersion,
-      ImmutableList<String> javacopts,
+      TurbineJavacOptions javacopts,
       ImmutableSet<String> processorNames,
       ClassLoader processorLoader) {
-    if (processorNames.isEmpty() || javacopts.contains("-proc:none")) {
+    if (processorNames.isEmpty() || javacopts.procNone()) {
       return ProcessorInfo.empty();
     }
     ImmutableList<Processor> processors = instantiateProcessors(processorNames, processorLoader);
-    ImmutableMap<String, String> processorOptions = processorOptions(javacopts);
-    return ProcessorInfo.create(processors, processorLoader, processorOptions, sourceVersion);
+    return ProcessorInfo.create(
+        processors, processorLoader, javacopts.processorOptions(), sourceVersion);
   }
 
   private static ImmutableList<Processor> instantiateProcessors(
@@ -449,27 +450,6 @@ public class Processing {
       urls[i++] = Paths.get(path).toUri().toURL();
     }
     return urls;
-  }
-
-  public static ImmutableMap<String, String> processorOptions(ImmutableList<String> javacopts) {
-    Map<String, String> result = new LinkedHashMap<>(); // ImmutableMap.Builder rejects duplicates
-    for (String javacopt : javacopts) {
-      if (javacopt.startsWith("-A")) {
-        javacopt = javacopt.substring("-A".length());
-        int idx = javacopt.indexOf('=');
-        String key;
-        String value;
-        if (idx != -1) {
-          key = javacopt.substring(0, idx);
-          value = javacopt.substring(idx + 1);
-        } else {
-          key = javacopt;
-          value = javacopt;
-        }
-        result.put(key, value);
-      }
-    }
-    return ImmutableMap.copyOf(result);
   }
 
   /** Information about any annotation processing performed by this compilation. */

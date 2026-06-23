@@ -92,7 +92,9 @@ public class TurbineOptionsTest {
     assertThat(options.processorPath()).containsExactly("libproc1.jar", "libproc2.jar").inOrder();
     assertThat(options.classPath()).containsExactly("lib1.jar", "lib2.jar").inOrder();
     assertThat(options.bootClassPath()).containsExactly("rt.jar", "zipfs.jar").inOrder();
-    assertThat(options.javacOpts()).containsExactly("-source", "8", "-target", "8").inOrder();
+    assertThat(options.javacOpts().rawJavacOpts())
+        .containsExactly("-source", "8", "-target", "8")
+        .inOrder();
     assertThat(options.sources()).containsExactly("Source1.java", "Source2.java");
     assertThat(options.outputDeps()).hasValue("out.jdeps");
     assertThat(options.targetLabel()).hasValue("//java/com/google/test");
@@ -214,7 +216,7 @@ public class TurbineOptionsTest {
     TurbineOptions options = TurbineOptionsParser.parse(Arrays.asList(lines));
 
     // assert that options were read from params file
-    assertThat(options.javacOpts())
+    assertThat(options.javacOpts().rawJavacOpts())
         .containsExactly("-source", "8", "-target", "8", "-Aconnector.opt=with,space, here")
         .inOrder();
     // ... and directly from the command line
@@ -288,7 +290,9 @@ public class TurbineOptionsTest {
     TurbineOptions options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, Arrays.asList(lines)));
 
-    assertThat(options.javacOpts()).containsExactly("--release", "8", "--release", "9").inOrder();
+    assertThat(options.javacOpts().rawJavacOpts())
+        .containsExactly("--release", "8", "--release", "9")
+        .inOrder();
     assertThat(options.sources()).containsExactly("Test.java");
   }
 
@@ -411,6 +415,11 @@ public class TurbineOptionsTest {
 
     options =
         TurbineOptionsParser.parse(Iterables.concat(BASE_ARGS, ImmutableList.of("--noparallel")));
+    assertThat(options.parallel()).isFalse();
+
+    options =
+        TurbineOptionsParser.parse(
+            Iterables.concat(BASE_ARGS, ImmutableList.of("--javacopts", "-XDnoParallel", "--")));
     assertThat(options.parallel()).isFalse();
   }
 }

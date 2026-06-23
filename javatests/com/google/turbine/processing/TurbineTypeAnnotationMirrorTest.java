@@ -43,6 +43,7 @@ import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
 import com.google.turbine.lower.Lower;
+import com.google.turbine.options.LowerOptions;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
@@ -279,7 +280,7 @@ public class TurbineTypeAnnotationMirrorTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder().build(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())

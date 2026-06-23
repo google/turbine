@@ -44,7 +44,7 @@ import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
-import com.google.turbine.options.LanguageVersion;
+import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.tree.Tree.CompUnit;
@@ -325,7 +325,7 @@ public final class IntegrationTestSupport {
         Comparator.comparing((InnerClassNode x) -> x.name)
             .thenComparing(x -> x.outerName)
             .thenComparing(x -> x.innerName)
-            .thenComparing(x -> x.access));
+            .thenComparingInt(x -> x.access));
 
     sortAnnotations(n.visibleAnnotations);
     sortAnnotations(n.invisibleAnnotations);
@@ -589,9 +589,7 @@ public final class IntegrationTestSupport {
     BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
     return Lower.lowerAll(
             newDirectExecutorService(),
-            Lower.LowerOptions.builder()
-                .languageVersion(LanguageVersion.fromJavacopts(javacopts))
-                .build(),
+            TurbineJavacOptions.parse(javacopts).lowerOptions(),
             bound.units(),
             bound.modules(),
             bound.classPathEnv())

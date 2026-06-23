@@ -48,7 +48,8 @@ import com.google.turbine.diag.TurbineError;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.options.LanguageVersion;
+import com.google.turbine.options.LowerOptions;
+import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.type.Type;
@@ -243,7 +244,7 @@ public class LowerTest {
     Map<String, byte[]> bytes =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
                 ImmutableList.of(),
@@ -276,7 +277,7 @@ public class LowerTest {
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -356,7 +357,7 @@ public class LowerTest {
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -441,7 +442,7 @@ public class LowerTest {
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -669,10 +670,10 @@ public class LowerTest {
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder()
+                LowerOptions.builder()
                     .languageVersion(
-                        LanguageVersion.fromJavacopts(
-                            ImmutableList.of("-source", "7", "-target", "7")))
+                        TurbineJavacOptions.parse(ImmutableList.of("-source", "7", "-target", "7"))
+                            .languageVersion())
                     .build(),
                 bound.units(),
                 bound.modules(),
@@ -714,7 +715,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder().emitPrivateFields(true).build(),
+                LowerOptions.builder().emitPrivateFields(true).build(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -752,7 +753,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder().emitPrivateFieldsInRecords(true).build(),
+                LowerOptions.builder().emitPrivateFieldsInRecords(true).build(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -790,7 +791,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -829,7 +830,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder()
+                LowerOptions.builder()
                     .emitPrivateFields(true)
                     .emitAllPrivateMemberClasses(false)
                     .build(),
@@ -874,7 +875,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder().emitAllPrivateMemberClasses(true).build(),
+                LowerOptions.builder().emitAllPrivateMemberClasses(true).build(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -900,7 +901,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -935,7 +936,7 @@ public class LowerTest {
             () ->
                 Lower.lowerAll(
                     newDirectExecutorService(),
-                    Lower.LowerOptions.createDefault(),
+                    LowerOptions.createDefault(),
                     bound.units(),
                     bound.modules(),
                     bound.classPathEnv()));
@@ -964,7 +965,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -1010,7 +1011,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.builder().methodParameters(false).build(),
+                LowerOptions.builder().methodParameters(false).build(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -1094,7 +1095,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -1134,7 +1135,7 @@ public class LowerTest {
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 newDirectExecutorService(),
-                Lower.LowerOptions.createDefault(),
+                LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
                 bound.classPathEnv())
@@ -1183,7 +1184,7 @@ public class LowerTest {
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
                 .append(new SimpleEnv<>(bound.units())),
             unit,
-            Lower.LowerOptions.createDefault());
+            LowerOptions.createDefault());
     // The usage graph should only include symbols with the same outermost enclosing class
     assertThat(usages).containsExactly(new ClassSymbol("A$I"));
   }

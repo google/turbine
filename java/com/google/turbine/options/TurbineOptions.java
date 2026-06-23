@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Optional;
 
 /**
@@ -30,7 +29,6 @@ import java.util.Optional;
  * @param sources Paths to the Java source files to compile.
  * @param classPath Paths to classpath artifacts.
  * @param bootClassPath Paths to compilation bootclasspath artifacts.
- * @param languageVersion The language version.
  * @param system The target platform's system modules.
  * @param output The output jar.
  * @param headerCompilationOutput The header compilation output jar.
@@ -48,7 +46,7 @@ import java.util.Optional;
  *     <p>Note that this rule will have a completely different label to {@link #targetLabel} above.
  * @param depsArtifacts The .jdeps artifacts for direct dependencies.
  * @param help Print usage information.
- * @param javacOpts Additional Java compiler flags.
+ * @param javacOpts Javac options parsed for use by Turbine.
  * @param reducedClasspathMode The reduced classpath optimization mode.
  * @param profile An optional path for profiling output.
  * @param gensrcOutput An optional path for generated source output.
@@ -58,7 +56,6 @@ public record TurbineOptions(
     ImmutableList<String> sources,
     ImmutableList<String> classPath,
     ImmutableSet<String> bootClassPath,
-    LanguageVersion languageVersion,
     Optional<String> system,
     Optional<String> output,
     Optional<String> headerCompilationOutput,
@@ -74,7 +71,7 @@ public record TurbineOptions(
     Optional<String> injectingRuleKind,
     ImmutableList<String> depsArtifacts,
     boolean help,
-    ImmutableList<String> javacOpts,
+    TurbineJavacOptions javacOpts,
     ReducedClasspathMode reducedClasspathMode,
     Optional<String> profile,
     Optional<String> gensrcOutput,
@@ -86,7 +83,6 @@ public record TurbineOptions(
     requireNonNull(sources, "sources");
     requireNonNull(classPath, "classPath");
     requireNonNull(bootClassPath, "bootClassPath");
-    requireNonNull(languageVersion, "languageVersion");
     requireNonNull(system, "system");
     requireNonNull(output, "output");
     requireNonNull(headerCompilationOutput, "headerCompilationOutput");
@@ -106,6 +102,15 @@ public record TurbineOptions(
     requireNonNull(gensrcOutput, "gensrcOutput");
     requireNonNull(resourceOutput, "resourceOutput");
     requireNonNull(experimentalFixDepsTool, "experimentalFixDepsTool");
+  }
+
+  public LanguageVersion languageVersion() {
+    return javacOpts().languageVersion();
+  }
+
+  @Override
+  public boolean parallel() {
+    return parallel && javacOpts().parallel();
   }
 
   /**
@@ -145,8 +150,7 @@ public record TurbineOptions(
         .setSourceJars(ImmutableList.of())
         .setDirectJars(ImmutableList.of())
         .setDepsArtifacts(ImmutableList.of())
-        .addAllJavacOpts(ImmutableList.of())
-        .setLanguageVersion(LanguageVersion.createDefault())
+        .setJavacOpts(TurbineJavacOptions.empty())
         .setReducedClasspathMode(ReducedClasspathMode.NONE)
         .setHelp(false)
         .setFullClasspathLength(0)
@@ -162,8 +166,6 @@ public record TurbineOptions(
     public abstract Builder setClassPath(ImmutableList<String> classPath);
 
     public abstract Builder setBootClassPath(ImmutableList<String> bootClassPath);
-
-    public abstract Builder setLanguageVersion(LanguageVersion languageVersion);
 
     public abstract Builder setSystem(String system);
 
@@ -191,13 +193,7 @@ public record TurbineOptions(
 
     public abstract Builder setHelp(boolean help);
 
-    abstract ImmutableList.Builder<String> javacOptsBuilder();
-
-    @CanIgnoreReturnValue
-    public Builder addAllJavacOpts(Iterable<String> javacOpts) {
-      javacOptsBuilder().addAll(javacOpts);
-      return this;
-    }
+    public abstract Builder setJavacOpts(TurbineJavacOptions javacOpts);
 
     public abstract Builder setReducedClasspathMode(ReducedClasspathMode reducedClasspathMode);
 

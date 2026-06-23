@@ -144,7 +144,7 @@ public final class Main {
   public static Result compile(TurbineOptions options) throws IOException {
     usage(options);
 
-    boolean parallel = options.parallel() && !options.javacOpts().contains("-XDnoParallel");
+    boolean parallel = options.parallel();
     try (ListeningExecutorService executor =
         listeningDecorator(
             parallel
@@ -213,10 +213,7 @@ public final class Main {
       Lowered lowered =
           Lower.lowerAll(
               executor,
-              Lower.LowerOptions.builder()
-                  .languageVersion(options.languageVersion())
-                  .javacOpts(options.javacOpts())
-                  .build(),
+              options.javacOpts().lowerOptions(),
               bound.units(),
               bound.modules(),
               bound.classPathEnv());
