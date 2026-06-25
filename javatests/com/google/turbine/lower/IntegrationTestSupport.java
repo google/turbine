@@ -18,7 +18,6 @@ package com.google.turbine.lower;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.MoreFiles.getFileExtension;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -45,6 +44,7 @@ import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.options.TurbineJavacOptions;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
 import com.google.turbine.tree.Tree.CompUnit;
@@ -588,7 +588,7 @@ public final class IntegrationTestSupport {
       throws IOException {
     BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
     return Lower.lowerAll(
-            newDirectExecutorService(),
+            TurbineExecutor.direct(),
             TurbineJavacOptions.parse(javacopts).lowerOptions(),
             bound.units(),
             bound.modules(),
@@ -609,7 +609,7 @@ public final class IntegrationTestSupport {
             .collect(toImmutableList());
 
     return Binder.bind(
-        newDirectExecutorService(),
+        TurbineExecutor.direct(),
         units,
         ClassPathBinder.bindClasspath(classpath),
         bootClassPath,

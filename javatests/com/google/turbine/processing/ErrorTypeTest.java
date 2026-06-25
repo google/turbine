@@ -18,7 +18,6 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
@@ -31,6 +30,7 @@ import com.google.turbine.binder.Processing;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
@@ -207,7 +207,7 @@ public class ErrorTypeTest {
             TurbineError.class,
             () ->
                 Binder.bind(
-                    newDirectExecutorService(),
+                    TurbineExecutor.direct(),
                     units,
                     ClassPathBinder.bindClasspath(ImmutableList.of()),
                     Processing.ProcessorInfo.create(
