@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -41,6 +40,7 @@ import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.options.TurbineJavacOptions;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.processing.ModelFactory;
 import com.google.turbine.processing.TurbineElements;
@@ -77,7 +77,7 @@ import org.jspecify.annotations.Nullable;
 public class Processing {
 
   static @Nullable BindingResult process(
-      ListeningExecutorService executor,
+      TurbineExecutor executor,
       TurbineLog log,
       final ImmutableList<CompUnit> initialSources,
       final ClassPath classpath,

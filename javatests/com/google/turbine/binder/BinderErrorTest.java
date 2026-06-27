@@ -17,7 +17,6 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
@@ -28,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.util.Arrays;
@@ -1143,7 +1143,7 @@ public class BinderErrorTest {
             TurbineError.class,
             () ->
                 Binder.bind(
-                        newDirectExecutorService(),
+                        TurbineExecutor.direct(),
                         ImmutableList.of(parseLines(source)),
                         ClassPathBinder.bindClasspath(ImmutableList.of()),
                         TURBINE_BOOTCLASSPATH,
@@ -1175,7 +1175,7 @@ public class BinderErrorTest {
             TurbineError.class,
             () ->
                 Binder.bind(
-                        newDirectExecutorService(),
+                        TurbineExecutor.direct(),
                         ImmutableList.of(parseLines(source)),
                         ClassPathBinder.bindClasspath(ImmutableList.of()),
                         ProcessorInfo.create(

@@ -24,7 +24,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.util.Arrays.stream;
 import static org.junit.Assert.fail;
 
@@ -44,6 +43,7 @@ import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
 import com.google.turbine.lower.Lower;
 import com.google.turbine.options.LowerOptions;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
@@ -260,7 +260,7 @@ public class TurbineTypeAnnotationMirrorTest {
             .collect(toImmutableList());
     Binder.BindingResult bound =
         Binder.bind(
-            newDirectExecutorService(),
+            TurbineExecutor.direct(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             Processing.ProcessorInfo.create(
@@ -279,7 +279,7 @@ public class TurbineTypeAnnotationMirrorTest {
         MultimapBuilder.linkedHashKeys().arrayListValues().build();
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
-                newDirectExecutorService(),
+                TurbineExecutor.direct(),
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
@@ -295,7 +295,7 @@ public class TurbineTypeAnnotationMirrorTest {
     ImmutableList<Path> classpathJar = ImmutableList.of(lib);
     Binder.BindingResult unused =
         Binder.bind(
-            newDirectExecutorService(),
+            TurbineExecutor.direct(),
             // Turbine requires sources to be present to do annotation processing.
             // The actual element that will be processed is still 'Test' from the classpath.
             ImmutableList.of(Parser.parse("class Hello {}")),
