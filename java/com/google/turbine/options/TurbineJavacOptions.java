@@ -26,12 +26,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.OptionalInt;
 
-/** A structured representation of the javac options used by Turbine. */
+/**
+ * A structured representation of the javac options used by Turbine.
+ *
+ * @param parallelMinThreshold minimum number of files to consider processing parallel
+ */
 public record TurbineJavacOptions(
     LowerOptions lowerOptions,
     ImmutableMap<String, String> processorOptions,
     boolean procNone,
     boolean parallel,
+    int parallelMinThreshold,
     ImmutableList<String> rawJavacOpts) {
 
   public static Builder builder() {
@@ -40,6 +45,7 @@ public record TurbineJavacOptions(
         .processorOptions(ImmutableMap.of())
         .procNone(false)
         .parallel(true)
+        .parallelMinThreshold(20)
         .rawJavacOpts(ImmutableList.of());
   }
 
@@ -53,6 +59,8 @@ public record TurbineJavacOptions(
     public abstract Builder procNone(boolean procNone);
 
     public abstract Builder parallel(boolean parallel);
+
+    public abstract Builder parallelMinThreshold(int parallelMinThreshold);
 
     public abstract Builder rawJavacOpts(ImmutableList<String> rawJavacOpts);
 
@@ -164,6 +172,14 @@ public record TurbineJavacOptions(
             } else {
               processorOptions.put(arg, arg);
             }
+          } else if (opt.startsWith("-XDturbine.parallel.min_threshold=")) {
+            String val = opt.substring("-XDturbine.parallel.min_threshold=".length());
+            Integer threshold = Ints.tryParse(val);
+            if (threshold == null) {
+              throw new IllegalArgumentException(
+                  "invalid -XDturbine.parallel.min_threshold value: " + val);
+            }
+            builder.parallelMinThreshold(threshold);
           } else if (ONE_ARG_FLAGS.contains(opt)) {
             if (it.hasNext()) {
               it.next(); // Skip the argument of this unused option

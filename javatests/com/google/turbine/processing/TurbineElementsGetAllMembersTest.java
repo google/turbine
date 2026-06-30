@@ -18,7 +18,6 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
@@ -33,6 +32,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree.CompUnit;
@@ -268,7 +268,7 @@ public class TurbineElementsGetAllMembersTest {
 
     Binder.BindingResult bound =
         Binder.bind(
-            newDirectExecutorService(),
+            TurbineExecutor.direct(),
             units,
             ClassPathBinder.bindClasspath(ImmutableList.of()),
             TestClassPaths.TURBINE_BOOTCLASSPATH,

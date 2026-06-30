@@ -16,7 +16,6 @@
 
 package com.google.turbine.lower;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeated;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
@@ -25,8 +24,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
@@ -73,7 +70,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.options.LowerOptions;
-import com.google.turbine.parallel.Parallel;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -95,8 +92,6 @@ import org.jspecify.annotations.Nullable;
 /** Lowering from bound classes to bytecode. */
 public class Lower {
 
-
-
   /** The lowered compilation output. */
   @AutoValue
   public abstract static class Lowered {
@@ -117,7 +112,7 @@ public class Lower {
 
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
-      ListeningExecutorService executor,
+      TurbineExecutor executor,
       LowerOptions options,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       ImmutableList<SourceModuleInfo> modules,
@@ -129,39 +124,40 @@ public class Lower {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
         RemovePrivateMembers.process(env, units, options);
     TurbineLog log = new TurbineLog();
-    List<ListenableFuture<TaskResult>> futures = new ArrayList<>();
-    for (var entry : pruned.entrySet()) {
-      ClassSymbol sym = entry.getKey();
-      futures.add(
-          executor.submit(
-              () ->
-                  lower(sym.binaryName(), entry.getValue(), env, sym, majorVersion, options, log)));
-    }
-    if (modules.size() == 1) {
-      // single module mode: the module-info.class file is at the root
-      futures.add(
-          executor.submit(
-              () ->
-                  lower("module-info", getOnlyElement(modules), env, majorVersion, options, log)));
-    } else {
-      // multi-module mode: the output module-info.class are in a directory corresponding to their
-      // package
-      for (SourceModuleInfo module : modules) {
-        futures.add(
-            executor.submit(
-                () ->
-                    lower(
-                        module.name().replace('.', '/') + "/module-info",
-                        module,
-                        env,
-                        majorVersion,
-                        options,
-                        log)));
-      }
-    }
+
+    ImmutableList<TaskResult> classResults =
+        executor.map(
+            pruned.entrySet().asList(),
+            entry -> {
+              ClassSymbol sym = entry.getKey();
+              return lower(
+                  sym.binaryName(), entry.getValue(), env, sym, majorVersion, options, log);
+            });
+
+    ImmutableList<TaskResult> moduleResults =
+        executor.map(
+            modules,
+            module ->
+                lower(
+                    modules.size() == 1
+                        // single module mode: the module-info.class file is at the root
+                        ? "module-info"
+                        // multi-module mode: the output module-info.class are in a directory
+                        // corresponding to their package
+                        : module.name().replace('.', '/') + "/module-info",
+                    module,
+                    env,
+                    majorVersion,
+                    options,
+                    log));
+
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     ImmutableSet.Builder<ClassSymbol> symbols = ImmutableSet.builder();
-    for (TaskResult lowered : Parallel.allAsList(futures)) {
+    for (TaskResult lowered : classResults) {
+      result.put(lowered.name(), lowered.bytes());
+      symbols.addAll(lowered.symbols());
+    }
+    for (TaskResult lowered : moduleResults) {
       result.put(lowered.name(), lowered.bytes());
       symbols.addAll(lowered.symbols());
     }
