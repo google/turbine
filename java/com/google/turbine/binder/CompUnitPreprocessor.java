@@ -147,8 +147,7 @@ public final class CompUnitPreprocessor {
     ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
     Set<String> seen = new HashSet<>();
     for (Tree member : members) {
-      if (member.kind() == Tree.Kind.TY_DECL) {
-        Tree.TyDecl decl = (Tree.TyDecl) member;
+      if (member instanceof Tree.TyDecl decl) {
         ClassSymbol sym = new ClassSymbol(owner.binaryName() + '$' + decl.name());
         if (!seen.add(decl.name().value())) {
           throw TurbineError.format(
@@ -201,10 +200,9 @@ public final class CompUnitPreprocessor {
    */
   private static boolean isEnumFinal(ImmutableList<Tree> declMembers) {
     for (Tree t : declMembers) {
-      if (t.kind() != Tree.Kind.VAR_DECL) {
+      if (!(t instanceof Tree.VarDecl var)) {
         continue;
       }
-      Tree.VarDecl var = (Tree.VarDecl) t;
       if (!var.mods().contains(TurbineModifier.ENUM_IMPL)) {
         continue;
       }

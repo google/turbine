@@ -52,7 +52,6 @@ import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.Anno;
 import com.google.turbine.tree.Tree.ClassTy;
 import com.google.turbine.tree.Tree.Ident;
-import com.google.turbine.tree.Tree.Kind;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.PrimTy;
 import com.google.turbine.tree.TurbineModifier;
@@ -655,10 +654,7 @@ public class TypeBinder {
 
   private boolean hasConstructor() {
     for (Tree m : base.decl().members()) {
-      if (m.kind() != Kind.METH_DECL) {
-        continue;
-      }
-      if (((MethDecl) m).name().value().equals("<init>")) {
+      if (m instanceof Tree.MethDecl meth && meth.name().value().equals("<init>")) {
         return true;
       }
     }
@@ -696,8 +692,8 @@ public class TypeBinder {
     List<MethodInfo> methods = new ArrayList<>();
     int idx = 0;
     for (Tree member : members) {
-      if (member.kind() == Tree.Kind.METH_DECL) {
-        methods.add(bindMethod(idx++, scope, (MethDecl) member, components));
+      if (member instanceof Tree.MethDecl meth) {
+        methods.add(bindMethod(idx++, scope, meth, components));
       }
     }
     return methods;
@@ -913,10 +909,8 @@ public class TypeBinder {
   }
 
   private Type bindTyArg(CompoundScope scope, Tree.Type ty) {
-    switch (ty.kind()) {
-      case WILD_TY -> {
-        return bindWildTy(scope, (Tree.WildTy) ty);
-      }
+    return switch (ty.kind()) {
+      case WILD_TY -> bindWildTy(scope, (Tree.WildTy) ty);
       default -> {
         Type result = bindTy(scope, ty);
         if (result.tyKind().equals(Type.TyKind.PRIM_TY)) {
@@ -925,9 +919,9 @@ public class TypeBinder {
           // TODO(cushon): consider ensuring this is done for all diagnostics that mention types
           log.error(ty.position(), ErrorKind.UNEXPECTED_TYPE, Deannotate.deannotate(result));
         }
-        return result;
+        yield result;
       }
-    }
+    };
   }
 
   private Type bindTy(CompoundScope scope, Tree t) {

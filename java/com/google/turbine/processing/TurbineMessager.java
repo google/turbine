@@ -208,16 +208,14 @@ public class TurbineMessager implements Messager {
    */
   private static int locate(Const toFind, Const v, Tree.Expression t) {
     // the element name can be omitted for `value`, e.g. in `@A({1, 2, 3})`
-    t = t.kind().equals(Tree.Kind.ASSIGN) ? ((Tree.Assign) t).expr() : t;
+    t = t instanceof Tree.Assign assign ? assign.expr() : t;
     if (toFind.equals(v)) {
       return t.position();
     }
     return switch (v.kind()) {
       case ARRAY -> {
         ImmutableList<Tree.Expression> elements =
-            t.kind().equals(Tree.Kind.ARRAY_INIT)
-                ? ((Tree.ArrayInit) t).exprs()
-                : ImmutableList.of(t);
+            t instanceof Tree.ArrayInit arrayInit ? arrayInit.exprs() : ImmutableList.of(t);
         yield locate(toFind, ((Const.ArrayInitValue) v).elements(), elements);
       }
       case ANNOTATION -> locateInAnnotation(toFind, ((TurbineAnnotationValue) v).info());

@@ -33,7 +33,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /** An AST node. */
-public abstract class Tree {
+public abstract sealed class Tree {
 
   public abstract Kind kind();
 
@@ -42,7 +42,7 @@ public abstract class Tree {
 
   private final int position;
 
-  protected Tree(int position) {
+  private Tree(int position) {
     this.position = position;
   }
 
@@ -92,7 +92,7 @@ public abstract class Tree {
 
   /** An identifier. */
   @Immutable
-  public static class Ident extends Tree {
+  public static final class Ident extends Tree {
 
     private final String value;
 
@@ -123,7 +123,7 @@ public abstract class Tree {
   }
 
   /** A type use. */
-  public abstract static class Type extends Tree {
+  public abstract static sealed class Type extends Tree {
     private final ImmutableList<Anno> annos;
 
     public Type(int position, ImmutableList<Anno> annos) {
@@ -137,14 +137,14 @@ public abstract class Tree {
   }
 
   /** An expression. */
-  public abstract static class Expression extends Tree {
+  public abstract static sealed class Expression extends Tree {
     public Expression(int position) {
       super(position);
     }
   }
 
   /** A wildcard type, possibly with an upper or lower bound. */
-  public static class WildTy extends Type {
+  public static final class WildTy extends Type {
     private final Optional<Type> upper;
     private final Optional<Type> lower;
 
@@ -186,7 +186,7 @@ public abstract class Tree {
   }
 
   /** An array type. */
-  public static class ArrTy extends Type {
+  public static final class ArrTy extends Type {
     private final Type elem;
 
     public ArrTy(int position, ImmutableList<Anno> annos, Type elem) {
@@ -216,7 +216,7 @@ public abstract class Tree {
   }
 
   /** A primitive type. */
-  public static class PrimTy extends Type {
+  public static final class PrimTy extends Type {
     private final TurbineConstantTypeKind tykind;
 
     public PrimTy(int position, ImmutableList<Anno> annos, TurbineConstantTypeKind tykind) {
@@ -242,7 +242,7 @@ public abstract class Tree {
   }
 
   /** The void type, used only for void-returning methods. */
-  public static class VoidTy extends Type {
+  public static final class VoidTy extends Type {
 
     @Override
     public Kind kind() {
@@ -261,7 +261,7 @@ public abstract class Tree {
   }
 
   /** A class, enum, interface, or annotation {@link Type}. */
-  public static class ClassTy extends Type {
+  public static final class ClassTy extends Type {
     private final Optional<ClassTy> base;
     private final Ident name;
     private final ImmutableList<Type> tyargs;
@@ -336,7 +336,7 @@ public abstract class Tree {
   }
 
   /** A JLS 3.10 literal expression. */
-  public static class Literal extends Expression {
+  public static final class Literal extends Expression {
     private final TurbineConstantTypeKind tykind;
     private final Const value;
 
@@ -367,7 +367,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.8.5 parenthesized expression. */
-  public static class Paren extends Expression {
+  public static final class Paren extends Expression {
     private final Expression expr;
 
     public Paren(int position, Expression expr) {
@@ -392,7 +392,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.16 cast expression. */
-  public static class TypeCast extends Expression {
+  public static final class TypeCast extends Expression {
     private final Type ty;
     private final Expression expr;
 
@@ -423,7 +423,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.14 - 14.15 unary expression. */
-  public static class Unary extends Expression {
+  public static final class Unary extends Expression {
     private final Expression expr;
     private final TurbineOperatorKind op;
 
@@ -454,7 +454,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.17 - 14.24 binary expression. */
-  public static class Binary extends Expression {
+  public static final class Binary extends Expression {
     private final Expression lhs;
     private final Expression rhs;
     private final TurbineOperatorKind op;
@@ -503,7 +503,7 @@ public abstract class Tree {
   }
 
   /** A JLS 4.12.4 constant variable. */
-  public static class ConstVarName extends Expression {
+  public static final class ConstVarName extends Expression {
     private final ImmutableList<Ident> name;
 
     public ConstVarName(int position, ImmutableList<Ident> name) {
@@ -528,7 +528,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.8.2 class literal. */
-  public static class ClassLiteral extends Expression {
+  public static final class ClassLiteral extends Expression {
 
     private final Type type;
 
@@ -554,7 +554,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.26 assignment expression. */
-  public static class Assign extends Expression {
+  public static final class Assign extends Expression {
     private final Ident name;
     private final Expression expr;
 
@@ -585,7 +585,7 @@ public abstract class Tree {
   }
 
   /** A JLS 15.25 conditional expression. */
-  public static class Conditional extends Expression {
+  public static final class Conditional extends Expression {
     private final Expression cond;
     private final Expression iftrue;
     private final Expression iffalse;
@@ -622,7 +622,7 @@ public abstract class Tree {
   }
 
   /** JLS 10.6 array initializer. */
-  public static class ArrayInit extends Expression {
+  public static final class ArrayInit extends Expression {
     private final ImmutableList<Expression> exprs;
 
     public ArrayInit(int position, ImmutableList<Expression> exprs) {
@@ -647,7 +647,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.3 compilation unit. */
-  public static class CompUnit extends Tree {
+  public static final class CompUnit extends Tree {
     private final Optional<PkgDecl> pkg;
     private final Optional<ModDecl> mod;
     private final ImmutableList<ImportDecl> imports;
@@ -702,7 +702,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.5 import declaration. */
-  public static class ImportDecl extends Tree {
+  public static final class ImportDecl extends Tree {
     private final ImmutableList<Ident> type;
     private final boolean stat;
     private final boolean wild;
@@ -741,7 +741,7 @@ public abstract class Tree {
   }
 
   /** A JLS 8.3 field declaration, JLS 8.4.1 formal method parameter, or JLS 14.4 variable. */
-  public static class VarDecl extends Tree {
+  public static final class VarDecl extends Tree {
     private final ImmutableSet<TurbineModifier> mods;
     private final ImmutableList<Anno> annos;
     private final Tree ty;
@@ -807,7 +807,7 @@ public abstract class Tree {
   }
 
   /** A JLS 8.4 method declaration. */
-  public static class MethDecl extends Tree {
+  public static final class MethDecl extends Tree {
     private final ImmutableSet<TurbineModifier> mods;
     private final ImmutableList<Anno> annos;
     private final ImmutableList<TyParam> typarams;
@@ -894,7 +894,7 @@ public abstract class Tree {
   }
 
   /** A JLS 9.7 annotation. */
-  public static class Anno extends Tree {
+  public static final class Anno extends Tree {
     private final ImmutableList<Ident> name;
     private final ImmutableList<Expression> args;
 
@@ -928,7 +928,7 @@ public abstract class Tree {
    * An annotation in an expression context, e.g. an annotation literal nested inside another
    * annotation.
    */
-  public static class AnnoExpr extends Expression {
+  public static final class AnnoExpr extends Expression {
 
     private final Anno value;
 
@@ -955,7 +955,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.6 or 8.5 type declaration. */
-  public static class TyDecl extends Tree {
+  public static final class TyDecl extends Tree {
     private final ImmutableSet<TurbineModifier> mods;
     private final ImmutableList<Anno> annos;
     private final Ident name;
@@ -1056,7 +1056,7 @@ public abstract class Tree {
   }
 
   /** A JLS 4.4. type variable declaration. */
-  public static class TyParam extends Tree {
+  public static final class TyParam extends Tree {
     private final Ident name;
     private final ImmutableList<Tree> bounds;
     private final ImmutableList<Anno> annos;
@@ -1094,7 +1094,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.4 package declaration. */
-  public static class PkgDecl extends Tree {
+  public static final class PkgDecl extends Tree {
     private final ImmutableList<Ident> name;
     private final ImmutableList<Anno> annos;
     private final TurbineJavadoc javadoc;
@@ -1135,7 +1135,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.7 module declaration. */
-  public static class ModDecl extends Tree {
+  public static final class ModDecl extends Tree {
 
     private final ImmutableList<Anno> annos;
     private final boolean open;
@@ -1184,7 +1184,7 @@ public abstract class Tree {
   }
 
   /** A kind of module directive. */
-  public abstract static class ModDirective extends Tree {
+  public abstract static sealed class ModDirective extends Tree {
 
     /** A module directive kind. */
     public enum DirectiveKind {
@@ -1203,7 +1203,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.7.1 module requires directive. */
-  public static class ModRequires extends ModDirective {
+  public static final class ModRequires extends ModDirective {
 
     private final ImmutableSet<TurbineModifier> mods;
     private final String moduleName;
@@ -1240,7 +1240,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.7.2 module exports directive. */
-  public static class ModExports extends ModDirective {
+  public static final class ModExports extends ModDirective {
 
     private final String packageName;
     private final ImmutableList<String> moduleNames;
@@ -1277,7 +1277,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.7.2 module opens directive. */
-  public static class ModOpens extends ModDirective {
+  public static final class ModOpens extends ModDirective {
 
     private final String packageName;
     private final ImmutableList<String> moduleNames;
@@ -1314,7 +1314,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.7.3 module uses directive. */
-  public static class ModUses extends ModDirective {
+  public static final class ModUses extends ModDirective {
 
     private final ImmutableList<Ident> typeName;
 
@@ -1345,7 +1345,7 @@ public abstract class Tree {
   }
 
   /** A JLS 7.7.4 module uses directive. */
-  public static class ModProvides extends ModDirective {
+  public static final class ModProvides extends ModDirective {
 
     private final ImmutableList<Ident> typeName;
     private final ImmutableList<ImmutableList<Ident>> implNames;

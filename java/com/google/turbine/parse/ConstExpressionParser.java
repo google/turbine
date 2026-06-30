@@ -187,8 +187,7 @@ public class ConstExpressionParser {
       return null;
     }
     eat();
-    if (expr.kind() == Tree.Kind.CONST_VAR_NAME) {
-      Tree.ConstVarName cvar = (Tree.ConstVarName) expr;
+    if (expr instanceof Tree.ConstVarName cvar) {
       return switch (token) {
         case STRING_LITERAL, IDENT, LPAREN -> {
           Expression expression = primary(false);
@@ -372,8 +371,7 @@ public class ConstExpressionParser {
     if (expr == null) {
       return null;
     }
-    if (negate && expr.kind() == Tree.Kind.LITERAL) {
-      Tree.Literal lit = (Tree.Literal) expr;
+    if (negate && expr instanceof Tree.Literal lit) {
       switch (lit.tykind()) {
         case INT, LONG -> {
           return expr;
