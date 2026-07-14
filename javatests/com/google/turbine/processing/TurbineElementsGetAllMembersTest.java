@@ -236,6 +236,29 @@ public class TurbineElementsGetAllMembersTest {
         "  }",
         "}",
       },
+      {
+        // A covariant override inherited through a class + interface diamond: the base-typed f()
+        // reaches Test via the superclass S, and the narrowed override via interface B. Only the
+        // override should survive in getAllMembers.
+        "=== O.java ===",
+        "interface O {}",
+        "=== P.java ===",
+        "interface P extends O {}",
+        "=== A.java ===",
+        "interface A {",
+        "  O f();",
+        "}",
+        "=== B.java ===",
+        "interface B extends A {",
+        "  @Override",
+        "  P f();",
+        "}",
+        "=== S.java ===",
+        "abstract class S implements A {}",
+        "=== Test.java ===", //
+        "abstract class Test extends S implements B {",
+        "}",
+      },
     };
     return Arrays.stream(inputs)
         .map(input -> TestInput.parse(Joiner.on('\n').join(input)))

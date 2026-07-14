@@ -41,6 +41,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.Proxy;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -198,7 +199,7 @@ public class TurbineElements implements Elements {
         MultimapBuilder.linkedHashKeys().linkedHashSetValues().build();
 
     // collect all members of each transitive supertype of the input
-    ImmutableList.Builder<Element> results = ImmutableList.builder();
+    LinkedHashSet<Element> results = new LinkedHashSet<>();
     for (ClassSymbol superType : factory.cha().transitiveSupertypes(s)) {
       // Most of JSR-269 is implemented on top of turbine's model, instead of the Element and
       // TypeMirror wrappers. We don't do that here because we need most of the Elements returned
@@ -209,7 +210,7 @@ public class TurbineElements implements Elements {
         switch (sym.symKind()) {
           case METHOD -> {
             TurbineExecutableElement m = (TurbineExecutableElement) el;
-            if (shouldAdd(s, from, methods, m)) {
+            if (shouldAdd(s, from, m, methods, results)) {
               methods.put(m.info().name(), m);
               results.add(el);
             }
@@ -223,14 +224,19 @@ public class TurbineElements implements Elements {
         }
       }
     }
-    return results.build();
+    return ImmutableList.copyOf(results);
   }
 
+  /**
+   * Returns whether to add the method to {@code results} (and {@code methods}) <b>and</b> directly
+   * removes any methods that it overrides from {@code results} and {@code methods}.
+   */
   private boolean shouldAdd(
       ClassSymbol s,
       PackageSymbol from,
+      TurbineExecutableElement m,
       Multimap<String, TurbineExecutableElement> methods,
-      TurbineExecutableElement m) {
+      LinkedHashSet<Element> results) {
     if (m.sym().owner().equals(s)) {
       // always include methods (and constructors) declared in the given type
       return true;
@@ -269,6 +275,7 @@ public class TurbineElements implements Elements {
     // Add this method, and remove any methods we've already processed that it overrides.
     for (TurbineExecutableElement override : overrides) {
       methods.remove(name, override);
+      results.remove(override);
     }
     return true;
   }
