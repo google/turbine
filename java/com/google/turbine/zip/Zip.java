@@ -135,14 +135,10 @@ public final class Zip {
     }
 
     public String string(ByteBuffer buf, int offset, int length) {
-      // TODO: cushon - switch to FFM on JDK 22+
-      // MemorySegment.copy(MemorySegment.ofBuffer(buf), JAVA_BYTE, offset, bytes, 0, length);
       // TODO: cushon - switch to MemorySegment#getString on JDK 27(?)+
       // MemorySegment.ofBuffer(buf).getString(offset, UTF_8, length);
-      buf = buf.duplicate();
-      buf.position(offset);
       byte[] bytes = new byte[length];
-      buf.get(bytes);
+      buf.get(offset, bytes, 0, length);
       return new String(bytes, UTF_8);
     }
   }
