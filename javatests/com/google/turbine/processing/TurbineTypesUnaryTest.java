@@ -163,4 +163,16 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
           .doesNotContain("@");
     }
   }
+
+  @Test
+  public void stripAnnotations() {
+    assume().that(javacA.getKind()).isNotEqualTo(TypeKind.EXECUTABLE);
+    assume().that(javacA.getKind()).isNotEqualTo(TypeKind.PACKAGE);
+
+    String expected = javacTypes.stripAnnotations(javacA).toString();
+    String actual = turbineTypes.stripAnnotations(turbineA).toString();
+    assertWithMessage("stripAnnotations(`%s`) = stripAnnotations(`%s`)", javacA, turbineA)
+        .that(actual)
+        .isEqualTo(expected);
+  }
 }

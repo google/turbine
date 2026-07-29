@@ -825,6 +825,12 @@ public class TurbineTypes implements Types {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public <T extends TypeMirror> T stripAnnotations(T t) {
+    return (T) factory.asTypeMirror(deannotate(asTurbineType(t)));
+  }
+
+  @Override
   public TypeElement boxedClass(PrimitiveType p) {
     return factory.typeElement(boxedClass(((PrimTy) asTurbineType(p)).primkind()));
   }
