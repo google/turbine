@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -296,9 +295,8 @@ public class Processing {
   private static void logProcessorCrash(TurbineLog log, Processor processor, Throwable t) {
     log.diagnostic(
         Diagnostic.Kind.ERROR,
-        String.format(
-            "An exception occurred in %s:\n%s",
-            processor.getClass().getCanonicalName(), Throwables.getStackTraceAsString(t)));
+        String.format("An exception occurred in %s:", processor.getClass().getCanonicalName()),
+        t);
   }
 
   /** Returns a map from annotations present in the compilation to the annotated elements. */

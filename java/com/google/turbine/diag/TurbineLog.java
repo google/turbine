@@ -98,6 +98,13 @@ public class TurbineLog {
     add(TurbineDiagnostic.format(severity, ErrorKind.PROC, message));
   }
 
+  /**
+   * Reports an annotation processing diagnostic with no position information, retaining the cause.
+   */
+  public void diagnostic(Diagnostic.Kind severity, String message, Throwable t) {
+    add(TurbineDiagnostic.format(severity, ErrorKind.PROC, message, t));
+  }
+
   public void add(TurbineDiagnostic diagnostic) {
     synchronized (lock) {
       diagnostics.add(diagnostic);
