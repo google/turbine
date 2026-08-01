@@ -21,6 +21,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -37,18 +38,21 @@ public class TurbineDiagnostic {
   private final ImmutableList<Object> args;
   private final @Nullable SourceFile source;
   private final int position;
+  private final @Nullable Throwable cause;
 
   private TurbineDiagnostic(
       Diagnostic.Kind severity,
       ErrorKind kind,
       ImmutableList<Object> args,
       @Nullable SourceFile source,
-      int position) {
+      int position,
+      @Nullable Throwable cause) {
     this.severity = requireNonNull(severity);
     this.kind = requireNonNull(kind);
     this.args = requireNonNull(args);
     this.source = source;
     this.position = position;
+    this.cause = cause;
   }
 
   /** The diagnostic kind. */
@@ -85,6 +89,9 @@ public class TurbineDiagnostic {
       sb.append(": ").append(severity);
     }
     sb.append(": ").append(message());
+    if (cause != null) {
+      sb.append(System.lineSeparator()).append(Throwables.getStackTraceAsString(cause));
+    }
     if (position != -1) {
       sb.append(System.lineSeparator());
       sb.append(lineSource());
@@ -104,7 +111,8 @@ public class TurbineDiagnostic {
       ErrorKind kind,
       ImmutableList<Object> args,
       SourceFile source,
-      int position) {
+      int position,
+      @Nullable Throwable cause) {
     switch (kind) {
       case SYMBOL_NOT_FOUND ->
           checkArgument(
@@ -114,11 +122,29 @@ public class TurbineDiagnostic {
               args);
       default -> {}
     }
-    return new TurbineDiagnostic(severity, kind, args, source, position);
+    return new TurbineDiagnostic(severity, kind, args, source, position, cause);
+  }
+
+  private static TurbineDiagnostic create(
+      Diagnostic.Kind severity,
+      ErrorKind kind,
+      ImmutableList<Object> args,
+      SourceFile source,
+      int position) {
+    return create(severity, kind, args, source, position, null);
+  }
+
+  public @Nullable Throwable cause() {
+    return cause;
   }
 
   public static TurbineDiagnostic format(Diagnostic.Kind severity, ErrorKind kind, String message) {
     return create(severity, kind, ImmutableList.of(message), null, -1);
+  }
+
+  public static TurbineDiagnostic format(
+      Diagnostic.Kind severity, ErrorKind kind, String message, Throwable cause) {
+    return create(severity, kind, ImmutableList.of(message), null, -1, cause);
   }
 
   public static TurbineDiagnostic format(Diagnostic.Kind severity, ErrorKind kind) {
@@ -149,7 +175,7 @@ public class TurbineDiagnostic {
   }
 
   public TurbineDiagnostic withPosition(SourceFile source, int position) {
-    return new TurbineDiagnostic(severity, kind, args, source, position);
+    return new TurbineDiagnostic(severity, kind, args, source, position, cause);
   }
 
   @Override

@@ -125,7 +125,11 @@ public class ProcessingIntegrationTest {
         e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
     assertThat(messages).hasSize(2);
     assertThat(messages.getFirst()).contains("could not resolve NoSuch");
-    assertThat(messages.get(1)).contains("crash!");
+    assertThat(messages.get(1))
+        .contains(
+            "An exception occurred in"
+                + " com.google.turbine.processing.ProcessingIntegrationTest.CrashingProcessor:");
+    assertThat(e.diagnostics().get(1).cause()).hasMessageThat().contains("crash!");
   }
 
   @SupportedAnnotationTypes("*")
