@@ -36,9 +36,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
+import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
@@ -113,19 +115,37 @@ public class ProcessingIntegrationTest {
   }
 
   @Test
-  public void crash() throws IOException {
+  public void crash() throws Exception {
     ImmutableList<Tree.CompUnit> units =
         parseUnit(
             "=== Test.java ===", //
             "@Deprecated",
             "class Test extends NoSuch {",
             "}");
-    TurbineError e = runProcessors(units, new CrashingProcessor());
+    TurbineExecutor executor = TurbineExecutor.direct();
+    ClassPath classpath = ClassPathBinder.bindClasspath(ImmutableList.of());
+    ProcessorInfo processorInfo =
+        ProcessorInfo.create(
+            ImmutableList.of(new CrashingProcessor()),
+            getClass().getClassLoader(),
+            ImmutableMap.of(),
+            SourceVersion.latestSupported());
+    AnnotationProcessingError e =
+        assertThrows(
+            AnnotationProcessingError.class,
+            () ->
+                Binder.bind(
+                    executor,
+                    units,
+                    classpath,
+                    processorInfo,
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(e).hasCauseThat().hasMessageThat().contains("crash!");
     ImmutableList<String> messages =
         e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
-    assertThat(messages).hasSize(2);
-    assertThat(messages.getFirst()).contains("could not resolve NoSuch");
-    assertThat(messages.get(1)).contains("crash!");
+    assertThat(messages).hasSize(1);
+    assertThat(messages.get(0)).contains("could not resolve NoSuch");
   }
 
   @SupportedAnnotationTypes("*")

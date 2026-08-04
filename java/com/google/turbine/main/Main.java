@@ -37,6 +37,7 @@ import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.deps.Dependencies;
 import com.google.turbine.deps.Transitive;
+import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.Lower;
@@ -92,6 +93,13 @@ public final class Main {
       ok = true;
     } catch (TurbineError | UsageException e) {
       System.err.println(e.getMessage());
+      ok = false;
+    } catch (AnnotationProcessingError e) {
+      System.err.println(e.getMessage());
+      var cause = e.getCause();
+      if (cause != null) {
+        cause.printStackTrace(System.err);
+      }
       ok = false;
     } catch (Throwable turbineCrash) {
       turbineCrash.printStackTrace();

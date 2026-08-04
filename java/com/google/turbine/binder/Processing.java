@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -37,6 +36,7 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
+import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.options.TurbineJavacOptions;
@@ -70,7 +70,6 @@ import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
 /** Top level annotation processing logic, see also {@link Binder}. */
@@ -128,8 +127,7 @@ public class Processing {
       try (Timers.Timer unused = timers.start(processor)) {
         processor.init(processingEnv);
       } catch (Throwable t) {
-        logProcessorCrash(log, processor, t);
-        return null;
+        throw new AnnotationProcessingError(processor, t, log.diagnostics());
       }
     }
 
@@ -177,8 +175,7 @@ public class Processing {
             // TODO(cushon): consider disallowing this, or reporting a diagnostic
             processor.process(annotations, roundEnv);
           } catch (Throwable t) {
-            logProcessorCrash(log, processor, t);
-            return null;
+            throw new AnnotationProcessingError(processor, t, log.diagnostics());
           }
         }
       }
@@ -223,8 +220,7 @@ public class Processing {
       try (Timers.Timer unused = timers.start(processor)) {
         processor.process(ImmutableSet.of(), roundEnv);
       } catch (Throwable t) {
-        logProcessorCrash(log, processor, t);
-        return null;
+        throw new AnnotationProcessingError(processor, t, log.diagnostics());
       }
     }
 
@@ -293,13 +289,6 @@ public class Processing {
     }
   }
 
-  private static void logProcessorCrash(TurbineLog log, Processor processor, Throwable t) {
-    log.diagnostic(
-        Diagnostic.Kind.ERROR,
-        String.format(
-            "An exception occurred in %s:\n%s",
-            processor.getClass().getCanonicalName(), Throwables.getStackTraceAsString(t)));
-  }
 
   /** Returns a map from annotations present in the compilation to the annotated elements. */
   private static ImmutableSetMultimap<ClassSymbol, Symbol> getAllAnnotations(
