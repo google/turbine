@@ -1189,6 +1189,63 @@ public class LowerTest {
     assertThat(usages).containsExactly(new ClassSymbol("A$I"));
   }
 
+  @Test
+  public void strictfpJava8() throws Exception {
+    assertThat(strictfpAccess(8)).isEqualTo(Opcodes.ACC_STRICT);
+  }
+
+  @Test
+  public void strictfpJava16() throws Exception {
+    assertThat(strictfpAccess(16)).isEqualTo(Opcodes.ACC_STRICT);
+  }
+
+  @Test
+  public void strictfpJava17() throws Exception {
+    assertThat(strictfpAccess(17)).isEqualTo(0);
+  }
+
+  private static int strictfpAccess(int release) throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class Test {
+                      strictfp void f() {}
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                TurbineExecutor.direct(),
+                TurbineJavacOptions.parse(ImmutableList.of("--release", String.valueOf(release)))
+                    .lowerOptions(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<Integer> methodAccess = new ArrayList<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public MethodVisitor visitMethod(
+                  int access,
+                  String name,
+                  String descriptor,
+                  String signature,
+                  String[] exceptions) {
+                methodAccess.add(access);
+                return null;
+              }
+            },
+            0);
+    return methodAccess.get(1) & Opcodes.ACC_STRICT;
+  }
+
   static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

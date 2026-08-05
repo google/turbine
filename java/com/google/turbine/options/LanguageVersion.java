@@ -35,6 +35,14 @@ public record LanguageVersion(int source, int target, OptionalInt release) {
     return target() + 44;
   }
 
+  /**
+   * Returns true if ACC_STRICT should be emitted on methods. For Java ≥ 17 (after JEP 306), FP is
+   * always strict, and the ACC_STRICT flag is never emitted
+   */
+  public boolean emitStrictfp() {
+    return target() < 17;
+  }
+
   public SourceVersion sourceVersion() {
     try {
       return SourceVersion.valueOf("RELEASE_" + source());

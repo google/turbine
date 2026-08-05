@@ -372,6 +372,10 @@ public class Lower {
 
   private ClassFile.MethodInfo lowerMethod(final MethodInfo m, final ClassSymbol sym) {
     int access = m.access();
+    if (!lowerOptions.languageVersion().emitStrictfp()) {
+      // For Java ≥ 17, FP is always strict, and the ACC_STRICT flag is never emitted
+      access &= ~TurbineFlag.ACC_STRICT;
+    }
     Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(m.tyParams());
     String name = m.name();
     String desc = methodDescriptor(m, tenv);
