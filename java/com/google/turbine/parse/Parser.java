@@ -826,27 +826,27 @@ public class Parser {
               modifiers.javadoc());
     }
 
-    switch (token) {
+    return switch (token) {
       case VOID -> {
         result = new Tree.VoidTy(position);
         next();
         int pos = position;
         name = eatIdent();
-        return memberRest(pos, modifiers, typaram, result, name);
+        yield memberRest(pos, modifiers, typaram, result, name);
       }
       case BOOLEAN, BYTE, SHORT, INT, LONG, CHAR, DOUBLE, FLOAT -> {
         result = referenceType(ImmutableList.of());
         int pos = position;
         name = eatIdent();
-        return memberRest(pos, modifiers, typaram, result, name);
+        yield memberRest(pos, modifiers, typaram, result, name);
       }
       case IDENT -> {
         int pos = position;
         Ident ident = eatIdent();
-        return member(modifiers, typaram, pos, ident);
+        yield member(modifiers, typaram, pos, ident);
       }
       default -> throw error(token);
-    }
+    };
   }
 
   private ImmutableList<Tree> member(
@@ -913,18 +913,16 @@ public class Parser {
     result = maybeDims(result);
     pos = position;
     name = eatIdent();
-    switch (token) {
-      case LPAREN -> {
-        return ImmutableList.of(methodRest(pos, modifiers, typaram, result, name));
-      }
+    return switch (token) {
+      case LPAREN -> ImmutableList.of(methodRest(pos, modifiers, typaram, result, name));
       case LBRACK, SEMI, ASSIGN, COMMA -> {
         if (!typaram.isEmpty()) {
           throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
         }
-        return fieldRest(pos, modifiers, result, name);
+        yield fieldRest(pos, modifiers, result, name);
       }
       default -> throw error(token);
-    }
+    };
   }
 
   private ImmutableList<Anno> maybeAnnos() {
@@ -946,18 +944,16 @@ public class Parser {
 
   private ImmutableList<Tree> memberRest(
       int pos, Modifiers modifiers, ImmutableList<TyParam> typaram, Tree.Type result, Ident name) {
-    switch (token) {
+    return switch (token) {
       case ASSIGN, AT, COMMA, LBRACK, SEMI -> {
         if (!typaram.isEmpty()) {
           throw error(ErrorKind.UNEXPECTED_TYPE_PARAMETER, typaram);
         }
-        return fieldRest(pos, modifiers, result, name);
+        yield fieldRest(pos, modifiers, result, name);
       }
-      case LPAREN -> {
-        return ImmutableList.of(methodRest(pos, modifiers, typaram, result, name));
-      }
+      case LPAREN -> ImmutableList.of(methodRest(pos, modifiers, typaram, result, name));
       default -> throw error(token);
-    }
+    };
   }
 
   private ImmutableList<Tree> fieldRest(
@@ -1111,38 +1107,36 @@ public class Parser {
 
   private Tree.Type paramDims(EnumSet<TurbineModifier> access, Tree.Type ty) {
     ImmutableList<Anno> typeAnnos = maybeAnnos();
-    switch (token) {
+    return switch (token) {
       case LBRACK -> {
         next();
         eat(Token.RBRACK);
-        return new ArrTy(position, typeAnnos, paramDims(access, ty));
+        yield new ArrTy(position, typeAnnos, paramDims(access, ty));
       }
       case ELLIPSIS -> {
         next();
         access.add(VARARGS);
-        return new ArrTy(position, typeAnnos, ty);
+        yield new ArrTy(position, typeAnnos, ty);
       }
       default -> {
         if (!typeAnnos.isEmpty()) {
           throw error(token);
         }
-        return ty;
+        yield ty;
       }
-    }
+    };
   }
 
   private Ident identOrThis() {
-    switch (token) {
-      case IDENT -> {
-        return eatIdent();
-      }
+    return switch (token) {
+      case IDENT -> eatIdent();
       case THIS -> {
         int position = lexer.position();
         eat(Token.THIS);
-        return new Ident(position, "this");
+        yield new Ident(position, "this");
       }
       default -> throw error(token);
-    }
+    };
   }
 
   private void dropParens() {

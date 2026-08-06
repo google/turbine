@@ -590,21 +590,19 @@ public class ConstEvaluator {
     if (expr == null) {
       return null;
     }
-    switch (t.ty().kind()) {
-      case PRIM_TY -> {
-        return coerce(t.expr().position(), expr, ((Tree.PrimTy) t.ty()).tykind());
-      }
+    return switch (t.ty().kind()) {
+      case PRIM_TY -> coerce(t.expr().position(), expr, ((Tree.PrimTy) t.ty()).tykind());
       case CLASS_TY -> {
         ClassTy classTy = (ClassTy) t.ty();
         // TODO(cushon): check package?
         if (!classTy.name().value().equals("String")) {
           // Explicit boxing cases (e.g. `(Boolean) false`) are legal, but not const exprs.
-          return null;
+          yield null;
         }
-        return toString(t.expr().position(), expr);
+        yield toString(t.expr().position(), expr);
       }
       default -> throw new AssertionError(t.ty().kind());
-    }
+    };
   }
 
   private Const.@Nullable Value add(int position, Const.Value a, Const.Value b) {

@@ -654,66 +654,53 @@ public class TurbineTypes implements Types {
     if (t1.tyKind() == TyKind.WILD_TY) {
       WildTy w1 = (WildTy) t1;
       Type t;
-      switch (w1.boundKind()) {
+      return switch (w1.boundKind()) {
         case UPPER -> {
           t = w1.bound();
           if (t2.tyKind() == TyKind.WILD_TY) {
             WildTy w2 = (WildTy) t2;
-            switch (w2.boundKind()) {
-              case UPPER:
-                // ? extends T <= ? extends S if T <: S
-                return isSubtype(t, w2.bound(), strict);
-              case NONE:
-                // ? extends T <= ? [extends Object] if T <: Object
-                return true;
-              case LOWER:
-                // ? extends T <= ? super S
-                return false;
-            }
-            throw new AssertionError(w1.boundKind());
+            yield switch (w2.boundKind()) {
+              // ? extends T <= ? extends S if T <: S
+              case UPPER -> isSubtype(t, w2.bound(), strict);
+              // ? extends T <= ? [extends Object] if T <: Object
+              case NONE -> true;
+              // ? extends T <= ? super S
+              case LOWER -> false;
+            };
           }
-          return false;
+          yield false;
         }
         case LOWER -> {
           t = w1.bound();
           if (t2.tyKind() == TyKind.WILD_TY) {
             WildTy w2 = (WildTy) t2;
-            switch (w2.boundKind()) {
-              case LOWER:
-                // ? super T <= ? super S if S <: T
-                return isSubtype(w2.bound(), t, strict);
-              case NONE:
-                // ? super T <= ? [extends Object]
-                return true;
-              case UPPER:
-                // ? super T <= ? extends Object
-                return isObjectType(w2.bound());
-            }
-            throw new AssertionError(w2.boundKind());
+            yield switch (w2.boundKind()) {
+              // ? super T <= ? super S if S <: T
+              case LOWER -> isSubtype(w2.bound(), t, strict);
+              // ? super T <= ? [extends Object]
+              case NONE -> true;
+              // ? super T <= ? extends Object
+              case UPPER -> isObjectType(w2.bound());
+            };
           }
           // ? super Object <= Object
-          return isObjectType(t2) && isObjectType(t);
+          yield isObjectType(t2) && isObjectType(t);
         }
         case NONE -> {
           if (t2.tyKind() == TyKind.WILD_TY) {
             WildTy w2 = (WildTy) t2;
-            switch (w2.boundKind()) {
-              case NONE:
-                // ? [extends Object] <= ? extends Object
-                return true;
-              case LOWER:
-                // ? [extends Object] <= ? super S
-                return false;
-              case UPPER:
-                // ? [extends Object] <= ? extends S if Object <: S
-                return isObjectType(w2.bound());
-            }
-            throw new AssertionError(w2.boundKind());
+            yield switch (w2.boundKind()) {
+              // ? [extends Object] <= ? extends Object
+              case NONE -> true;
+              // ? [extends Object] <= ? super S
+              case LOWER -> false;
+              // ? [extends Object] <= ? extends S if Object <: S
+              case UPPER -> isObjectType(w2.bound());
+            };
           }
-          return false;
+          yield false;
         }
-      }
-      throw new AssertionError(w1.boundKind());
+      };
     }
     if (t2.tyKind() == TyKind.WILD_TY) {
       WildTy w2 = (WildTy) t2;

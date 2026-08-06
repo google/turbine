@@ -171,36 +171,36 @@ public class TurbineFiler implements Filer {
     checkArgument(location instanceof StandardLocation, "unsupported location %s", location);
     StandardLocation standardLocation = (StandardLocation) location;
     String path = packageRelativePath(pkg, relativeName);
-    switch (standardLocation) {
+    return switch (standardLocation) {
       case CLASS_OUTPUT -> {
         byte[] generated = generatedClasses.get(path);
         if (generated == null) {
           throw new FileNotFoundException(path);
         }
-        return new BytesFileObject(path, Suppliers.ofInstance(generated));
+        yield new BytesFileObject(path, Suppliers.ofInstance(generated));
       }
       case SOURCE_OUTPUT -> {
         SourceFile source = generatedSources.get(path);
         if (source == null) {
           throw new FileNotFoundException(path);
         }
-        return new SourceFileObject(path, source.source());
+        yield new SourceFileObject(path, source.source());
       }
       case ANNOTATION_PROCESSOR_PATH -> {
         if (loader.getResource(path) == null) {
           throw new FileNotFoundException(path);
         }
-        return new ResourceFileObject(loader, path);
+        yield new ResourceFileObject(loader, path);
       }
       case CLASS_PATH -> {
         Supplier<byte[]> bytes = classPath.apply(path);
         if (bytes == null) {
           throw new FileNotFoundException(path);
         }
-        return new BytesFileObject(path, bytes);
+        yield new BytesFileObject(path, bytes);
       }
       default -> throw new IllegalArgumentException(standardLocation.getName());
-    }
+    };
   }
 
   private static String packageRelativePath(String pkg, String relativeName) {
