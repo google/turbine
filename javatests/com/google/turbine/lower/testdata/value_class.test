@@ -1,0 +1,9 @@
+=== ValueClass.java ===
+package test;
+
+public value class ValueClass {
+  private final int x;
+  public ValueClass(int x) {
+    this.x = x;
+  }
+}

@@ -66,9 +66,11 @@ public class LowerIntegrationTest {
           entry("textblock2.test", 15),
           entry("textblock3.test", 15),
           entry("B306423115.test", 15),
-          entry("permits.test", 17));
+          entry("permits.test", 17),
+          entry("value_class.test", 28));
 
-  private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW = ImmutableSet.of();
+  private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW =
+      ImmutableSet.of("value_class.test");
 
   @Parameters(name = "{index}: {0}")
   public static Iterable<Object[]> parameters() {
@@ -358,6 +360,7 @@ public class LowerIntegrationTest {
       "unicode.test",
       "unicode_pkg.test",
       "useextend.test",
+      "value_class.test",
       "vanillaexception.test",
       "varargs.test",
       "visible_nested.test",

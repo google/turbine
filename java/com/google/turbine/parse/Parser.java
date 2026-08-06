@@ -221,6 +221,10 @@ public class Parser {
               decls.add(recordDeclaration(modifiers.build()));
               modifiers.reset();
             }
+            case "value" -> {
+              next();
+              // TODO: b/542891523 - handle value modifier
+            }
             case "sealed" -> {
               next();
               modifiers.access(TurbineModifier.SEALED);
@@ -741,6 +745,10 @@ public class Parser {
         case IDENT -> {
           Ident ident = ident();
           switch (ident.value()) {
+            case "value" -> {
+              next();
+              // TODO: b/542891523 - handle value modifier
+            }
             case "sealed" -> {
               next();
               modifiers.access(TurbineModifier.SEALED);
