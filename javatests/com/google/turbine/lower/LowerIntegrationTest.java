@@ -54,19 +54,8 @@ public class LowerIntegrationTest {
 
   private static final ImmutableMap<String, Integer> SOURCE_VERSION =
       ImmutableMap.ofEntries(
-          entry("record.test", 16),
-          entry("record_fields.test", 16),
-          entry("record2.test", 16),
-          entry("record_tostring.test", 16),
-          entry("record_ctor.test", 16),
-          entry("record_getter_override.test", 16),
-          entry("sealed.test", 17),
-          entry("sealed_nested.test", 17),
-          entry("textblock.test", 15),
-          entry("textblock2.test", 15),
-          entry("textblock3.test", 15),
-          entry("B306423115.test", 15),
-          entry("permits.test", 17),
+          entry("java_lang_object.test", 8),
+          entry("source_bootclasspath_order.test", 8),
           entry("value_class.test", 28));
 
   private static final ImmutableSet<String> SOURCE_VERSION_PREVIEW =
@@ -81,6 +70,7 @@ public class LowerIntegrationTest {
       "B33513475b.test",
       "B33513475c.test",
       "B70953542.test",
+      "B74332665.test",
       "B8056066.test",
       "B8056066b.test",
       "B8075274.test",
@@ -259,8 +249,6 @@ public class LowerIntegrationTest {
       "marker.test",
       "member.test",
       "member_import_clash.test",
-      // TODO(cushon): support for source level 9 in integration tests
-      // "B74332665.test",
       "memberimport.test",
       "mods.test",
       "morefields.test",
@@ -427,7 +415,7 @@ public class LowerIntegrationTest {
     }
 
     int actualVersion = Runtime.version().feature();
-    int requiredVersion = SOURCE_VERSION.getOrDefault(test, 8);
+    int requiredVersion = SOURCE_VERSION.getOrDefault(test, 25);
     assume().that(actualVersion).isAtLeast(requiredVersion);
     ImmutableList.Builder<String> javacoptsBuilder = ImmutableList.builder();
     if (SOURCE_VERSION_PREVIEW.contains(test)) {

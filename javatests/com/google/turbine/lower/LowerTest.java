@@ -1246,6 +1246,92 @@ public class LowerTest {
     return methodAccess.get(1) & Opcodes.ACC_STRICT;
   }
 
+  @Test
+  public void emitNestsJava8() throws Exception {
+    assertThat(emitNests(8)).isFalse();
+  }
+
+  @Test
+  public void emitNestsJava11() throws Exception {
+    assertThat(emitNests(11)).isTrue();
+  }
+
+  @Test
+  public void emitNestsPrunedPrivateMember() throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class Test {
+                      static class I {
+                        private static class Inner {
+                        }
+                      }
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                TurbineExecutor.direct(),
+                TurbineJavacOptions.parse(ImmutableList.of("--release", "11")).lowerOptions(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<String> nestMembers = new ArrayList<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public void visitNestMember(String nestMember) {
+                nestMembers.add(nestMember);
+              }
+            },
+            0);
+    assertThat(nestMembers).containsExactly("Test$I");
+  }
+
+  private boolean emitNests(int release) throws Exception {
+    BindingResult bound =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            ImmutableList.of(
+                Parser.parse(
+                    """
+                    class Test {
+                      class Inner {
+                      }
+                    }
+                    """)),
+            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                TurbineExecutor.direct(),
+                TurbineJavacOptions.parse(ImmutableList.of("--release", String.valueOf(release)))
+                    .lowerOptions(),
+                bound.units(),
+                bound.modules(),
+                bound.classPathEnv())
+            .bytes();
+    List<String> nestMembers = new ArrayList<>();
+    new ClassReader(lowered.get("Test"))
+        .accept(
+            new ClassVisitor(Opcodes.ASM9) {
+              @Override
+              public void visitNestMember(String nestMember) {
+                nestMembers.add(nestMember);
+              }
+            },
+            0);
+    return !nestMembers.isEmpty();
+  }
+
   static String lines(String... lines) {
     return Joiner.on(System.lineSeparator()).join(lines);
   }

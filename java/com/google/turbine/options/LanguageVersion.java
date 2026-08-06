@@ -43,6 +43,16 @@ public record LanguageVersion(int source, int target, OptionalInt release) {
     return target() < 17;
   }
 
+  /** Returns true if sealed classes are supported (Java 17+, JEP 409). */
+  public boolean supportsSealedClasses() {
+    return target() >= 17;
+  }
+
+  /** Returns true if nestmates are supported (Java 11+, JEP 181). */
+  public boolean emitNests() {
+    return target() >= 11;
+  }
+
   public SourceVersion sourceVersion() {
     try {
       return SourceVersion.valueOf("RELEASE_" + source());

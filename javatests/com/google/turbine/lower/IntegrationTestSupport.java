@@ -151,6 +151,7 @@ public final class IntegrationTestSupport {
       for (ClassNode n : remaining.values()) {
         removeUnusedInnerClassAttributes(infos, n, removed);
         makeEnumsNonAbstract(remaining.keySet(), n);
+        removePermittedSubclassesFromEnums(n);
         sortAttributes(n);
         undeprecate(n);
         removePreviewVersion(n);
@@ -275,6 +276,14 @@ public final class IntegrationTestSupport {
         });
     if ((n.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
       n.access &= ~Opcodes.ACC_ABSTRACT;
+    }
+  }
+
+  // anonymous enum subclasses classes aren't part of the ABI and are not emitted by turbine,
+  // so the permitted subclass attribute emitted by javac is removed
+  private static void removePermittedSubclassesFromEnums(ClassNode n) {
+    if ((n.access & Opcodes.ACC_ENUM) == Opcodes.ACC_ENUM) {
+      n.permittedSubclasses = null;
     }
   }
 

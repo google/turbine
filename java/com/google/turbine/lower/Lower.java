@@ -131,7 +131,14 @@ public class Lower {
             entry -> {
               ClassSymbol sym = entry.getKey();
               return lower(
-                  sym.binaryName(), entry.getValue(), env, sym, majorVersion, options, log);
+                  sym.binaryName(),
+                  entry.getValue(),
+                  env,
+                  sym,
+                  majorVersion,
+                  options,
+                  log,
+                  pruned.keySet());
             });
 
     ImmutableList<TaskResult> moduleResults =
@@ -173,9 +180,11 @@ public class Lower {
       ClassSymbol sym,
       int majorVersion,
       LowerOptions lowerOptions,
-      TurbineLog log) {
+      TurbineLog log,
+      Set<ClassSymbol> emitted) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    byte[] bytes = new Lower(env, log, lowerOptions).lower(info, sym, symbols, majorVersion);
+    byte[] bytes =
+        new Lower(env, log, lowerOptions, emitted).lower(info, sym, symbols, majorVersion);
     return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
   }
 
@@ -187,7 +196,7 @@ public class Lower {
       LowerOptions lowerOptions,
       TurbineLog log) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    byte[] bytes = new Lower(env, log, lowerOptions).lower(module, symbols, majorVersion);
+    byte[] bytes = new Lower(env, log, lowerOptions, null).lower(module, symbols, majorVersion);
     return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
   }
 
@@ -195,11 +204,21 @@ public class Lower {
   private final Env<ClassSymbol, TypeBoundClass> env;
   private final TurbineLog log;
   private final LowerOptions lowerOptions;
+  private final @Nullable Set<ClassSymbol> emitted;
 
-  public Lower(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, LowerOptions lowerOptions) {
+  public Lower(
+      Env<ClassSymbol, TypeBoundClass> env,
+      TurbineLog log,
+      LowerOptions lowerOptions,
+      @Nullable Set<ClassSymbol> emitted) {
     this.env = env;
     this.log = log;
     this.lowerOptions = lowerOptions;
+    this.emitted = emitted;
+  }
+
+  public Lower(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, LowerOptions lowerOptions) {
+    this(env, log, lowerOptions, null);
   }
 
   private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols, int majorVersion) {
@@ -325,8 +344,7 @@ public class Lower {
 
     String nestHost = null;
     ImmutableList<String> nestMembers = ImmutableList.of();
-    // nests were added in Java 11, i.e. major version 55
-    if (majorVersion >= 55) {
+    if (lowerOptions.languageVersion().emitNests()) {
       nestHost = collectNestHost(info.source(), info.owner());
       nestMembers = nestHost == null ? collectNestMembers(info.source(), info) : ImmutableList.of();
     }
@@ -534,7 +552,7 @@ public class Lower {
   private ImmutableList<String> collectNestMembers(SourceFile source, SourceTypeBoundClass info) {
     Set<ClassSymbol> nestMembers = new LinkedHashSet<>();
     for (ClassSymbol child : info.children().values()) {
-      addNestMembers(source, env, nestMembers, child);
+      addNestMembers(source, nestMembers, child);
     }
     ImmutableList.Builder<String> result = ImmutableList.builder();
     for (ClassSymbol nestMember : nestMembers) {
@@ -543,11 +561,10 @@ public class Lower {
     return result.build();
   }
 
-  private static void addNestMembers(
-      SourceFile source,
-      Env<ClassSymbol, TypeBoundClass> env,
-      Set<ClassSymbol> nestMembers,
-      ClassSymbol sym) {
+  private void addNestMembers(SourceFile source, Set<ClassSymbol> nestMembers, ClassSymbol sym) {
+    if (emitted != null && !emitted.contains(sym)) {
+      return;
+    }
     if (!nestMembers.add(sym)) {
       return;
     }
@@ -556,7 +573,7 @@ public class Lower {
       throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
     }
     for (ClassSymbol child : info.children().values()) {
-      addNestMembers(source, env, nestMembers, child);
+      addNestMembers(source, nestMembers, child);
     }
   }
 
