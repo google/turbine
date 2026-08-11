@@ -145,7 +145,8 @@ public final class Binder {
       ClassPath classpath,
       ClassPath bootclasspath,
       Optional<String> moduleVersion) {
-    ImmutableList<PreprocessedCompUnit> preProcessedUnits = CompUnitPreprocessor.preprocess(units);
+    ImmutableList<PreprocessedCompUnit> preProcessedUnits =
+        CompUnitPreprocessor.preprocess(log, units);
 
     SimpleEnv<ClassSymbol, SourceBoundClass> ienv = bindSourceBoundClasses(preProcessedUnits);
 

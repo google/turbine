@@ -1123,6 +1123,27 @@ public class BinderErrorTest {
           """
         }
       },
+      // Turbine currently tolerates nested types with the same name as their enclosing type.
+      // This is disallowed by JLS 8.1, but so far isn't import to reject in turbine rather than
+      // letting javac reject it in parallel.
+      {
+        {
+          "package a;", //
+          "public class Foo {",
+          "  public interface Foo {}",
+          "  public interface Foo {}",
+          "  public interface Foo {}",
+          "}",
+        },
+        {
+          "<>:4: error: duplicate declaration of a.Foo$Foo",
+          "  public interface Foo {}",
+          "                   ^",
+          "<>:5: error: duplicate declaration of a.Foo$Foo",
+          "  public interface Foo {}",
+          "                   ^",
+        }
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

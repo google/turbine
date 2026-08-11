@@ -24,8 +24,8 @@ import com.google.common.collect.Iterables;
 import com.google.turbine.binder.bound.SourceBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
+import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
@@ -91,15 +91,16 @@ public final class CompUnitPreprocessor {
     }
   }
 
-  public static ImmutableList<PreprocessedCompUnit> preprocess(List<CompUnit> units) {
+  public static ImmutableList<PreprocessedCompUnit> preprocess(
+      TurbineLog log, List<CompUnit> units) {
     ImmutableList.Builder<PreprocessedCompUnit> result = ImmutableList.builder();
     for (CompUnit unit : units) {
-      result.add(preprocess(unit));
+      result.add(preprocess(log, unit));
     }
     return result.build();
   }
 
-  public static PreprocessedCompUnit preprocess(CompUnit unit) {
+  public static PreprocessedCompUnit preprocess(TurbineLog log, CompUnit unit) {
     String packageName;
     Iterable<TyDecl> decls = unit.decls();
     if (unit.pkg().isPresent()) {
@@ -119,7 +120,7 @@ public final class CompUnitPreprocessor {
           new ClassSymbol((!packageName.isEmpty() ? packageName + "/" : "") + decl.name());
       int access = access(decl.mods(), decl);
       ImmutableMap<String, ClassSymbol> children =
-          preprocessChildren(unit.source(), types, sym, decl.members(), access);
+          preprocessChildren(log, unit.source(), types, sym, decl.members(), access);
       types.add(new SourceBoundClass(sym, null, children, access, decl));
     }
     return new PreprocessedCompUnit(
@@ -139,6 +140,7 @@ public final class CompUnitPreprocessor {
   }
 
   private static ImmutableMap<String, ClassSymbol> preprocessChildren(
+      TurbineLog log,
       SourceFile source,
       ImmutableList.Builder<SourceBoundClass> types,
       ClassSymbol owner,
@@ -150,15 +152,15 @@ public final class CompUnitPreprocessor {
       if (member instanceof Tree.TyDecl decl) {
         ClassSymbol sym = new ClassSymbol(owner.binaryName() + '$' + decl.name());
         if (!seen.add(decl.name().value())) {
-          throw TurbineError.format(
-              source, member.position(), ErrorKind.DUPLICATE_DECLARATION, sym);
+          log.withSource(source).error(member.position(), ErrorKind.DUPLICATE_DECLARATION, sym);
+          continue;
         }
         result.put(decl.name().value(), sym);
 
         int access = innerClassAccess(enclosing, decl);
 
         ImmutableMap<String, ClassSymbol> children =
-            preprocessChildren(source, types, sym, decl.members(), access);
+            preprocessChildren(log, source, types, sym, decl.members(), access);
         types.add(new SourceBoundClass(sym, owner, children, access, decl));
       }
     }
