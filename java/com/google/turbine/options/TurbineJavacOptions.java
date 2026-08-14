@@ -35,6 +35,7 @@ public record TurbineJavacOptions(
     LowerOptions lowerOptions,
     ImmutableMap<String, String> processorOptions,
     boolean procNone,
+    boolean enablePreview,
     boolean parallel,
     int parallelMinThreshold,
     ImmutableList<String> rawJavacOpts) {
@@ -44,6 +45,7 @@ public record TurbineJavacOptions(
         .lowerOptions(LowerOptions.createDefault())
         .processorOptions(ImmutableMap.of())
         .procNone(false)
+        .enablePreview(false)
         .parallel(true)
         .parallelMinThreshold(20)
         .rawJavacOpts(ImmutableList.of());
@@ -57,6 +59,8 @@ public record TurbineJavacOptions(
     public abstract Builder processorOptions(ImmutableMap<String, String> processorOptions);
 
     public abstract Builder procNone(boolean procNone);
+
+    public abstract Builder enablePreview(boolean enablePreview);
 
     public abstract Builder parallel(boolean parallel);
 
@@ -117,10 +121,7 @@ public record TurbineJavacOptions(
   public static TurbineJavacOptions parse(ImmutableList<String> javacopts) {
     Builder builder = builder().rawJavacOpts(javacopts);
     LowerOptions.Builder lowerOptionsBuilder = LowerOptions.builder();
-
-    int sourceVersion = LanguageVersion.DEFAULT;
-    int targetVersion = LanguageVersion.DEFAULT;
-    OptionalInt release = OptionalInt.empty();
+    LanguageVersion.Builder languageVersionBuilder = lowerOptionsBuilder.languageVersionBuilder();
 
     Map<String, String> processorOptions = new LinkedHashMap<>();
 
@@ -132,15 +133,15 @@ public record TurbineJavacOptions(
           if (!it.hasNext()) {
             throw new IllegalArgumentException(opt + " requires an argument");
           }
-          sourceVersion = parseVersion(it.next());
-          release = OptionalInt.empty();
+          languageVersionBuilder.source(parseVersion(it.next()));
+          languageVersionBuilder.release(OptionalInt.empty());
         }
         case "-target", "--target" -> {
           if (!it.hasNext()) {
             throw new IllegalArgumentException(opt + " requires an argument");
           }
-          targetVersion = parseVersion(it.next());
-          release = OptionalInt.empty();
+          languageVersionBuilder.target(parseVersion(it.next()));
+          languageVersionBuilder.release(OptionalInt.empty());
         }
         case "--release" -> {
           if (!it.hasNext()) {
@@ -151,11 +152,12 @@ public record TurbineJavacOptions(
           if (n == null) {
             throw new IllegalArgumentException("invalid --release version: " + value);
           }
-          release = OptionalInt.of(n);
-          sourceVersion = n;
-          targetVersion = n;
+          languageVersionBuilder.release(n);
+          languageVersionBuilder.source(n);
+          languageVersionBuilder.target(n);
         }
         case "-proc:none" -> builder.procNone(true);
+        case "--enable-preview" -> languageVersionBuilder.preview(true);
         case "-XDturbine.emitPrivateFields" -> lowerOptionsBuilder.emitPrivateFields(true);
         case "-XDturbine.emitPrivateFieldsInRecords" ->
             lowerOptionsBuilder.emitPrivateFieldsInRecords(true);
@@ -190,10 +192,7 @@ public record TurbineJavacOptions(
     }
 
     return builder
-        .lowerOptions(
-            lowerOptionsBuilder
-                .languageVersion(LanguageVersion.create(sourceVersion, targetVersion, release))
-                .build())
+        .lowerOptions(lowerOptionsBuilder.build())
         .processorOptions(ImmutableMap.copyOf(processorOptions))
         .build();
   }

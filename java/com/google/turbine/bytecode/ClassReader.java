@@ -141,6 +141,7 @@ public class ClassReader {
     return new ClassFile(
         accessFlags,
         majorVersion,
+        minorVersion,
         thisClass,
         signature,
         superClass,

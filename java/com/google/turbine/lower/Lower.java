@@ -17,7 +17,6 @@
 package com.google.turbine.lower;
 
 import static com.google.turbine.binder.DisambiguateTypeAnnotations.groupRepeated;
-import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
@@ -119,8 +118,6 @@ public class Lower {
       Env<ClassSymbol, BytecodeBoundClass> classpath) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
-    // Output Java 8 bytecode at minimum, for type annotations
-    int majorVersion = max(options.languageVersion().majorVersion(), 52);
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
         RemovePrivateMembers.process(env, units, options);
     TurbineLog log = new TurbineLog();
@@ -131,14 +128,7 @@ public class Lower {
             entry -> {
               ClassSymbol sym = entry.getKey();
               return lower(
-                  sym.binaryName(),
-                  entry.getValue(),
-                  env,
-                  sym,
-                  majorVersion,
-                  options,
-                  log,
-                  pruned.keySet());
+                  sym.binaryName(), entry.getValue(), env, sym, options, log, pruned.keySet());
             });
 
     ImmutableList<TaskResult> moduleResults =
@@ -154,7 +144,6 @@ public class Lower {
                         : module.name().replace('.', '/') + "/module-info",
                     module,
                     env,
-                    majorVersion,
                     options,
                     log));
 
@@ -178,13 +167,11 @@ public class Lower {
       SourceTypeBoundClass info,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
-      int majorVersion,
       LowerOptions lowerOptions,
       TurbineLog log,
       Set<ClassSymbol> emitted) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    byte[] bytes =
-        new Lower(env, log, lowerOptions, emitted).lower(info, sym, symbols, majorVersion);
+    byte[] bytes = new Lower(env, log, lowerOptions, emitted).lower(info, sym, symbols);
     return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
   }
 
@@ -192,11 +179,10 @@ public class Lower {
       String name,
       SourceModuleInfo module,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
-      int majorVersion,
       LowerOptions lowerOptions,
       TurbineLog log) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    byte[] bytes = new Lower(env, log, lowerOptions, null).lower(module, symbols, majorVersion);
+    byte[] bytes = new Lower(env, log, lowerOptions, null).lower(module, symbols);
     return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
   }
 
@@ -221,7 +207,7 @@ public class Lower {
     this(env, log, lowerOptions, null);
   }
 
-  private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols, int majorVersion) {
+  private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols) {
     String name = "module-info";
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(module.annos());
     ClassFile.ModuleInfo moduleInfo = lowerModule(module);
@@ -240,7 +226,8 @@ public class Lower {
     ClassFile classfile =
         new ClassFile(
             /* access= */ TurbineFlag.ACC_MODULE,
-            majorVersion,
+            lowerOptions.languageVersion().majorVersion(),
+            /* minorVersion= */ 0,
             name,
             /* signature= */ null,
             /* superClass= */ null,
@@ -303,8 +290,7 @@ public class Lower {
         provides.build());
   }
 
-  private byte[] lower(
-      SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols, int majorVersion) {
+  private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info, env);
@@ -351,10 +337,19 @@ public class Lower {
 
     ImmutableList<ClassFile.InnerClass> inners = collectInnerClasses(info.source(), sym, info);
 
+    boolean isValueClass =
+        info.kind().equals(TurbineTyKind.CLASS)
+            && ((info.access() & TurbineFlag.ACC_IDENTITY) == 0);
+    int minorVersion =
+        (lowerOptions.languageVersion().preview() && isValueClass)
+            ? ClassFile.PREVIEW_MINOR_VERSION
+            : 0;
+
     ClassFile classfile =
         new ClassFile(
             access,
-            majorVersion,
+            lowerOptions.languageVersion().majorVersion(),
+            minorVersion,
             name,
             signature,
             superName,

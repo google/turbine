@@ -45,6 +45,8 @@ public record LowerOptions(
   public abstract static class Builder {
     public abstract Builder languageVersion(LanguageVersion languageVersion);
 
+    public abstract LanguageVersion.Builder languageVersionBuilder();
+
     public abstract Builder emitPrivateFields(boolean emitPrivateFields);
 
     public abstract Builder emitPrivateFieldsInRecords(boolean emitPrivateFieldsInRecords);

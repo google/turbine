@@ -109,6 +109,7 @@ public final class Transitive {
     return new ClassFile(
         cf.access(),
         cf.majorVersion(),
+        cf.minorVersion(),
         cf.name(),
         cf.signature(),
         cf.superName(),

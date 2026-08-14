@@ -16,6 +16,7 @@
 
 package com.google.turbine.options;
 
+import com.google.auto.value.AutoBuilder;
 import java.util.OptionalInt;
 import javax.lang.model.SourceVersion;
 
@@ -28,7 +29,14 @@ import javax.lang.model.SourceVersion;
  * @param release The release version. If set, system APIs will be resolved from the host JDK's
  *     ct.sym instead of using the provided {@code --bootclasspath}.
  */
-public record LanguageVersion(int source, int target, OptionalInt release) {
+public record LanguageVersion(int source, int target, OptionalInt release, boolean preview) {
+
+  private static final int MIN_TARGET_VERSION = 8;
+
+  public LanguageVersion {
+    // Output Java 8 bytecode at minimum, for type annotations
+    target = Math.max(target, MIN_TARGET_VERSION);
+  }
 
   /** The class file major version corresponding to the {@link #target}. */
   public int majorVersion() {
@@ -61,13 +69,32 @@ public record LanguageVersion(int source, int target, OptionalInt release) {
     }
   }
 
-  static LanguageVersion create(int source, int target, OptionalInt release) {
-    return new LanguageVersion(source, target, release);
-  }
-
   /** The default language version. Currently Java 8. */
   public static LanguageVersion createDefault() {
-    return create(DEFAULT, DEFAULT, OptionalInt.empty());
+    return builder().source(DEFAULT).target(DEFAULT).build();
+  }
+
+  Builder toBuilder() {
+    return new AutoBuilder_LanguageVersion_Builder(this);
+  }
+
+  static Builder builder() {
+    return new AutoBuilder_LanguageVersion_Builder().source(DEFAULT).target(DEFAULT).preview(false);
+  }
+
+  @AutoBuilder
+  interface Builder {
+    Builder source(int source);
+
+    Builder target(int target);
+
+    Builder release(int release);
+
+    Builder release(OptionalInt release);
+
+    Builder preview(boolean preview);
+
+    LanguageVersion build();
   }
 
   static final int DEFAULT = 8;

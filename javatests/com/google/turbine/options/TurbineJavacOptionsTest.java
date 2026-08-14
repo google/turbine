@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import java.util.OptionalInt;
 import javax.lang.model.SourceVersion;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -235,5 +236,29 @@ public class TurbineJavacOptionsTest {
   public void rawJavacOpts() {
     ImmutableList<String> rawOpts = ImmutableList.of("-source", "8", "-proc:none");
     assertThat(TurbineJavacOptions.parse(rawOpts).rawJavacOpts()).isEqualTo(rawOpts);
+  }
+
+  @Test
+  public void languageVersionToBuilder() {
+    LanguageVersion version =
+        LanguageVersion.builder().source(17).target(17).release(17).preview(true).build();
+    LanguageVersion copy = version.toBuilder().preview(false).build();
+
+    assertThat(copy.source()).isEqualTo(17);
+    assertThat(copy.target()).isEqualTo(17);
+    assertThat(copy.release()).isEqualTo(OptionalInt.of(17));
+    assertThat(copy.preview()).isFalse();
+  }
+
+  @Test
+  public void lowerOptionsLanguageVersionBuilder() {
+    LowerOptions.Builder builder =
+        LowerOptions.builder()
+            .languageVersion(LanguageVersion.builder().source(17).target(17).build());
+    builder.languageVersionBuilder().preview(true);
+
+    assertThat(builder.build().languageVersion().source()).isEqualTo(17);
+    assertThat(builder.build().languageVersion().target()).isEqualTo(17);
+    assertThat(builder.build().languageVersion().preview()).isTrue();
   }
 }

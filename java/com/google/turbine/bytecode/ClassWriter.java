@@ -30,7 +30,6 @@ import java.util.List;
 public final class ClassWriter {
 
   private static final int MAGIC = 0xcafebabe;
-  private static final int MINOR_VERSION = 0;
 
   /** Writes a {@link ClassFile} to bytecode. */
   public static byte[] writeClass(ClassFile classfile) {
@@ -99,7 +98,7 @@ public final class ClassWriter {
       ConstantPool pool, ByteArrayDataOutput body, ClassFile classfile) {
     ByteArrayDataOutput result = ByteStreams.newDataOutput();
     result.writeInt(MAGIC);
-    result.writeShort(MINOR_VERSION);
+    result.writeShort(classfile.minorVersion());
     result.writeShort(classfile.majorVersion());
     writeConstantPool(pool, result);
     result.write(body.toByteArray());

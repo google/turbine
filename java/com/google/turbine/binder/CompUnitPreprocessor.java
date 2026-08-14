@@ -174,7 +174,16 @@ public final class CompUnitPreprocessor {
       access |= m.flag();
     }
     return switch (decl.tykind()) {
-      case CLASS -> access | TurbineFlag.ACC_SUPER;
+      case CLASS -> {
+        int flags = access;
+        boolean isValue = mods.contains(TurbineModifier.VALUE);
+        if (!isValue) {
+          flags |= TurbineFlag.ACC_SUPER;
+        } else {
+          flags |= TurbineFlag.ACC_FINAL;
+        }
+        yield flags;
+      }
       case INTERFACE -> access | TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_INTERFACE;
       case ENUM -> {
         // Assuming all enums are non-abstract is safe, because nothing outside

@@ -223,7 +223,7 @@ public class Parser {
             }
             case "value" -> {
               next();
-              // TODO: b/542891523 - handle value modifier
+              modifiers.access(TurbineModifier.VALUE);
             }
             case "sealed" -> {
               next();
@@ -747,7 +747,7 @@ public class Parser {
           switch (ident.value()) {
             case "value" -> {
               next();
-              // TODO: b/542891523 - handle value modifier
+              modifiers.access(TurbineModifier.VALUE);
             }
             case "sealed" -> {
               next();

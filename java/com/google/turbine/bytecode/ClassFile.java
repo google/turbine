@@ -32,8 +32,11 @@ import org.jspecify.annotations.Nullable;
 /** A JVMS §4.1 ClassFile. */
 public class ClassFile {
 
+  public static final int PREVIEW_MINOR_VERSION = 0xffff;
+
   private final int access;
   private final int majorVersion;
+  private final int minorVersion;
   private final String name;
   private final @Nullable String signature;
   private final @Nullable String superClass;
@@ -53,6 +56,7 @@ public class ClassFile {
   public ClassFile(
       int access,
       int majorVersion,
+      int minorVersion,
       String name,
       @Nullable String signature,
       @Nullable String superClass,
@@ -70,6 +74,7 @@ public class ClassFile {
       @Nullable String transitiveJar) {
     this.access = access;
     this.majorVersion = majorVersion;
+    this.minorVersion = minorVersion;
     this.name = name;
     this.signature = signature;
     this.superClass = superClass;
@@ -95,6 +100,11 @@ public class ClassFile {
   /** Class file major version. */
   public int majorVersion() {
     return majorVersion;
+  }
+
+  /** Class file minor version. */
+  public int minorVersion() {
+    return minorVersion;
   }
 
   /** The name of the class or interface. */

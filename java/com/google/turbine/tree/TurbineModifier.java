@@ -49,7 +49,8 @@ public enum TurbineModifier {
   SEALED(TurbineFlag.ACC_SEALED),
   NON_SEALED(TurbineFlag.ACC_NON_SEALED),
   COMPACT_CTOR(TurbineFlag.ACC_COMPACT_CTOR),
-  ENUM_IMPL(TurbineFlag.ACC_ENUM_IMPL);
+  ENUM_IMPL(TurbineFlag.ACC_ENUM_IMPL),
+  VALUE(0);
 
   private final int flag;
 

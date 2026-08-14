@@ -522,7 +522,8 @@ public class Pretty implements Tree.Visitor<@Nullable Void, @Nullable Void> {
             DEFAULT,
             TRANSITIVE,
             SEALED,
-            NON_SEALED ->
+            NON_SEALED,
+            VALUE ->
             append(mod.toString()).append(' ');
         case ACC_SUPER,
             VARARGS,
