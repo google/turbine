@@ -816,7 +816,7 @@ public abstract sealed class Tree {
     private final ImmutableList<VarDecl> params;
     private final ImmutableList<ClassTy> exntys;
     private final Optional<Tree> defaultValue;
-    private final TurbineJavadoc javadoc;
+    private final @Nullable TurbineJavadoc javadoc;
 
     public MethDecl(
         int position,
@@ -828,7 +828,7 @@ public abstract sealed class Tree {
         ImmutableList<VarDecl> params,
         ImmutableList<ClassTy> exntys,
         Optional<Tree> defaultValue,
-        TurbineJavadoc javadoc) {
+        @Nullable TurbineJavadoc javadoc) {
       super(position);
       this.mods = ImmutableSet.copyOf(mods);
       this.annos = annos;
@@ -888,7 +888,7 @@ public abstract sealed class Tree {
      * A javadoc comment, excluding the opening and closing delimiters but including all interior
      * characters and whitespace.
      */
-    public TurbineJavadoc javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       return javadoc;
     }
   }
@@ -1097,13 +1097,13 @@ public abstract sealed class Tree {
   public static final class PkgDecl extends Tree {
     private final ImmutableList<Ident> name;
     private final ImmutableList<Anno> annos;
-    private final TurbineJavadoc javadoc;
+    private final @Nullable TurbineJavadoc javadoc;
 
     public PkgDecl(
         int position,
         ImmutableList<Ident> name,
         ImmutableList<Anno> annos,
-        TurbineJavadoc javadoc) {
+        @Nullable TurbineJavadoc javadoc) {
       super(position);
       this.name = name;
       this.annos = annos;
@@ -1129,7 +1129,7 @@ public abstract sealed class Tree {
       return annos;
     }
 
-    public TurbineJavadoc javadoc() {
+    public @Nullable TurbineJavadoc javadoc() {
       return javadoc;
     }
   }
