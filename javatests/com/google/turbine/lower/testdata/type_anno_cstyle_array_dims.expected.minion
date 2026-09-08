@@ -121,18 +121,18 @@ class Test {
 
   // access flags 0x0
   f([[[[[[Ljava/lang/Object;)[[[[[[I
-  @LA;() : METHOD_RETURN, [[[[[[ // invisible
   @LA;() : METHOD_FORMAL_PARAMETER 0, [[[[[[ // invisible
-  @LB;() : METHOD_RETURN, [[[ // invisible
+  @LA;() : METHOD_RETURN, [[[[[[ // invisible
   @LB;() : METHOD_FORMAL_PARAMETER 0, [[[ // invisible
-  @LC;() : METHOD_RETURN, [[[[ // invisible
+  @LB;() : METHOD_RETURN, [[[ // invisible
   @LC;() : METHOD_FORMAL_PARAMETER 0, [[[[ // invisible
+  @LC;() : METHOD_RETURN, [[[[ // invisible
+  @LD;() : METHOD_FORMAL_PARAMETER 0, [[[[[ // invisible
   @LD;() : METHOD_RETURN, [[[[[ // invisible
   @LD;() : METHOD_RETURN, null // invisible
-  @LD;() : METHOD_FORMAL_PARAMETER 0, [[[[[ // invisible
-  @LE;() : METHOD_RETURN, [ // invisible
   @LE;() : METHOD_FORMAL_PARAMETER 0, null // invisible
-  @LF;() : METHOD_RETURN, [[ // invisible
+  @LE;() : METHOD_RETURN, [ // invisible
   @LF;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+  @LF;() : METHOD_RETURN, [[ // invisible
   @LG;() : METHOD_FORMAL_PARAMETER 0, [[ // invisible
 }

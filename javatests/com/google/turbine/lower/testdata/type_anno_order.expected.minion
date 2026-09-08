@@ -17,11 +17,11 @@ abstract interface Test {
   // declaration: java.util.function.Function<T, java.lang.Throwable> a<T>(java.util.function.Function<T, java.lang.Throwable>)
   public abstract a(Ljava/util/function/Function;)Ljava/util/function/Function;
   @LA;() // invisible
-  @LA;() : METHOD_TYPE_PARAMETER_BOUND 0, 0, null // invisible
-  @LA;() : METHOD_RETURN, 1; // invisible
-  @LA;() : METHOD_RETURN, null // invisible
   @LA;() : METHOD_FORMAL_PARAMETER 0, 1; // invisible
   @LA;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LA;() : METHOD_RETURN, 1; // invisible
+  @LA;() : METHOD_RETURN, null // invisible
+  @LA;() : METHOD_TYPE_PARAMETER_BOUND 0, 0, null // invisible
     // annotable parameter count: 1 (invisible)
     @LA;() // invisible, parameter 0
 }

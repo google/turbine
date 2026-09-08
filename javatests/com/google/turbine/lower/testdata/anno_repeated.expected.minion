@@ -65,8 +65,8 @@ class Test {
   // declaration: X f<X>(int)
   f(I)Ljava/lang/Object;
   @LA;() : METHOD_RETURN, null // invisible
-  @LAs;(value={@LA;(), @LA;()}) : METHOD_TYPE_PARAMETER 0, null // invisible
   @LAs;(value={@LA;(), @LA;()}) : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LAs;(value={@LA;(), @LA;()}) : METHOD_TYPE_PARAMETER 0, null // invisible
     // annotable parameter count: 1 (invisible)
     @LAs;(value={@LA;(), @LA;()}) // invisible, parameter 0
 }

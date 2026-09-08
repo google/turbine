@@ -175,9 +175,9 @@ public class Test implements I {
   // signature <X:Ljava/lang/Object;>([[[I)TX;
   // declaration: X f<X>(int[][][])
   f([[[I)Ljava/lang/Object; throws java/lang/Exception
+  @LA;(value={1}) : METHOD_RETURN, null
   @LA;(value={1}) : METHOD_TYPE_PARAMETER 0, null
   @LA;(value={1}) : METHOD_TYPE_PARAMETER_BOUND 0, 0, null
-  @LA;(value={1}) : METHOD_RETURN, null
   @LB;() : METHOD_RETURN, null // invisible
   @LC;() : METHOD_FORMAL_PARAMETER 0, null // invisible
   @LD;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
