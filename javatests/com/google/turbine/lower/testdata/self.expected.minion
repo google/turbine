@@ -1,0 +1,41 @@
+=== pkg/Simple$State.class ===
+// class version 69.0 (69)
+// access flags 0x4030
+// signature Ljava/lang/Enum<Lpkg/Simple$State;>;
+// declaration: pkg/Simple$State extends java.lang.Enum<pkg.Simple$State>
+final enum pkg/Simple$State extends java/lang/Enum {
+
+  NESTHOST pkg/Simple
+  // access flags 0x4018
+  final static enum INNERCLASS pkg/Simple$State pkg/Simple State
+
+  // access flags 0x4019
+  public final static enum Lpkg/Simple$State; ONE
+
+  // access flags 0x4019
+  public final static enum Lpkg/Simple$State; TWO
+
+  // access flags 0x4019
+  public final static enum Lpkg/Simple$State; THREE
+
+  // access flags 0x9
+  public static values()[Lpkg/Simple$State;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lpkg/Simple$State;
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+  NESTMEMBER pkg/Simple$State
+  // access flags 0x4018
+  final static enum INNERCLASS pkg/Simple$State pkg/Simple State
+
+  // access flags 0x0
+  Lpkg/Simple$State; state
+
+  // access flags 0x1
+  public <init>()V
+}

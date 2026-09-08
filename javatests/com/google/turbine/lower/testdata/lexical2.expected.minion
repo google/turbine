@@ -1,0 +1,118 @@
+=== Lex$I2$I3$I4.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$I2$I3$I4 {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$I2 Lex I2
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3 Lex$I2 I3
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3$I4 Lex$I2$I3 I4
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA Lex SideA
+
+  // access flags 0x0
+  LLex$SideA; s
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex$I2$I3.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$I2$I3 {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$I2 Lex I2
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3 Lex$I2 I3
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3$I4 Lex$I2$I3 I4
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex$I2.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$I2 {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$I2 Lex I2
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3 Lex$I2 I3
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex$SideA$SideI.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$SideA$SideI {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA Lex SideA
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA$SideI Lex$SideA SideI
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex$SideA.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$SideA {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA Lex SideA
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA$SideI Lex$SideA SideI
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex$SideB.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$SideB {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$SideB Lex SideB
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex {
+
+  NESTMEMBER Lex$I2
+  NESTMEMBER Lex$I2$I3
+  NESTMEMBER Lex$I2$I3$I4
+  NESTMEMBER Lex$SideA
+  NESTMEMBER Lex$SideA$SideI
+  NESTMEMBER Lex$SideB
+  // access flags 0x9
+  public static INNERCLASS Lex$I2 Lex I2
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3 Lex$I2 I3
+  // access flags 0x9
+  public static INNERCLASS Lex$I2$I3$I4 Lex$I2$I3 I4
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA Lex SideA
+  // access flags 0x9
+  public static INNERCLASS Lex$SideA$SideI Lex$SideA SideI
+  // access flags 0x9
+  public static INNERCLASS Lex$SideB Lex SideB
+
+  // access flags 0x1
+  public <init>()V
+}

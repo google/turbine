@@ -1,0 +1,25 @@
+=== test/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x601
+// signature <T::Ltest/Test$Inner<TT;>;>Ljava/lang/Object;Ljava/lang/Comparable<TT;>;
+// declaration: test/Test$Inner<T extends test.Test$Inner<T>> extends java.lang.Comparable<T>
+public abstract interface test/Test$Inner implements java/lang/Comparable {
+
+  NESTHOST test/Test
+  // access flags 0x609
+  public static abstract INNERCLASS test/Test$Inner test/Test Inner
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T::Ltest/Test$Inner<TT;>;>Ljava/lang/Object;
+// declaration: test/Test<T extends test.Test$Inner<T>>
+public class test/Test {
+
+  NESTMEMBER test/Test$Inner
+  // access flags 0x609
+  public static abstract INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x1
+  public <init>()V
+}

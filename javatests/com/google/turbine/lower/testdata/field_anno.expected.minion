@@ -1,0 +1,64 @@
+=== Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract b()B
+    default=(byte)0
+
+  // access flags 0x401
+  public abstract c()C
+    default=(char)0
+
+  // access flags 0x401
+  public abstract s()S
+    default=(short)0
+
+  // access flags 0x401
+  public abstract d()D
+    default=0.0D
+
+  // access flags 0x401
+  public abstract f()F
+    default=0.0F
+
+  // access flags 0x401
+  public abstract i()I
+    default=0
+
+  // access flags 0x401
+  public abstract j()J
+    default=0L
+
+  // access flags 0x401
+  public abstract str()Ljava/lang/String;
+    default=""
+
+  // access flags 0x401
+  public abstract z()Z
+    default=false
+}
+=== RuntimeAnno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface RuntimeAnno implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  // access flags 0x0
+  I a
+  @LRuntimeAnno;()
+  @LAnno;(b=(byte)42, c=(char)122, s=(short)43, d=44.0D, f=45.0F, i=46, j=47L, str="48", z=true) // invisible
+
+  // access flags 0x1
+  public <init>()V
+}

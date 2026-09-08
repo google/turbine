@@ -1,0 +1,40 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x0
+  <init>(LTest;)V
+
+  // access flags 0x0
+  f(I)V
+  @LA;() : METHOD_RECEIVER, . // invisible
+
+  // access flags 0x0
+  g(LTest$Inner;)V
+  @LA;() : METHOD_FORMAL_PARAMETER 0, . // invisible
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+  NESTMEMBER Test$Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x0
+  <init>()V
+}

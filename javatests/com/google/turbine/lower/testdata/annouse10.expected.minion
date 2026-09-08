@@ -1,0 +1,19 @@
+=== pkg/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE, Ljava/lang/annotation/ElementType;.METHOD})
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  @Lpkg/Anno;() // invisible
+
+  // access flags 0x1
+  public <init>()V
+}

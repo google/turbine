@@ -1,0 +1,11 @@
+=== pkg/Test.class ===
+// class version 69.0 (69)
+// access flags 0x421
+// signature Ljava/lang/Object;Ljava/util/List<Ljava/lang/String;>;
+// declaration: pkg/Test implements java.util.List<java.lang.String>
+public abstract class pkg/Test implements java/util/List {
+
+
+  // access flags 0x1
+  public <init>()V
+}

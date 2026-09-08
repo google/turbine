@@ -1,0 +1,138 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+
+  // access flags 0x401
+  public abstract value()I
+    default=0
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== D.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface D implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== E.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface E implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== F.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface F implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== G.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface G implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== H.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface H implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== J.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface J implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== K.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface K implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x0
+  [I x
+
+  // access flags 0x0
+  [[[I y
+  @LB;() : FIELD, null // invisible
+  @LC;() : FIELD, null // invisible
+  @LD;() : FIELD, [ // invisible
+  @LE;() : FIELD, [ // invisible
+
+  // access flags 0x0
+  [[[[[[I z
+  @LA;() : FIELD, [[[[[[ // invisible
+  @LB;() : FIELD, [[[ // invisible
+  @LC;() : FIELD, [[[[ // invisible
+  @LD;() : FIELD, [[[[[ // invisible
+  @LE;() : FIELD, null // invisible
+  @LF;() : FIELD, [ // invisible
+  @LG;() : FIELD, [[ // invisible
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  log([[[Ljava/lang/Object;)V
+  @LA;() : METHOD_FORMAL_PARAMETER 0, [[[ // invisible
+  @LB;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LC;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LD;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+  @LE;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+
+  // access flags 0x0
+  f([[[[[[Ljava/lang/Object;)[[[[[[I
+  @LA;() : METHOD_RETURN, [[[[[[ // invisible
+  @LA;() : METHOD_FORMAL_PARAMETER 0, [[[[[[ // invisible
+  @LB;() : METHOD_RETURN, [[[ // invisible
+  @LB;() : METHOD_FORMAL_PARAMETER 0, [[[ // invisible
+  @LC;() : METHOD_RETURN, [[[[ // invisible
+  @LC;() : METHOD_FORMAL_PARAMETER 0, [[[[ // invisible
+  @LD;() : METHOD_RETURN, [[[[[ // invisible
+  @LD;() : METHOD_RETURN, null // invisible
+  @LD;() : METHOD_FORMAL_PARAMETER 0, [[[[[ // invisible
+  @LE;() : METHOD_RETURN, [ // invisible
+  @LE;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LF;() : METHOD_RETURN, [[ // invisible
+  @LF;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+  @LG;() : METHOD_FORMAL_PARAMETER 0, [[ // invisible
+}

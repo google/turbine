@@ -1,0 +1,35 @@
+=== Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> value()
+  public abstract value()Ljava/lang/Class;
+    default=Anno.class
+}
+=== Annos.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Annos implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()[LAnno;
+    default={}
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x0
+  I x
+  @LAnnos;(value={@LAnno;(value=byte.class), @LAnno;(value=char.class), @LAnno;(value=double.class), @LAnno;(value=float.class), @LAnno;(value=int.class), @LAnno;(value=long.class), @LAnno;(value=short.class), @LAnno;(value=boolean.class), @LAnno;(value=void.class)}) // invisible
+
+  // access flags 0x0
+  <init>()V
+}

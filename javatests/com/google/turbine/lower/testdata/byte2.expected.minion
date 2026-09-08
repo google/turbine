@@ -1,0 +1,14 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+  // access flags 0x1
+  public INNERCLASS lib/Lib$Inner lib/Lib Inner
+
+  // access flags 0x0
+  Llib/Lib$Inner; i
+
+  // access flags 0x1
+  public <init>()V
+}

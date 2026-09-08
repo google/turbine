@@ -1,0 +1,12 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Test {
+
+
+  // access flags 0x19
+  public final static J NANOS = 1000000000L
+
+  // access flags 0x19
+  public final static D VERY_SMALL_NUMBER = 1.0E-6D
+}

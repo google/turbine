@@ -1,0 +1,53 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  @La/A;(value={Le/E;.TWO}) // invisible
+
+  // access flags 0x0
+  Ltwo/TWO; two
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface a/A implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()[Le/E;
+    default={Le/E;.ONE}
+}
+=== e/E.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Le/E;>;
+// declaration: e/E extends java.lang.Enum<e.E>
+public final enum e/E extends java/lang/Enum {
+
+
+  // access flags 0x4019
+  public final static enum Le/E; ONE
+
+  // access flags 0x4019
+  public final static enum Le/E; TWO
+
+  // access flags 0x9
+  public static values()[Le/E;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Le/E;
+}
+=== two/TWO.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class two/TWO {
+
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,64 @@
+=== Z$K.class ===
+// class version 69.0 (69)
+// access flags 0x30
+final class Z$K {
+
+  NESTHOST Z
+  // access flags 0x18
+  final static INNERCLASS Z$K Z K
+
+  // access flags 0x0
+  <init>()V
+}
+=== Z$KS.class ===
+// class version 69.0 (69)
+// access flags 0x420
+abstract class Z$KS extends Z$S {
+
+  NESTHOST Z
+  // access flags 0x18
+  final static INNERCLASS Z$K Z K
+  // access flags 0x408
+  static abstract INNERCLASS Z$KS Z KS
+  // access flags 0x8
+  static INNERCLASS Z$S Z S
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x400
+  abstract g()[LZ$K;
+}
+=== Z$S.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Z$S {
+
+  NESTHOST Z
+  // access flags 0x8
+  static INNERCLASS Z$S Z S
+
+  // access flags 0x0
+  <init>()V
+}
+=== Z.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Z {
+
+  NESTMEMBER Z$K
+  NESTMEMBER Z$KS
+  NESTMEMBER Z$S
+  // access flags 0x18
+  final static INNERCLASS Z$K Z K
+  // access flags 0x408
+  static abstract INNERCLASS Z$KS Z KS
+  // access flags 0x8
+  static INNERCLASS Z$S Z S
+
+  // access flags 0x18
+  final static [LZ$S; MS
+
+  // access flags 0x1
+  public <init>()V
+}

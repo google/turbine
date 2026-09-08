@@ -1,0 +1,58 @@
+=== pkg/MyExn.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class pkg/MyExn extends java/lang/Throwable {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class pkg/Simple {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x401
+  public abstract f()I
+
+  // access flags 0x401
+  public abstract g()V
+
+  // access flags 0x401
+  public abstract h(I)V
+
+  // access flags 0x401
+  public abstract i(II)V
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/Object;>(II)TT;
+  // declaration: T j<T>(int, int)
+  public abstract j(II)Ljava/lang/Object;
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/Object;U:TT;>(TU;I)TT;
+  // declaration: T k<T, U extends T>(U, int)
+  public abstract k(Ljava/lang/Object;I)Ljava/lang/Object;
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/Object;U:TT;>(TU;[I)TT;
+  // declaration: T l<T, U extends T>(U, int[])
+  public abstract l(Ljava/lang/Object;[I)Ljava/lang/Object;
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/Object;U:TT;>([[TU;[I)TT;
+  // declaration: T m<T, U extends T>(U[][], int[])
+  public abstract m([[Ljava/lang/Object;[I)Ljava/lang/Object;
+
+  // access flags 0x401
+  public abstract z()V throws java/lang/Throwable pkg/MyExn
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/String;>(TT;)TT;
+  // declaration: T j<T extends java.lang.String>(T)
+  public abstract j(Ljava/lang/String;)Ljava/lang/String;
+}

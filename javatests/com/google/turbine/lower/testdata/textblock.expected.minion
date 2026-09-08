@@ -1,0 +1,27 @@
+=== TextBlock.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class TextBlock {
+
+
+  // access flags 0x19
+  public final static Ljava/lang/String; hello = "hello\nworld\n"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; escape = "hello\nworld\"\n\r\u0009\u0008\n\n3\n'\n\\\n\"\n"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; quotes = "\" \"\" \"\"\""
+
+  // access flags 0x19
+  public final static Ljava/lang/String; newline = "hello\nworld"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; blank = "hello\n\n\nworld\n"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; allBlank = "\n\n"
+
+  // access flags 0x0
+  <init>()V
+}

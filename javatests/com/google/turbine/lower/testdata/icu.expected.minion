@@ -1,0 +1,34 @@
+=== a/A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A$Inner {
+
+  NESTHOST a/A
+  // access flags 0x9
+  public static INNERCLASS a/A$Inner a/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Ljava/lang/Object;La/I<La/A$Inner;>;
+// declaration: a/A implements a.I<a.A$Inner>
+public class a/A implements a/I {
+
+  NESTMEMBER a/A$Inner
+  // access flags 0x9
+  public static INNERCLASS a/A$Inner a/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: a/I<T>
+public abstract interface a/I {
+
+}

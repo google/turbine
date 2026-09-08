@@ -1,0 +1,74 @@
+=== p/A$I.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/A$I {
+
+  NESTHOST p/A
+  // access flags 0x8
+  static INNERCLASS p/A$I p/A I
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/A {
+
+  NESTMEMBER p/A$I
+  // access flags 0x8
+  static INNERCLASS p/A$I p/A I
+  // access flags 0x9
+  public static INNERCLASS p/B$Inner p/B Inner
+  // access flags 0xC
+  protected static INNERCLASS p/B$Inner$InnerMost p/B$Inner InnerMost
+
+  // access flags 0x0
+  Lp/B$Inner$InnerMost; i
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/B$Inner$InnerMost.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/B$Inner$InnerMost {
+
+  NESTHOST p/B
+  // access flags 0x9
+  public static INNERCLASS p/B$Inner p/B Inner
+  // access flags 0xC
+  protected static INNERCLASS p/B$Inner$InnerMost p/B$Inner InnerMost
+
+  // access flags 0x4
+  protected <init>()V
+}
+=== p/B$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/B$Inner {
+
+  NESTHOST p/B
+  // access flags 0x9
+  public static INNERCLASS p/B$Inner p/B Inner
+  // access flags 0xC
+  protected static INNERCLASS p/B$Inner$InnerMost p/B$Inner InnerMost
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/B {
+
+  NESTMEMBER p/B$Inner
+  NESTMEMBER p/B$Inner$InnerMost
+  // access flags 0x9
+  public static INNERCLASS p/B$Inner p/B Inner
+  // access flags 0xC
+  protected static INNERCLASS p/B$Inner$InnerMost p/B$Inner InnerMost
+
+  // access flags 0x1
+  public <init>()V
+}

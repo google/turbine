@@ -1,0 +1,39 @@
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0x8
+  static INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x19
+  public final static I CONST = 43
+
+  // access flags 0x0
+  <init>()V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+  NESTMEMBER Test$Inner
+  // access flags 0x8
+  static INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x19
+  public final static I X = 43
+
+  // access flags 0x1
+  public <init>()V
+}
+=== X.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class X {
+
+
+  // access flags 0x1
+  public <init>()V
+}

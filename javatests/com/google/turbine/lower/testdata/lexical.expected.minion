@@ -1,0 +1,41 @@
+=== Lex$I.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$I extends Lex$Inh {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$I Lex I
+  // access flags 0x9
+  public static INNERCLASS Lex$Inh Lex Inh
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex$Inh.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex$Inh {
+
+  NESTHOST Lex
+  // access flags 0x9
+  public static INNERCLASS Lex$Inh Lex Inh
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Lex.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Lex {
+
+  NESTMEMBER Lex$I
+  NESTMEMBER Lex$Inh
+  // access flags 0x9
+  public static INNERCLASS Lex$I Lex I
+  // access flags 0x9
+  public static INNERCLASS Lex$Inh Lex Inh
+
+  // access flags 0x1
+  public <init>()V
+}

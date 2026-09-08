@@ -1,0 +1,25 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+
+  // access flags 0x0
+  I x
+
+  // DEPRECATED
+  // access flags 0x20000
+  I y
+  @Ljava/lang/Deprecated;()
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  f()V
+
+  // DEPRECATED
+  // access flags 0x20000
+  g()V
+  @Ljava/lang/Deprecated;()
+}

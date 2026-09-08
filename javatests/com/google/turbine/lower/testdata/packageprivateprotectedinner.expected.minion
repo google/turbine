@@ -1,0 +1,24 @@
+=== test/PackagePrivate$ProtectedInner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/PackagePrivate$ProtectedInner {
+
+  NESTHOST test/PackagePrivate
+  // access flags 0x4
+  protected INNERCLASS test/PackagePrivate$ProtectedInner test/PackagePrivate ProtectedInner
+
+  // access flags 0x4
+  protected <init>(Ltest/PackagePrivate;)V
+}
+=== test/PackagePrivate.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/PackagePrivate {
+
+  NESTMEMBER test/PackagePrivate$ProtectedInner
+  // access flags 0x4
+  protected INNERCLASS test/PackagePrivate$ProtectedInner test/PackagePrivate ProtectedInner
+
+  // access flags 0x0
+  <init>()V
+}

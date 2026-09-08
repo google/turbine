@@ -1,3 +1,6 @@
+---
+source_version: 8
+---
 === Object.java ===
 package java.lang;
 public class Object {

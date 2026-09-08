@@ -1,0 +1,15 @@
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x420
+// signature <X:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: T<X>
+abstract class T {
+
+
+  @LA$I;() : CLASS_TYPE_PARAMETER 0, null // invisible
+  // access flags 0x2609
+  public static abstract INNERCLASS A$I A I
+
+  // access flags 0x0
+  <init>()V
+}

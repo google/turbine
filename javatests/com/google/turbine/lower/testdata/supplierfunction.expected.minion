@@ -1,0 +1,40 @@
+=== test/Function.class ===
+// class version 69.0 (69)
+// access flags 0x601
+// signature <F:Ljava/lang/Object;T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Function<F, T>
+public abstract interface test/Function {
+
+
+  // access flags 0x401
+  // signature (TF;)TT;
+  // declaration: T apply(F)
+  public abstract apply(Ljava/lang/Object;)Ljava/lang/Object;
+}
+=== test/Supplier.class ===
+// class version 69.0 (69)
+// access flags 0x601
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Supplier<T>
+public abstract interface test/Supplier {
+
+
+  // access flags 0x401
+  // signature ()TT;
+  // declaration: T get()
+  public abstract get()Ljava/lang/Object;
+}
+=== test/Suppliers.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Suppliers {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x9
+  // signature <T:Ljava/lang/Object;>()Ltest/Function<Ltest/Supplier<TT;>;TT;>;
+  // declaration: test.Function<test.Supplier<T>, T> supplierFunction<T>()
+  public static supplierFunction()Ltest/Function;
+}

@@ -1,0 +1,54 @@
+=== pkg/Soup$Builder.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class pkg/Soup$Builder {
+
+  NESTHOST pkg/Soup
+  // access flags 0x8
+  static INNERCLASS pkg/Soup$Builder pkg/Soup Builder
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  add(Ljava/lang/Object;)Lpkg/Soup$Builder;
+}
+=== pkg/Soup.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Soup {
+
+  NESTMEMBER pkg/Soup$Builder
+  // access flags 0x8
+  static INNERCLASS pkg/Soup$Builder pkg/Soup Builder
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Test$Builder.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class pkg/Test$Builder {
+
+  NESTHOST pkg/Test
+  // access flags 0x8
+  static INNERCLASS pkg/Test$Builder pkg/Test Builder
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  add(Ljava/lang/Object;)Lpkg/Test$Builder;
+}
+=== pkg/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Test extends pkg/Soup {
+
+  NESTMEMBER pkg/Test$Builder
+  // access flags 0x8
+  static INNERCLASS pkg/Test$Builder pkg/Test Builder
+
+  // access flags 0x1
+  public <init>()V
+}

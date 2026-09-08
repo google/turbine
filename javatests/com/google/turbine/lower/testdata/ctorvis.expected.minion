@@ -1,0 +1,108 @@
+=== test/PackagePrivate$PackagePrivateInner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/PackagePrivate$PackagePrivateInner {
+
+  NESTHOST test/PackagePrivate
+  // access flags 0x0
+  INNERCLASS test/PackagePrivate$PackagePrivateInner test/PackagePrivate PackagePrivateInner
+
+  // access flags 0x0
+  <init>(Ltest/PackagePrivate;)V
+}
+=== test/PackagePrivate$ProtectedInner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/PackagePrivate$ProtectedInner {
+
+  NESTHOST test/PackagePrivate
+  // access flags 0x4
+  protected INNERCLASS test/PackagePrivate$ProtectedInner test/PackagePrivate ProtectedInner
+
+  // access flags 0x4
+  protected <init>(Ltest/PackagePrivate;)V
+}
+=== test/PackagePrivate$PublicInner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/PackagePrivate$PublicInner {
+
+  NESTHOST test/PackagePrivate
+  // access flags 0x1
+  public INNERCLASS test/PackagePrivate$PublicInner test/PackagePrivate PublicInner
+
+  // access flags 0x1
+  public <init>(Ltest/PackagePrivate;)V
+}
+=== test/PackagePrivate.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/PackagePrivate {
+
+  NESTMEMBER test/PackagePrivate$PackagePrivateInner
+  NESTMEMBER test/PackagePrivate$ProtectedInner
+  NESTMEMBER test/PackagePrivate$PublicInner
+  // access flags 0x0
+  INNERCLASS test/PackagePrivate$PackagePrivateInner test/PackagePrivate PackagePrivateInner
+  // access flags 0x4
+  protected INNERCLASS test/PackagePrivate$ProtectedInner test/PackagePrivate ProtectedInner
+  // access flags 0x1
+  public INNERCLASS test/PackagePrivate$PublicInner test/PackagePrivate PublicInner
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/Public$PackagePrivateInner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Public$PackagePrivateInner {
+
+  NESTHOST test/Public
+  // access flags 0x0
+  INNERCLASS test/Public$PackagePrivateInner test/Public PackagePrivateInner
+
+  // access flags 0x0
+  <init>(Ltest/Public;)V
+}
+=== test/Public$ProtectedInner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Public$ProtectedInner {
+
+  NESTHOST test/Public
+  // access flags 0x4
+  protected INNERCLASS test/Public$ProtectedInner test/Public ProtectedInner
+
+  // access flags 0x4
+  protected <init>(Ltest/Public;)V
+}
+=== test/Public$PublicInner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Public$PublicInner {
+
+  NESTHOST test/Public
+  // access flags 0x1
+  public INNERCLASS test/Public$PublicInner test/Public PublicInner
+
+  // access flags 0x1
+  public <init>(Ltest/Public;)V
+}
+=== test/Public.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Public {
+
+  NESTMEMBER test/Public$PackagePrivateInner
+  NESTMEMBER test/Public$ProtectedInner
+  NESTMEMBER test/Public$PublicInner
+  // access flags 0x0
+  INNERCLASS test/Public$PackagePrivateInner test/Public PackagePrivateInner
+  // access flags 0x4
+  protected INNERCLASS test/Public$ProtectedInner test/Public ProtectedInner
+  // access flags 0x1
+  public INNERCLASS test/Public$PublicInner test/Public PublicInner
+
+  // access flags 0x1
+  public <init>()V
+}

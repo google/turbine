@@ -1,0 +1,17 @@
+=== test/FirstComparator.class ===
+// class version 69.0 (69)
+// access flags 0x4021
+// signature Ljava/lang/Enum<Ltest/FirstComparator;>;Ljava/util/Comparator<Ljava/lang/Object;>;
+// declaration: test/FirstComparator extends java.lang.Enum<test.FirstComparator> implements java.util.Comparator<java.lang.Object>
+public enum test/FirstComparator extends java/lang/Enum implements java/util/Comparator {
+
+
+  // access flags 0x4019
+  public final static enum Ltest/FirstComparator; FIRST_COMPARATOR
+
+  // access flags 0x9
+  public static values()[Ltest/FirstComparator;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/FirstComparator;
+}

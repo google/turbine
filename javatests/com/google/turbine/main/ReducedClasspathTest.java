@@ -87,7 +87,7 @@ public class ReducedClasspathTest {
                             "package c;",
                             "import b.B;",
                             "public class C extends B {}")))
-                .sources,
+                .sources(),
             /* classpath= */ ImmutableList.of());
 
     liba = createLibrary(compiled, "liba.jar", "a/A", "a/A$I");

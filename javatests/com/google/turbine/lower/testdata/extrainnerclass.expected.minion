@@ -1,0 +1,58 @@
+=== test/A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/A$Inner {
+
+  NESTHOST test/A
+  // access flags 0x0
+  INNERCLASS test/A$Inner test/A Inner
+
+  // access flags 0x0
+  <init>(Ltest/A;)V
+}
+=== test/A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/A {
+
+  NESTMEMBER test/A$Inner
+  // access flags 0x0
+  INNERCLASS test/A$Inner test/A Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Test$Inner {
+
+  NESTHOST test/Test
+  // access flags 0x8
+  static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Test {
+
+  NESTMEMBER test/Test$Inner
+  // access flags 0x0
+  INNERCLASS test/A$Inner test/A Inner
+  // access flags 0x8
+  static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x1
+  public Ltest/A$Inner; i
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x1
+  // signature (Ljava/util/Map<**>;)V
+  // declaration: void m(java.util.Map<?, ?>)
+  public m(Ljava/util/Map;)V
+}

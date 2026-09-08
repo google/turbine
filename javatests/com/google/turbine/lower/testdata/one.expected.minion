@@ -1,0 +1,77 @@
+=== Default.class ===
+// class version 69.0 (69)
+// access flags 0x31
+// signature <T:Ljava/lang/Object;X:TT;>LDefault2<TT;>;
+// declaration: Default<T, X extends T> extends Default2<T>
+public final class Default extends Default2 {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Default2.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Default2<T>
+public class Default2 {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== bar/Bar$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class bar/Bar$Inner {
+
+  NESTHOST bar/Bar
+  // access flags 0x9
+  public static INNERCLASS bar/Bar$Inner bar/Bar Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== bar/Bar.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class bar/Bar {
+
+  NESTMEMBER bar/Bar$Inner
+  // access flags 0x9
+  public static INNERCLASS bar/Bar$Inner bar/Bar Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== bar/Boo.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class bar/Boo extends bar/Bar {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== foo/Foo.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class foo/Foo extends bar/Bar$Inner {
+
+  // access flags 0x9
+  public static INNERCLASS bar/Bar$Inner bar/Bar Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== foo/baz/Baz.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class foo/baz/Baz extends bar/Bar$Inner {
+
+  // access flags 0x9
+  public static INNERCLASS bar/Bar$Inner bar/Bar Inner
+
+  // access flags 0x1
+  public <init>()V
+}

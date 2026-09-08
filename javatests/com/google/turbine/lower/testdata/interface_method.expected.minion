@@ -1,0 +1,15 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Test {
+
+
+  // access flags 0x9
+  public static f()V
+
+  // access flags 0x401
+  public abstract g()V
+
+  // access flags 0x1
+  public default h()V
+}

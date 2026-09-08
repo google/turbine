@@ -1,0 +1,32 @@
+=== pkg/Anno$Kind.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Lpkg/Anno$Kind;>;
+// declaration: pkg/Anno$Kind extends java.lang.Enum<pkg.Anno$Kind>
+public final enum pkg/Anno$Kind extends java/lang/Enum {
+
+  NESTHOST pkg/Anno
+  // access flags 0x4019
+  public final static enum INNERCLASS pkg/Anno$Kind pkg/Anno Kind
+
+  // access flags 0x4019
+  public final static enum Lpkg/Anno$Kind; A
+
+  // access flags 0x4019
+  public final static enum Lpkg/Anno$Kind; B
+
+  // access flags 0x9
+  public static values()[Lpkg/Anno$Kind;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lpkg/Anno$Kind;
+}
+=== pkg/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno implements java/lang/annotation/Annotation {
+
+  NESTMEMBER pkg/Anno$Kind
+  // access flags 0x4019
+  public final static enum INNERCLASS pkg/Anno$Kind pkg/Anno Kind
+}

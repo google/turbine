@@ -1,0 +1,21 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <A:Ljava/lang/Object;B:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Test<A, B>
+public class test/Test {
+
+
+  // access flags 0x0
+  // signature TA;
+  // declaration: one extends A
+  Ljava/lang/Object; one
+
+  // access flags 0x0
+  // signature TB;
+  // declaration: two extends B
+  Ljava/lang/Object; two
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -203,7 +203,7 @@ public class TurbineAnnotationMirrorTest {
 
     Binder.BindingResult bound =
         IntegrationTestSupport.turbineAnalysis(
-            input.sources,
+            input.sources(),
             ImmutableList.of(),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());

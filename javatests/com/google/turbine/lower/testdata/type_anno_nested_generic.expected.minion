@@ -1,0 +1,122 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== D.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface D implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Outer$Foo$Bar.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$Foo$Bar {
+
+  NESTHOST Outer
+  // access flags 0x0
+  INNERCLASS Outer$Foo Outer Foo
+  // access flags 0x0
+  INNERCLASS Outer$Foo$Bar Outer$Foo Bar
+
+  // access flags 0x0
+  <init>(LOuter$Foo;)V
+}
+=== Outer$Foo.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$Foo {
+
+  NESTHOST Outer
+  // access flags 0x0
+  INNERCLASS Outer$Foo Outer Foo
+  // access flags 0x0
+  INNERCLASS Outer$Foo$Bar Outer$Foo Bar
+
+  // access flags 0x0
+  <init>(LOuter;)V
+}
+=== Outer$Middle$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Outer$Middle$Inner<U>
+class Outer$Middle$Inner {
+
+  NESTHOST Outer
+  // access flags 0x0
+  INNERCLASS Outer$Middle Outer Middle
+  // access flags 0x0
+  INNERCLASS Outer$Middle$Inner Outer$Middle Inner
+
+  // access flags 0x0
+  <init>(LOuter$Middle;)V
+}
+=== Outer$Middle.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Outer$Middle<T>
+class Outer$Middle {
+
+  NESTHOST Outer
+  // access flags 0x0
+  INNERCLASS Outer$Middle Outer Middle
+  // access flags 0x0
+  INNERCLASS Outer$Middle$Inner Outer$Middle Inner
+
+  // access flags 0x0
+  <init>(LOuter;)V
+}
+=== Outer.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer {
+
+  NESTMEMBER Outer$Foo
+  NESTMEMBER Outer$Foo$Bar
+  NESTMEMBER Outer$Middle
+  NESTMEMBER Outer$Middle$Inner
+  // access flags 0x0
+  INNERCLASS Outer$Foo Outer Foo
+  // access flags 0x0
+  INNERCLASS Outer$Foo$Bar Outer$Foo Bar
+  // access flags 0x0
+  INNERCLASS Outer$Middle Outer Middle
+  // access flags 0x0
+  INNERCLASS Outer$Middle$Inner Outer$Middle Inner
+
+  // access flags 0x0
+  // signature LOuter$Middle<LOuter$Foo$Bar;>.Inner<[Ljava/lang/String;>;
+  // declaration: f extends Outer$Middle<Outer$Foo$Bar>.Inner<java.lang.String[]>
+  LOuter$Middle$Inner; f
+  @LA;() : FIELD, .0;. // invisible
+  @LB;() : FIELD, .0;.. // invisible
+  @LC;() : FIELD, ..0; // invisible
+  @LD;() : FIELD, ..0;[ // invisible
+
+  // access flags 0x0
+  <init>()V
+}

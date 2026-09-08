@@ -1,0 +1,29 @@
+=== test/Raw$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Raw$Inner {
+
+  NESTHOST test/Raw
+  // access flags 0x1
+  public INNERCLASS test/Raw$Inner test/Raw Inner
+
+  // access flags 0x1
+  public <init>(Ltest/Raw;)V
+}
+=== test/Raw.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Raw<T>
+public class test/Raw {
+
+  NESTMEMBER test/Raw$Inner
+  // access flags 0x1
+  public INNERCLASS test/Raw$Inner test/Raw Inner
+
+  // access flags 0x0
+  Ltest/Raw$Inner; INSTANCE
+
+  // access flags 0x1
+  public <init>()V
+}

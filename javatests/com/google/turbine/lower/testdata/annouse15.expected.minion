@@ -1,0 +1,73 @@
+=== pkg/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  // access flags 0x401
+  public abstract one()B
+    default=(byte)0
+
+  // access flags 0x401
+  public abstract two()C
+    default=(char)0
+
+  // access flags 0x401
+  public abstract three()D
+    default=0.0D
+
+  // access flags 0x401
+  public abstract four()F
+    default=0.0F
+
+  // access flags 0x401
+  public abstract five()I
+    default=0
+
+  // access flags 0x401
+  public abstract six()J
+    default=0L
+
+  // access flags 0x401
+  public abstract seven()S
+    default=(short)0
+
+  // access flags 0x401
+  public abstract eight()Z
+    default=true
+
+  // access flags 0x401
+  public abstract nine()Ljava/lang/String;
+    default="hi"
+
+  // access flags 0x401
+  public abstract ten()Ljava/lang/annotation/RetentionPolicy;
+    default=Ljava/lang/annotation/RetentionPolicy;.RUNTIME
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> eleven()
+  public abstract eleven()Ljava/lang/Class;
+    default=java.lang.String.class
+
+  // access flags 0x401
+  public abstract twelve()Ljava/lang/annotation/Retention;
+    default=@Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.SOURCE)
+
+  // access flags 0x401
+  public abstract thirteen()[I
+    default={42}
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  @Lpkg/Anno;()
+
+  // access flags 0x1
+  public <init>()V
+}

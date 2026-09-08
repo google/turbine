@@ -1,0 +1,33 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A {
+
+
+  // access flags 0x19
+  public final static I CONST = 2
+
+  // access flags 0x1
+  public <init>()V
+}
+=== c/C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class c/C {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/Private.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/Private extends c/C {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  f(La/A;)V
+}

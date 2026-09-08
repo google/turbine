@@ -1,0 +1,32 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x0
+  // signature Ljava/util/List<+[Ljava/lang/Integer;>;
+  // declaration: xs extends java.util.List<? extends java.lang.Integer[]>
+  Ljava/util/List; xs
+  @LA;() : FIELD, 0;*[ // invisible
+  @LB;() : FIELD, 0;* // invisible
+
+  // access flags 0x0
+  <init>()V
+}

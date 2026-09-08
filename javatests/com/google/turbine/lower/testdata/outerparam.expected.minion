@@ -1,0 +1,31 @@
+=== OuterParam$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class OuterParam$Inner {
+
+  NESTHOST OuterParam
+  // access flags 0x0
+  INNERCLASS OuterParam$Inner OuterParam Inner
+
+  // access flags 0x0
+  <init>(LOuterParam;)V
+
+  // access flags 0x0
+  // signature ()TT;
+  // declaration: T f()
+  f()Ljava/lang/String;
+}
+=== OuterParam.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Ljava/lang/String;>Ljava/lang/Object;
+// declaration: OuterParam<T extends java.lang.String>
+class OuterParam {
+
+  NESTMEMBER OuterParam$Inner
+  // access flags 0x0
+  INNERCLASS OuterParam$Inner OuterParam Inner
+
+  // access flags 0x0
+  <init>()V
+}

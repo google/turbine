@@ -1,0 +1,23 @@
+=== pkg/Colours.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Lpkg/Colours;>;
+// declaration: pkg/Colours extends java.lang.Enum<pkg.Colours>
+public final enum pkg/Colours extends java/lang/Enum {
+
+
+  // access flags 0x4019
+  public final static enum Lpkg/Colours; RED
+
+  // access flags 0x4019
+  public final static enum Lpkg/Colours; GREEN
+
+  // access flags 0x4019
+  public final static enum Lpkg/Colours; BLUE
+
+  // access flags 0x9
+  public static values()[Lpkg/Colours;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lpkg/Colours;
+}

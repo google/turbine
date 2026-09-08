@@ -1,0 +1,76 @@
+=== S.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class S {
+
+  // access flags 0x9
+  public static INNERCLASS b/Lib$Inner b/Lib Inner
+
+  // access flags 0x0
+  Lb/Lib$Inner; x
+
+  // access flags 0x0
+  <init>()V
+}
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T {
+
+  // access flags 0x9
+  public static INNERCLASS b/Lib$Inner b/Lib Inner
+
+  // access flags 0x0
+  Lb/Lib$Inner; x
+
+  // access flags 0x0
+  <init>()V
+}
+=== a/Lib$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/Lib$Inner {
+
+  NESTHOST a/Lib
+  // access flags 0xC
+  protected static INNERCLASS a/Lib$Inner a/Lib Inner
+
+  // access flags 0x4
+  protected <init>()V
+}
+=== a/Lib.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/Lib {
+
+  NESTMEMBER a/Lib$Inner
+  // access flags 0xC
+  protected static INNERCLASS a/Lib$Inner a/Lib Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== b/Lib$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class b/Lib$Inner {
+
+  NESTHOST b/Lib
+  // access flags 0x9
+  public static INNERCLASS b/Lib$Inner b/Lib Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== b/Lib.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class b/Lib {
+
+  NESTMEMBER b/Lib$Inner
+  // access flags 0x9
+  public static INNERCLASS b/Lib$Inner b/Lib Inner
+
+  // access flags 0x1
+  public <init>()V
+}

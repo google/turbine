@@ -1,0 +1,36 @@
+=== test/I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface test/I {
+
+}
+=== test/J.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface test/J {
+
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  // signature <T:Ltest/Test;>(TT;)TT;
+  // declaration: T f1<T extends test.Test>(T)
+  f1(Ltest/Test;)Ltest/Test;
+
+  // access flags 0x0
+  // signature <T:Ltest/Test;:Ltest/I;>(TT;)TT;
+  // declaration: T f2<T extends test.Test extends test.I>(T)
+  f2(Ltest/Test;)Ltest/Test;
+
+  // access flags 0x0
+  // signature <T:Ltest/Test;:Ltest/I;:Ltest/J;>(TT;)TT;
+  // declaration: T f3<T extends test.Test extends test.I, test.J>(T)
+  f3(Ltest/Test;)Ltest/Test;
+}

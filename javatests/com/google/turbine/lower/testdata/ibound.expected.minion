@@ -1,0 +1,19 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Test {
+
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x1
+  // signature <T::Ljava/lang/Comparable;>(TT;)V
+  // declaration: void f<T extends java.lang.Comparable>(T)
+  public f(Ljava/lang/Comparable;)V
+
+  // access flags 0x1
+  // signature <U::Ljava/lang/Comparable;T:TU;>(TT;TU;)V
+  // declaration: void f<U extends java.lang.Comparable, T extends U>(T, U)
+  public f(Ljava/lang/Comparable;Ljava/lang/Comparable;)V
+}

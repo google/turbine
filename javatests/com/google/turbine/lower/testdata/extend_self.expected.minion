@@ -1,0 +1,45 @@
+=== a/A$AI1.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Li/I<La/A<TT;>.AI1;>;
+// declaration: a/A$AI1 extends i.I<a.A<T>.AI1>
+public class a/A$AI1 extends i/I {
+
+  NESTHOST a/A
+  // access flags 0x1
+  public INNERCLASS a/A$AI1 a/A AI1
+
+  // access flags 0x1
+  public <init>(La/A;)V
+}
+=== a/A$AI2.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Li/I<La/A$AI2;>;
+// declaration: a/A$AI2 extends i.I<a.A$AI2>
+public class a/A$AI2 extends i/I {
+
+  NESTHOST a/A
+  // access flags 0x9
+  public static INNERCLASS a/A$AI2 a/A AI2
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: a/A<T>
+public class a/A {
+
+  NESTMEMBER a/A$AI1
+  NESTMEMBER a/A$AI2
+  // access flags 0x1
+  public INNERCLASS a/A$AI1 a/A AI1
+  // access flags 0x9
+  public static INNERCLASS a/A$AI2 a/A AI2
+
+  // access flags 0x1
+  public <init>()V
+}

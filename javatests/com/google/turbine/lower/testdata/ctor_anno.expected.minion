@@ -1,0 +1,18 @@
+=== Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Anno implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.CONSTRUCTOR})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  // access flags 0x0
+  <init>(I)V
+  @LAnno;() // invisible
+}

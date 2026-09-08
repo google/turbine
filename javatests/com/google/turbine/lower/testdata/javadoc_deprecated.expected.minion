@@ -1,0 +1,30 @@
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x0
+  <init>(LTest;)V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+  NESTMEMBER Test$Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x0
+  I x
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  f()V
+}

@@ -1,0 +1,26 @@
+=== test/Test$FooMap.class ===
+// class version 69.0 (69)
+// access flags 0x421
+// signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Map<TK;TV;>;
+// declaration: test/Test$FooMap<K, V> implements java.util.Map<K, V>
+public abstract class test/Test$FooMap implements java/util/Map {
+
+  NESTHOST test/Test
+  // access flags 0x409
+  public static abstract INNERCLASS test/Test$FooMap test/Test FooMap
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+  NESTMEMBER test/Test$FooMap
+  // access flags 0x409
+  public static abstract INNERCLASS test/Test$FooMap test/Test FooMap
+
+  // access flags 0x1
+  public <init>()V
+}

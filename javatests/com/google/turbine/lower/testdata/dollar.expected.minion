@@ -1,0 +1,9 @@
+=== Test$0.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$0 {
+
+
+  // access flags 0x0
+  <init>()V
+}

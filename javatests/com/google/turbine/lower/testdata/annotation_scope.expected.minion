@@ -1,0 +1,45 @@
+=== Test$A.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface Test$A implements java/lang/annotation/Annotation {
+
+  NESTHOST Test
+  // access flags 0x2609
+  public static abstract INNERCLASS Test$A Test A
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  @La/As;(value={a.A.class, Test.class}) // invisible
+  NESTMEMBER Test$A
+  // access flags 0x2609
+  public static abstract INNERCLASS Test$A Test A
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  f()V
+  @La/As;(value={Test$A.class}) // invisible
+}
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface a/A implements java/lang/annotation/Annotation {
+
+}
+=== a/As.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface a/As implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  // signature ()[Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?>[] value()
+  public abstract value()[Ljava/lang/Class;
+    default={}
+}

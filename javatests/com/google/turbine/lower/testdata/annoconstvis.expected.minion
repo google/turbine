@@ -1,0 +1,24 @@
+=== pkg/Simple$Foo.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Simple$Foo implements java/lang/annotation/Annotation {
+
+  NESTHOST pkg/Simple
+  // access flags 0x2609
+  public static abstract INNERCLASS pkg/Simple$Foo pkg/Simple Foo
+
+  // access flags 0x19
+  public final static Ljava/lang/String; CONST = "ASD"
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class pkg/Simple {
+
+  NESTMEMBER pkg/Simple$Foo
+  // access flags 0x2609
+  public static abstract INNERCLASS pkg/Simple$Foo pkg/Simple Foo
+
+  // access flags 0x1
+  public <init>()V
+}

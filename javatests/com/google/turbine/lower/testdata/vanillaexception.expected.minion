@@ -1,0 +1,14 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Test {
+
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x1
+  // signature <T:Ljava/lang/Object;>(TT;)V
+  // declaration: void f<T>(T)
+  public f(Ljava/lang/Object;)V throws java/io/IOException
+}

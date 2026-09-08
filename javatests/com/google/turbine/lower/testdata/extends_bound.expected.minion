@@ -1,0 +1,22 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: a/A<T>
+public class a/A {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== b/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>La/A<TT;>;
+// declaration: b/B<T> extends a.A<T>
+public class b/B extends a/A {
+
+
+  // access flags 0x1
+  public <init>()V
+}

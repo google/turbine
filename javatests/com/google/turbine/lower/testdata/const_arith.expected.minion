@@ -1,0 +1,33 @@
+=== test/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/B {
+
+
+  // access flags 0x19
+  public final static J S1 = 65534L
+
+  // access flags 0x19
+  public final static J S2 = 32768L
+
+  // access flags 0x19
+  public final static Z B1 = 0
+
+  // access flags 0x19
+  public final static Z B2 = 1
+
+  // access flags 0x19
+  public final static Z B3 = 1
+
+  // access flags 0x19
+  public final static Z B4 = 1
+
+  // access flags 0x19
+  public final static J MAX_LONG_POWER_OF_TWO = 4611686018427387904L
+
+  // access flags 0x19
+  public final static S MAX_SHORT_POWER_OF_TWO = 16384
+
+  // access flags 0x1
+  public <init>()V
+}

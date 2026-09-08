@@ -1,0 +1,331 @@
+=== Records$A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Records$A implements java/lang/annotation/Annotation {
+
+  NESTHOST Records
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+  // access flags 0x2608
+  static abstract INNERCLASS Records$A Records A
+}
+=== Records$B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Records$B implements java/lang/annotation/Annotation {
+
+  NESTHOST Records
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.RECORD_COMPONENT})
+  // access flags 0x2608
+  static abstract INNERCLASS Records$B Records B
+}
+=== Records$C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Records$C implements java/lang/annotation/Annotation {
+
+  NESTHOST Records
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.RECORD_COMPONENT})
+  // access flags 0x2608
+  static abstract INNERCLASS Records$C Records C
+}
+=== Records$R1.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+final class Records$R1 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R1 Records R1
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+}
+=== Records$R10.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$R10<T> extends java.lang.Record
+final class Records$R10 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x2608
+  static abstract INNERCLASS Records$A Records A
+  // access flags 0x2608
+  static abstract INNERCLASS Records$B Records B
+  // access flags 0x2608
+  static abstract INNERCLASS Records$C Records C
+  // access flags 0x18
+  final static INNERCLASS Records$R10 Records R10
+  RECORDCOMPONENT   // signature Ljava/util/List<TT;>;
+  // declaration: x extends java.util.List<T>
+  Ljava/util/List; x
+  @LRecords$A;() : FIELD, 0; // invisible
+  @LRecords$A;() : FIELD, null // invisible
+  RECORDCOMPONENT   I y
+  @LRecords$B;() // invisible
+  RECORDCOMPONENT   I z
+  @LRecords$C;() // invisible
+  @LRecords$C;() : FIELD, null // invisible
+
+  // access flags 0x0
+  // signature (Ljava/util/List<TT;>;II)V
+  // declaration: void <init>(java.util.List<T>, int, int)
+  <init>(Ljava/util/List;II)V
+  @LRecords$A;() : METHOD_FORMAL_PARAMETER 0, 0; // invisible
+  @LRecords$A;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LRecords$C;() : METHOD_FORMAL_PARAMETER 2, null // invisible
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  // signature ()Ljava/util/List<TT;>;
+  // declaration: java.util.List<T> x()
+  public x()Ljava/util/List;
+  @LRecords$A;() : METHOD_RETURN, 0; // invisible
+  @LRecords$A;() : METHOD_RETURN, null // invisible
+
+  // access flags 0x1
+  public y()I
+
+  // access flags 0x1
+  public z()I
+  @LRecords$C;() : METHOD_RETURN, null // invisible
+}
+=== Records$R4.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$R4<T> extends java.lang.Record
+final class Records$R4 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R4 Records R4
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+}
+=== Records$R5.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$R5<T> extends java.lang.Record
+final class Records$R5 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R5 Records R5
+  RECORDCOMPONENT   I x
+
+  // access flags 0x0
+  <init>(I)V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public x()I
+}
+=== Records$R6.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$R6<T> extends java.lang.Record
+final class Records$R6 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R6 Records R6
+  RECORDCOMPONENT   I x
+
+  // access flags 0x0
+  <init>(I)V
+    // annotable parameter count: 1 (visible)
+    @Ljava/lang/Deprecated;() // parameter 0
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // DEPRECATED
+  // access flags 0x20001
+  public x()I
+  @Ljava/lang/Deprecated;()
+}
+=== Records$R7.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$R7<T> extends java.lang.Record
+final class Records$R7 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R7 Records R7
+  RECORDCOMPONENT   I x
+  RECORDCOMPONENT   [I y
+
+  // access flags 0x80
+  varargs <init>(I[I)V
+    // annotable parameter count: 2 (visible)
+    @Ljava/lang/Deprecated;() // parameter 0
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // DEPRECATED
+  // access flags 0x20001
+  public x()I
+  @Ljava/lang/Deprecated;()
+
+  // access flags 0x1
+  public y()[I
+}
+=== Records$R8.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;Ljava/lang/Comparable<LRecords$R8<TT;>;>;
+// declaration: Records$R8<T> extends java.lang.Record implements java.lang.Comparable<Records$R8<T>>
+final class Records$R8 extends java/lang/Record implements java/lang/Comparable {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R8 Records R8
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x1
+  // signature (LRecords$R8<TT;>;)I
+  // declaration: int compareTo(Records$R8<T>)
+  public compareTo(LRecords$R8;)I
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+}
+=== Records$R9.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+final class Records$R9 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x18
+  final static INNERCLASS Records$R9 Records R9
+  RECORDCOMPONENT   I x
+
+  // access flags 0x0
+  <init>(I)V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public x()I
+}
+=== Records.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Records {
+
+  NESTMEMBER Records$A
+  NESTMEMBER Records$B
+  NESTMEMBER Records$C
+  NESTMEMBER Records$R1
+  NESTMEMBER Records$R10
+  NESTMEMBER Records$R4
+  NESTMEMBER Records$R5
+  NESTMEMBER Records$R6
+  NESTMEMBER Records$R7
+  NESTMEMBER Records$R8
+  NESTMEMBER Records$R9
+  // access flags 0x2608
+  static abstract INNERCLASS Records$A Records A
+  // access flags 0x2608
+  static abstract INNERCLASS Records$B Records B
+  // access flags 0x2608
+  static abstract INNERCLASS Records$C Records C
+  // access flags 0x18
+  final static INNERCLASS Records$R1 Records R1
+  // access flags 0x18
+  final static INNERCLASS Records$R10 Records R10
+  // access flags 0x18
+  final static INNERCLASS Records$R4 Records R4
+  // access flags 0x18
+  final static INNERCLASS Records$R5 Records R5
+  // access flags 0x18
+  final static INNERCLASS Records$R6 Records R6
+  // access flags 0x18
+  final static INNERCLASS Records$R7 Records R7
+  // access flags 0x18
+  final static INNERCLASS Records$R8 Records R8
+  // access flags 0x18
+  final static INNERCLASS Records$R9 Records R9
+
+  // access flags 0x0
+  <init>()V
+}

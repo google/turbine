@@ -16,16 +16,19 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.MoreFiles.getFileExtension;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -56,6 +59,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -95,6 +99,45 @@ import org.objectweb.asm.tree.TypeAnnotationNode;
 
 /** Support for bytecode diffing-integration tests. */
 public final class IntegrationTestSupport {
+
+  public static final ImmutableList<TestInput> TEST_CASES = discoverTestCases();
+
+  public static final int DEFAULT_SOURCE_VERSION = 25;
+
+  private static ImmutableList<TestInput> discoverTestCases() {
+    try {
+      ImmutableList<TestInput> result =
+          com.google.common.reflect.ClassPath.from(IntegrationTestSupport.class.getClassLoader())
+              .getResources()
+              .stream()
+              .filter(
+                  r ->
+                      r.getResourceName().startsWith("com/google/turbine/lower/testdata/")
+                          && r.getResourceName().endsWith(".test")
+                          // TODO(cushon): crashes ASM, see:
+                          // https://gitlab.ow2.org/asm/asm/issues/317776
+                          && !r.getResourceName().endsWith("/canon_array.test")
+                          // contains broken imports intended to test turbine's lazy error handling
+                          && !r.getResourceName().endsWith("/importlazy.test"))
+              .map(
+                  r -> {
+                    try {
+                      String name =
+                          r.getResourceName()
+                              .substring("com/google/turbine/lower/testdata/".length());
+                      return TestInput.parse(name, r.asCharSource(UTF_8).read());
+                    } catch (IOException e) {
+                      throw new UncheckedIOException(e);
+                    }
+                  })
+              .sorted(comparing(TestInput::name))
+              .collect(toImmutableList());
+      verify(result.size() >= 300, "expected at least 300 test cases, got %s", result.size());
+      return result;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
 
   /**
    * Normalizes order of members, attributes, and constant pool entries, to allow diffing bytecode.
@@ -755,23 +798,94 @@ public final class IntegrationTestSupport {
     return sb.toString();
   }
 
-  public static class TestInput {
-
-    public final Map<String, String> sources;
-    public final Map<String, String> classes;
+  public record TestInput(
+      String name,
+      int sourceVersion,
+      boolean preview,
+      ImmutableList<String> extraJavacopts,
+      Map<String, String> sources,
+      Map<String, String> classes) {
 
     public TestInput(Map<String, String> sources, Map<String, String> classes) {
-      this.sources = sources;
-      this.classes = classes;
+      this("", DEFAULT_SOURCE_VERSION, false, ImmutableList.of(), sources, classes);
+    }
+
+    public ImmutableList<String> javacopts() {
+      int actualVersion = Runtime.version().feature();
+      int requiredVersion = sourceVersion();
+      assumeTrue(actualVersion >= requiredVersion);
+      ImmutableList.Builder<String> builder = ImmutableList.builder();
+      if (preview()) {
+        requiredVersion = actualVersion;
+        builder.add("--enable-preview");
+      }
+      return builder
+          .addAll(extraJavacopts())
+          .add(
+              "-source",
+              String.valueOf(requiredVersion),
+              "-target",
+              String.valueOf(requiredVersion))
+          .add("-Xpkginfo:always")
+          .build();
+    }
+
+    @Override
+    public String toString() {
+      return name;
     }
 
     public static TestInput parse(String text) {
+      return parse("", text);
+    }
+
+    public static TestInput parse(String name, String text) {
       Map<String, String> sources = new LinkedHashMap<>();
       Map<String, String> classes = new LinkedHashMap<>();
+      int sourceVersion = DEFAULT_SOURCE_VERSION;
+      boolean preview = false;
+      ImmutableList.Builder<String> javacopts = ImmutableList.builder();
+
+      List<String> allLines = Splitter.on('\n').splitToList(text);
+      int startLine = 0;
+      if (!allLines.isEmpty() && allLines.get(0).trim().equals("---")) {
+        int endIdx = -1;
+        for (int i = 1; i < allLines.size(); i++) {
+          if (allLines.get(i).trim().equals("---")) {
+            endIdx = i;
+            break;
+          }
+        }
+        if (endIdx != -1) {
+          for (int i = 1; i < endIdx; i++) {
+            String line = allLines.get(i).trim();
+            if (line.isEmpty() || line.startsWith("#")) {
+              continue;
+            }
+            List<String> parts = Splitter.on(':').limit(2).trimResults().splitToList(line);
+            if (parts.size() != 2) {
+              throw new IllegalArgumentException(
+                  String.format("Malformed header line in %s: %s", name, line));
+            }
+            switch (parts.get(0)) {
+              case "source_version" -> sourceVersion = Integer.parseInt(parts.get(1));
+              case "preview" -> preview = Boolean.parseBoolean(parts.get(1));
+              case "javacopts" ->
+                  javacopts.addAll(Splitter.on(' ').omitEmptyStrings().split(parts.get(1)));
+              default ->
+                  throw new IllegalArgumentException(
+                      String.format("Unknown header key in %s: %s", name, parts.get(0)));
+            }
+          }
+          startLine = endIdx + 1;
+        }
+      }
+
       String className = null;
       String sourceName = null;
       List<String> lines = new ArrayList<>();
-      for (String line : Splitter.on('\n').split(text)) {
+      for (int i = startLine; i < allLines.size(); i++) {
+        String line = allLines.get(i);
         if (line.startsWith("===")) {
           if (sourceName != null) {
             sources.put(sourceName, Joiner.on('\n').join(lines) + "\n");
@@ -803,7 +917,7 @@ public final class IntegrationTestSupport {
         classes.put(className, Joiner.on('\n').join(lines) + "\n");
       }
       lines.clear();
-      return new TestInput(sources, classes);
+      return new TestInput(name, sourceVersion, preview, javacopts.build(), sources, classes);
     }
   }
 

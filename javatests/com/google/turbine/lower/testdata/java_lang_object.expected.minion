@@ -1,0 +1,44 @@
+=== java/lang/Object.class ===
+// class version 52.0 (52)
+// access flags 0x21
+public class java/lang/Object {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x11
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> getClass()
+  public final getClass()Ljava/lang/Class;
+
+  // access flags 0x1
+  public hashCode()I
+
+  // access flags 0x1
+  public equals(Ljava/lang/Object;)Z
+
+  // access flags 0x4
+  protected clone()Ljava/lang/Object; throws java/lang/CloneNotSupportedException
+
+  // access flags 0x1
+  public toString()Ljava/lang/String;
+
+  // access flags 0x4
+  protected finalize()V throws java/lang/Throwable
+
+  // access flags 0x11
+  public final notify()V
+
+  // access flags 0x11
+  public final notifyAll()V
+
+  // access flags 0x11
+  public final wait(J)V throws java/lang/InterruptedException
+
+  // access flags 0x11
+  public final wait(JI)V throws java/lang/InterruptedException
+
+  // access flags 0x11
+  public final wait()V throws java/lang/InterruptedException
+}

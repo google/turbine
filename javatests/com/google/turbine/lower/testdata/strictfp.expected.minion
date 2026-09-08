@@ -1,0 +1,167 @@
+=== E$N.class ===
+// class version 69.0 (69)
+// access flags 0x420
+abstract class E$N {
+
+  NESTHOST E
+  // access flags 0x400
+  abstract INNERCLASS E$N E N
+
+  // access flags 0x0
+  <init>(LE;)V
+
+  // access flags 0x0
+  g()V
+
+  // access flags 0x400
+  abstract a()V
+}
+=== E.class ===
+// class version 69.0 (69)
+// access flags 0x4020
+// signature Ljava/lang/Enum<LE;>;
+// declaration: E extends java.lang.Enum<E>
+enum E extends java/lang/Enum {
+
+  NESTMEMBER E$N
+  // access flags 0x400
+  abstract INNERCLASS E$N E N
+
+  // access flags 0x4019
+  public final static enum LE; I
+
+  // access flags 0x9
+  public static values()[LE;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LE;
+
+  // access flags 0x0
+  f()V
+
+  // access flags 0x400
+  abstract a()V
+}
+=== I$N.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class I$N {
+
+  NESTHOST I
+  // access flags 0x409
+  public static abstract INNERCLASS I$N I N
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  g()V
+
+  // access flags 0x400
+  abstract a()V
+}
+=== I.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface I {
+
+  NESTMEMBER I$N
+  // access flags 0x409
+  public static abstract INNERCLASS I$N I N
+
+  // access flags 0x401
+  public abstract f()V
+
+  // access flags 0x401
+  public abstract a()V
+}
+=== Test$A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Test$A implements java/lang/annotation/Annotation {
+
+  NESTHOST Test
+  // access flags 0x2608
+  static abstract INNERCLASS Test$A Test A
+
+  // access flags 0x401
+  public abstract value()I
+    default=0
+}
+=== Test$E.class ===
+// class version 69.0 (69)
+// access flags 0x4030
+// signature Ljava/lang/Enum<LTest$E;>;
+// declaration: Test$E extends java.lang.Enum<Test$E>
+final enum Test$E extends java/lang/Enum {
+
+  NESTHOST Test
+  // access flags 0x4018
+  final static enum INNERCLASS Test$E Test E
+
+  // access flags 0x9
+  public static values()[LTest$E;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LTest$E;
+
+  // access flags 0x0
+  h()V
+}
+=== Test$I.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Test$I {
+
+  NESTHOST Test
+  // access flags 0x608
+  static abstract INNERCLASS Test$I Test I
+
+  // access flags 0x1
+  public default j()I
+}
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x0
+  <init>(LTest;)V
+
+  // access flags 0x0
+  g()V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x420
+abstract class Test {
+
+  NESTMEMBER Test$A
+  NESTMEMBER Test$E
+  NESTMEMBER Test$I
+  NESTMEMBER Test$Inner
+  // access flags 0x2608
+  static abstract INNERCLASS Test$A Test A
+  // access flags 0x4018
+  final static enum INNERCLASS Test$E Test E
+  // access flags 0x608
+  static abstract INNERCLASS Test$I Test I
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x10
+  final D x = 0.5D
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x400
+  abstract a()V
+
+  // access flags 0x0
+  f()V
+}

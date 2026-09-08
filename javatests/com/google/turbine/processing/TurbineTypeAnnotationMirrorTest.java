@@ -233,7 +233,7 @@ public class TurbineTypeAnnotationMirrorTest {
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
     JavacTask task =
         IntegrationTestSupport.runJavacAnalysis(
-            input.sources,
+            input.sources(),
             ImmutableList.of(),
             /* options= */ ImmutableList.of(),
             diagnostics,
@@ -254,7 +254,7 @@ public class TurbineTypeAnnotationMirrorTest {
     ListMultimap<Integer, String> turbineSource =
         MultimapBuilder.linkedHashKeys().arrayListValues().build();
     ImmutableList<Tree.CompUnit> units =
-        input.sources.entrySet().stream()
+        input.sources().entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());

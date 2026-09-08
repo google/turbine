@@ -1,0 +1,62 @@
+=== Test$A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Test$A implements java/lang/annotation/Annotation {
+
+  NESTHOST Test
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+  // access flags 0x260A
+  private static abstract INNERCLASS Test$A Test A
+}
+=== Test$B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Test$B implements java/lang/annotation/Annotation {
+
+  NESTHOST Test
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+  // access flags 0x260A
+  private static abstract INNERCLASS Test$B Test B
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> value()
+  public abstract value()Ljava/lang/Class;
+}
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0xA
+  private static INNERCLASS Test$Inner Test Inner
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+  NESTMEMBER Test$A
+  NESTMEMBER Test$B
+  NESTMEMBER Test$Inner
+  // access flags 0x260A
+  private static abstract INNERCLASS Test$A Test A
+  // access flags 0x260A
+  private static abstract INNERCLASS Test$B Test B
+  // access flags 0xA
+  private static INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x9
+  public static Ljava/lang/Object; x
+  @LTest$A;()
+
+  // access flags 0x9
+  public static Ljava/lang/Object; y
+  @LTest$B;(value=Test$Inner.class)
+
+  // access flags 0x0
+  <init>()V
+}

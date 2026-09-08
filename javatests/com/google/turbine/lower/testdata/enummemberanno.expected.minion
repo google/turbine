@@ -1,0 +1,28 @@
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// DEPRECATED
+// access flags 0x24031
+// signature Ljava/lang/Enum<Lpkg/Simple;>;
+// declaration: pkg/Simple extends java.lang.Enum<pkg.Simple>
+public final enum pkg/Simple extends java/lang/Enum {
+
+
+  @Ljava/lang/Deprecated;()
+
+  // access flags 0x4019
+  public final static enum Lpkg/Simple; A
+
+  // DEPRECATED
+  // access flags 0x24019
+  public final static enum Lpkg/Simple; B
+  @Ljava/lang/Deprecated;()
+
+  // access flags 0x4019
+  public final static enum Lpkg/Simple; C
+
+  // access flags 0x9
+  public static values()[Lpkg/Simple;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lpkg/Simple;
+}

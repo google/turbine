@@ -1,0 +1,56 @@
+=== test/FilteredKeyMultimap$Entries.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/FilteredKeyMultimap$Entries {
+
+  NESTHOST test/FilteredKeyMultimap
+  // access flags 0x0
+  INNERCLASS test/FilteredKeyMultimap$Entries test/FilteredKeyMultimap Entries
+
+  // access flags 0x0
+  <init>(Ltest/FilteredKeyMultimap;)V
+}
+=== test/FilteredKeyMultimap.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/FilteredKeyMultimap<K, V>
+public class test/FilteredKeyMultimap {
+
+  NESTMEMBER test/FilteredKeyMultimap$Entries
+  // access flags 0x0
+  INNERCLASS test/FilteredKeyMultimap$Entries test/FilteredKeyMultimap Entries
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/FilteredKeySetMultimap$EntrySet.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature Ltest/FilteredKeyMultimap<TK;TV;>.Entries;
+// declaration: test/FilteredKeySetMultimap$EntrySet extends test.FilteredKeyMultimap<K, V>.Entries
+class test/FilteredKeySetMultimap$EntrySet extends test/FilteredKeyMultimap$Entries {
+
+  NESTHOST test/FilteredKeySetMultimap
+  // access flags 0x0
+  INNERCLASS test/FilteredKeyMultimap$Entries test/FilteredKeyMultimap Entries
+  // access flags 0x0
+  INNERCLASS test/FilteredKeySetMultimap$EntrySet test/FilteredKeySetMultimap EntrySet
+
+  // access flags 0x0
+  <init>(Ltest/FilteredKeySetMultimap;)V
+}
+=== test/FilteredKeySetMultimap.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ltest/FilteredKeyMultimap<TK;TV;>;
+// declaration: test/FilteredKeySetMultimap<K, V> extends test.FilteredKeyMultimap<K, V>
+class test/FilteredKeySetMultimap extends test/FilteredKeyMultimap {
+
+  NESTMEMBER test/FilteredKeySetMultimap$EntrySet
+  // access flags 0x0
+  INNERCLASS test/FilteredKeySetMultimap$EntrySet test/FilteredKeySetMultimap EntrySet
+
+  // access flags 0x0
+  <init>()V
+}

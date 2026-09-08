@@ -1,0 +1,44 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.SOURCE)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.CLASS)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x0
+  I x
+  @LB;() : FIELD, null
+  @LC;() : FIELD, null // invisible
+
+  // access flags 0x0
+  <init>()V
+}

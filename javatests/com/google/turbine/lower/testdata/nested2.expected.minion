@@ -1,0 +1,39 @@
+=== nested/Test$Inner1.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class nested/Test$Inner1 {
+
+  NESTHOST nested/Test
+  // access flags 0x9
+  public static INNERCLASS nested/Test$Inner1 nested/Test Inner1
+
+  // access flags 0x1
+  public <init>()V
+}
+=== nested/Test$Inner2.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class nested/Test$Inner2 {
+
+  NESTHOST nested/Test
+  // access flags 0x9
+  public static INNERCLASS nested/Test$Inner2 nested/Test Inner2
+
+  // access flags 0x1
+  public <init>()V
+}
+=== nested/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class nested/Test {
+
+  NESTMEMBER nested/Test$Inner1
+  NESTMEMBER nested/Test$Inner2
+  // access flags 0x9
+  public static INNERCLASS nested/Test$Inner1 nested/Test Inner1
+  // access flags 0x9
+  public static INNERCLASS nested/Test$Inner2 nested/Test Inner2
+
+  // access flags 0x1
+  public <init>()V
+}

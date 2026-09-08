@@ -1,0 +1,186 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  // access flags 0x19
+  public final static C char_char = 0
+
+  // access flags 0x19
+  public final static C char_short = 0
+
+  // access flags 0x19
+  public final static C char_int = 0
+
+  // access flags 0x19
+  public final static C char_long = 0
+
+  // access flags 0x19
+  public final static C char_float = 0
+
+  // access flags 0x19
+  public final static C char_double = 0
+
+  // access flags 0x19
+  public final static C char_byte = 0
+
+  // access flags 0x19
+  public final static S short_char = 0
+
+  // access flags 0x19
+  public final static S short_short = 0
+
+  // access flags 0x19
+  public final static S short_int = 0
+
+  // access flags 0x19
+  public final static S short_long = 0
+
+  // access flags 0x19
+  public final static S short_float = 0
+
+  // access flags 0x19
+  public final static S short_double = 0
+
+  // access flags 0x19
+  public final static S short_byte = 0
+
+  // access flags 0x19
+  public final static I int_char = 0
+
+  // access flags 0x19
+  public final static I int_short = 0
+
+  // access flags 0x19
+  public final static I int_int = 0
+
+  // access flags 0x19
+  public final static I int_long = 0
+
+  // access flags 0x19
+  public final static I int_float = 0
+
+  // access flags 0x19
+  public final static I int_double = 0
+
+  // access flags 0x19
+  public final static I int_byte = 0
+
+  // access flags 0x19
+  public final static J long_char = 0L
+
+  // access flags 0x19
+  public final static J long_short = 0L
+
+  // access flags 0x19
+  public final static J long_int = 0L
+
+  // access flags 0x19
+  public final static J long_long = 0L
+
+  // access flags 0x19
+  public final static J long_float = 0L
+
+  // access flags 0x19
+  public final static J long_double = 0L
+
+  // access flags 0x19
+  public final static J long_byte = 0L
+
+  // access flags 0x19
+  public final static F float_char = 0.0F
+
+  // access flags 0x19
+  public final static F float_short = 0.0F
+
+  // access flags 0x19
+  public final static F float_int = 0.0F
+
+  // access flags 0x19
+  public final static F float_long = 0.0F
+
+  // access flags 0x19
+  public final static F float_float = 0.0F
+
+  // access flags 0x19
+  public final static F float_double = 0.0F
+
+  // access flags 0x19
+  public final static F float_byte = 0.0F
+
+  // access flags 0x19
+  public final static D double_char = 0.0D
+
+  // access flags 0x19
+  public final static D double_short = 0.0D
+
+  // access flags 0x19
+  public final static D double_int = 0.0D
+
+  // access flags 0x19
+  public final static D double_long = 0.0D
+
+  // access flags 0x19
+  public final static D double_float = 0.0D
+
+  // access flags 0x19
+  public final static D double_double = 0.0D
+
+  // access flags 0x19
+  public final static D double_byte = 0.0D
+
+  // access flags 0x19
+  public final static B byte_char = 0
+
+  // access flags 0x19
+  public final static B byte_short = 0
+
+  // access flags 0x19
+  public final static B byte_int = 0
+
+  // access flags 0x19
+  public final static B byte_long = 0
+
+  // access flags 0x19
+  public final static B byte_float = 0
+
+  // access flags 0x19
+  public final static B byte_double = 0
+
+  // access flags 0x19
+  public final static B byte_byte = 0
+
+  // access flags 0x19
+  public final static Ljava/lang/String; char_string = "\u0000"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; short_string = "0"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; int_string = "0"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; long_string = "0"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; float_string = "0.0"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; double_string = "0.0"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; boolean_string = "false"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; byte_string = "0"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; String_string
+
+  // access flags 0x19
+  public final static Ljava/lang/String; null_string
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,130 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Outer$StaticMiddle$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Outer$StaticMiddle$Inner<U>
+class Outer$StaticMiddle$Inner {
+
+  NESTHOST Outer
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle Outer StaticMiddle
+  // access flags 0x0
+  INNERCLASS Outer$StaticMiddle$Inner Outer$StaticMiddle Inner
+
+  // access flags 0x0
+  <init>(LOuter$StaticMiddle;)V
+}
+=== Outer$StaticMiddle$StaticInner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Outer$StaticMiddle$StaticInner<U>
+class Outer$StaticMiddle$StaticInner {
+
+  NESTHOST Outer
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle Outer StaticMiddle
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle$StaticInner Outer$StaticMiddle StaticInner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Outer$StaticMiddle.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Outer$StaticMiddle<T>
+class Outer$StaticMiddle {
+
+  NESTHOST Outer
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle Outer StaticMiddle
+  // access flags 0x0
+  INNERCLASS Outer$StaticMiddle$Inner Outer$StaticMiddle Inner
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle$StaticInner Outer$StaticMiddle StaticInner
+
+  // access flags 0x0
+  LOuter$StaticMiddle$Inner; a
+  @LA;() : FIELD, . // invisible
+
+  // access flags 0x0
+  LOuter$StaticMiddle$StaticInner; b
+  @LA;() : FIELD, null // invisible
+
+  // access flags 0x0
+  <init>()V
+}
+=== Outer.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer {
+
+  NESTMEMBER Outer$StaticMiddle
+  NESTMEMBER Outer$StaticMiddle$Inner
+  NESTMEMBER Outer$StaticMiddle$StaticInner
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle Outer StaticMiddle
+  // access flags 0x0
+  INNERCLASS Outer$StaticMiddle$Inner Outer$StaticMiddle Inner
+  // access flags 0x8
+  static INNERCLASS Outer$StaticMiddle$StaticInner Outer$StaticMiddle StaticInner
+
+  // access flags 0x0
+  LOuter$StaticMiddle$Inner; e
+  @LA;() : FIELD, . // invisible
+
+  // access flags 0x0
+  LOuter$StaticMiddle$StaticInner; f
+  @LA;() : FIELD, null // invisible
+
+  // access flags 0x0
+  // signature LOuter$StaticMiddle<Ljava/lang/String;>.Inner<Ljava/lang/String;>;
+  // declaration: g extends Outer$StaticMiddle<java.lang.String>.Inner<java.lang.String>
+  LOuter$StaticMiddle$Inner; g
+  @LA;() : FIELD, 0; // invisible
+  @LB;() : FIELD, . // invisible
+  @LC;() : FIELD, .0; // invisible
+
+  // access flags 0x0
+  // signature LOuter$StaticMiddle<Ljava/util/List;>.Inner<Ljava/util/List;>;
+  // declaration: h extends Outer$StaticMiddle<java.util.List>.Inner<java.util.List>
+  LOuter$StaticMiddle$Inner; h
+  @LA;() : FIELD, 0; // invisible
+  @LB;() : FIELD, . // invisible
+  @LC;() : FIELD, .0; // invisible
+
+  // access flags 0x0
+  // signature Ljava/util/List<LOuter$StaticMiddle$StaticInner;>;
+  // declaration: i extends java.util.List<Outer$StaticMiddle$StaticInner>
+  Ljava/util/List; i
+  @LA;() : FIELD, 0; // invisible
+
+  // access flags 0x0
+  <init>()V
+}

@@ -1,0 +1,37 @@
+=== pkg/Anno1.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno1 implements java/lang/annotation/Annotation {
+
+}
+=== pkg/Anno2.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno2 implements java/lang/annotation/Annotation {
+
+}
+=== pkg/Anno3.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno3 implements java/lang/annotation/Annotation {
+
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  @Lpkg/Anno1;() // invisible
+
+  // access flags 0x0
+  I x
+  @Lpkg/Anno3;() // invisible
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  a()V
+  @Lpkg/Anno2;() // invisible
+}

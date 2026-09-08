@@ -1,0 +1,53 @@
+=== test/One$Builder.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class test/One$Builder {
+
+  NESTHOST test/One
+  // access flags 0x409
+  public static abstract INNERCLASS test/One$Builder test/One Builder
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/One.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class test/One {
+
+  NESTMEMBER test/One$Builder
+  // access flags 0x409
+  public static abstract INNERCLASS test/One$Builder test/One Builder
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Two$Builder.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Two$Builder extends test/One$Builder {
+
+  NESTHOST test/Two
+  // access flags 0x409
+  public static abstract INNERCLASS test/One$Builder test/One Builder
+  // access flags 0x9
+  public static INNERCLASS test/Two$Builder test/Two Builder
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  build()Ltest/Two$Builder;
+}
+=== test/Two.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Two extends test/One {
+
+  NESTMEMBER test/Two$Builder
+  // access flags 0x9
+  public static INNERCLASS test/Two$Builder test/Two Builder
+
+  // access flags 0x1
+  public <init>()V
+}

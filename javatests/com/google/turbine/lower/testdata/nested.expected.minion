@@ -1,0 +1,24 @@
+=== nested/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class nested/Test$Inner {
+
+  NESTHOST nested/Test
+  // access flags 0x9
+  public static INNERCLASS nested/Test$Inner nested/Test Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== nested/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class nested/Test {
+
+  NESTMEMBER nested/Test$Inner
+  // access flags 0x9
+  public static INNERCLASS nested/Test$Inner nested/Test Inner
+
+  // access flags 0x1
+  public <init>()V
+}

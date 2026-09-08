@@ -278,13 +278,13 @@ public class TurbineElementsGetAllMembersTest {
   public void test() throws Exception {
     JavacTask javacTask =
         IntegrationTestSupport.runJavacAnalysis(
-            input.sources, ImmutableList.of(), ImmutableList.of());
+            input.sources(), ImmutableList.of(), ImmutableList.of());
     Elements javacElements = javacTask.getElements();
     List<? extends Element> javacMembers =
         javacElements.getAllMembers(requireNonNull(javacElements.getTypeElement("Test")));
 
     ImmutableList<CompUnit> units =
-        input.sources.entrySet().stream()
+        input.sources().entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());

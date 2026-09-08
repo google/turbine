@@ -1,0 +1,31 @@
+=== test/Maps$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x420
+abstract class test/Maps$Inner {
+
+  NESTHOST test/Maps
+  // access flags 0x609
+  public static abstract INNERCLASS java/util/Map$Entry java/util/Map Entry
+  // access flags 0x400
+  abstract INNERCLASS test/Maps$Inner test/Maps Inner
+
+  // access flags 0x0
+  <init>(Ltest/Maps;)V
+
+  // access flags 0x400
+  // signature ()Ljava/util/Set<Ljava/util/Map$Entry<Ljava/lang/String;Ljava/lang/Integer;>;>;
+  // declaration: java.util.Set<java.util.Map$Entry<java.lang.String, java.lang.Integer>> entries()
+  abstract entries()Ljava/util/Set;
+}
+=== test/Maps.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class test/Maps implements java/util/Map {
+
+  NESTMEMBER test/Maps$Inner
+  // access flags 0x400
+  abstract INNERCLASS test/Maps$Inner test/Maps Inner
+
+  // access flags 0x1
+  public <init>()V
+}

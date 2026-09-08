@@ -125,13 +125,13 @@ public class TurbineElementsTest {
   public void setup() throws Exception {
     JavacTask task =
         IntegrationTestSupport.runJavacAnalysis(
-            SOURCES.sources, ImmutableList.of(), ImmutableList.of());
+            SOURCES.sources(), ImmutableList.of(), ImmutableList.of());
     task.analyze();
     javacElements = task.getElements();
 
     BindingResult bound =
         IntegrationTestSupport.turbineAnalysis(
-            SOURCES.sources,
+            SOURCES.sources(),
             ImmutableList.of(),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());

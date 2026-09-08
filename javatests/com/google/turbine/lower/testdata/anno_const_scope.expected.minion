@@ -1,0 +1,56 @@
+=== Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()Ljava/lang/String;
+    default=""
+}
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+
+  @LAnno;(value="test") // invisible
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x19
+  public final static Ljava/lang/String; CONST = "inner"
+
+  // access flags 0x0
+  <init>(LTest;)V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  @LAnno;(value="one") // invisible
+  NESTMEMBER Test$Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+
+  // access flags 0x19
+  public final static Ljava/lang/String; CONST = "test"
+
+  // access flags 0x0
+  <init>()V
+}
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A {
+
+
+  // access flags 0x19
+  public final static Ljava/lang/String; CONST = "one"
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,27 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER, Ljava/lang/annotation/ElementType;.METHOD, Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Test {
+
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/Object;>(Ljava/util/function/Function<TT;Ljava/lang/Throwable;>;)Ljava/util/function/Function<TT;Ljava/lang/Throwable;>;
+  // declaration: java.util.function.Function<T, java.lang.Throwable> a<T>(java.util.function.Function<T, java.lang.Throwable>)
+  public abstract a(Ljava/util/function/Function;)Ljava/util/function/Function;
+  @LA;() // invisible
+  @LA;() : METHOD_TYPE_PARAMETER_BOUND 0, 0, null // invisible
+  @LA;() : METHOD_RETURN, 1; // invisible
+  @LA;() : METHOD_RETURN, null // invisible
+  @LA;() : METHOD_FORMAL_PARAMETER 0, 1; // invisible
+  @LA;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+    // annotable parameter count: 1 (invisible)
+    @LA;() // invisible, parameter 0
+}

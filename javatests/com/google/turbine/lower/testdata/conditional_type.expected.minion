@@ -1,0 +1,15 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  // access flags 0x19
+  public final static Ljava/lang/String; S = "\u0001"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; T = "65536"
+
+  // access flags 0x1
+  public <init>()V
+}

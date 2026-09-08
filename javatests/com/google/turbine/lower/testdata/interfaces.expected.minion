@@ -1,0 +1,21 @@
+=== Default.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Default implements test/I1 test/I2 {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/I1.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface test/I1 {
+
+}
+=== test/I2.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface test/I2 {
+
+}

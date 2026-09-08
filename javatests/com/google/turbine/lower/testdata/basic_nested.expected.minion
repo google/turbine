@@ -1,0 +1,129 @@
+=== test/A$AOne$ATwo.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/A$AOne$ATwo extends test/A$AOne {
+
+  NESTHOST test/A
+  // access flags 0x8
+  static INNERCLASS test/A$AOne test/A AOne
+  // access flags 0x8
+  static INNERCLASS test/A$AOne$ATwo test/A$AOne ATwo
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/A$AOne.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/A$AOne {
+
+  NESTHOST test/A
+  // access flags 0x8
+  static INNERCLASS test/A$AOne test/A AOne
+  // access flags 0x8
+  static INNERCLASS test/A$AOne$ATwo test/A$AOne ATwo
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/A$AThree.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/A$AThree extends test/C {
+
+  NESTHOST test/A
+  // access flags 0x8
+  static INNERCLASS test/A$AThree test/A AThree
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/A {
+
+  NESTMEMBER test/A$AOne
+  NESTMEMBER test/A$AOne$ATwo
+  NESTMEMBER test/A$AThree
+  // access flags 0x8
+  static INNERCLASS test/A$AOne test/A AOne
+  // access flags 0x8
+  static INNERCLASS test/A$AOne$ATwo test/A$AOne ATwo
+  // access flags 0x8
+  static INNERCLASS test/A$AThree test/A AThree
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/B$BOne.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/B$BOne extends test/A$AOne {
+
+  NESTHOST test/B
+  // access flags 0x8
+  static INNERCLASS test/A$AOne test/A AOne
+  // access flags 0x8
+  static INNERCLASS test/B$BOne test/B BOne
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/B.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/B extends test/A {
+
+  NESTMEMBER test/B$BOne
+  // access flags 0x8
+  static INNERCLASS test/B$BOne test/B BOne
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/C$COne$CTwo.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/C$COne$CTwo extends test/B$BOne {
+
+  NESTHOST test/C
+  // access flags 0x8
+  static INNERCLASS test/B$BOne test/B BOne
+  // access flags 0x8
+  static INNERCLASS test/C$COne test/C COne
+  // access flags 0x8
+  static INNERCLASS test/C$COne$CTwo test/C$COne CTwo
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/C$COne.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/C$COne extends test/B {
+
+  NESTHOST test/C
+  // access flags 0x8
+  static INNERCLASS test/C$COne test/C COne
+  // access flags 0x8
+  static INNERCLASS test/C$COne$CTwo test/C$COne CTwo
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/C.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/C {
+
+  NESTMEMBER test/C$COne
+  NESTMEMBER test/C$COne$CTwo
+  // access flags 0x8
+  static INNERCLASS test/C$COne test/C COne
+  // access flags 0x8
+  static INNERCLASS test/C$COne$CTwo test/C$COne CTwo
+
+  // access flags 0x0
+  <init>()V
+}

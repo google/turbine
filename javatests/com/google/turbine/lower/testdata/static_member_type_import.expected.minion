@@ -1,0 +1,35 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test extends a/A$Inner {
+
+  // access flags 0x9
+  public static INNERCLASS a/A$Inner a/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A$Inner {
+
+  NESTHOST a/A
+  // access flags 0x9
+  public static INNERCLASS a/A$Inner a/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A {
+
+  NESTMEMBER a/A$Inner
+  // access flags 0x9
+  public static INNERCLASS a/A$Inner a/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}

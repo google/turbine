@@ -1,0 +1,11 @@
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Lpkg/Simple<TT;>;>Ljava/lang/Object;
+// declaration: pkg/Simple<T extends pkg.Simple<T>>
+public class pkg/Simple {
+
+
+  // access flags 0x1
+  public <init>()V
+}

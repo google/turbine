@@ -1,0 +1,43 @@
+=== test/Test$State.class ===
+// class version 69.0 (69)
+// access flags 0x4030
+// signature Ljava/lang/Enum<Ltest/Test$State;>;
+// declaration: test/Test$State extends java.lang.Enum<test.Test$State>
+final enum test/Test$State extends java/lang/Enum {
+
+  NESTHOST test/Test
+  // access flags 0x4018
+  final static enum INNERCLASS test/Test$State test/Test State
+
+  // access flags 0x4019
+  public final static enum Ltest/Test$State; READY
+
+  // access flags 0x4019
+  public final static enum Ltest/Test$State; SET
+
+  // access flags 0x4019
+  public final static enum Ltest/Test$State; GO
+
+  // access flags 0x9
+  public static values()[Ltest/Test$State;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/Test$State;
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x421
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Iterator<TT;>;
+// declaration: test/Test<T> implements java.util.Iterator<T>
+public abstract class test/Test implements java/util/Iterator {
+
+  NESTMEMBER test/Test$State
+  // access flags 0x4018
+  final static enum INNERCLASS test/Test$State test/Test State
+
+  // access flags 0x1
+  public Ltest/Test$State; state
+
+  // access flags 0x1
+  public <init>()V
+}

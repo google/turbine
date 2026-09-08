@@ -1,0 +1,30 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x18
+  final static I non = 42
+
+  // access flags 0x18
+  final static I sealed = 1
+
+  // access flags 0x18
+  final static I x = 41
+
+  // access flags 0x0
+  <init>()V
+}
+=== non.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class non {
+
+
+  // access flags 0x0
+  Lnon; self
+
+  // access flags 0x0
+  <init>()V
+}

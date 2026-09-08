@@ -1,0 +1,44 @@
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class C extends Sup$I {
+
+  // access flags 0x9
+  public static INNERCLASS Sup$I Sup I
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Sub.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Sub extends Sup {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Sup$I.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Sup$I {
+
+  NESTHOST Sup
+  // access flags 0x9
+  public static INNERCLASS Sup$I Sup I
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Sup.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Sup {
+
+  NESTMEMBER Sup$I
+  // access flags 0x9
+  public static INNERCLASS Sup$I Sup I
+
+  // access flags 0x1
+  public <init>()V
+}

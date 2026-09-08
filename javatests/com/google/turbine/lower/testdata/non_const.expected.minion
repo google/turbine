@@ -1,0 +1,43 @@
+=== Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()[I
+    default={}
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x19
+  public final static I A
+
+  // access flags 0x19
+  public final static I B
+
+  // access flags 0x19
+  public final static I C
+
+  // access flags 0x19
+  public final static I D
+
+  // access flags 0x19
+  public final static S E
+
+  // access flags 0x19
+  public final static [I F
+
+  // access flags 0x19
+  public final static I G
+
+  // access flags 0x19
+  public final static Ljava/lang/String; H
+
+  // access flags 0x0
+  <init>()V
+}

@@ -1,0 +1,33 @@
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T {
+
+
+  // access flags 0x19
+  public final static Z Z
+
+  // access flags 0x19
+  public final static B B
+
+  // access flags 0x19
+  public final static C C
+
+  // access flags 0x19
+  public final static S S
+
+  // access flags 0x19
+  public final static I I
+
+  // access flags 0x19
+  public final static J L
+
+  // access flags 0x19
+  public final static D D
+
+  // access flags 0x19
+  public final static F F
+
+  // access flags 0x0
+  <init>()V
+}

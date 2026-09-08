@@ -1,0 +1,100 @@
+=== test/A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/A$Inner {
+
+  NESTHOST test/A
+  // access flags 0x1
+  public INNERCLASS test/A$Inner test/A Inner
+
+  // access flags 0x1
+  public <init>(Ltest/A;)V
+}
+=== test/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/A<U>
+public class test/A {
+
+  NESTMEMBER test/A$Inner
+  // access flags 0x1
+  public INNERCLASS test/A$Inner test/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/I$Holder.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Ltest/A<TT;>;
+// declaration: test/I$Holder extends test.A<T>
+public class test/I$Holder extends test/A {
+
+  NESTHOST test/I
+  // access flags 0x1
+  public INNERCLASS test/I$Holder test/I Holder
+
+  // access flags 0x1
+  public <init>(Ltest/I;)V
+}
+=== test/I.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/I<T>
+public class test/I {
+
+  NESTMEMBER test/I$Holder
+  // access flags 0x1
+  public INNERCLASS test/I$Holder test/I Holder
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/J.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Ltest/I<Ljava/lang/String;>;
+// declaration: test/J extends test.I<java.lang.String>
+public class test/J extends test/I {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Test$K.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Ltest/I<Ljava/lang/String;>.Holder;
+// declaration: test/Test$K extends test.I<java.lang.String>.Holder
+public class test/Test$K extends test/I$Holder {
+
+  NESTHOST test/Test
+  // access flags 0x1
+  public INNERCLASS test/I$Holder test/I Holder
+  // access flags 0x1
+  public INNERCLASS test/Test$K test/Test K
+
+  // access flags 0x1
+  public <init>(Ltest/Test;)V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test extends test/J {
+
+  NESTMEMBER test/Test$K
+  // access flags 0x1
+  public INNERCLASS test/A$Inner test/A Inner
+  // access flags 0x1
+  public INNERCLASS test/Test$K test/Test K
+
+  // access flags 0x0
+  // signature Ltest/A<Ljava/lang/String;>.Inner;
+  // declaration: i extends test.A<java.lang.String>.Inner
+  Ltest/A$Inner; i
+
+  // access flags 0x1
+  public <init>()V
+}

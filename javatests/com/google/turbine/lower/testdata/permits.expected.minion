@@ -1,0 +1,48 @@
+=== A$B.class ===
+// class version 69.0 (69)
+// access flags 0x31
+public final class A$B implements A {
+
+  NESTHOST A
+  // access flags 0x19
+  public final static INNERCLASS A$B A B
+
+  // access flags 0x1
+  public <init>()V
+}
+=== A$C.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class A$C extends java/lang/Record implements A {
+
+  NESTHOST A
+  // access flags 0x19
+  public final static INNERCLASS A$C A C
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+}
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface A {
+
+  NESTMEMBER A$B
+  NESTMEMBER A$C
+  PERMITTEDSUBCLASS A$B
+  PERMITTEDSUBCLASS A$C
+  // access flags 0x19
+  public final static INNERCLASS A$B A B
+  // access flags 0x19
+  public final static INNERCLASS A$C A C
+}

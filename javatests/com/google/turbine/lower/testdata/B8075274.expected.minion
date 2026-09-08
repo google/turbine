@@ -1,0 +1,56 @@
+=== P/Outer$Nested.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Outer$Nested implements P/Q/D$I {
+
+  NESTHOST P/Outer
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+  // access flags 0x609
+  public static abstract INNERCLASS P/Q/D$I P/Q/D I
+
+  // access flags 0x1
+  public <init>()V
+}
+=== P/Outer.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Outer {
+
+  NESTMEMBER P/Outer$Nested
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+
+  // access flags 0x1
+  public <init>()V
+}
+=== P/Q/C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Q/C extends P/Q/D {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== P/Q/D$I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface P/Q/D$I {
+
+  NESTHOST P/Q/D
+  // access flags 0x609
+  public static abstract INNERCLASS P/Q/D$I P/Q/D I
+}
+=== P/Q/D.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Q/D {
+
+  NESTMEMBER P/Q/D$I
+  // access flags 0x609
+  public static abstract INNERCLASS P/Q/D$I P/Q/D I
+
+  // access flags 0x1
+  public <init>()V
+}

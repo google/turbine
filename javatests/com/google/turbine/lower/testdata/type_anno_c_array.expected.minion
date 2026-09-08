@@ -1,0 +1,71 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== D.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface D implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x18
+  final static [I as
+  @LA;() : FIELD, null
+
+  // access flags 0x18
+  final static [[I bs
+  @LA;() : FIELD, null
+  @LB;() : FIELD, [
+
+  // access flags 0x18
+  final static [[[I cs
+  @LA;() : FIELD, null
+  @LB;() : FIELD, [
+  @LC;() : FIELD, [[
+
+  // access flags 0x18
+  final static [[[[I ds
+  @LA;() : FIELD, null
+  @LB;() : FIELD, [
+  @LC;() : FIELD, [[
+  @LD;() : FIELD, [[[
+
+  // access flags 0x0
+  <init>()V
+}

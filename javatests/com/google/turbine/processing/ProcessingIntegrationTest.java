@@ -747,7 +747,7 @@ public class ProcessingIntegrationTest {
 
   private static ImmutableList<Tree.CompUnit> parseUnit(String... lines) {
     return IntegrationTestSupport.TestInput.parse(Joiner.on('\n').join(lines))
-        .sources
+        .sources()
         .entrySet()
         .stream()
         .map(e -> new SourceFile(e.getKey(), e.getValue()))

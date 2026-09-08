@@ -1,0 +1,443 @@
+=== Ano$A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ano$A$Inner {
+
+  NESTHOST Ano
+  // access flags 0x9
+  public static INNERCLASS Ano$A Ano A
+  // access flags 0x9
+  public static INNERCLASS Ano$A$Inner Ano$A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ano$A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ano$A {
+
+  NESTHOST Ano
+  // access flags 0x9
+  public static INNERCLASS Ano$A Ano A
+  // access flags 0x9
+  public static INNERCLASS Ano$A$Inner Ano$A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ano$B$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ano$B$Inner {
+
+  NESTHOST Ano
+  // access flags 0x9
+  public static INNERCLASS Ano$B Ano B
+  // access flags 0x1
+  public INNERCLASS Ano$B$Inner Ano$B Inner
+
+  // access flags 0x1
+  public <init>(LAno$B;)V
+}
+=== Ano$B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ano$B {
+
+  NESTHOST Ano
+  // access flags 0x9
+  public static INNERCLASS Ano$B Ano B
+  // access flags 0x1
+  public INNERCLASS Ano$B$Inner Ano$B Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ano$C$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ano$C$Inner {
+
+  NESTHOST Ano
+  // access flags 0x9
+  public static INNERCLASS Ano$C Ano C
+  // access flags 0x1
+  public INNERCLASS Ano$C$Inner Ano$C Inner
+
+  // access flags 0x1
+  public <init>(LAno$C;)V
+}
+=== Ano$C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ano$C {
+
+  NESTHOST Ano
+  // access flags 0x9
+  public static INNERCLASS Ano$C Ano C
+  // access flags 0x1
+  public INNERCLASS Ano$C$Inner Ano$C Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ano.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Ano implements java/lang/annotation/Annotation {
+
+  NESTMEMBER Ano$A
+  NESTMEMBER Ano$A$Inner
+  NESTMEMBER Ano$B
+  NESTMEMBER Ano$B$Inner
+  NESTMEMBER Ano$C
+  NESTMEMBER Ano$C$Inner
+  // access flags 0x9
+  public static INNERCLASS Ano$A Ano A
+  // access flags 0x9
+  public static INNERCLASS Ano$A$Inner Ano$A Inner
+  // access flags 0x9
+  public static INNERCLASS Ano$B Ano B
+  // access flags 0x1
+  public INNERCLASS Ano$B$Inner Ano$B Inner
+  // access flags 0x9
+  public static INNERCLASS Ano$C Ano C
+  // access flags 0x1
+  public INNERCLASS Ano$C$Inner Ano$C Inner
+}
+=== Cls$A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Cls$A$Inner {
+
+  NESTHOST Cls
+  // access flags 0x8
+  static INNERCLASS Cls$A Cls A
+  // access flags 0x9
+  public static INNERCLASS Cls$A$Inner Cls$A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Cls$A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Cls$A {
+
+  NESTHOST Cls
+  // access flags 0x8
+  static INNERCLASS Cls$A Cls A
+  // access flags 0x9
+  public static INNERCLASS Cls$A$Inner Cls$A Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Cls$B$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Cls$B$Inner {
+
+  NESTHOST Cls
+  // access flags 0x8
+  static INNERCLASS Cls$B Cls B
+  // access flags 0x1
+  public INNERCLASS Cls$B$Inner Cls$B Inner
+
+  // access flags 0x1
+  public <init>(LCls$B;)V
+}
+=== Cls$B.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Cls$B {
+
+  NESTHOST Cls
+  // access flags 0x8
+  static INNERCLASS Cls$B Cls B
+  // access flags 0x1
+  public INNERCLASS Cls$B$Inner Cls$B Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Cls$C$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Cls$C$Inner {
+
+  NESTHOST Cls
+  // access flags 0x0
+  INNERCLASS Cls$C Cls C
+  // access flags 0x1
+  public INNERCLASS Cls$C$Inner Cls$C Inner
+
+  // access flags 0x1
+  public <init>(LCls$C;)V
+}
+=== Cls$C.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Cls$C {
+
+  NESTHOST Cls
+  // access flags 0x0
+  INNERCLASS Cls$C Cls C
+  // access flags 0x1
+  public INNERCLASS Cls$C$Inner Cls$C Inner
+
+  // access flags 0x0
+  <init>(LCls;)V
+}
+=== Cls.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Cls {
+
+  NESTMEMBER Cls$A
+  NESTMEMBER Cls$A$Inner
+  NESTMEMBER Cls$B
+  NESTMEMBER Cls$B$Inner
+  NESTMEMBER Cls$C
+  NESTMEMBER Cls$C$Inner
+  // access flags 0x8
+  static INNERCLASS Cls$A Cls A
+  // access flags 0x9
+  public static INNERCLASS Cls$A$Inner Cls$A Inner
+  // access flags 0x8
+  static INNERCLASS Cls$B Cls B
+  // access flags 0x1
+  public INNERCLASS Cls$B$Inner Cls$B Inner
+  // access flags 0x0
+  INNERCLASS Cls$C Cls C
+  // access flags 0x1
+  public INNERCLASS Cls$C$Inner Cls$C Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Enm$A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Enm$A$Inner {
+
+  NESTHOST Enm
+  // access flags 0x8
+  static INNERCLASS Enm$A Enm A
+  // access flags 0x9
+  public static INNERCLASS Enm$A$Inner Enm$A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Enm$A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Enm$A {
+
+  NESTHOST Enm
+  // access flags 0x8
+  static INNERCLASS Enm$A Enm A
+  // access flags 0x9
+  public static INNERCLASS Enm$A$Inner Enm$A Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Enm$B$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Enm$B$Inner {
+
+  NESTHOST Enm
+  // access flags 0x8
+  static INNERCLASS Enm$B Enm B
+  // access flags 0x1
+  public INNERCLASS Enm$B$Inner Enm$B Inner
+
+  // access flags 0x1
+  public <init>(LEnm$B;)V
+}
+=== Enm$B.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Enm$B {
+
+  NESTHOST Enm
+  // access flags 0x8
+  static INNERCLASS Enm$B Enm B
+  // access flags 0x1
+  public INNERCLASS Enm$B$Inner Enm$B Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Enm$C$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Enm$C$Inner {
+
+  NESTHOST Enm
+  // access flags 0x0
+  INNERCLASS Enm$C Enm C
+  // access flags 0x1
+  public INNERCLASS Enm$C$Inner Enm$C Inner
+
+  // access flags 0x1
+  public <init>(LEnm$C;)V
+}
+=== Enm$C.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Enm$C {
+
+  NESTHOST Enm
+  // access flags 0x0
+  INNERCLASS Enm$C Enm C
+  // access flags 0x1
+  public INNERCLASS Enm$C$Inner Enm$C Inner
+
+  // access flags 0x0
+  <init>(LEnm;)V
+}
+=== Enm.class ===
+// class version 69.0 (69)
+// access flags 0x4030
+// signature Ljava/lang/Enum<LEnm;>;
+// declaration: Enm extends java.lang.Enum<Enm>
+final enum Enm extends java/lang/Enum {
+
+  NESTMEMBER Enm$A
+  NESTMEMBER Enm$A$Inner
+  NESTMEMBER Enm$B
+  NESTMEMBER Enm$B$Inner
+  NESTMEMBER Enm$C
+  NESTMEMBER Enm$C$Inner
+  // access flags 0x8
+  static INNERCLASS Enm$A Enm A
+  // access flags 0x9
+  public static INNERCLASS Enm$A$Inner Enm$A Inner
+  // access flags 0x8
+  static INNERCLASS Enm$B Enm B
+  // access flags 0x1
+  public INNERCLASS Enm$B$Inner Enm$B Inner
+  // access flags 0x0
+  INNERCLASS Enm$C Enm C
+  // access flags 0x1
+  public INNERCLASS Enm$C$Inner Enm$C Inner
+
+  // access flags 0x9
+  public static values()[LEnm;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LEnm;
+}
+=== Ifc$A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ifc$A$Inner {
+
+  NESTHOST Ifc
+  // access flags 0x9
+  public static INNERCLASS Ifc$A Ifc A
+  // access flags 0x9
+  public static INNERCLASS Ifc$A$Inner Ifc$A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ifc$A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ifc$A {
+
+  NESTHOST Ifc
+  // access flags 0x9
+  public static INNERCLASS Ifc$A Ifc A
+  // access flags 0x9
+  public static INNERCLASS Ifc$A$Inner Ifc$A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ifc$B$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ifc$B$Inner {
+
+  NESTHOST Ifc
+  // access flags 0x9
+  public static INNERCLASS Ifc$B Ifc B
+  // access flags 0x1
+  public INNERCLASS Ifc$B$Inner Ifc$B Inner
+
+  // access flags 0x1
+  public <init>(LIfc$B;)V
+}
+=== Ifc$B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ifc$B {
+
+  NESTHOST Ifc
+  // access flags 0x9
+  public static INNERCLASS Ifc$B Ifc B
+  // access flags 0x1
+  public INNERCLASS Ifc$B$Inner Ifc$B Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ifc$C$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ifc$C$Inner {
+
+  NESTHOST Ifc
+  // access flags 0x9
+  public static INNERCLASS Ifc$C Ifc C
+  // access flags 0x1
+  public INNERCLASS Ifc$C$Inner Ifc$C Inner
+
+  // access flags 0x1
+  public <init>(LIfc$C;)V
+}
+=== Ifc$C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Ifc$C {
+
+  NESTHOST Ifc
+  // access flags 0x9
+  public static INNERCLASS Ifc$C Ifc C
+  // access flags 0x1
+  public INNERCLASS Ifc$C$Inner Ifc$C Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Ifc.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Ifc {
+
+  NESTMEMBER Ifc$A
+  NESTMEMBER Ifc$A$Inner
+  NESTMEMBER Ifc$B
+  NESTMEMBER Ifc$B$Inner
+  NESTMEMBER Ifc$C
+  NESTMEMBER Ifc$C$Inner
+  // access flags 0x9
+  public static INNERCLASS Ifc$A Ifc A
+  // access flags 0x9
+  public static INNERCLASS Ifc$A$Inner Ifc$A Inner
+  // access flags 0x9
+  public static INNERCLASS Ifc$B Ifc B
+  // access flags 0x1
+  public INNERCLASS Ifc$B$Inner Ifc$B Inner
+  // access flags 0x9
+  public static INNERCLASS Ifc$C Ifc C
+  // access flags 0x1
+  public INNERCLASS Ifc$C$Inner Ifc$C Inner
+}

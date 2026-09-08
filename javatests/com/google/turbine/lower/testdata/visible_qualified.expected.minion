@@ -1,0 +1,27 @@
+=== Test$Super.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test$Super {
+
+  NESTHOST Test
+  // access flags 0x9
+  public static INNERCLASS Test$Super Test Super
+
+  // access flags 0x1
+  public <init>()V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+  NESTMEMBER Test$Super
+  // access flags 0x9
+  public static INNERCLASS Test$Super Test Super
+
+  // access flags 0x19
+  public final static D A = 3.14159D
+
+  // access flags 0x1
+  public <init>()V
+}

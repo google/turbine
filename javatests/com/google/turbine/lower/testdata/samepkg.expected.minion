@@ -1,0 +1,18 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/B extends a/A {
+
+
+  // access flags 0x1
+  public <init>()V
+}

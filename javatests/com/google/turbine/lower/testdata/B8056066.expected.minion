@@ -1,0 +1,30 @@
+=== P/Outer$Nested.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Outer$Nested implements P/Q/I {
+
+  NESTHOST P/Outer
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+
+  // access flags 0x1
+  public <init>()V
+}
+=== P/Outer.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Outer {
+
+  NESTMEMBER P/Outer$Nested
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+
+  // access flags 0x1
+  public <init>()V
+}
+=== P/Q/I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface P/Q/I {
+
+}

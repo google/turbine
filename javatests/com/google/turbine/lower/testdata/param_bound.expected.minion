@@ -1,0 +1,109 @@
+=== p/C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/C {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface p/I {
+
+}
+=== p/Test$Five.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T::Lp/I;>Ljava/lang/Object;
+// declaration: p/Test$Five<T extends p.I>
+class p/Test$Five {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$Five p/Test Five
+
+  // access flags 0x0
+  <init>(Lp/Test;)V
+}
+=== p/Test$Four.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <A::Lp/I;B::Lp/I;T:TA;>Ljava/lang/Object;
+// declaration: p/Test$Four<A extends p.I, B extends p.I, T extends A>
+class p/Test$Four {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$Four p/Test Four
+
+  // access flags 0x0
+  <init>(Lp/Test;)V
+}
+=== p/Test$One.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Lp/C;:Lp/I;>Ljava/lang/Object;
+// declaration: p/Test$One<T extends p.C extends p.I>
+class p/Test$One {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$One p/Test One
+
+  // access flags 0x0
+  <init>(Lp/Test;)V
+}
+=== p/Test$Three.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <U:Ljava/lang/Object;T:TU;>Ljava/lang/Object;
+// declaration: p/Test$Three<U, T extends U>
+class p/Test$Three {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$Three p/Test Three
+
+  // access flags 0x0
+  <init>(Lp/Test;)V
+}
+=== p/Test$Two.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Lp/C;>Ljava/lang/Object;
+// declaration: p/Test$Two<T extends p.C>
+class p/Test$Two {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$Two p/Test Two
+
+  // access flags 0x0
+  <init>(Lp/Test;)V
+}
+=== p/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/Test {
+
+  NESTMEMBER p/Test$Five
+  NESTMEMBER p/Test$Four
+  NESTMEMBER p/Test$One
+  NESTMEMBER p/Test$Three
+  NESTMEMBER p/Test$Two
+  // access flags 0x0
+  INNERCLASS p/Test$Five p/Test Five
+  // access flags 0x0
+  INNERCLASS p/Test$Four p/Test Four
+  // access flags 0x0
+  INNERCLASS p/Test$One p/Test One
+  // access flags 0x0
+  INNERCLASS p/Test$Three p/Test Three
+  // access flags 0x0
+  INNERCLASS p/Test$Two p/Test Two
+
+  // access flags 0x1
+  public <init>()V
+}

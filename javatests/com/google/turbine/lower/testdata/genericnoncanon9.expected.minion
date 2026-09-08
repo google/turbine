@@ -1,0 +1,72 @@
+=== test/B$F.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <X:Ljava/lang/Object;>Ltest/B<TX;>.Inner;
+// declaration: test/B$F<X> extends test.B<X>.Inner
+public class test/B$F extends test/B$Inner {
+
+  NESTHOST test/B
+  // access flags 0x1
+  public INNERCLASS test/B$F test/B F
+  // access flags 0x1
+  public INNERCLASS test/B$Inner test/B Inner
+
+  // access flags 0x1
+  public <init>(Ltest/B;)V
+}
+=== test/B$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/B$Inner {
+
+  NESTHOST test/B
+  // access flags 0x1
+  public INNERCLASS test/B$Inner test/B Inner
+
+  // access flags 0x1
+  public <init>(Ltest/B;)V
+}
+=== test/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/B<U>
+public class test/B {
+
+  NESTMEMBER test/B$F
+  NESTMEMBER test/B$Inner
+  // access flags 0x1
+  public INNERCLASS test/B$F test/B F
+  // access flags 0x1
+  public INNERCLASS test/B$Inner test/B Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/D.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <Z:Ljava/lang/Object;>Ltest/B<TZ;>;
+// declaration: test/D<Z> extends test.B<Z>
+public class test/D extends test/B {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+  // access flags 0x1
+  public INNERCLASS test/B$F test/B F
+
+  // access flags 0x0
+  // signature Ltest/B<Ljava/lang/Number;>.F<Ljava/lang/String;>;
+  // declaration: i3 extends test.B<java.lang.Number>.F<java.lang.String>
+  Ltest/B$F; i3
+
+  // access flags 0x1
+  public <init>()V
+}

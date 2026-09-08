@@ -1,0 +1,15 @@
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  // access flags 0x19
+  public final static J CONST1 = 10000L
+
+  // access flags 0x19
+  public final static I CONST2 = 10000
+
+  // access flags 0x1
+  public <init>()V
+}

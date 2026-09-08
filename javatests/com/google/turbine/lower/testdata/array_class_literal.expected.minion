@@ -1,0 +1,43 @@
+=== Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> value()
+  public abstract value()Ljava/lang/Class;
+    default=java.lang.Object.class
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+  // access flags 0x609
+  public static abstract INNERCLASS java/util/Map$Entry java/util/Map Entry
+
+  // access flags 0x0
+  I a
+  @LAnno;(value=byte[].class) // invisible
+
+  // access flags 0x0
+  I b
+  @LAnno;(value=byte[][].class) // invisible
+
+  // access flags 0x0
+  I c
+  @LAnno;(value=int[][].class) // invisible
+
+  // access flags 0x0
+  I d
+  @LAnno;(value=java.lang.Object[].class) // invisible
+
+  // access flags 0x0
+  I e
+  @LAnno;(value=java.util.Map$Entry[].class) // invisible
+
+  // access flags 0x0
+  <init>()V
+}

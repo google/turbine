@@ -1,0 +1,45 @@
+=== P/Outer$Nested$I.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class P/Outer$Nested$I {
+
+  NESTHOST P/Outer
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+  // access flags 0x8
+  static INNERCLASS P/Outer$Nested$I P/Outer$Nested I
+
+  // access flags 0x0
+  <init>()V
+}
+=== P/Outer$Nested.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:LP/Outer$Nested$I;>Ljava/lang/Object;
+// declaration: P/Outer$Nested<T extends P.Outer$Nested$I>
+public class P/Outer$Nested {
+
+  NESTHOST P/Outer
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+  // access flags 0x8
+  static INNERCLASS P/Outer$Nested$I P/Outer$Nested I
+
+  // access flags 0x1
+  public <init>()V
+}
+=== P/Outer.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class P/Outer {
+
+  NESTMEMBER P/Outer$Nested
+  NESTMEMBER P/Outer$Nested$I
+  // access flags 0x9
+  public static INNERCLASS P/Outer$Nested P/Outer Nested
+  // access flags 0x8
+  static INNERCLASS P/Outer$Nested$I P/Outer$Nested I
+
+  // access flags 0x1
+  public <init>()V
+}

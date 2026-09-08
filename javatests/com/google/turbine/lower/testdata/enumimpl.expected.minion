@@ -1,0 +1,41 @@
+=== test/EnumImpl$Foo.class ===
+// class version 69.0 (69)
+// access flags 0x4020
+// signature Ljava/lang/Enum<Ltest/EnumImpl$Foo;>;Ltest/I;
+// declaration: test/EnumImpl$Foo extends java.lang.Enum<test.EnumImpl$Foo> implements test.I
+enum test/EnumImpl$Foo extends java/lang/Enum implements test/I {
+
+  NESTHOST test/EnumImpl
+  // access flags 0x4008
+  static enum INNERCLASS test/EnumImpl$Foo test/EnumImpl Foo
+
+  // access flags 0x4019
+  public final static enum Ltest/EnumImpl$Foo; ONE
+
+  // access flags 0x9
+  public static values()[Ltest/EnumImpl$Foo;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/EnumImpl$Foo;
+}
+=== test/EnumImpl.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/EnumImpl {
+
+  NESTMEMBER test/EnumImpl$Foo
+  // access flags 0x4008
+  static enum INNERCLASS test/EnumImpl$Foo test/EnumImpl Foo
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface test/I {
+
+
+  // access flags 0x401
+  public abstract foo()Ljava/lang/String;
+}

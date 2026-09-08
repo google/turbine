@@ -1,0 +1,40 @@
+=== test/Test$Inner$InnerMost.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Test$Inner$InnerMost {
+
+  NESTHOST test/Test
+  // access flags 0x2
+  private INNERCLASS test/Test$Inner test/Test Inner
+  // access flags 0x2
+  private INNERCLASS test/Test$Inner$InnerMost test/Test$Inner InnerMost
+}
+=== test/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class test/Test$Inner {
+
+  NESTHOST test/Test
+  // access flags 0x2
+  private INNERCLASS test/Test$Inner test/Test Inner
+  // access flags 0x2
+  private INNERCLASS test/Test$Inner$InnerMost test/Test$Inner InnerMost
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+  NESTMEMBER test/Test$Inner
+  NESTMEMBER test/Test$Inner$InnerMost
+  // access flags 0x2
+  private INNERCLASS test/Test$Inner test/Test Inner
+  // access flags 0x2
+  private INNERCLASS test/Test$Inner$InnerMost test/Test$Inner InnerMost
+
+  // access flags 0x1
+  public Ltest/Test$Inner$InnerMost; x
+
+  // access flags 0x1
+  public <init>()V
+}

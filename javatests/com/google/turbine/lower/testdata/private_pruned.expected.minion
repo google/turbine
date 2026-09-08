@@ -1,0 +1,24 @@
+=== p/Test$A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test$A {
+
+  NESTHOST p/Test
+  // access flags 0xA
+  private static INNERCLASS p/Test$A p/Test A
+}
+=== p/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test {
+
+  NESTMEMBER p/Test$A
+  // access flags 0xA
+  private static INNERCLASS p/Test$A p/Test A
+
+  // access flags 0x19
+  public final static Lp/Test$A; a
+
+  // access flags 0x0
+  <init>()V
+}

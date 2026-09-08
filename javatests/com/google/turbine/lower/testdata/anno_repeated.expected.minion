@@ -1,0 +1,72 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Repeatable;(value=As.class)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.FIELD, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER, Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== As.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface As implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.FIELD, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER, Ljava/lang/annotation/ElementType;.PARAMETER})
+
+  // access flags 0x401
+  public abstract value()[LA;
+    default={}
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Repeatable;(value=Cs.class)
+}
+=== Cs.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Cs implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()[LC;
+    default={}
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x0
+  I x
+  @LAs;(value={@LA;(), @LA;()}) // invisible
+  @LBs;(value={@LB;(), @LB;()}) // invisible
+  @LAs;(value={@LA;(), @LA;()}) : FIELD, null // invisible
+
+  // access flags 0x0
+  // signature Ljava/util/Map<Ljava/lang/Integer;Ljava/lang/String;>;
+  // declaration: y extends java.util.Map<java.lang.Integer, java.lang.String>
+  Ljava/util/Map; y
+  @LA;() : FIELD, 1; // invisible
+  @LAs;(value={@LA;(), @LA;()}) : FIELD, 0; // invisible
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  // signature <X:Ljava/lang/Object;>(I)TX;
+  // declaration: X f<X>(int)
+  f(I)Ljava/lang/Object;
+  @LA;() : METHOD_RETURN, null // invisible
+  @LAs;(value={@LA;(), @LA;()}) : METHOD_TYPE_PARAMETER 0, null // invisible
+  @LAs;(value={@LA;(), @LA;()}) : METHOD_FORMAL_PARAMETER 0, null // invisible
+    // annotable parameter count: 1 (invisible)
+    @LAs;(value={@LA;(), @LA;()}) // invisible, parameter 0
+}

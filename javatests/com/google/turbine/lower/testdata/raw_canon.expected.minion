@@ -1,0 +1,53 @@
+=== Test$Inner$InnerMost.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner$InnerMost {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner$InnerMost Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>(LTest$Inner;)V
+}
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <V:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test$Inner<V>
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner$InnerMost Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>(LTest;)V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test<T>
+class Test {
+
+  NESTMEMBER Test$Inner
+  NESTMEMBER Test$Inner$InnerMost
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner$InnerMost Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  f(LTest$Inner;)V
+
+  // access flags 0x0
+  f(LTest$Inner$InnerMost;)V
+}

@@ -1,0 +1,108 @@
+=== Records$R1.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Records$R1 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$R1 Records R1
+  RECORDCOMPONENT   Ljava/lang/String; one
+
+  // access flags 0x1
+  public <init>(Ljava/lang/String;)V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public one()Ljava/lang/String;
+}
+=== Records$R2.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Records$R2 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$R2 Records R2
+  RECORDCOMPONENT   Ljava/lang/String; one
+
+  // DEPRECATED
+  // access flags 0x20001
+  public <init>(Ljava/lang/String;)V
+  @Ljava/lang/Deprecated;()
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public one()Ljava/lang/String;
+}
+=== Records$R3.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$R3<T> extends java.lang.Record
+public final class Records$R3 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$R3 Records R3
+  RECORDCOMPONENT   // signature TT;
+  // declaration: x extends T
+  Ljava/lang/Object; x
+
+  // DEPRECATED
+  // access flags 0x20001
+  // signature (TT;)V
+  // declaration: void <init>(T)
+  public <init>(Ljava/lang/Object;)V
+  @Ljava/lang/Deprecated;()
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  // signature ()TT;
+  // declaration: T x()
+  public x()Ljava/lang/Object;
+}
+=== Records.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Records {
+
+  NESTMEMBER Records$R1
+  NESTMEMBER Records$R2
+  NESTMEMBER Records$R3
+  // access flags 0x19
+  public final static INNERCLASS Records$R1 Records R1
+  // access flags 0x19
+  public final static INNERCLASS Records$R2 Records R2
+  // access flags 0x19
+  public final static INNERCLASS Records$R3 Records R3
+
+  // access flags 0x0
+  <init>()V
+}

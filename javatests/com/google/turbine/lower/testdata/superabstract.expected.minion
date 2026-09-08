@@ -1,0 +1,28 @@
+=== test/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x30
+// signature Lpkg/Simple$Inner<Ltest/Test;>;
+// declaration: test/Test$Inner extends pkg.Simple$Inner<test.Test>
+final class test/Test$Inner extends pkg/Simple$Inner {
+
+  NESTHOST test/Test
+  // access flags 0x409
+  public static abstract INNERCLASS pkg/Simple$Inner pkg/Simple Inner
+  // access flags 0x18
+  final static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x0
+  <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+  NESTMEMBER test/Test$Inner
+  // access flags 0x18
+  final static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x1
+  public <init>()V
+}

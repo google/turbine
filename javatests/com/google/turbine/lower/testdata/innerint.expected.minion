@@ -1,0 +1,36 @@
+=== pkg/Simple$I1.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface pkg/Simple$I1 {
+
+  NESTHOST pkg/Simple
+  // access flags 0x609
+  public static abstract INNERCLASS pkg/Simple$I1 pkg/Simple I1
+}
+=== pkg/Simple$I3.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple$I3 {
+
+  NESTHOST pkg/Simple
+  // access flags 0x9
+  public static INNERCLASS pkg/Simple$I3 pkg/Simple I3
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+  NESTMEMBER pkg/Simple$I1
+  NESTMEMBER pkg/Simple$I3
+  // access flags 0x609
+  public static abstract INNERCLASS pkg/Simple$I1 pkg/Simple I1
+  // access flags 0x9
+  public static INNERCLASS pkg/Simple$I3 pkg/Simple I3
+
+  // access flags 0x1
+  public <init>()V
+}

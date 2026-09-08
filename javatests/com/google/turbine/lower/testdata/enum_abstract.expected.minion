@@ -1,0 +1,118 @@
+=== EnumConstantEmptyBody.class ===
+// class version 69.0 (69)
+// access flags 0x4020
+// signature Ljava/lang/Enum<LEnumConstantEmptyBody;>;
+// declaration: EnumConstantEmptyBody extends java.lang.Enum<EnumConstantEmptyBody>
+enum EnumConstantEmptyBody extends java/lang/Enum {
+
+
+  // access flags 0x4019
+  public final static enum LEnumConstantEmptyBody; ONE
+
+  // access flags 0x9
+  public static values()[LEnumConstantEmptyBody;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LEnumConstantEmptyBody;
+}
+=== EnumConstantImplementsInterface.class ===
+// class version 69.0 (69)
+// access flags 0x4020
+// signature Ljava/lang/Enum<LEnumConstantImplementsInterface;>;LI;
+// declaration: EnumConstantImplementsInterface extends java.lang.Enum<EnumConstantImplementsInterface> implements I
+enum EnumConstantImplementsInterface extends java/lang/Enum implements I {
+
+
+  // access flags 0x4019
+  public final static enum LEnumConstantImplementsInterface; ONE
+
+  // access flags 0x9
+  public static values()[LEnumConstantImplementsInterface;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LEnumConstantImplementsInterface;
+}
+=== EnumConstantImplementsMethod.class ===
+// class version 69.0 (69)
+// access flags 0x4020
+// signature Ljava/lang/Enum<LEnumConstantImplementsMethod;>;
+// declaration: EnumConstantImplementsMethod extends java.lang.Enum<EnumConstantImplementsMethod>
+enum EnumConstantImplementsMethod extends java/lang/Enum {
+
+
+  // access flags 0x4019
+  public final static enum LEnumConstantImplementsMethod; ONE
+
+  // access flags 0x9
+  public static values()[LEnumConstantImplementsMethod;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LEnumConstantImplementsMethod;
+
+  // access flags 0x1
+  public f()V
+}
+=== EnumImplementsInterface.class ===
+// class version 69.0 (69)
+// access flags 0x4030
+// signature Ljava/lang/Enum<LEnumImplementsInterface;>;LI;
+// declaration: EnumImplementsInterface extends java.lang.Enum<EnumImplementsInterface> implements I
+final enum EnumImplementsInterface extends java/lang/Enum implements I {
+
+
+  // access flags 0x4019
+  public final static enum LEnumImplementsInterface; ONE
+
+  // access flags 0x9
+  public static values()[LEnumImplementsInterface;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LEnumImplementsInterface;
+
+  // access flags 0x1
+  public f()V
+}
+=== I.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface I {
+
+
+  // access flags 0x401
+  public abstract f()V
+}
+=== Test$E.class ===
+// class version 69.0 (69)
+// access flags 0x4020
+// signature Ljava/lang/Enum<LTest$E;>;
+// declaration: Test$E extends java.lang.Enum<Test$E>
+enum Test$E extends java/lang/Enum {
+
+  NESTHOST Test
+  // access flags 0x4008
+  static enum INNERCLASS Test$E Test E
+
+  // access flags 0x4019
+  public final static enum LTest$E; ONE
+
+  // access flags 0x4019
+  public final static enum LTest$E; TWO
+
+  // access flags 0x9
+  public static values()[LTest$E;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)LTest$E;
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+  NESTMEMBER Test$E
+  // access flags 0x4008
+  static enum INNERCLASS Test$E Test E
+
+  // access flags 0x0
+  <init>()V
+}

@@ -1,0 +1,17 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Ltest/Test;>;
+// declaration: test/Test extends java.lang.Enum<test.Test>
+public final enum test/Test extends java/lang/Enum {
+
+
+  // access flags 0x4019
+  public final static enum Ltest/Test; ONE
+
+  // access flags 0x9
+  public static values()[Ltest/Test;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/Test;
+}

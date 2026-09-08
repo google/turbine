@@ -22,6 +22,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.google.turbine.tree.Tree;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,67 +31,57 @@ import java.io.InputStreamReader;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(Parameterized.class)
+@RunWith(TestParameterInjector.class)
 public class ParserIntegrationTest {
 
-  @Parameters(name = "{index}: {0}")
-  public static String[] parameters() {
-    return new String[] {
-      "anno1.input",
-      "anno2.input",
-      "annodecl1.input",
-      "annodecl2.input",
-      "annodecl3.input",
-      "annouse.input",
-      "annouse2.input",
-      "annouse3.input",
-      "annouse4.input",
-      "annouse5.input",
-      "annouse6.input",
-      "class1.input",
-      "class2.input",
-      "class3.input",
-      "class4.input",
-      "class5.input",
-      "class6.input",
-      "class7.input",
-      "enum1.input",
-      "import1.input",
-      "member1.input",
-      "member2.input",
-      "member3.input",
-      "member4.input",
-      "methoddecl1.input",
-      "methoddecl2.input",
-      "methoddecl3.input",
-      "methoddecl4.input",
-      "methoddecl5.input",
-      "package1.input",
-      "package2.input",
-      "packinfo1.input",
-      "weirdstring.input",
-      "type_annotations.input",
-      "type_annotations_arrays.input",
-      "module-info.input",
-      "record.input",
-      "sealed.input",
-      "arrays.input",
-    };
-  }
-
-  final String input;
-
-  public ParserIntegrationTest(String input) {
-    this.input = input;
-  }
-
   @Test
-  public void test() throws IOException {
+  public void test(
+      @TestParameter({
+            "anno1.input",
+            "anno2.input",
+            "annodecl1.input",
+            "annodecl2.input",
+            "annodecl3.input",
+            "annouse.input",
+            "annouse2.input",
+            "annouse3.input",
+            "annouse4.input",
+            "annouse5.input",
+            "annouse6.input",
+            "class1.input",
+            "class2.input",
+            "class3.input",
+            "class4.input",
+            "class5.input",
+            "class6.input",
+            "class7.input",
+            "enum1.input",
+            "import1.input",
+            "member1.input",
+            "member2.input",
+            "member3.input",
+            "member4.input",
+            "methoddecl1.input",
+            "methoddecl2.input",
+            "methoddecl3.input",
+            "methoddecl4.input",
+            "methoddecl5.input",
+            "package1.input",
+            "package2.input",
+            "packinfo1.input",
+            "weirdstring.input",
+            "type_annotations.input",
+            "type_annotations_arrays.input",
+            "module-info.input",
+            "record.input",
+            "sealed.input",
+            "arrays.input",
+          })
+          String file)
+      throws IOException {
     InputStream stream =
-        verifyNotNull(ParserIntegrationTest.class.getResourceAsStream("testdata/" + input), input);
+        verifyNotNull(ParserIntegrationTest.class.getResourceAsStream("testdata/" + file), file);
     String result;
     try (InputStreamReader in = new InputStreamReader(stream, UTF_8)) {
       result = CharStreams.toString(in);

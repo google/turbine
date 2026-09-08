@@ -198,7 +198,7 @@ public class TurbineMessagerTest {
     DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
     JavacTask task =
         IntegrationTestSupport.runJavacAnalysis(
-            SOURCES.sources, ImmutableList.of(), ImmutableList.of(), collector);
+            SOURCES.sources(), ImmutableList.of(), ImmutableList.of(), collector);
     task.setProcessors(ImmutableList.of(new DiagnosticTesterProcessor()));
     task.call();
     ImmutableList<String> javacDiagnostics =
@@ -212,7 +212,7 @@ public class TurbineMessagerTest {
             .collect(toImmutableList());
 
     ImmutableList<Tree.CompUnit> units =
-        SOURCES.sources.entrySet().stream()
+        SOURCES.sources().entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());

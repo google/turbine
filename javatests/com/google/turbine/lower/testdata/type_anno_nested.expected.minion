@@ -1,0 +1,135 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Outer$Middle$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$Middle$Inner {
+
+  NESTHOST Outer
+  // access flags 0x0
+  INNERCLASS Outer$Middle Outer Middle
+  // access flags 0x0
+  INNERCLASS Outer$Middle$Inner Outer$Middle Inner
+
+  // access flags 0x0
+  <init>(LOuter$Middle;)V
+}
+=== Outer$Middle.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$Middle {
+
+  NESTHOST Outer
+  // access flags 0x0
+  INNERCLASS Outer$Middle Outer Middle
+  // access flags 0x0
+  INNERCLASS Outer$Middle$Inner Outer$Middle Inner
+
+  // access flags 0x0
+  <init>(LOuter;)V
+}
+=== Outer$MiddleStatic$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$MiddleStatic$Inner {
+
+  NESTHOST Outer
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic Outer MiddleStatic
+  // access flags 0x0
+  INNERCLASS Outer$MiddleStatic$Inner Outer$MiddleStatic Inner
+
+  // access flags 0x0
+  <init>(LOuter$MiddleStatic;)V
+}
+=== Outer$MiddleStatic$InnerStatic.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$MiddleStatic$InnerStatic {
+
+  NESTHOST Outer
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic Outer MiddleStatic
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic$InnerStatic Outer$MiddleStatic InnerStatic
+
+  // access flags 0x0
+  <init>()V
+}
+=== Outer$MiddleStatic.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer$MiddleStatic {
+
+  NESTHOST Outer
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic Outer MiddleStatic
+  // access flags 0x0
+  INNERCLASS Outer$MiddleStatic$Inner Outer$MiddleStatic Inner
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic$InnerStatic Outer$MiddleStatic InnerStatic
+
+  // access flags 0x0
+  <init>()V
+}
+=== Outer.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Outer {
+
+  NESTMEMBER Outer$Middle
+  NESTMEMBER Outer$Middle$Inner
+  NESTMEMBER Outer$MiddleStatic
+  NESTMEMBER Outer$MiddleStatic$Inner
+  NESTMEMBER Outer$MiddleStatic$InnerStatic
+  // access flags 0x0
+  INNERCLASS Outer$Middle Outer Middle
+  // access flags 0x0
+  INNERCLASS Outer$Middle$Inner Outer$Middle Inner
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic Outer MiddleStatic
+  // access flags 0x0
+  INNERCLASS Outer$MiddleStatic$Inner Outer$MiddleStatic Inner
+  // access flags 0x8
+  static INNERCLASS Outer$MiddleStatic$InnerStatic Outer$MiddleStatic InnerStatic
+
+  // access flags 0x0
+  LOuter$Middle$Inner; f
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, . // invisible
+  @LC;() : FIELD, .. // invisible
+
+  // access flags 0x0
+  LOuter$MiddleStatic$Inner; g
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, . // invisible
+
+  // access flags 0x0
+  LOuter$MiddleStatic$InnerStatic; h
+  @LA;() : FIELD, null // invisible
+
+  // access flags 0x0
+  <init>()V
+}

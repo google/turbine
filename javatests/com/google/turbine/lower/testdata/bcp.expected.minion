@@ -1,0 +1,31 @@
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: pkg/Simple<T>
+public class pkg/Simple {
+
+
+  // access flags 0x0
+  // signature Ljava/util/List<Ljava/lang/String;>;
+  // declaration: l1 extends java.util.List<java.lang.String>
+  Ljava/util/List; l1
+
+  // access flags 0x0
+  // signature Ljava/util/List<TT;>;
+  // declaration: l2 extends java.util.List<T>
+  Ljava/util/List; l2
+
+  // access flags 0x0
+  // signature Ljava/util/List<Ljava/util/List<TT;>;>;
+  // declaration: l3 extends java.util.List<java.util.List<T>>
+  Ljava/util/List; l3
+
+  // access flags 0x0
+  // signature Ljava/util/List<Ljava/util/List<TT;>;>;
+  // declaration: l4 extends java.util.List<java.util.List<T>>
+  Ljava/util/List; l4
+
+  // access flags 0x1
+  public <init>()V
+}

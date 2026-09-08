@@ -1,0 +1,53 @@
+=== test/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface test/Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()I
+    default=42
+}
+=== test/AnnoNested.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface test/AnnoNested implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()[Ltest/Anno;
+    default={}
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+
+  // access flags 0x0
+  I b
+  @Ltest/AnnoNested;(value={@Ltest/Anno;()}) // invisible
+
+  // access flags 0x0
+  I c
+  @Ltest/AnnoNested;(value={@Ltest/Anno;()}) // invisible
+
+  // access flags 0x0
+  I d
+  @Ltest/AnnoNested;(value={@Ltest/Anno;()}) // invisible
+
+  // access flags 0x0
+  I e
+  @Ltest/AnnoNested;(value={@Ltest/Anno;()}) // invisible
+
+  // access flags 0x0
+  I f
+  @Ltest/AnnoNested;(value={@Ltest/Anno;(value=42)}) // invisible
+
+  // access flags 0x0
+  I g
+  @Ltest/AnnoNested;(value={@Ltest/Anno;(value=42), @Ltest/Anno;(value=43)}) // invisible
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,23 @@
+=== Test$T.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Test$T {
+
+  NESTHOST Test
+  // access flags 0x608
+  static abstract INNERCLASS Test$T Test T
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test<T>
+class Test {
+
+  NESTMEMBER Test$T
+  // access flags 0x608
+  static abstract INNERCLASS Test$T Test T
+
+  // access flags 0x4
+  protected <init>(LTest$T;)V
+}

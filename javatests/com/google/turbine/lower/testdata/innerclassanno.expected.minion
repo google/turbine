@@ -1,0 +1,121 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface a/A implements java/lang/annotation/Annotation {
+
+  // access flags 0x2609
+  public static abstract INNERCLASS a/Anno$InnerAnno a/Anno InnerAnno
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> clazz()
+  public abstract clazz()Ljava/lang/Class;
+    default=a.Anno$InnerAnno.class
+}
+=== a/Anno$E.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<La/Anno$E;>;
+// declaration: a/Anno$E extends java.lang.Enum<a.Anno$E>
+public final enum a/Anno$E extends java/lang/Enum {
+
+  NESTHOST a/Anno
+  // access flags 0x4019
+  public final static enum INNERCLASS a/Anno$E a/Anno E
+
+  // access flags 0x4019
+  public final static enum La/Anno$E; ONE
+
+  // access flags 0x9
+  public static values()[La/Anno$E;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)La/Anno$E;
+}
+=== a/Anno$InnerAnno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface a/Anno$InnerAnno implements java/lang/annotation/Annotation {
+
+  NESTHOST a/Anno
+  // access flags 0x2609
+  public static abstract INNERCLASS a/Anno$InnerAnno a/Anno InnerAnno
+}
+=== a/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface a/Anno implements java/lang/annotation/Annotation {
+
+  NESTMEMBER a/Anno$E
+  NESTMEMBER a/Anno$InnerAnno
+  // access flags 0x4019
+  public final static enum INNERCLASS a/Anno$E a/Anno E
+  // access flags 0x2609
+  public static abstract INNERCLASS a/Anno$InnerAnno a/Anno InnerAnno
+
+  // access flags 0x401
+  // signature ()[Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?>[] clazz()
+  public abstract clazz()[Ljava/lang/Class;
+    default={}
+
+  // access flags 0x401
+  public abstract anno()[La/Anno$InnerAnno;
+    default={}
+
+  // access flags 0x401
+  public abstract enums()[La/Anno$E;
+    default={}
+}
+=== b/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class b/B {
+
+
+  @La/Anno$InnerAnno;() // invisible
+  // access flags 0x2609
+  public static abstract INNERCLASS a/Anno$InnerAnno a/Anno InnerAnno
+
+  // access flags 0x1
+  public <init>()V
+}
+=== c/C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class c/C {
+
+
+  @La/Anno;(clazz={a.Anno$InnerAnno.class}) // invisible
+  // access flags 0x2609
+  public static abstract INNERCLASS a/Anno$InnerAnno a/Anno InnerAnno
+
+  // access flags 0x1
+  public <init>()V
+}
+=== d/D.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class d/D {
+
+
+  @La/Anno;(anno={@La/Anno$InnerAnno;()}) // invisible
+  // access flags 0x2609
+  public static abstract INNERCLASS a/Anno$InnerAnno a/Anno InnerAnno
+
+  // access flags 0x1
+  public <init>()V
+}
+=== e/E.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class e/E {
+
+
+  @La/Anno;(enums={La/Anno$E;.ONE}) // invisible
+  // access flags 0x4019
+  public final static enum INNERCLASS a/Anno$E a/Anno E
+
+  // access flags 0x1
+  public <init>()V
+}

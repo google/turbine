@@ -1,0 +1,27 @@
+=== test/ClassPreamble.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface test/ClassPreamble implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract author()Ljava/lang/String;
+
+  // access flags 0x401
+  public abstract date()Ljava/lang/String;
+
+  // access flags 0x401
+  public abstract currentRevision()I
+    default=1
+
+  // access flags 0x401
+  public abstract lastModified()Ljava/lang/String;
+    default="N/A"
+
+  // access flags 0x401
+  public abstract lastModifiedBy()Ljava/lang/String;
+    default="N/A"
+
+  // access flags 0x401
+  public abstract reviewers()[Ljava/lang/String;
+}

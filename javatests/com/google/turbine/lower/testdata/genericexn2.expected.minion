@@ -1,0 +1,16 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x421
+// signature <E:Ljava/lang/Exception;>Ljava/lang/Object;
+// declaration: test/Test<E extends java.lang.Exception>
+public abstract class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x401
+  // signature ()Ljava/lang/String;^TE;
+  // declaration: java.lang.String get() throws E
+  public abstract get()Ljava/lang/String; throws java/lang/Exception
+}

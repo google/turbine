@@ -305,7 +305,7 @@ public class LowerTest {
             getResource(getClass(), "testdata/canon_array.test"));
 
     Map<String, byte[]> actual =
-        IntegrationTestSupport.runTurbine(input.sources, ImmutableList.of());
+        IntegrationTestSupport.runTurbine(input.sources(), ImmutableList.of());
 
     ByteReader reader = new ByteReader(actual.get("Test"), 0);
     assertThat(reader.u4()).isEqualTo(0xcafebabe); // magic

@@ -1,0 +1,33 @@
+=== Foo.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Foo extends java/lang/Record {
+
+  RECORDCOMPONENT   I bar
+  RECORDCOMPONENT   // signature Ljava/util/List<Ljava/lang/String;>;
+  // declaration: baz extends java.util.List<java.lang.String>
+  Ljava/util/List; baz
+
+  // access flags 0x1
+  // signature (ILjava/util/List<Ljava/lang/String;>;)V
+  // declaration: void <init>(int, java.util.List<java.lang.String>)
+  public <init>(ILjava/util/List;)V
+
+  // access flags 0x1
+  // signature ()Ljava/util/List<Ljava/lang/String;>;
+  // declaration: java.util.List<java.lang.String> baz()
+  public baz()Ljava/util/List;
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public bar()I
+}

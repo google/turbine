@@ -1,0 +1,57 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  // access flags 0x19
+  public final static I MAX_INT_DEC = 2147483647
+
+  // access flags 0x19
+  public final static I MIN_INT_DEC = -2147483648
+
+  // access flags 0x19
+  public final static I MAX_INT_HEX = 2147483647
+
+  // access flags 0x19
+  public final static I MIN_INT_HEX = -2147483648
+
+  // access flags 0x19
+  public final static I MAX_INT_OCT = 2147483647
+
+  // access flags 0x19
+  public final static I MIN_INT_OCT = -2147483648
+
+  // access flags 0x19
+  public final static I MAX_INT_BIN = 2147483647
+
+  // access flags 0x19
+  public final static I MIN_INT_BIN = -2147483648
+
+  // access flags 0x19
+  public final static J MAX_LONG_DEC = 9223372036854775807L
+
+  // access flags 0x19
+  public final static J MIN_LONG_DEC = -9223372036854775808L
+
+  // access flags 0x19
+  public final static J MAX_LONG_HEX = 9223372036854775807L
+
+  // access flags 0x19
+  public final static J MIN_LONG_HEX = -9223372036854775808L
+
+  // access flags 0x19
+  public final static J MAX_LONG_OCT = 9223372036854775807L
+
+  // access flags 0x19
+  public final static J MIN_LONG_OCT = -9223372036854775808L
+
+  // access flags 0x19
+  public final static J MAX_LONG_BIN = 9223372036854775807L
+
+  // access flags 0x19
+  public final static J MIN_LONG_BIN = -9223372036854775808L
+
+  // access flags 0x1
+  public <init>()V
+}

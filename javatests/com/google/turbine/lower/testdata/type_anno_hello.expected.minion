@@ -1,0 +1,186 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER})
+
+  // access flags 0x401
+  public abstract value()[I
+    default={0}
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER})
+}
+=== D.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface D implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER})
+}
+=== E.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface E implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER})
+}
+=== F.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface F implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER})
+}
+=== I.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface I {
+
+}
+=== Test$One$Two$Three.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <E:Ljava/lang/Object;F:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test$One$Two$Three<E, F>
+class Test$One$Two$Three {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$One Test One
+  // access flags 0x0
+  INNERCLASS Test$One$Two Test$One Two
+  // access flags 0x0
+  INNERCLASS Test$One$Two$Three Test$One$Two Three
+
+  // access flags 0x0
+  <init>(LTest$One$Two;)V
+}
+=== Test$One$Two.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <C:Ljava/lang/Object;D:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test$One$Two<C, D>
+class Test$One$Two {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$One Test One
+  // access flags 0x0
+  INNERCLASS Test$One$Two Test$One Two
+  // access flags 0x0
+  INNERCLASS Test$One$Two$Three Test$One$Two Three
+
+  // access flags 0x0
+  <init>(LTest$One;)V
+}
+=== Test$One.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <A:Ljava/lang/Object;B:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test$One<A, B>
+class Test$One {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$One Test One
+  // access flags 0x0
+  INNERCLASS Test$One$Two Test$One Two
+
+  // access flags 0x0
+  <init>(LTest;)V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T::Ljava/util/List<*>;>Ljava/lang/Object;LI;
+// declaration: Test<T extends java.util.List<?>> implements I
+public class Test implements I {
+
+
+  @LA;(value={1}) : CLASS_TYPE_PARAMETER 0, null
+
+  @LB;() : CLASS_TYPE_PARAMETER_BOUND 0, 1, null // invisible
+
+  @LC;() : CLASS_TYPE_PARAMETER_BOUND 0, 1, 0; // invisible
+
+  @LD;() : CLASS_EXTENDS -1, null // invisible
+
+  @LE;() : CLASS_EXTENDS 0, null // invisible
+  NESTMEMBER Test$One
+  NESTMEMBER Test$One$Two
+  NESTMEMBER Test$One$Two$Three
+  // access flags 0x0
+  INNERCLASS Test$One Test One
+  // access flags 0x0
+  INNERCLASS Test$One$Two Test$One Two
+  // access flags 0x0
+  INNERCLASS Test$One$Two$Three Test$One$Two Three
+
+  // access flags 0x0
+  // signature Ljava/util/List<+Ljava/lang/Object;>;
+  // declaration: x extends java.util.List<? extends java.lang.Object>
+  Ljava/util/List; x
+  @LA;() : FIELD, 0;
+  @LB;() : FIELD, 0;* // invisible
+
+  // access flags 0x0
+  // signature Ljava/util/List<-Ljava/lang/Object;>;
+  // declaration: y extends java.util.List<? super java.lang.Object>
+  Ljava/util/List; y
+  @LA;() : FIELD, 0;
+  @LB;() : FIELD, 0;* // invisible
+
+  // access flags 0x0
+  // signature Ljava/util/List<*>;
+  // declaration: z extends java.util.List<?>
+  Ljava/util/List; z
+  @LA;() : FIELD, 0;
+
+  // access flags 0x0
+  // signature LTest<TT;>.One<Ljava/lang/Object;Ljava/lang/Object;>.Two<Ljava/lang/Object;Ljava/lang/Object;>.Three<Ljava/lang/Object;Ljava/lang/Object;>;
+  // declaration: n extends Test<T>.One<java.lang.Object, java.lang.Object>.Two<java.lang.Object, java.lang.Object>.Three<java.lang.Object, java.lang.Object>
+  LTest$One$Two$Three; n
+  @LA;() : FIELD, .0;
+  @LB;() : FIELD, .1; // invisible
+  @LC;() : FIELD, ..0; // invisible
+  @LD;() : FIELD, ..1; // invisible
+  @LE;() : FIELD, ...0; // invisible
+  @LF;() : FIELD, ...1; // invisible
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  // signature <X:Ljava/lang/Object;>([[[I)TX;
+  // declaration: X f<X>(int[][][])
+  f([[[I)Ljava/lang/Object; throws java/lang/Exception
+  @LA;(value={1}) : METHOD_TYPE_PARAMETER 0, null
+  @LA;(value={1}) : METHOD_TYPE_PARAMETER_BOUND 0, 0, null
+  @LA;(value={1}) : METHOD_RETURN, null
+  @LB;() : METHOD_RETURN, null // invisible
+  @LC;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LD;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+  @LE;() : METHOD_FORMAL_PARAMETER 0, [[ // invisible
+  @LE;() : THROWS 0, null // invisible
+}

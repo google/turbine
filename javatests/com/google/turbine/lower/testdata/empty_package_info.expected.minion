@@ -1,0 +1,6 @@
+=== test/package-info.class ===
+// class version 69.0 (69)
+// access flags 0x1600
+abstract synthetic interface test/package-info {
+
+}

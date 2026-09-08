@@ -1,0 +1,39 @@
+=== p/A$I.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/A$I {
+
+  NESTHOST p/A
+  // access flags 0x8
+  static INNERCLASS p/A$I p/A I
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/A {
+
+  NESTMEMBER p/A$I
+  // access flags 0x8
+  static INNERCLASS p/A$I p/A I
+
+  // access flags 0x18
+  final static I M = 2
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/B {
+
+
+  // access flags 0x19
+  public final static I N = 2
+
+  // access flags 0x1
+  public <init>()V
+}

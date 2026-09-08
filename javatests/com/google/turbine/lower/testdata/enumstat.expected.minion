@@ -1,0 +1,71 @@
+=== test/MapMaker$RemovalCause.class ===
+// class version 69.0 (69)
+// access flags 0x4021
+// signature Ljava/lang/Enum<Ltest/MapMaker$RemovalCause;>;
+// declaration: test/MapMaker$RemovalCause extends java.lang.Enum<test.MapMaker$RemovalCause>
+public enum test/MapMaker$RemovalCause extends java/lang/Enum {
+
+  NESTHOST test/MapMaker
+  // access flags 0x4009
+  public static enum INNERCLASS test/MapMaker$RemovalCause test/MapMaker RemovalCause
+
+  // access flags 0x4019
+  public final static enum Ltest/MapMaker$RemovalCause; EXPLICIT
+
+  // access flags 0x9
+  public static values()[Ltest/MapMaker$RemovalCause;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/MapMaker$RemovalCause;
+
+  // access flags 0x400
+  abstract wasEvicted()Z
+}
+=== test/MapMaker.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/MapMaker {
+
+  NESTMEMBER test/MapMaker$RemovalCause
+  // access flags 0x4009
+  public static enum INNERCLASS test/MapMaker$RemovalCause test/MapMaker RemovalCause
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/MapMakerInternalMap$Segment.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/MapMakerInternalMap$Segment<K, V>
+class test/MapMakerInternalMap$Segment {
+
+  NESTHOST test/MapMakerInternalMap
+  // access flags 0x4009
+  public static enum INNERCLASS test/MapMaker$RemovalCause test/MapMaker RemovalCause
+  // access flags 0x8
+  static INNERCLASS test/MapMakerInternalMap$Segment test/MapMakerInternalMap Segment
+
+  // access flags 0x0
+  Ljava/lang/Object; cause
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  enqueueNotification(Ltest/MapMaker$RemovalCause;)V
+}
+=== test/MapMakerInternalMap.class ===
+// class version 69.0 (69)
+// access flags 0x421
+// signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/concurrent/ConcurrentMap<TK;TV;>;Ljava/io/Serializable;
+// declaration: test/MapMakerInternalMap<K, V> extends java.util.AbstractMap<K, V> implements java.util.concurrent.ConcurrentMap<K, V>, java.io.Serializable
+public abstract class test/MapMakerInternalMap extends java/util/AbstractMap implements java/util/concurrent/ConcurrentMap java/io/Serializable {
+
+  NESTMEMBER test/MapMakerInternalMap$Segment
+  // access flags 0x8
+  static INNERCLASS test/MapMakerInternalMap$Segment test/MapMakerInternalMap Segment
+
+  // access flags 0x1
+  public <init>()V
+}

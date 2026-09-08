@@ -1,0 +1,12 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface test/Test implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;
+  // declaration: java.lang.Class<? extends java.lang.annotation.Annotation> foo()
+  public abstract foo()Ljava/lang/Class;
+    default=test.Test.class
+}

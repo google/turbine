@@ -1,0 +1,16 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Test<T>
+public class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x1
+  // signature ()Ljava/util/Set<TT;>;
+  // declaration: java.util.Set<T> asSet()
+  public asSet()Ljava/util/Set;
+}

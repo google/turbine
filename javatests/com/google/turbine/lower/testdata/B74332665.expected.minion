@@ -1,0 +1,24 @@
+=== B74332665$I.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface B74332665$I {
+
+  NESTHOST B74332665
+  // access flags 0x608
+  static abstract INNERCLASS B74332665$I B74332665 I
+
+  // access flags 0x401
+  public abstract g()Z
+}
+=== B74332665.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class B74332665 {
+
+  NESTMEMBER B74332665$I
+  // access flags 0x608
+  static abstract INNERCLASS B74332665$I B74332665 I
+
+  // access flags 0x0
+  <init>()V
+}

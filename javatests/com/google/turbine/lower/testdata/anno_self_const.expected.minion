@@ -1,0 +1,41 @@
+=== p/A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface p/A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE})
+
+  // access flags 0x401
+  public abstract x()Ljava/lang/String;
+    default=""
+
+  // access flags 0x401
+  // signature ()Ljava/lang/Class<*>;
+  // declaration: java.lang.Class<?> y()
+  public abstract y()Ljava/lang/Class;
+    default=java.lang.String.class
+}
+=== p/N.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/N extends p/Super {
+
+
+  @Lp/A;(x="hello", y=p.N.class) // invisible
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/Super.class ===
+// class version 69.0 (69)
+// access flags 0x421
+public abstract class p/Super {
+
+
+  // access flags 0x18
+  final static Ljava/lang/String; C = "hello"
+
+  // access flags 0x1
+  public <init>()V
+}

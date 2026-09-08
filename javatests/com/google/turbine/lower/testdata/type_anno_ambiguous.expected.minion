@@ -1,0 +1,184 @@
+=== D.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface D implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.METHOD})
+}
+=== E.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface E implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.METHOD})
+}
+=== F.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface F implements java/lang/annotation/Annotation {
+
+}
+=== Test$Inner$InnerMost.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner$InnerMost {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner$InnerMost Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>(LTest$Inner;)V
+}
+=== Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$Inner {
+
+  NESTHOST Test
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner$InnerMost Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>(LTest;)V
+}
+=== Test$StaticInner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test$StaticInner {
+
+  NESTHOST Test
+  // access flags 0x8
+  static INNERCLASS Test$StaticInner Test StaticInner
+
+  // access flags 0x0
+  <init>()V
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+  NESTMEMBER Test$Inner
+  NESTMEMBER Test$Inner$InnerMost
+  NESTMEMBER Test$StaticInner
+  // access flags 0x0
+  INNERCLASS Test$Inner Test Inner
+  // access flags 0x0
+  INNERCLASS Test$Inner$InnerMost Test$Inner InnerMost
+  // access flags 0x8
+  static INNERCLASS Test$StaticInner Test StaticInner
+
+  // access flags 0x1
+  public I a
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, null // invisible
+
+  // access flags 0x1
+  public Ljava/lang/String; b
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, null // invisible
+
+  // access flags 0x1
+  public [I c
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, [ // invisible
+  @LB;() : FIELD, [ // invisible
+
+  // access flags 0x1
+  public LTest$Inner$InnerMost; d
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, . // invisible
+  @LB;() : FIELD, . // invisible
+
+  // access flags 0x1
+  public I e
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, null // invisible
+
+  // access flags 0x1
+  public Ljava/lang/String; f
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, null // invisible
+
+  // access flags 0x1
+  public [I g
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, [ // invisible
+  @LB;() : FIELD, [ // invisible
+
+  // access flags 0x0
+  LTest$Inner$InnerMost; h
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, . // invisible
+  @LB;() : FIELD, . // invisible
+
+  // access flags 0x0
+  LTest$Inner$InnerMost; i
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, null // invisible
+
+  // access flags 0x0
+  LTest$StaticInner; j
+  @LB;() // invisible
+  @LC;() // invisible
+  @LG;() // invisible
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, null // invisible
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x1
+  public f()I
+  @LD;() // invisible
+  @LE;() // invisible
+  @LF;() // invisible
+  @LA;() : METHOD_RETURN, null // invisible
+  @LD;() : METHOD_RETURN, null // invisible
+
+  // access flags 0x1
+  public g()I
+  @LD;() // invisible
+  @LE;() // invisible
+  @LF;() // invisible
+  @LA;() : METHOD_RETURN, null // invisible
+  @LD;() : METHOD_RETURN, null // invisible
+
+  // access flags 0x1
+  public h()LTest$Inner$InnerMost;
+  @LD;() // invisible
+  @LE;() // invisible
+  @LF;() // invisible
+  @LA;() : METHOD_RETURN, . // invisible
+  @LD;() : METHOD_RETURN, . // invisible
+}

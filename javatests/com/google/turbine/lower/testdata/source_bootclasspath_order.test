@@ -1,3 +1,6 @@
+---
+source_version: 8
+---
 === Test.java ===
 import java.lang.String.I;
 class Test {

@@ -1,0 +1,12 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x89
+  public static varargs main([Ljava/lang/String;)V
+}

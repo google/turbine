@@ -1,0 +1,33 @@
+=== test/Test$Kind.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Ltest/Test$Kind;>;
+// declaration: test/Test$Kind extends java.lang.Enum<test.Test$Kind>
+public final enum test/Test$Kind extends java/lang/Enum {
+
+  NESTHOST test/Test
+  // access flags 0x4019
+  public final static enum INNERCLASS test/Test$Kind test/Test Kind
+
+  // access flags 0x4019
+  public final static enum Ltest/Test$Kind; FOO
+
+  // access flags 0x9
+  public static values()[Ltest/Test$Kind;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/Test$Kind;
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface test/Test implements java/lang/annotation/Annotation {
+
+  NESTMEMBER test/Test$Kind
+  // access flags 0x4019
+  public final static enum INNERCLASS test/Test$Kind test/Test Kind
+
+  // access flags 0x401
+  public abstract kind()Ltest/Test$Kind;
+    default=Ltest/Test$Kind;.FOO
+}

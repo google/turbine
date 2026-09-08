@@ -1,0 +1,23 @@
+=== p/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface p/Anno implements java/lang/annotation/Annotation {
+
+}
+=== p/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test {
+
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/package-info.class ===
+// class version 69.0 (69)
+// access flags 0x1600
+abstract synthetic interface p/package-info {
+
+
+  @Lp/Anno;() // invisible
+}

@@ -1,0 +1,30 @@
+=== pkg/Simple$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class pkg/Simple$Inner {
+
+  NESTHOST pkg/Simple
+  // access flags 0x8
+  static INNERCLASS pkg/Simple$Inner pkg/Simple Inner
+
+  // access flags 0x18
+  final static I B = 1
+
+  // access flags 0x0
+  <init>()V
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+  NESTMEMBER pkg/Simple$Inner
+  // access flags 0x8
+  static INNERCLASS pkg/Simple$Inner pkg/Simple Inner
+
+  // access flags 0x18
+  final static I A = 1
+
+  // access flags 0x1
+  public <init>()V
+}

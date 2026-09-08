@@ -1,0 +1,21 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.TYPE_PARAMETER, Ljava/lang/annotation/ElementType;.METHOD, Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface Test {
+
+
+  // access flags 0x401
+  // signature <T:Ljava/lang/Object;>(Ljava/util/function/Function<TT;Ljava/lang/Throwable;>;)Ljava/util/function/Function<TT;Ljava/lang/Throwable;>;
+  // declaration: java.util.function.Function<T, java.lang.Throwable> c<T>(java.util.function.Function<T, java.lang.Throwable>)
+  public abstract c(Ljava/util/function/Function;)Ljava/util/function/Function;
+  @LA;() // invisible
+  @LA;() : METHOD_RETURN, null // invisible
+}

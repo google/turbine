@@ -1,0 +1,11 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface Test {
+
+  // access flags 0x609
+  public static abstract INNERCLASS java/util/Map$Entry java/util/Map Entry
+
+  // access flags 0x401
+  public abstract f()Ljava/util/Map$Entry;
+}

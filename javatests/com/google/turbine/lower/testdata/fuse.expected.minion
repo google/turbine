@@ -1,0 +1,72 @@
+=== pkg/Converter.class ===
+// class version 69.0 (69)
+// access flags 0x601
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: pkg/Converter<T>
+public abstract interface pkg/Converter {
+
+
+  // access flags 0x401
+  // signature (Ljava/lang/String;)TT;
+  // declaration: T convert(java.lang.String)
+  public abstract convert(Ljava/lang/String;)Ljava/lang/Object;
+}
+=== pkg/EnumConverter.class ===
+// class version 69.0 (69)
+// access flags 0x421
+// signature <T:Ljava/lang/Enum<TT;>;>Ljava/lang/Object;Lpkg/Converter<TT;>;
+// declaration: pkg/EnumConverter<T extends java.lang.Enum<T>> implements pkg.Converter<T>
+public abstract class pkg/EnumConverter implements pkg/Converter {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x1
+  // signature (Ljava/lang/String;)TT;
+  // declaration: T convert(java.lang.String)
+  public convert(Ljava/lang/String;)Ljava/lang/Enum;
+}
+=== pkg/Suite.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Lpkg/Suite;>;
+// declaration: pkg/Suite extends java.lang.Enum<pkg.Suite>
+public final enum pkg/Suite extends java/lang/Enum {
+
+
+  // access flags 0x4019
+  public final static enum Lpkg/Suite; HEARTS
+
+  // access flags 0x9
+  public static values()[Lpkg/Suite;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lpkg/Suite;
+}
+=== pkg/Test$MyConverter.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature Lpkg/EnumConverter<Lpkg/Suite;>;
+// declaration: pkg/Test$MyConverter extends pkg.EnumConverter<pkg.Suite>
+public class pkg/Test$MyConverter extends pkg/EnumConverter {
+
+  NESTHOST pkg/Test
+  // access flags 0x9
+  public static INNERCLASS pkg/Test$MyConverter pkg/Test MyConverter
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Test {
+
+  NESTMEMBER pkg/Test$MyConverter
+  // access flags 0x9
+  public static INNERCLASS pkg/Test$MyConverter pkg/Test MyConverter
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,15 @@
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class B {
+
+
+  // access flags 0x19
+  public final static Z ONE = 0
+
+  // access flags 0x19
+  public final static Z TWO = 1
+
+  // access flags 0x0
+  <init>()V
+}

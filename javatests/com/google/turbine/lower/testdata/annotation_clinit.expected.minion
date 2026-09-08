@@ -1,0 +1,11 @@
+=== pkg/T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class pkg/T {
+
+
+  @Lpkg/Anno;()
+
+  // access flags 0x0
+  <init>()V
+}

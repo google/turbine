@@ -1,0 +1,14 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x9
+  // signature <X:Ljava/lang/Throwable;>(Ljava/lang/Throwable;Ljava/lang/Class<TX;>;)V^TX;
+  // declaration: void propagateIfInstanceOf<X extends java.lang.Throwable>(java.lang.Throwable, java.lang.Class<X>) throws X
+  public static propagateIfInstanceOf(Ljava/lang/Throwable;Ljava/lang/Class;)V throws java/lang/Throwable
+}

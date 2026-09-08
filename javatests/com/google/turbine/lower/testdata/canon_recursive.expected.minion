@@ -1,0 +1,55 @@
+=== A$I.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class A$I {
+
+  NESTHOST A
+  // access flags 0x0
+  INNERCLASS A$I A I
+
+  // access flags 0x0
+  <init>(LA;)V
+}
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: A<K, V>
+class A {
+
+  NESTMEMBER A$I
+  // access flags 0x0
+  INNERCLASS A$I A I
+
+  // access flags 0x0
+  <init>()V
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <S:Ljava/lang/Number;T:Ljava/lang/Number;>LA<Ljava/util/Map<Ljava/util/List<TS;>;TS;>;Ljava/util/Map<Ljava/util/List<TT;>;TT;>;>;
+// declaration: B<S extends java.lang.Number, T extends java.lang.Number> extends A<java.util.Map<java.util.List<S>, S>, java.util.Map<java.util.List<T>, T>>
+class B extends A {
+
+
+  // access flags 0x0
+  <init>()V
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature LB<Ljava/lang/Integer;Ljava/lang/Long;>;
+// declaration: C extends B<java.lang.Integer, java.lang.Long>
+class C extends B {
+
+  // access flags 0x0
+  INNERCLASS A$I A I
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  // signature (LA<Ljava/util/Map<Ljava/util/List<Ljava/lang/Integer;>;Ljava/lang/Integer;>;Ljava/util/Map<Ljava/util/List<Ljava/lang/Long;>;Ljava/lang/Long;>;>.I;)V
+  // declaration: void f(A<java.util.Map<java.util.List<java.lang.Integer>, java.lang.Integer>, java.util.Map<java.util.List<java.lang.Long>, java.lang.Long>>.I)
+  f(LA$I;)V
+}

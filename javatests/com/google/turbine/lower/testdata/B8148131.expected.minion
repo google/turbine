@@ -1,0 +1,64 @@
+=== p/One$OneInner.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface p/One$OneInner {
+
+  NESTHOST p/One
+  // access flags 0x608
+  static abstract INNERCLASS p/One$OneInner p/One OneInner
+}
+=== p/One.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/One implements p/Three$ThreeInner {
+
+  NESTMEMBER p/One$OneInner
+  // access flags 0x608
+  static abstract INNERCLASS p/One$OneInner p/One OneInner
+  // access flags 0x608
+  static abstract INNERCLASS p/Three$ThreeInner p/Three ThreeInner
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test implements p/One$OneInner {
+
+  // access flags 0x608
+  static abstract INNERCLASS p/One$OneInner p/One OneInner
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/Three$ThreeInner.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface p/Three$ThreeInner {
+
+  NESTHOST p/Three
+  // access flags 0x608
+  static abstract INNERCLASS p/Three$ThreeInner p/Three ThreeInner
+}
+=== p/Three.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Three {
+
+  NESTMEMBER p/Three$ThreeInner
+  // access flags 0x608
+  static abstract INNERCLASS p/Three$ThreeInner p/Three ThreeInner
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/Two.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Two extends p/Three {
+
+
+  // access flags 0x0
+  <init>()V
+}

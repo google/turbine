@@ -1,0 +1,18 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x18
+  final static I A = 8
+
+  // access flags 0x18
+  final static J B = 8L
+
+  // access flags 0x18
+  final static J C = 8L
+
+  // access flags 0x0
+  <init>()V
+}

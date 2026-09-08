@@ -1,0 +1,191 @@
+=== Records$A.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Records$A extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$A Records A
+  RECORDCOMPONENT   Ljava/lang/String; value
+
+  // access flags 0x1
+  public <init>(Ljava/lang/String;Ljava/lang/String;)V
+
+  // access flags 0x1
+  public <init>(Ljava/lang/String;)V
+
+  // access flags 0x0
+  one()V
+
+  // access flags 0x0
+  two()V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public value()Ljava/lang/String;
+}
+=== Records$B.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Records$B extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$B Records B
+  // access flags 0x2608
+  static abstract INNERCLASS Records$N Records N
+  RECORDCOMPONENT   Ljava/lang/String; value
+
+  // access flags 0x1
+  public <init>(Ljava/lang/String;)V
+  @LRecords$N;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+
+  // access flags 0x1
+  public <init>(Ljava/lang/String;Ljava/lang/String;)V
+
+  // access flags 0x0
+  one()V
+
+  // access flags 0x0
+  two()V
+
+  // access flags 0x0
+  three()V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public value()Ljava/lang/String;
+}
+=== Records$C.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Records$C extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$C Records C
+  // access flags 0x0
+  INNERCLASS Records$Inner Records Inner
+  // access flags 0x2608
+  static abstract INNERCLASS Records$N Records N
+  RECORDCOMPONENT   LRecords$Inner; value
+
+  // access flags 0x1
+  public <init>(LRecords$Inner;)V
+  @LRecords$N;() : METHOD_FORMAL_PARAMETER 0, . // invisible
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public value()LRecords$Inner;
+}
+=== Records$D.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+// signature <T:Ljava/lang/Object;>Ljava/lang/Record;
+// declaration: Records$D<T> extends java.lang.Record
+public final class Records$D extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$D Records D
+  RECORDCOMPONENT   // signature TT;
+  // declaration: value extends T
+  Ljava/lang/Object; value
+
+  // access flags 0x1
+  // signature (TT;)V
+  // declaration: void <init>(T)
+  public <init>(Ljava/lang/Object;)V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  // signature ()TT;
+  // declaration: T value()
+  public value()Ljava/lang/Object;
+}
+=== Records$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Records$Inner {
+
+  NESTHOST Records
+  // access flags 0x0
+  INNERCLASS Records$Inner Records Inner
+
+  // access flags 0x0
+  <init>(LRecords;)V
+}
+=== Records$N.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface Records$N implements java/lang/annotation/Annotation {
+
+  NESTHOST Records
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+  // access flags 0x2608
+  static abstract INNERCLASS Records$N Records N
+}
+=== Records.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Records {
+
+  NESTMEMBER Records$A
+  NESTMEMBER Records$B
+  NESTMEMBER Records$C
+  NESTMEMBER Records$D
+  NESTMEMBER Records$Inner
+  NESTMEMBER Records$N
+  // access flags 0x19
+  public final static INNERCLASS Records$A Records A
+  // access flags 0x19
+  public final static INNERCLASS Records$B Records B
+  // access flags 0x19
+  public final static INNERCLASS Records$C Records C
+  // access flags 0x19
+  public final static INNERCLASS Records$D Records D
+  // access flags 0x0
+  INNERCLASS Records$Inner Records Inner
+  // access flags 0x2608
+  static abstract INNERCLASS Records$N Records N
+
+  // access flags 0x1
+  public <init>()V
+}

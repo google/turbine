@@ -1,0 +1,11 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <J::Ljava/util/List<TK;>;K::Ljava/util/List<TJ;>;>Ljava/lang/Object;
+// declaration: Test<J extends java.util.List<K>, K extends java.util.List<J>>
+class Test {
+
+
+  // access flags 0x0
+  <init>()V
+}

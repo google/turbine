@@ -1,0 +1,13 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x0
+  I x
+  @LAnno;(foo={"aYX"}, bar={"aYX"}) // invisible
+
+  // access flags 0x0
+  <init>()V
+}

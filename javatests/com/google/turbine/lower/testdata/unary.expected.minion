@@ -1,0 +1,66 @@
+=== Unary.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Unary {
+
+
+  // access flags 0x19
+  public final static B B_comp = -43
+
+  // access flags 0x19
+  public final static B B_plus = 42
+
+  // access flags 0x19
+  public final static B B_minus = -42
+
+  // access flags 0x19
+  public final static S S_comp = -43
+
+  // access flags 0x19
+  public final static S S_plus = 42
+
+  // access flags 0x19
+  public final static S S_minus = -42
+
+  // access flags 0x19
+  public final static C C_comp = 65436
+
+  // access flags 0x19
+  public final static C C_plus = 99
+
+  // access flags 0x19
+  public final static C C_minus = 65437
+
+  // access flags 0x19
+  public final static I I_comp = -43
+
+  // access flags 0x19
+  public final static I I_plus = 42
+
+  // access flags 0x19
+  public final static I I_minus = -42
+
+  // access flags 0x19
+  public final static J J_comp = -43L
+
+  // access flags 0x19
+  public final static J J_plus = 42L
+
+  // access flags 0x19
+  public final static J J_minus = -42L
+
+  // access flags 0x19
+  public final static D D_plus = 42.0D
+
+  // access flags 0x19
+  public final static D D_minus = -42.0D
+
+  // access flags 0x19
+  public final static F F_plus = 42.0F
+
+  // access flags 0x19
+  public final static F F_minus = -42.0F
+
+  // access flags 0x0
+  <init>()V
+}

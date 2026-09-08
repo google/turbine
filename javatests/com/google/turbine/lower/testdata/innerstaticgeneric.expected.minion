@@ -1,0 +1,40 @@
+=== test/Test$I.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface test/Test$I {
+
+  NESTHOST test/Test
+  // access flags 0x609
+  public static abstract INNERCLASS test/Test$I test/Test I
+}
+=== test/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test$Inner implements test/Test$I {
+
+  NESTHOST test/Test
+  // access flags 0x609
+  public static abstract INNERCLASS test/Test$I test/Test I
+  // access flags 0x9
+  public static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Test<T>
+public class test/Test {
+
+  NESTMEMBER test/Test$I
+  NESTMEMBER test/Test$Inner
+  // access flags 0x609
+  public static abstract INNERCLASS test/Test$I test/Test I
+  // access flags 0x9
+  public static INNERCLASS test/Test$Inner test/Test Inner
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,40 @@
+=== pkg/Anno1.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno1 implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  // access flags 0x401
+  public abstract x()I
+    default=42
+}
+=== pkg/Anno2.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno2 implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Retention;(value=Ljava/lang/annotation/RetentionPolicy;.RUNTIME)
+
+  // access flags 0x401
+  public abstract x()Lpkg/Anno1;
+    default=@Lpkg/Anno1;(x=42)
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  // access flags 0x19
+  public final static I CONST = 42
+
+  // access flags 0x0
+  I annotated
+  @Lpkg/Anno2;()
+
+  // access flags 0x1
+  public <init>()V
+}

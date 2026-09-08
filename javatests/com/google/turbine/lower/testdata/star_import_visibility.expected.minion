@@ -1,0 +1,42 @@
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T {
+
+
+  // access flags 0x0
+  Lb/Lib; x
+
+  // access flags 0x0
+  <init>()V
+}
+=== a/Lib.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class a/Lib {
+
+
+  // access flags 0x0
+  <init>()V
+}
+=== a/SamePackage.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class a/SamePackage {
+
+
+  // access flags 0x0
+  La/Lib; x
+
+  // access flags 0x0
+  <init>()V
+}
+=== b/Lib.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class b/Lib {
+
+
+  // access flags 0x1
+  public <init>()V
+}

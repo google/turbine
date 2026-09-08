@@ -1,0 +1,15 @@
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  // access flags 0x0
+  Ljava/lang/String; s
+
+  // access flags 0x0
+  Ljava/lang/String; s2
+
+  // access flags 0x1
+  public <init>()V
+}

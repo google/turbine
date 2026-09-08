@@ -1,0 +1,36 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: Test<T>
+class Test {
+
+  // access flags 0x609
+  public static abstract INNERCLASS java/util/Map$Entry java/util/Map Entry
+
+  // access flags 0x0
+  // signature [[Ljava/util/Map$Entry<**>;
+  // declaration: entries extends java.util.Map$Entry<?, ?>[][]
+  [[Ljava/util/Map$Entry; entries
+  @LA;() : FIELD, null // invisible
+  @LB;() : FIELD, [ // invisible
+
+  // access flags 0x0
+  <init>()V
+}

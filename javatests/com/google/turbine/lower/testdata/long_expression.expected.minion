@@ -1,0 +1,27 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+
+  // access flags 0x18
+  final static J DAY_IN_MILLISECONDS = 86400000L
+
+  // access flags 0x18
+  final static J HUNDRED_YEARS_IN_MILLISECONDS = 3153600000000L
+
+  // access flags 0x18
+  final static J A = 9223372036854775807L
+
+  // access flags 0x18
+  final static J B = 9223368883254775807L
+
+  // access flags 0x18
+  final static J OVERFLOW = 500654080000L
+
+  // access flags 0x18
+  final static J NO_OVERFLOW = 86400000000000L
+
+  // access flags 0x0
+  <init>()V
+}

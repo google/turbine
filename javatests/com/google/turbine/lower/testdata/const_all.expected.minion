@@ -1,0 +1,108 @@
+=== test/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/B {
+
+
+  // access flags 0x19
+  public final static B B = 0
+
+  // access flags 0x19
+  public final static C C = 0
+
+  // access flags 0x19
+  public final static S S = 0
+
+  // access flags 0x19
+  public final static I I = 0
+
+  // access flags 0x19
+  public final static J L = 0L
+
+  // access flags 0x19
+  public final static Ljava/lang/String; O = ""
+
+  // access flags 0x19
+  public final static I U1 = 1
+
+  // access flags 0x19
+  public final static I U2 = -1
+
+  // access flags 0x19
+  public final static I U3 = -2
+
+  // access flags 0x19
+  public final static Z U4 = 1
+
+  // access flags 0x19
+  public final static I M1 = 1
+
+  // access flags 0x19
+  public final static I M2 = 1
+
+  // access flags 0x19
+  public final static I M3 = 0
+
+  // access flags 0x19
+  public final static I S1 = 2
+
+  // access flags 0x19
+  public final static I S2 = -1
+
+  // access flags 0x19
+  public final static I S3 = 2147483647
+
+  // access flags 0x19
+  public final static Z R1 = 0
+
+  // access flags 0x19
+  public final static Z R2 = 1
+
+  // access flags 0x19
+  public final static Z R3 = 0
+
+  // access flags 0x19
+  public final static Z R4 = 1
+
+  // access flags 0x19
+  public final static Z EQ1 = 1
+
+  // access flags 0x19
+  public final static Z EQ2 = 0
+
+  // access flags 0x19
+  public final static I BIT1 = 1
+
+  // access flags 0x19
+  public final static I BIT2 = 0
+
+  // access flags 0x19
+  public final static I BIT3 = 1
+
+  // access flags 0x19
+  public final static Z BOOL1 = 1
+
+  // access flags 0x19
+  public final static Z BOOL2 = 1
+
+  // access flags 0x19
+  public final static I TERNARY = 1
+
+  // access flags 0x19
+  public final static I PAREN = 3
+
+  // access flags 0x19
+  public final static Ljava/lang/String; STRING1 = "hello"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; STRING2 = "hello"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; STRING3 = "hello"
+
+  // access flags 0x19
+  public final static Ljava/lang/String; STRING4 = "hello"
+
+  // access flags 0x1
+  public <init>()V
+}

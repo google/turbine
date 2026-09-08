@@ -1,0 +1,11 @@
+=== Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:LSimple;>Ljava/lang/Object;
+// declaration: Simple<T extends Simple>
+public class Simple {
+
+
+  // access flags 0x1
+  public <init>()V
+}

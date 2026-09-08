@@ -1,0 +1,24 @@
+=== test/C$I.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/C$I {
+
+  NESTHOST test/C
+  // access flags 0x1
+  public INNERCLASS test/C$I test/C I
+
+  // access flags 0x1
+  public <init>(Ltest/C;)V
+}
+=== test/C.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/C {
+
+  NESTMEMBER test/C$I
+  // access flags 0x1
+  public INNERCLASS test/C$I test/C I
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,65 @@
+=== A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE, Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== C.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface C implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.PARAMETER})
+}
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  f(I)V
+  @LA;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LB;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+    // annotable parameter count: 1 (invisible)
+    @LA;() // invisible, parameter 0
+    @LC;() // invisible, parameter 0
+
+  // access flags 0x0
+  g(I)V
+  @LA;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LB;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+    // annotable parameter count: 1 (invisible)
+    @LA;() // invisible, parameter 0
+    @LC;() // invisible, parameter 0
+
+  // access flags 0x0
+  h(I)V
+  @LA;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+  @LB;() : METHOD_FORMAL_PARAMETER 0, null // invisible
+    // annotable parameter count: 1 (invisible)
+    @LA;() // invisible, parameter 0
+    @LC;() // invisible, parameter 0
+
+  // access flags 0x0
+  i([I)V
+  @LA;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+  @LB;() : METHOD_FORMAL_PARAMETER 0, [ // invisible
+    // annotable parameter count: 1 (invisible)
+    @LA;() // invisible, parameter 0
+    @LC;() // invisible, parameter 0
+}

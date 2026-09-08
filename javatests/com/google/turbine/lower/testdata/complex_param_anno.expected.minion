@@ -1,0 +1,23 @@
+=== pkg/Anno.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface pkg/Anno implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract value()I
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x1
+  public f(I)V
+    // annotable parameter count: 1 (invisible)
+    @Lpkg/Anno;(value=42) // invisible, parameter 0
+}

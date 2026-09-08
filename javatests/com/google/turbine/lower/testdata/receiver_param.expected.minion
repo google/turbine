@@ -1,0 +1,63 @@
+=== p/A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface p/A implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== p/B.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface p/B implements java/lang/annotation/Annotation {
+
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.TYPE_USE})
+}
+=== p/Test$Inner$InnerMost.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test$Inner$InnerMost {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$Inner p/Test Inner
+  // access flags 0x0
+  INNERCLASS p/Test$Inner$InnerMost p/Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>(Lp/Test$Inner;)V
+}
+=== p/Test$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test$Inner {
+
+  NESTHOST p/Test
+  // access flags 0x0
+  INNERCLASS p/Test$Inner p/Test Inner
+  // access flags 0x0
+  INNERCLASS p/Test$Inner$InnerMost p/Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>(Lp/Test;)V
+}
+=== p/Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/Test {
+
+  NESTMEMBER p/Test$Inner
+  NESTMEMBER p/Test$Inner$InnerMost
+  // access flags 0x0
+  INNERCLASS p/Test$Inner p/Test Inner
+  // access flags 0x0
+  INNERCLASS p/Test$Inner$InnerMost p/Test$Inner InnerMost
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  f(I)V
+  @Lp/A;() : METHOD_RECEIVER, null // invisible
+}

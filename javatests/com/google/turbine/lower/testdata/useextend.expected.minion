@@ -1,0 +1,39 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>La/A0;
+// declaration: a/A<T> extends a.A0
+public class a/A extends a/A0 {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== a/A0.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: a/A0<T>
+public class a/A0 {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature La/A<Ljava/lang/String;>;
+// declaration: test/B extends a.A<java.lang.String>
+public class test/B extends a/A {
+
+
+  // access flags 0x0
+  La/A; a
+
+  // access flags 0x0
+  Ltest/B; b
+
+  // access flags 0x1
+  public <init>()V
+}

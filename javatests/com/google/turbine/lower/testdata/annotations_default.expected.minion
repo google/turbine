@@ -1,0 +1,18 @@
+=== test/GwtCompatible.class ===
+// class version 69.0 (69)
+// access flags 0x2601
+public abstract @interface test/GwtCompatible implements java/lang/annotation/Annotation {
+
+
+  // access flags 0x401
+  public abstract serializable()Z
+    default=false
+
+  // access flags 0x401
+  public abstract emulated()Z
+    default=false
+
+  // access flags 0x401
+  public abstract altNames()[Ljava/lang/String;
+    default={}
+}

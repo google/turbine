@@ -1,0 +1,16 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+// signature <T::Ljava/io/Serializable;:Ljava/util/List;>Ljava/lang/Object;
+// declaration: Test<T extends java.io.Serializable, java.util.List>
+class Test {
+
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  // signature <X:Ljava/util/ArrayList;:Ljava/io/Serializable;:Ljava/util/List;>()TX;
+  // declaration: X f<X extends java.util.ArrayList extends java.io.Serializable, java.util.List>()
+  f()Ljava/util/ArrayList;
+}

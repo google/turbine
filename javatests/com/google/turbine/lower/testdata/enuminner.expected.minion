@@ -1,0 +1,35 @@
+=== pkg/E$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class pkg/E$Inner {
+
+  NESTHOST pkg/E
+  // access flags 0x0
+  INNERCLASS pkg/E$Inner pkg/E Inner
+
+  // access flags 0x0
+  <init>(Lpkg/E;)V
+
+  // access flags 0x0
+  f()V
+}
+=== pkg/E.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Lpkg/E;>;
+// declaration: pkg/E extends java.lang.Enum<pkg.E>
+public final enum pkg/E extends java/lang/Enum {
+
+  NESTMEMBER pkg/E$Inner
+  // access flags 0x0
+  INNERCLASS pkg/E$Inner pkg/E Inner
+
+  // access flags 0x0
+  I x
+
+  // access flags 0x9
+  public static values()[Lpkg/E;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lpkg/E;
+}

@@ -1,0 +1,21 @@
+=== a/One.class ===
+// class version 69.0 (69)
+// access flags 0x601
+public abstract interface a/One {
+
+
+  // access flags 0x19
+  public final static I CONST = 1
+}
+=== a/Two.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/Two implements a/One {
+
+
+  // access flags 0x0
+  I value
+
+  // access flags 0x1
+  public <init>()V
+}

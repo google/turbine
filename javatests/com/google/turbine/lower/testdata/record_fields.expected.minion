@@ -1,0 +1,33 @@
+=== R.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10030
+final class R extends java/lang/Record {
+
+  RECORDCOMPONENT   I x
+  RECORDCOMPONENT   I y
+
+  // access flags 0x18
+  final static I X = 42
+
+  // access flags 0x18
+  final static LR; r
+
+  // access flags 0x0
+  <init>(II)V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public x()I
+
+  // access flags 0x1
+  public y()I
+}

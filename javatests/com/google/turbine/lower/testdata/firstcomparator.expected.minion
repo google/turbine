@@ -1,0 +1,33 @@
+=== test/FirstComparator.class ===
+// class version 69.0 (69)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Ltest/FirstComparator;>;Ljava/util/Comparator<Ltest/Pair<Ljava/lang/Comparable;Ljava/lang/Object;>;>;
+// declaration: test/FirstComparator extends java.lang.Enum<test.FirstComparator> implements java.util.Comparator<test.Pair<java.lang.Comparable, java.lang.Object>>
+public final enum test/FirstComparator extends java/lang/Enum implements java/util/Comparator {
+
+
+  // access flags 0x4019
+  public final static enum Ltest/FirstComparator; FIRST_COMPARATOR
+
+  // access flags 0x9
+  public static values()[Ltest/FirstComparator;
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Ltest/FirstComparator;
+
+  // access flags 0x1
+  // signature (Ltest/Pair<Ljava/lang/Comparable;Ljava/lang/Object;>;Ltest/Pair<Ljava/lang/Comparable;Ljava/lang/Object;>;)I
+  // declaration: int compare(test.Pair<java.lang.Comparable, java.lang.Object>, test.Pair<java.lang.Comparable, java.lang.Object>)
+  public compare(Ltest/Pair;Ltest/Pair;)I
+}
+=== test/Pair.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <A:Ljava/lang/Object;B:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Pair<A, B>
+public class test/Pair {
+
+
+  // access flags 0x1
+  public <init>()V
+}

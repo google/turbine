@@ -1,0 +1,18 @@
+=== a/b/c/D.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/b/c/D {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Simple extends a/b/c/D {
+
+
+  // access flags 0x1
+  public <init>()V
+}

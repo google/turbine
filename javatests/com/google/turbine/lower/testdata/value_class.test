@@ -1,3 +1,7 @@
+---
+source_version: 28
+preview: true
+---
 === ValueClass.java ===
 package test;
 

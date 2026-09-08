@@ -1,0 +1,25 @@
+=== pkg/Simple$IntTree.class ===
+// class version 69.0 (69)
+// access flags 0x600
+// signature <V:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: pkg/Simple$IntTree<V>
+abstract interface pkg/Simple$IntTree {
+
+  NESTHOST pkg/Simple
+  // access flags 0x608
+  static abstract INNERCLASS pkg/Simple$IntTree pkg/Simple IntTree
+}
+=== pkg/Simple.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <V:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: pkg/Simple<V>
+public class pkg/Simple {
+
+  NESTMEMBER pkg/Simple$IntTree
+  // access flags 0x608
+  static abstract INNERCLASS pkg/Simple$IntTree pkg/Simple IntTree
+
+  // access flags 0x1
+  public <init>()V
+}

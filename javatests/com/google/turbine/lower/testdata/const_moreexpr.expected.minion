@@ -1,0 +1,30 @@
+=== test/B.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/B {
+
+
+  // access flags 0x19
+  public final static Z A = 0
+
+  // access flags 0x19
+  public final static I B = 8
+
+  // access flags 0x19
+  public final static I C = 3
+
+  // access flags 0x19
+  public final static I D = -1
+
+  // access flags 0x19
+  public final static D E = 3.0D
+
+  // access flags 0x19
+  public final static Z F = 0
+
+  // access flags 0x19
+  public final static I G = -4
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,12 @@
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T {
+
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x0
+  f()Ljava/lang/Object;
+}

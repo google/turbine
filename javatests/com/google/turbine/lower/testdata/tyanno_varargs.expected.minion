@@ -1,0 +1,30 @@
+=== T$A.class ===
+// class version 69.0 (69)
+// access flags 0x2600
+abstract @interface T$A implements java/lang/annotation/Annotation {
+
+  NESTHOST T
+
+  @Ljava/lang/annotation/Target;(value={Ljava/lang/annotation/ElementType;.PARAMETER, Ljava/lang/annotation/ElementType;.TYPE_USE})
+  // access flags 0x2608
+  static abstract INNERCLASS T$A T A
+}
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x420
+abstract class T {
+
+  NESTMEMBER T$A
+  // access flags 0x2608
+  static abstract INNERCLASS T$A T A
+
+  // access flags 0x0
+  <init>()V
+
+  // access flags 0x80
+  varargs f(ZLjava/lang/String;[Ljava/lang/Object;)V
+  @LT$A;() : METHOD_FORMAL_PARAMETER 1, null // invisible
+  @LT$A;() : METHOD_FORMAL_PARAMETER 2, null // invisible
+    // annotable parameter count: 3 (invisible)
+    @LT$A;() // invisible, parameter 1
+}

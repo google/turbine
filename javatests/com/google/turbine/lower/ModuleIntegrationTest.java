@@ -17,13 +17,13 @@
 package com.google.turbine.lower;
 
 import static com.google.common.base.StandardSystemProperty.JAVA_CLASS_VERSION;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.turbine.testing.TestResources.getResource;
-import static java.util.Arrays.stream;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.google.turbine.binder.CtSymClassBinder;
 import com.google.turbine.binder.JimageClassBinder;
 import java.nio.file.Files;
@@ -36,44 +36,33 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(Parameterized.class)
+@RunWith(TestParameterInjector.class)
 public class ModuleIntegrationTest {
-
-  @Parameters(name = "{index}: {0}")
-  public static Iterable<Object[]> parameters() {
-    String[] testCases = {
-      "module-info.test", //
-      "classpath.test",
-      "multimodule.test",
-      "module-info-for-base.test",
-      "module-info-open.test",
-      "module-requires-static-transitive.test",
-      "module-requires-transitive-static.test",
-    };
-    return stream(testCases).map(x -> new Object[] {x}).collect(toImmutableList());
-  }
-
-  final String test;
-
-  public ModuleIntegrationTest(String test) {
-    this.test = test;
-  }
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Test
-  public void test() throws Exception {
+  public void test(
+      @TestParameter({
+            "module-info.test",
+            "classpath.test",
+            "multimodule.test",
+            "module-info-for-base.test",
+            "module-info-open.test",
+            "module-requires-static-transitive.test",
+            "module-requires-transitive-static.test",
+          })
+          String test)
+      throws Exception {
     IntegrationTestSupport.TestInput input =
         IntegrationTestSupport.TestInput.parse(getResource(getClass(), "moduletestdata/" + test));
 
     ImmutableList<Path> classpathJar = ImmutableList.of();
-    if (!input.classes.isEmpty()) {
+    if (!input.classes().isEmpty()) {
       Map<String, byte[]> classpath =
           IntegrationTestSupport.runJavac(
-              input.classes,
+              input.classes(),
               /* classpath= */ ImmutableList.of(),
               ImmutableList.of("--release", "9", "--module-version=43"));
       Path lib = temporaryFolder.newFile("lib.jar").toPath();
@@ -88,11 +77,13 @@ public class ModuleIntegrationTest {
 
     Map<String, byte[]> expected =
         IntegrationTestSupport.runJavac(
-            input.sources, classpathJar, ImmutableList.of("--release", "9", "--module-version=42"));
+            input.sources(),
+            classpathJar,
+            ImmutableList.of("--release", "9", "--module-version=42"));
 
     Map<String, byte[]> actual =
         IntegrationTestSupport.runTurbine(
-            input.sources,
+            input.sources(),
             classpathJar,
             Double.parseDouble(JAVA_CLASS_VERSION.value()) < 54
                 ? JimageClassBinder.bindDefault()

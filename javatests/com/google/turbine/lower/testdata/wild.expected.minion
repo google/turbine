@@ -1,0 +1,46 @@
+=== test/One.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/One<T>
+public class test/One {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  // signature (Ltest/Two<**>;)Ltest/Two<**>;
+  // declaration: test.Two<?, ?> a1(test.Two<?, ?>)
+  a1(Ltest/Two;)Ltest/Two;
+
+  // access flags 0x0
+  // signature (Ltest/One<+Ltest/Test;>;)Ltest/One<+Ltest/Test;>;
+  // declaration: test.One<? extends test.Test> a2(test.One<? extends test.Test>)
+  a2(Ltest/One;)Ltest/One;
+
+  // access flags 0x0
+  // signature (Ltest/One<-Ltest/Test;>;)Ltest/One<-Ltest/Test;>;
+  // declaration: test.One<? super test.Test> a3(test.One<? super test.Test>)
+  a3(Ltest/One;)Ltest/One;
+}
+=== test/Two.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Two<T, U>
+public class test/Two {
+
+
+  // access flags 0x1
+  public <init>()V
+}

@@ -1,0 +1,31 @@
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/Test<T>
+public class test/Test {
+
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  // signature ()TT;
+  // declaration: T f1()
+  f1()Ljava/lang/Object;
+
+  // access flags 0x0
+  // signature ()[TT;
+  // declaration: T[] f2()
+  f2()[Ljava/lang/Object;
+
+  // access flags 0x0
+  // signature (TT;)V
+  // declaration: void f3(T)
+  f3(Ljava/lang/Object;)V
+
+  // access flags 0x0
+  // signature ([TT;)V
+  // declaration: void f4(T[])
+  f4([Ljava/lang/Object;)V
+}

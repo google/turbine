@@ -1,0 +1,71 @@
+=== pkg/One$Inner1.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/One$Inner1 {
+
+  NESTHOST pkg/One
+  // access flags 0x9
+  public static INNERCLASS pkg/One$Inner1 pkg/One Inner1
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/One.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/One {
+
+  NESTMEMBER pkg/One$Inner1
+  // access flags 0x9
+  public static INNERCLASS pkg/One$Inner1 pkg/One Inner1
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Two$Inner2$InnerMost.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Two$Inner2$InnerMost extends pkg/One$Inner1 {
+
+  NESTHOST pkg/Two
+  // access flags 0x9
+  public static INNERCLASS pkg/One$Inner1 pkg/One Inner1
+  // access flags 0x9
+  public static INNERCLASS pkg/Two$Inner2 pkg/Two Inner2
+  // access flags 0x9
+  public static INNERCLASS pkg/Two$Inner2$InnerMost pkg/Two$Inner2 InnerMost
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Two$Inner2.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Two$Inner2 extends pkg/One$Inner1 {
+
+  NESTHOST pkg/Two
+  // access flags 0x9
+  public static INNERCLASS pkg/One$Inner1 pkg/One Inner1
+  // access flags 0x9
+  public static INNERCLASS pkg/Two$Inner2 pkg/Two Inner2
+  // access flags 0x9
+  public static INNERCLASS pkg/Two$Inner2$InnerMost pkg/Two$Inner2 InnerMost
+
+  // access flags 0x1
+  public <init>()V
+}
+=== pkg/Two.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class pkg/Two extends pkg/One {
+
+  NESTMEMBER pkg/Two$Inner2
+  NESTMEMBER pkg/Two$Inner2$InnerMost
+  // access flags 0x9
+  public static INNERCLASS pkg/Two$Inner2 pkg/Two Inner2
+  // access flags 0x9
+  public static INNERCLASS pkg/Two$Inner2$InnerMost pkg/Two$Inner2 InnerMost
+
+  // access flags 0x1
+  public <init>()V
+}

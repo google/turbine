@@ -151,7 +151,7 @@ public class TurbineAnnotationProxyTest {
                     ""));
 
     ImmutableList<CompUnit> units =
-        input.sources.entrySet().stream()
+        input.sources().entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());
@@ -262,7 +262,7 @@ public class TurbineAnnotationProxyTest {
                     ""));
 
     ImmutableList<CompUnit> units =
-        input.sources.entrySet().stream()
+        input.sources().entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());

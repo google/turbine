@@ -1,0 +1,24 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A {
+
+
+  // access flags 0x19
+  public final static Ljava/lang/Object; Object
+
+  // access flags 0x1
+  public <init>()V
+}
+=== b/B.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class b/B {
+
+
+  // access flags 0x19
+  public final static Ljava/lang/Object; x
+
+  // access flags 0x0
+  <init>()V
+}

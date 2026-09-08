@@ -1,0 +1,41 @@
+=== p/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/A implements p/Super$Nested {
+
+  // access flags 0x608
+  static abstract INNERCLASS p/Super$Nested p/Super Nested
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/Base.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/Base extends p/Super {
+
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/Super$Nested.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface p/Super$Nested {
+
+  NESTHOST p/Super
+  // access flags 0x608
+  static abstract INNERCLASS p/Super$Nested p/Super Nested
+}
+=== p/Super.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/Super {
+
+  NESTMEMBER p/Super$Nested
+  // access flags 0x608
+  static abstract INNERCLASS p/Super$Nested p/Super Nested
+
+  // access flags 0x1
+  public <init>()V
+}

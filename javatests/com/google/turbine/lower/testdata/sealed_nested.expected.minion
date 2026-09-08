@@ -1,0 +1,44 @@
+=== T$Sealed$Foo.class ===
+// class version 69.0 (69)
+// access flags 0x30
+final class T$Sealed$Foo extends T$Sealed {
+
+  NESTHOST T
+  // access flags 0x8
+  static INNERCLASS T$Sealed T Sealed
+  // access flags 0x18
+  final static INNERCLASS T$Sealed$Foo T$Sealed Foo
+
+  // access flags 0x0
+  <init>()V
+}
+=== T$Sealed.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T$Sealed {
+
+  NESTHOST T
+  PERMITTEDSUBCLASS T$Sealed$Foo
+  // access flags 0x8
+  static INNERCLASS T$Sealed T Sealed
+  // access flags 0x18
+  final static INNERCLASS T$Sealed$Foo T$Sealed Foo
+
+  // access flags 0x0
+  <init>()V
+}
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T {
+
+  NESTMEMBER T$Sealed
+  NESTMEMBER T$Sealed$Foo
+  // access flags 0x8
+  static INNERCLASS T$Sealed T Sealed
+  // access flags 0x18
+  final static INNERCLASS T$Sealed$Foo T$Sealed Foo
+
+  // access flags 0x0
+  <init>()V
+}

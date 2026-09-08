@@ -1,0 +1,87 @@
+=== test/A$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/A$Inner {
+
+  NESTHOST test/A
+  // access flags 0x1
+  public INNERCLASS test/A$Inner test/A Inner
+
+  // access flags 0x1
+  public <init>(Ltest/A;)V
+}
+=== test/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <U:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/A<U>
+public class test/A {
+
+  NESTMEMBER test/A$Inner
+  // access flags 0x1
+  public INNERCLASS test/A$Inner test/A Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/D$F.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <X:Ljava/lang/Object;>Ltest/D<TX;>.Inner;
+// declaration: test/D$F<X> extends test.D<X>.Inner
+public class test/D$F extends test/D$Inner {
+
+  NESTHOST test/D
+  // access flags 0x1
+  public INNERCLASS test/D$F test/D F
+  // access flags 0x1
+  public INNERCLASS test/D$Inner test/D Inner
+
+  // access flags 0x1
+  public <init>(Ltest/D;)V
+}
+=== test/D$Inner.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/D$Inner {
+
+  NESTHOST test/D
+  // access flags 0x1
+  public INNERCLASS test/D$Inner test/D Inner
+
+  // access flags 0x1
+  public <init>(Ltest/D;)V
+}
+=== test/D.class ===
+// class version 69.0 (69)
+// access flags 0x21
+// signature <Z:Ljava/lang/Object;>Ljava/lang/Object;
+// declaration: test/D<Z>
+public class test/D {
+
+  NESTMEMBER test/D$F
+  NESTMEMBER test/D$Inner
+  // access flags 0x1
+  public INNERCLASS test/D$F test/D F
+  // access flags 0x1
+  public INNERCLASS test/D$Inner test/D Inner
+
+  // access flags 0x1
+  public <init>()V
+}
+=== test/Test.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/Test {
+
+  // access flags 0x1
+  public INNERCLASS test/D$F test/D F
+
+  // access flags 0x0
+  // signature Ltest/D<Ltest/D<Ltest/Test;>;>.F<Ltest/Test;>;
+  // declaration: i3 extends test.D<test.D<test.Test>>.F<test.Test>
+  Ltest/D$F; i3
+
+  // access flags 0x1
+  public <init>()V
+}

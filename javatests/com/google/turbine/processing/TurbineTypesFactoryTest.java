@@ -64,7 +64,7 @@ public class TurbineTypesFactoryTest {
 
     BindingResult bound =
         IntegrationTestSupport.turbineAnalysis(
-            SOURCES.sources,
+            SOURCES.sources(),
             ImmutableList.of(),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());

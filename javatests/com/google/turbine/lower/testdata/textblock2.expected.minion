@@ -1,0 +1,48 @@
+=== T.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class T {
+
+
+  // access flags 0x18
+  final static Ljava/lang/String; a = "line 1\nline 2\nline 3\n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; b = "line 1\nline 2\nline 3"
+
+  // access flags 0x18
+  final static Ljava/lang/String; c = ""
+
+  // access flags 0x18
+  final static Ljava/lang/String; g = "<html>\r\n    <body>\r\n        <p>Hello, world</p>\r\n    </body>\r\n</html>\r\n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; h = "\"When I use a word,\" Humpty Dumpty said,\nin rather a scornful tone, \"it means just what I\nchoose it to mean - neither more nor less.\"\n\"The question is,\" said Alice, \"whether you\ncan make words mean so many different things.\"\n\"The question is,\" said Humpty Dumpty,\n\"which is to be master - that's all.\"\n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; i = "String empty = \"\";\n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; j = "String text = \"\"\"\n    A text block inside a text block\n\"\"\";\n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; k = "A common character\nin Java programs\nis \""
+
+  // access flags 0x18
+  final static Ljava/lang/String; l = "The empty string literal\nis formed from \" characters\nas follows: \"\""
+
+  // access flags 0x18
+  final static Ljava/lang/String; m = "\"\n\"\"\n\"\"\"\n\"\"\"\"\n\"\"\"\"\"\n\"\"\"\"\"\"\n\"\"\"\"\"\"\"\n\"\"\"\"\"\"\"\"\n\"\"\"\"\"\"\"\"\"\n\"\"\"\"\"\"\"\"\"\"\n\"\"\"\"\"\"\"\"\"\"\"\n\"\"\"\"\"\"\"\"\"\"\"\"\n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; n = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+
+  // access flags 0x18
+  final static Ljava/lang/String; o = "red   \ngreen \nblue  \n"
+
+  // access flags 0x18
+  final static Ljava/lang/String; p = "public void print(Object o) {    System.out.println(Objects.toString(o));\n}\n"
+
+  // access flags 0x0
+  <init>()V
+}

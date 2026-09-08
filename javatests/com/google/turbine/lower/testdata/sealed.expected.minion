@@ -1,0 +1,79 @@
+=== ISealed$Bar.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class ISealed$Bar implements ISealed {
+
+  NESTHOST ISealed
+  // access flags 0x9
+  public static INNERCLASS ISealed$Bar ISealed Bar
+
+  // access flags 0x1
+  public <init>()V
+}
+=== ISealed$Foo.class ===
+// class version 69.0 (69)
+// access flags 0x31
+public final class ISealed$Foo implements ISealed {
+
+  NESTHOST ISealed
+  // access flags 0x19
+  public final static INNERCLASS ISealed$Foo ISealed Foo
+
+  // access flags 0x1
+  public <init>()V
+}
+=== ISealed.class ===
+// class version 69.0 (69)
+// access flags 0x600
+abstract interface ISealed {
+
+  NESTMEMBER ISealed$Bar
+  NESTMEMBER ISealed$Foo
+  PERMITTEDSUBCLASS ISealed$Foo
+  PERMITTEDSUBCLASS ISealed$Bar
+  // access flags 0x9
+  public static INNERCLASS ISealed$Bar ISealed Bar
+  // access flags 0x19
+  public final static INNERCLASS ISealed$Foo ISealed Foo
+}
+=== Sealed$Bar.class ===
+// class version 69.0 (69)
+// access flags 0x30
+final class Sealed$Bar extends Sealed {
+
+  NESTHOST Sealed
+  // access flags 0x18
+  final static INNERCLASS Sealed$Bar Sealed Bar
+
+  // access flags 0x0
+  <init>()V
+}
+=== Sealed$Foo.class ===
+// class version 69.0 (69)
+// access flags 0x30
+final class Sealed$Foo extends Sealed {
+
+  NESTHOST Sealed
+  // access flags 0x18
+  final static INNERCLASS Sealed$Foo Sealed Foo
+
+  // access flags 0x0
+  <init>()V
+}
+=== Sealed.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Sealed {
+
+  NESTMEMBER Sealed$Bar
+  NESTMEMBER Sealed$Foo
+  PERMITTEDSUBCLASS Sealed$Foo
+  PERMITTEDSUBCLASS Sealed$Bar
+  // access flags 0x18
+  final static INNERCLASS Sealed$Bar Sealed Bar
+  // access flags 0x18
+  final static INNERCLASS Sealed$Foo Sealed Foo
+
+  // access flags 0x0
+  <init>()V
+}

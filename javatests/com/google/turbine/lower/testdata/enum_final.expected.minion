@@ -1,0 +1,14 @@
+=== Test.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class Test {
+
+  // access flags 0x4408
+  static abstract enum INNERCLASS A$E A E
+
+  // access flags 0x0
+  LA$E; e
+
+  // access flags 0x0
+  <init>()V
+}

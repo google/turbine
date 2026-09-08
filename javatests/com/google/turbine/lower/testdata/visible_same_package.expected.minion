@@ -1,0 +1,56 @@
+=== a/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class a/A {
+
+
+  // access flags 0x19
+  public final static I CONST = 2
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/P$A.class ===
+// class version 69.0 (69)
+// access flags 0x20
+class p/P$A {
+
+  NESTHOST p/P
+  // access flags 0x8
+  static INNERCLASS p/P$A p/P A
+
+  // access flags 0x0
+  <init>()V
+}
+=== p/P.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/P {
+
+  NESTMEMBER p/P$A
+  // access flags 0x8
+  static INNERCLASS p/P$A p/P A
+
+  // access flags 0x18
+  final static I CONST = 1
+
+  // access flags 0x1
+  public <init>()V
+}
+=== p/SamePackage.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class p/SamePackage extends p/P {
+
+  // access flags 0x8
+  static INNERCLASS p/P$A p/P A
+
+  // access flags 0x10
+  final I x = 1
+
+  // access flags 0x1
+  public <init>()V
+
+  // access flags 0x0
+  f(Lp/P$A;)V
+}
