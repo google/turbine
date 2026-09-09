@@ -39,7 +39,6 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.io.MoreFiles;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import org.objectweb.asm.Opcodes;
 import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
@@ -70,13 +69,24 @@ import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassSignature;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodSignature;
 import java.lang.classfile.MethodTransform;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.ArrayTypeSig;
+import java.lang.classfile.Signature.BaseTypeSig;
+import java.lang.classfile.Signature.ClassTypeSig;
+import java.lang.classfile.Signature.RefTypeSig;
+import java.lang.classfile.Signature.ThrowableSig;
+import java.lang.classfile.Signature.TypeArg;
+import java.lang.classfile.Signature.TypeParam;
+import java.lang.classfile.Signature.TypeVarSig;
 import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.attribute.DeprecatedAttribute;
 import java.lang.classfile.attribute.InnerClassInfo;
@@ -94,6 +104,8 @@ import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
@@ -101,12 +113,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -114,12 +124,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
-import org.objectweb.asm.signature.SignatureReader;
-import org.objectweb.asm.signature.SignatureVisitor;
 
 /** Support for bytecode diffing-integration tests. */
 public final class IntegrationTestSupport {
@@ -586,7 +596,7 @@ public final class IntegrationTestSupport {
     Set<String> types = new HashSet<>();
     types.add(cm.thisClass().asInternalName());
     cm.findAttribute(Attributes.signature())
-        .ifPresent(s -> collectTypesFromSignature(types, s.signature().stringValue()));
+        .ifPresent(s -> collectTypesFromClassSignature(types, s.asClassSignature()));
     cm.superclass().ifPresent(s -> types.add(s.asInternalName()));
     for (ClassEntry iface : cm.interfaces()) {
       types.add(iface.asInternalName());
@@ -596,9 +606,9 @@ public final class IntegrationTestSupport {
       if (isSkippedMethod(m)) {
         continue;
       }
-      collectTypesFromSignature(types, m.methodType().stringValue());
+      collectTypesFromMethodType(types, m.methodTypeSymbol());
       m.findAttribute(Attributes.signature())
-          .ifPresent(s -> collectTypesFromSignature(types, s.signature().stringValue()));
+          .ifPresent(s -> collectTypesFromMethodSignature(types, s.asMethodSignature()));
       m.findAttribute(Attributes.exceptions())
           .ifPresent(e -> e.exceptions().forEach(ex -> types.add(ex.asInternalName())));
 
@@ -612,9 +622,9 @@ public final class IntegrationTestSupport {
       if (isSkippedField(f)) {
         continue;
       }
-      collectTypesFromSignature(types, f.fieldType().stringValue());
+      collectTypesFromClassDesc(types, f.fieldTypeSymbol());
       f.findAttribute(Attributes.signature())
-          .ifPresent(s -> collectTypesFromSignature(types, s.signature().stringValue()));
+          .ifPresent(s -> collectTypesFromSignature(types, s.asTypeSignature()));
 
       addAllTypesInAnnotations(types, f);
     }
@@ -622,9 +632,9 @@ public final class IntegrationTestSupport {
         .ifPresent(
             record -> {
               for (RecordComponentInfo r : record.components()) {
-                collectTypesFromSignature(types, r.descriptor().stringValue());
+                collectTypesFromClassDesc(types, r.descriptorSymbol());
                 r.findAttribute(Attributes.signature())
-                    .ifPresent(s -> collectTypesFromSignature(types, s.signature().stringValue()));
+                    .ifPresent(s -> collectTypesFromSignature(types, s.asTypeSignature()));
 
                 addAllTypesInAnnotations(types, r);
               }
@@ -691,7 +701,7 @@ public final class IntegrationTestSupport {
   }
 
   private static void collectTypesFromAnnotation(Set<String> types, Annotation a) {
-    collectTypesFromSignature(types, a.className().stringValue());
+    collectTypesFromClassDesc(types, a.classSymbol());
     for (AnnotationElement element : a.elements()) {
       collectTypesFromAnnotationValue(types, element.value());
     }
@@ -705,46 +715,83 @@ public final class IntegrationTestSupport {
         }
       }
       case AnnotationValue.OfClass ofClass ->
-          collectTypesFromSignature(types, ofClass.className().stringValue());
+          collectTypesFromClassDesc(types, ofClass.classSymbol());
       case AnnotationValue.OfAnnotation ofAnno ->
           collectTypesFromAnnotation(types, ofAnno.annotation());
-      case AnnotationValue.OfEnum ofEnum ->
-          collectTypesFromSignature(types, ofEnum.className().stringValue());
+      case AnnotationValue.OfEnum ofEnum -> collectTypesFromClassDesc(types, ofEnum.classSymbol());
       default -> {}
     }
   }
 
-  /** Save all class types referenced in a signature. */
-  private static void collectTypesFromSignature(Set<String> classes, String signature) {
-    if (signature == null) {
-      return;
+  private static final Pattern CLASS_DESCRIPTOR_PATTERN = Pattern.compile("L(.*);");
+
+  private static void collectTypesFromClassDesc(Set<String> classes, ClassDesc desc) {
+    while (desc.isArray()) {
+      desc = desc.componentType();
     }
-    // signatures for qualified generic class types are visited as name and type argument pieces,
-    // so stitch them back together into a binary class name
-    new SignatureReader(signature)
-        .accept(
-            new SignatureVisitor(Opcodes.ASM9) {
-              // class signatures may contain type arguments that contain class signatures
-              final Deque<List<String>> pieces = new ArrayDeque<>();
+    if (!desc.isPrimitive()) {
+      String descriptor = desc.descriptorString();
+      Matcher matcher = CLASS_DESCRIPTOR_PATTERN.matcher(descriptor);
+      verify(matcher.matches());
+      classes.add(matcher.group(1));
+    }
+  }
 
-              @Override
-              public void visitInnerClassType(String name) {
-                pieces.getFirst().add(name);
-              }
+  private static void collectTypesFromMethodType(Set<String> classes, MethodTypeDesc methodType) {
+    collectTypesFromClassDesc(classes, methodType.returnType());
+    for (ClassDesc param : methodType.parameterList()) {
+      collectTypesFromClassDesc(classes, param);
+    }
+  }
 
-              @Override
-              public void visitClassType(String name) {
-                List<String> classType = new ArrayList<>();
-                classType.add(name);
-                pieces.push(classType);
-              }
+  private static void collectTypesFromClassSignature(Set<String> classes, ClassSignature sig) {
+    for (TypeParam param : sig.typeParameters()) {
+      collectTypesFromTypeParam(classes, param);
+    }
+    collectTypesFromSignature(classes, sig.superclassSignature());
+    for (ClassTypeSig iface : sig.superinterfaceSignatures()) {
+      collectTypesFromSignature(classes, iface);
+    }
+  }
 
-              @Override
-              public void visitEnd() {
-                classes.add(Joiner.on('$').join(pieces.pop()));
-                super.visitEnd();
-              }
-            });
+  private static void collectTypesFromMethodSignature(Set<String> classes, MethodSignature sig) {
+    for (TypeParam param : sig.typeParameters()) {
+      collectTypesFromTypeParam(classes, param);
+    }
+    for (Signature arg : sig.arguments()) {
+      collectTypesFromSignature(classes, arg);
+    }
+    collectTypesFromSignature(classes, sig.result());
+    for (ThrowableSig throwable : sig.throwableSignatures()) {
+      collectTypesFromSignature(classes, throwable);
+    }
+  }
+
+  private static void collectTypesFromTypeParam(Set<String> classes, TypeParam param) {
+    param.classBound().ifPresent(b -> collectTypesFromSignature(classes, b));
+    for (RefTypeSig bound : param.interfaceBounds()) {
+      collectTypesFromSignature(classes, bound);
+    }
+  }
+
+  private static void collectTypesFromSignature(Set<String> classes, Signature sig) {
+    switch (sig) {
+      case ClassTypeSig classTypeSig -> {
+        collectTypesFromClassDesc(classes, classTypeSig.classDesc());
+        for (ClassTypeSig curr = classTypeSig; curr != null; curr = curr.outerType().orElse(null)) {
+          for (TypeArg arg : curr.typeArgs()) {
+            switch (arg) {
+              case TypeArg.Bounded bounded ->
+                  collectTypesFromSignature(classes, bounded.boundType());
+              case TypeArg.Unbounded _ -> {}
+            }
+          }
+        }
+      }
+      case ArrayTypeSig arrayTypeSig ->
+          collectTypesFromSignature(classes, arrayTypeSig.componentSignature());
+      case TypeVarSig _, BaseTypeSig _ -> {}
+    }
   }
 
   public static Map<String, byte[]> runTurbine(

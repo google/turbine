@@ -18,14 +18,18 @@ package com.google.turbine.bytecode;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static java.lang.classfile.ClassFile.JAVA_16_VERSION;
+import static java.lang.classfile.ClassFile.JAVA_9_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.testing.AsmUtils;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
@@ -34,6 +38,22 @@ import com.sun.tools.javac.util.Context;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.Signature;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.NestHostAttribute;
+import java.lang.classfile.attribute.NestMembersAttribute;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
+import java.lang.reflect.AccessFlag;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,9 +65,6 @@ import javax.tools.StandardLocation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.objectweb.asm.ModuleVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.RecordComponentVisitor;
 
 @RunWith(JUnit4.class)
 public class ClassWriterTest {
@@ -118,34 +135,78 @@ public class ClassWriterTest {
 
   @Test
   public void module() throws Exception {
-
-    org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(0);
-
-    cw.visit(53, /* access= */ 53, "module-info", null, null, null);
-
-    ModuleVisitor mv = cw.visitModule("mod", Opcodes.ACC_OPEN, "mod-ver");
-
-    mv.visitRequire("r1", Opcodes.ACC_TRANSITIVE, "r1-ver");
-    mv.visitRequire("r2", Opcodes.ACC_STATIC_PHASE, "r2-ver");
-    mv.visitRequire("r3", Opcodes.ACC_STATIC_PHASE | Opcodes.ACC_TRANSITIVE, "r3-ver");
-
-    mv.visitExport("e1", Opcodes.ACC_SYNTHETIC, "e1m1", "e1m2", "e1m3");
-    mv.visitExport("e2", Opcodes.ACC_MANDATED, "e2m1", "e2m2");
-    mv.visitExport("e3", /* access= */ 0, "e3m1");
-
-    mv.visitOpen("o1", Opcodes.ACC_SYNTHETIC, "o1m1", "o1m2", "o1m3");
-    mv.visitOpen("o2", Opcodes.ACC_MANDATED, "o2m1", "o2m2");
-    mv.visitOpen("o3", /* access= */ 0, "o3m1");
-
-    mv.visitUse("u1");
-    mv.visitUse("u2");
-    mv.visitUse("u3");
-    mv.visitUse("u4");
-
-    mv.visitProvide("p1", "p1i1", "p1i2");
-    mv.visitProvide("p2", "p2i1", "p2i2", "p2i3");
-
-    byte[] inputBytes = cw.toByteArray();
+    byte[] inputBytes =
+        java.lang.classfile.ClassFile.of()
+            .build(
+                ClassDesc.of("module-info"),
+                clb -> {
+                  clb.withVersion(JAVA_9_VERSION, 0);
+                  clb.withFlags(AccessFlag.MODULE);
+                  clb.with(
+                      ModuleAttribute.of(
+                          ModuleDesc.of("mod"),
+                          mb -> {
+                            var _ =
+                                mb.moduleFlags(AccessFlag.OPEN)
+                                    .moduleVersion("mod-ver")
+                                    .requires(
+                                        ModuleDesc.of("r1"),
+                                        ImmutableSet.of(AccessFlag.TRANSITIVE),
+                                        "r1-ver")
+                                    .requires(
+                                        ModuleDesc.of("r2"),
+                                        ImmutableSet.of(AccessFlag.STATIC_PHASE),
+                                        "r2-ver")
+                                    .requires(
+                                        ModuleDesc.of("r3"),
+                                        ImmutableSet.of(
+                                            AccessFlag.STATIC_PHASE, AccessFlag.TRANSITIVE),
+                                        "r3-ver")
+                                    .exports(
+                                        PackageDesc.of("e1"),
+                                        ImmutableSet.of(AccessFlag.SYNTHETIC),
+                                        ModuleDesc.of("e1m1"),
+                                        ModuleDesc.of("e1m2"),
+                                        ModuleDesc.of("e1m3"))
+                                    .exports(
+                                        PackageDesc.of("e2"),
+                                        ImmutableSet.of(AccessFlag.MANDATED),
+                                        ModuleDesc.of("e2m1"),
+                                        ModuleDesc.of("e2m2"))
+                                    .exports(
+                                        PackageDesc.of("e3"),
+                                        ImmutableSet.of(),
+                                        ModuleDesc.of("e3m1"))
+                                    .opens(
+                                        PackageDesc.of("o1"),
+                                        ImmutableSet.of(AccessFlag.SYNTHETIC),
+                                        ModuleDesc.of("o1m1"),
+                                        ModuleDesc.of("o1m2"),
+                                        ModuleDesc.of("o1m3"))
+                                    .opens(
+                                        PackageDesc.of("o2"),
+                                        ImmutableSet.of(AccessFlag.MANDATED),
+                                        ModuleDesc.of("o2m1"),
+                                        ModuleDesc.of("o2m2"))
+                                    .opens(
+                                        PackageDesc.of("o3"),
+                                        ImmutableSet.of(),
+                                        ModuleDesc.of("o3m1"))
+                                    .uses(ClassDesc.of("u1"))
+                                    .uses(ClassDesc.of("u2"))
+                                    .uses(ClassDesc.of("u3"))
+                                    .uses(ClassDesc.of("u4"))
+                                    .provides(
+                                        ClassDesc.of("p1"),
+                                        ClassDesc.of("p1i1"),
+                                        ClassDesc.of("p1i2"))
+                                    .provides(
+                                        ClassDesc.of("p2"),
+                                        ClassDesc.of("p2i1"),
+                                        ClassDesc.of("p2i2"),
+                                        ClassDesc.of("p2i3"));
+                          }));
+                });
     byte[] outputBytes = ClassWriter.writeClass(ClassReader.read("module-info", inputBytes));
 
     assertThat(AsmUtils.textify(inputBytes, /* skipDebug= */ true))
@@ -159,28 +220,37 @@ public class ClassWriterTest {
 
   @Test
   public void record() {
-
-    org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(0);
-
-    cw.visit(
-        Opcodes.V16,
-        Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_RECORD,
-        "R",
-        /* signature= */ null,
-        "java/lang/Record",
-        /* interfaces= */ null);
-
-    RecordComponentVisitor rv =
-        cw.visitRecordComponent("x", "Ljava/util/List;", "Ljava/util/List<Ljava/lang/Integer;>;");
-    rv.visitAnnotation("LA;", true);
-    rv.visitTypeAnnotation(318767104, null, "LA;", true);
-    cw.visitRecordComponent("y", "I", null);
-
-    byte[] expectedBytes = cw.toByteArray();
+    byte[] expectedBytes =
+        java.lang.classfile.ClassFile.of()
+            .build(
+                ClassDesc.of("R"),
+                clb -> {
+                  clb.withVersion(JAVA_16_VERSION, 0);
+                  clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER);
+                  clb.withSuperclass(ClassDesc.of("java.lang.Record"));
+                  clb.with(
+                      RecordAttribute.of(
+                          RecordComponentInfo.of(
+                              "x",
+                              ClassDesc.of("java.util.List"),
+                              SignatureAttribute.of(
+                                  Signature.ClassTypeSig.of(
+                                      ClassDesc.of("java.util.List"),
+                                      Signature.TypeArg.of(
+                                          Signature.ClassTypeSig.of(ConstantDescs.CD_Integer)))),
+                              RuntimeVisibleAnnotationsAttribute.of(
+                                  Annotation.of(ClassDesc.of("A"))),
+                              RuntimeVisibleTypeAnnotationsAttribute.of(
+                                  TypeAnnotation.of(
+                                      TypeAnnotation.TargetInfo.ofField(),
+                                      ImmutableList.of(),
+                                      Annotation.of(ClassDesc.of("A"))))),
+                          RecordComponentInfo.of("y", ConstantDescs.CD_int, ImmutableList.of())));
+                });
 
     ClassFile classFile =
         new ClassFile(
-            /* access= */ Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_RECORD,
+            /* access= */ TurbineFlag.ACC_FINAL | TurbineFlag.ACC_SUPER,
             /* majorVersion= */ 60,
             /* minorVersion= */ 0,
             /* name= */ "R",
@@ -228,21 +298,22 @@ public class ClassWriterTest {
 
   @Test
   public void nestHost() {
-
-    org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(0);
-
-    cw.visit(Opcodes.V16, Opcodes.ACC_SUPER, "N", null, null, null);
-
-    cw.visitNestHost("H");
-    cw.visitNestMember("A");
-    cw.visitNestMember("B");
-    cw.visitNestMember("C");
-
-    byte[] expectedBytes = cw.toByteArray();
+    byte[] expectedBytes =
+        java.lang.classfile.ClassFile.of()
+            .build(
+                ClassDesc.of("N"),
+                clb -> {
+                  clb.withVersion(JAVA_16_VERSION, 0);
+                  clb.withFlags(AccessFlag.SUPER);
+                  clb.with(NestHostAttribute.of(ClassDesc.of("H")));
+                  clb.with(
+                      NestMembersAttribute.ofSymbols(
+                          ClassDesc.of("A"), ClassDesc.of("B"), ClassDesc.of("C")));
+                });
 
     ClassFile classFile =
         new ClassFile(
-            /* access= */ Opcodes.ACC_SUPER,
+            /* access= */ TurbineFlag.ACC_SUPER,
             /* majorVersion= */ 60,
             /* minorVersion= */ 0,
             /* name= */ "N",

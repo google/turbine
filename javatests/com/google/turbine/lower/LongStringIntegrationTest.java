@@ -20,9 +20,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.objectweb.asm.Opcodes;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,9 +32,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
 
 @RunWith(JUnit4.class)
 public class LongStringIntegrationTest {
@@ -77,19 +75,13 @@ public class LongStringIntegrationTest {
 
   /** Extract the string value of a constant field from the class file. */
   private static String fieldValue(byte[] classFile) {
-    String[] result = {null};
-    new ClassReader(classFile)
-        .accept(
-            new ClassVisitor(Opcodes.ASM9) {
-              @Override
-              public FieldVisitor visitField(
-                  int access, String name, String desc, String signature, Object value) {
-                result[0] = (String) value;
-                return null;
-              }
-            },
-            0);
-    return result[0];
+    return ClassFile.of()
+        .parse(classFile)
+        .fields()
+        .getFirst()
+        .findAttribute(Attributes.constantValue())
+        .map(a -> (String) a.constant().constantValue())
+        .orElse(null);
   }
 
   /** Create a source file with a long concatenated string literal: {@code "" + "." + "." + ...}. */

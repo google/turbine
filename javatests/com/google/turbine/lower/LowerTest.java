@@ -16,10 +16,12 @@
 
 package com.google.turbine.lower;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
+import static java.lang.classfile.ClassFile.JAVA_8_VERSION;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
@@ -60,6 +62,17 @@ import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.reflect.AccessFlag;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -76,14 +89,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.TypePath;
 
 @RunWith(JUnit4.class)
 public class LowerTest {
@@ -282,17 +292,21 @@ public class LowerTest {
                 bound.modules(),
                 bound.classPathEnv())
             .bytes();
-    List<String> attributes = new ArrayList<>();
-    new ClassReader(lowered.get("Test$Inner$InnerMost"))
-        .accept(
-            new ClassVisitor(Opcodes.ASM9) {
-              @Override
-              public void visitInnerClass(
-                  String name, String outerName, String innerName, int access) {
-                attributes.add(String.format("%s %s %s", name, outerName, innerName));
-              }
-            },
-            0);
+    ClassModel cm = ClassFile.of().parse(lowered.get("Test$Inner$InnerMost"));
+    ImmutableList<String> attributes =
+        cm.findAttribute(Attributes.innerClasses())
+            .map(
+                a ->
+                    a.classes().stream()
+                        .map(
+                            i ->
+                                String.format(
+                                    "%s %s %s",
+                                    i.innerClass().asInternalName(),
+                                    i.outerClass().map(ClassEntry::asInternalName).orElse(""),
+                                    i.innerName().map(Utf8Entry::stringValue).orElse("")))
+                        .collect(toImmutableList()))
+            .orElse(ImmutableList.of());
     assertThat(attributes)
         .containsExactly("Test$Inner Test Inner", "Test$Inner$InnerMost Test$Inner InnerMost")
         .inOrder();
@@ -362,29 +376,18 @@ public class LowerTest {
                 bound.modules(),
                 bound.classPathEnv())
             .bytes();
-    TypePath[] path = new TypePath[1];
-    new ClassReader(lowered.get("Test"))
-        .accept(
-            new ClassVisitor(Opcodes.ASM9) {
-              @Override
-              public FieldVisitor visitField(
-                  int access, String name, String desc, String signature, Object value) {
-                return new FieldVisitor(Opcodes.ASM9) {
-                  @Override
-                  public AnnotationVisitor visitTypeAnnotation(
-                      int typeRef, TypePath typePath, String desc, boolean visible) {
-                    path[0] = typePath;
-                    return null;
-                  }
-                };
-              }
-            },
-            0);
-    assertThat(path[0].getLength()).isEqualTo(2);
-    assertThat(path[0].getStep(0)).isEqualTo(TypePath.ARRAY_ELEMENT);
-    assertThat(path[0].getStepArgument(0)).isEqualTo(0);
-    assertThat(path[0].getStep(1)).isEqualTo(TypePath.ARRAY_ELEMENT);
-    assertThat(path[0].getStepArgument(1)).isEqualTo(0);
+    ClassModel cm = ClassFile.of().parse(lowered.get("Test"));
+    TypeAnnotation anno =
+        cm.fields()
+            .getFirst()
+            .findAttribute(Attributes.runtimeInvisibleTypeAnnotations())
+            .orElseThrow()
+            .annotations()
+            .getFirst();
+    assertThat(anno.targetPath())
+        .isEqualTo(
+            ImmutableList.of(
+                TypeAnnotation.TypePathComponent.ARRAY, TypeAnnotation.TypePathComponent.ARRAY));
   }
 
   @Test
@@ -394,11 +397,31 @@ public class LowerTest {
         JarOutputStream jos = new JarOutputStream(os)) {
       jos.putNextEntry(new JarEntry("Lib.class"));
 
-      ClassWriter cw = new ClassWriter(0);
-      cw.visit(52, Opcodes.ACC_SUPER, "Lib", null, "java/lang/Object", null);
-      cw.visitField(Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "ZCONST", "Z", null, Integer.MAX_VALUE);
-      cw.visitField(Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "SCONST", "S", null, Integer.MAX_VALUE);
-      jos.write(cw.toByteArray());
+      byte[] bytes =
+          ClassFile.of()
+              .build(
+                  ClassDesc.of("Lib"),
+                  clb -> {
+                    clb.withVersion(JAVA_8_VERSION, 0);
+                    clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+                    clb.withField(
+                        "ZCONST",
+                        ConstantDescs.CD_boolean,
+                        fb ->
+                            fb.withFlags(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL)
+                                .with(
+                                    ConstantValueAttribute.of(
+                                        clb.constantPool().intEntry(Integer.MAX_VALUE))));
+                    clb.withField(
+                        "SCONST",
+                        ConstantDescs.CD_short,
+                        fb ->
+                            fb.withFlags(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL)
+                                .with(
+                                    ConstantValueAttribute.of(
+                                        clb.constantPool().intEntry(Integer.MAX_VALUE))));
+                  });
+      jos.write(bytes);
     }
 
     ImmutableMap<String, String> input =
@@ -414,17 +437,12 @@ public class LowerTest {
     Map<String, byte[]> actual = IntegrationTestSupport.runTurbine(input, ImmutableList.of(lib));
 
     Map<String, Object> values = new LinkedHashMap<>();
-    new ClassReader(actual.get("Test"))
-        .accept(
-            new ClassVisitor(Opcodes.ASM9) {
-              @Override
-              public FieldVisitor visitField(
-                  int access, String name, String desc, String signature, Object value) {
-                values.put(name, value);
-                return super.visitField(access, name, desc, signature, value);
-              }
-            },
-            0);
+    for (FieldModel field : ClassFile.of().parse(actual.get("Test")).fields()) {
+      field
+          .findAttribute(Attributes.constantValue())
+          .ifPresent(
+              cv -> values.put(field.fieldName().stringValue(), cv.constant().constantValue()));
+    }
 
     assertThat(values).containsEntry("SCONST", -1);
     assertThat(values).containsEntry("ZCONST", 1);
@@ -447,23 +465,8 @@ public class LowerTest {
                 bound.modules(),
                 bound.classPathEnv())
             .bytes();
-    int[] acc = {0};
-    new ClassReader(lowered.get("Test"))
-        .accept(
-            new ClassVisitor(Opcodes.ASM9) {
-              @Override
-              public void visit(
-                  int version,
-                  int access,
-                  String name,
-                  String signature,
-                  String superName,
-                  String[] interfaces) {
-                acc[0] = access;
-              }
-            },
-            0);
-    assertThat((acc[0] & Opcodes.ACC_DEPRECATED)).isEqualTo(Opcodes.ACC_DEPRECATED);
+    ClassModel cm = ClassFile.of().parse(lowered.get("Test"));
+    assertThat(cm.findAttribute(Attributes.deprecated())).isPresent();
   }
 
   @Test
