@@ -1,0 +1,9 @@
+=== test/ValueClass.class ===
+// class version 72.65535 (-65464)
+// access flags 0x11
+public final class test/ValueClass {
+
+
+  // access flags 0x1
+  public <init>(I)V
+}
