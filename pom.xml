@@ -36,9 +36,9 @@
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <protobuf.version>4.36.0</protobuf.version>
+    <protobuf.version>4.36.1</protobuf.version>
     <grpc.version>1.43.2</grpc.version>
-    <native.maven.plugin.version>1.1.11</native.maven.plugin.version>
+    <native.maven.plugin.version>1.1.12</native.maven.plugin.version>
     <truth.version>1.4.5</truth.version>
     <testparameterinjector.version>1.22</testparameterinjector.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
