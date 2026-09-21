@@ -61,7 +61,7 @@ public class JimageClassBinderConcurrencyTest {
                 }));
       }
       // Throws exception if task failed
-      var unused = Futures.allAsList(futures);
+      var _ = Futures.allAsList(futures);
     }
   }
 
@@ -93,7 +93,7 @@ public class JimageClassBinderConcurrencyTest {
                 }));
       }
       // Throws exception if task failed
-      var unused = Futures.allAsList(futures);
+      var _ = Futures.allAsList(futures);
     }
   }
 

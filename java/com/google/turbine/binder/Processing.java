@@ -124,7 +124,7 @@ public class Processing {
             statistics);
     Timers timers = new Timers();
     for (Processor processor : processorInfo.processors()) {
-      try (Timers.Timer unused = timers.start(processor)) {
+      try (var _ = timers.start(processor)) {
         processor.init(processingEnv);
       } catch (Throwable t) {
         throw new AnnotationProcessingError(processor, t, log.diagnostics());
@@ -170,7 +170,7 @@ public class Processing {
             roundEnv =
                 new TurbineRoundEnvironment(factory, syms, false, errorRaised, allAnnotations);
           }
-          try (Timers.Timer unused = timers.start(processor)) {
+          try (var _ = timers.start(processor)) {
             // discard the result of Processor#process because 'claiming' annotations is a bad idea
             // TODO(cushon): consider disallowing this, or reporting a diagnostic
             processor.process(annotations, roundEnv);
@@ -217,7 +217,7 @@ public class Processing {
                 errorRaised,
                 ImmutableSetMultimap.of());
       }
-      try (Timers.Timer unused = timers.start(processor)) {
+      try (var _ = timers.start(processor)) {
         processor.process(ImmutableSet.of(), roundEnv);
       } catch (Throwable t) {
         throw new AnnotationProcessingError(processor, t, log.diagnostics());

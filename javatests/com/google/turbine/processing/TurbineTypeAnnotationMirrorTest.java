@@ -293,7 +293,7 @@ public class TurbineTypeAnnotationMirrorTest {
       }
     }
     ImmutableList<Path> classpathJar = ImmutableList.of(lib);
-    Binder.BindingResult unused =
+    var _ =
         Binder.bind(
             TurbineExecutor.direct(),
             // Turbine requires sources to be present to do annotation processing.

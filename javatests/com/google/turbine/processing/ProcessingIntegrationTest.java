@@ -710,7 +710,7 @@ public class ProcessingIntegrationTest {
             "class Y {}");
 
     TurbineLog log = new TurbineLog();
-    BindingResult unused =
+    var _ =
         Binder.bind(
             TurbineExecutor.direct(),
             log,
@@ -1504,7 +1504,7 @@ public class ProcessingIntegrationTest {
             """);
 
     TurbineLog log = new TurbineLog();
-    BindingResult unused =
+    var _ =
         Binder.bind(
             TurbineExecutor.direct(),
             log,

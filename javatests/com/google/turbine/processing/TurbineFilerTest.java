@@ -123,7 +123,7 @@ public class TurbineFilerTest {
     try (Writer writer = classFile.openWriter()) {
       writer.write("hello");
     }
-    Collection<SourceFile> unused = filer.finishRound();
+    var _ = filer.finishRound();
 
     FileObject output = filer.getResource(StandardLocation.SOURCE_OUTPUT, "com.foo", "Bar.java");
     assertThat(new String(output.openInputStream().readAllBytes(), UTF_8)).isEqualTo("hello");
@@ -137,7 +137,7 @@ public class TurbineFilerTest {
     try (OutputStream os = classFile.openOutputStream()) {
       os.write("goodbye".getBytes(UTF_8));
     }
-    Collection<SourceFile> unused = filer.finishRound();
+    var _ = filer.finishRound();
 
     FileObject output = filer.getResource(StandardLocation.CLASS_OUTPUT, "com.foo", "Baz.class");
     assertThat(new String(output.openInputStream().readAllBytes(), UTF_8)).isEqualTo("goodbye");

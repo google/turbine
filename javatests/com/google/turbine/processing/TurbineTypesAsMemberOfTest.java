@@ -51,7 +51,7 @@ public class TurbineTypesAsMemberOfTest extends AbstractTurbineTypesBiFunctionTe
         (types, lhs, rhs) -> types.asMemberOf((DeclaredType) lhs, element(rhs)).toString();
 
     try {
-      String unused = javacInput.apply(predicate);
+      var _ = javacInput.apply(predicate);
     } catch (IllegalArgumentException e) {
       assertThrows(
           turbineInput.format("asMemberOf"),
