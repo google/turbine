@@ -26,6 +26,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
@@ -83,10 +84,37 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return Suppliers.memoize(() -> new BytecodeBoundClass(sym, bytes, env, path.toString()));
   }
 
+  private static final ClassSymbol NO_CLASS_SYMBOL = new ClassSymbol("<none>");
+  private static final ClassSig NO_SIG =
+      new ClassSig(ImmutableList.of(), new ClassTySig("", ImmutableList.of()), ImmutableList.of());
+  private static final ClassTy NO_CLASS_TY = ClassTy.asNonParametricClassTy(NO_CLASS_SYMBOL);
+  private static final AnnotationMetadata NO_ANNOTATION_METADATA =
+      new AnnotationMetadata(
+          /* retention= */ null, /* annotationTarget= */ null, /* repeatable= */ null);
+
   private final ClassSymbol sym;
   private final Env<ClassSymbol, BytecodeBoundClass> env;
-  private final Supplier<ClassFile> classFile;
+  private final Supplier<byte[]> bytes;
   private final @Nullable String jarFile;
+  @LazyInit private @Nullable ClassFile classFile;
+  @LazyInit private @Nullable TurbineTyKind kind;
+  @LazyInit private @Nullable ClassSymbol owner;
+  @LazyInit private @Nullable ImmutableMap<String, ClassSymbol> children;
+  @LazyInit private int access = -1;
+  @LazyInit private @Nullable ClassSig sig;
+  @LazyInit private @Nullable ImmutableMap<String, TyVarSymbol> tyParams;
+  @LazyInit private @Nullable ClassSymbol superclass;
+  @LazyInit private @Nullable ImmutableList<ClassSymbol> interfaces;
+  @LazyInit private @Nullable ClassTy superClassType;
+  @LazyInit private @Nullable ImmutableList<Type> interfaceTypes;
+  @LazyInit private @Nullable ImmutableList<ClassSymbol> permits;
+  @LazyInit private @Nullable ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes;
+  @LazyInit private @Nullable ImmutableList<FieldInfo> fields;
+  @LazyInit private @Nullable ImmutableList<MethodInfo> methods;
+  @LazyInit private @Nullable ImmutableList<RecordComponentInfo> components;
+  @LazyInit private @Nullable AnnotationMetadata annotationMetadata;
+  @LazyInit private @Nullable ImmutableList<AnnoInfo> annotations;
+  @LazyInit private @Nullable ImmutableMap<ClassSymbol, ClassFile.InnerClass> innerClasses;
 
   public BytecodeBoundClass(
       ClassSymbol sym,
@@ -95,275 +123,256 @@ public class BytecodeBoundClass implements TypeBoundClass {
       @Nullable String jarFile) {
     this.sym = sym;
     this.env = env;
+    this.bytes = bytes;
     this.jarFile = jarFile;
-    this.classFile =
-        Suppliers.memoize(
-            () -> {
-              ClassFile cf = ClassReader.read(jarFile + "!" + sym.binaryName(), bytes.get());
-              verify(
-                  cf.name().equals(sym.binaryName()),
-                  "expected class data for %s, saw %s instead",
-                  sym.binaryName(),
-                  cf.name());
-              return cf;
-            });
   }
 
-  private final Supplier<TurbineTyKind> kind =
-      Suppliers.memoize(
-          new Supplier<TurbineTyKind>() {
-            @Override
-            public TurbineTyKind get() {
-              int access = access();
-              if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
-                return TurbineTyKind.ANNOTATION;
-              }
-              if ((access & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE) {
-                return TurbineTyKind.INTERFACE;
-              }
-              if ((access & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
-                return TurbineTyKind.ENUM;
-              }
-              if (classFile.get().record() != null) {
-                return TurbineTyKind.RECORD;
-              }
-              return TurbineTyKind.CLASS;
-            }
-          });
+  private TurbineTyKind computeKind() {
+    int access = access();
+    if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {
+      return TurbineTyKind.ANNOTATION;
+    }
+    if ((access & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE) {
+      return TurbineTyKind.INTERFACE;
+    }
+    if ((access & TurbineFlag.ACC_ENUM) == TurbineFlag.ACC_ENUM) {
+      return TurbineTyKind.ENUM;
+    }
+    if (classFile().record() != null) {
+      return TurbineTyKind.RECORD;
+    }
+    return TurbineTyKind.CLASS;
+  }
 
   @Override
   public TurbineTyKind kind() {
-    return kind.get();
+    TurbineTyKind local = this.kind;
+    if (local == null) {
+      this.kind = local = computeKind();
+    }
+    return local;
   }
 
-  private final Supplier<@Nullable ClassSymbol> owner =
-      Suppliers.memoize(
-          new Supplier<@Nullable ClassSymbol>() {
-            @Override
-            public @Nullable ClassSymbol get() {
-              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
-                if (sym.binaryName().equals(inner.innerClass())) {
-                  return new ClassSymbol(inner.outerClass());
-                }
-              }
-              return null;
-            }
-          });
+  private ClassSymbol computeOwner() {
+    for (ClassFile.InnerClass inner : classFile().innerClasses()) {
+      if (sym.binaryName().equals(inner.innerClass())) {
+        return new ClassSymbol(inner.outerClass());
+      }
+    }
+    return NO_CLASS_SYMBOL;
+  }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public @Nullable ClassSymbol owner() {
-    return owner.get();
+    ClassSymbol local = this.owner;
+    if (local == null) {
+      this.owner = local = computeOwner();
+    }
+    return local == NO_CLASS_SYMBOL ? null : local;
   }
 
-  private final Supplier<ImmutableMap<String, ClassSymbol>> children =
-      Suppliers.memoize(
-          new Supplier<ImmutableMap<String, ClassSymbol>>() {
-            @Override
-            public ImmutableMap<String, ClassSymbol> get() {
-              ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
-              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
-                if (inner.innerName() == null) {
-                  // anonymous class
-                  continue;
-                }
-                if (sym.binaryName().equals(inner.outerClass())) {
-                  result.put(inner.innerName(), new ClassSymbol(inner.innerClass()));
-                }
-              }
-              return result.buildOrThrow();
-            }
-          });
+  private ImmutableMap<String, ClassSymbol> computeChildren() {
+    ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
+    for (ClassFile.InnerClass inner : classFile().innerClasses()) {
+      if (inner.innerName() == null) {
+        // anonymous class
+        continue;
+      }
+      if (sym.binaryName().equals(inner.outerClass())) {
+        result.put(inner.innerName(), new ClassSymbol(inner.innerClass()));
+      }
+    }
+    return result.buildOrThrow();
+  }
 
   @Override
   public ImmutableMap<String, ClassSymbol> children() {
-    return children.get();
+    ImmutableMap<String, ClassSymbol> local = this.children;
+    if (local == null) {
+      this.children = local = computeChildren();
+    }
+    return local;
   }
 
-  private final Supplier<Integer> access =
-      Suppliers.memoize(
-          new Supplier<Integer>() {
-            @Override
-            public Integer get() {
-              int access = classFile.get().access();
-              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
-                if (sym.binaryName().equals(inner.innerClass())) {
-                  access = inner.access();
-                }
-              }
-              return access;
-            }
-          });
+  private int computeAccess() {
+    int access = classFile().access();
+    for (ClassFile.InnerClass inner : classFile().innerClasses()) {
+      if (sym.binaryName().equals(inner.innerClass())) {
+        access = inner.access();
+      }
+    }
+    return access;
+  }
 
   @Override
   public int access() {
-    return access.get();
+    int local = this.access;
+    if (local == -1) {
+      this.access = local = computeAccess();
+    }
+    return local;
   }
 
-  private final Supplier<@Nullable ClassSig> sig =
-      Suppliers.memoize(
-          new Supplier<@Nullable ClassSig>() {
-            @Override
-            public @Nullable ClassSig get() {
-              String signature = classFile.get().signature();
-              if (signature == null) {
-                return null;
-              }
-              return new SigParser(signature).parseClassSig();
-            }
-          });
+  private ClassSig computeSig() {
+    String signature = classFile().signature();
+    if (signature == null) {
+      return NO_SIG;
+    }
+    return new SigParser(signature).parseClassSig();
+  }
 
-  private final Supplier<ImmutableMap<String, TyVarSymbol>> tyParams =
-      Suppliers.memoize(
-          new Supplier<ImmutableMap<String, TyVarSymbol>>() {
-            @Override
-            public ImmutableMap<String, TyVarSymbol> get() {
-              ClassSig csig = sig.get();
-              if (csig == null || csig.tyParams().isEmpty()) {
-                return ImmutableMap.of();
-              }
-              ImmutableMap.Builder<String, TyVarSymbol> result = ImmutableMap.builder();
-              for (Sig.TyParamSig p : csig.tyParams()) {
-                result.put(p.name(), new TyVarSymbol(sym, p.name()));
-              }
-              return result.buildOrThrow();
-            }
-          });
+  private @Nullable ClassSig sig() {
+    ClassSig local = this.sig;
+    if (local == null) {
+      this.sig = local = computeSig();
+    }
+    return local == NO_SIG ? null : local;
+  }
+
+  private ImmutableMap<String, TyVarSymbol> computeTypeParameters() {
+    ClassSig csig = sig();
+    if (csig == null || csig.tyParams().isEmpty()) {
+      return ImmutableMap.of();
+    }
+    ImmutableMap.Builder<String, TyVarSymbol> result = ImmutableMap.builder();
+    for (Sig.TyParamSig p : csig.tyParams()) {
+      result.put(p.name(), new TyVarSymbol(sym, p.name()));
+    }
+    return result.buildOrThrow();
+  }
 
   @Override
   public ImmutableMap<String, TyVarSymbol> typeParameters() {
-    return tyParams.get();
+    ImmutableMap<String, TyVarSymbol> local = this.tyParams;
+    if (local == null) {
+      this.tyParams = local = computeTypeParameters();
+    }
+    return local;
   }
 
-  private final Supplier<@Nullable ClassSymbol> superclass =
-      Suppliers.memoize(
-          new Supplier<@Nullable ClassSymbol>() {
-            @Override
-            public @Nullable ClassSymbol get() {
-              String superclass = classFile.get().superName();
-              if (superclass == null) {
-                return null;
-              }
-              return new ClassSymbol(superclass);
-            }
-          });
+  private ClassSymbol computeSuperclass() {
+    String superName = classFile().superName();
+    if (superName == null) {
+      return NO_CLASS_SYMBOL;
+    }
+    return new ClassSymbol(superName);
+  }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public @Nullable ClassSymbol superclass() {
-    return superclass.get();
+    ClassSymbol local = this.superclass;
+    if (local == null) {
+      this.superclass = local = computeSuperclass();
+    }
+    return local == NO_CLASS_SYMBOL ? null : local;
   }
-
-  private final Supplier<ImmutableList<ClassSymbol>> interfaces =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<ClassSymbol>>() {
-            @Override
-            public ImmutableList<ClassSymbol> get() {
-              ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
-              for (String i : classFile.get().interfaces()) {
-                result.add(new ClassSymbol(i));
-              }
-              return result.build();
-            }
-          });
 
   @Override
   public ImmutableList<ClassSymbol> interfaces() {
-    return interfaces.get();
+    ImmutableList<ClassSymbol> local = this.interfaces;
+    if (local == null) {
+      ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
+      for (String i : classFile().interfaces()) {
+        result.add(new ClassSymbol(i));
+      }
+      this.interfaces = local = result.build();
+    }
+    return local;
   }
 
-  private final Supplier<@Nullable ClassTy> superClassType =
-      Suppliers.memoize(
-          new Supplier<@Nullable ClassTy>() {
-            @Override
-            public @Nullable ClassTy get() {
-              if (superclass() == null) {
-                return null;
-              }
-              ImmutableList<TypeAnnotationInfo> typeAnnotations =
-                  typeAnnotationsForSupertype(65535);
-              if (sig.get() == null || sig.get().superClass() == null) {
-                return asNonParametricClassTy(
-                    superclass(), typeAnnotations, makeScope(env, sym, ImmutableMap.of()));
-              }
-              return BytecodeBinder.bindClassTy(
-                  sig.get().superClass(), makeScope(env, sym, ImmutableMap.of()), typeAnnotations);
-            }
-          });
+  private ClassTy computeSuperClassType() {
+    if (superclass() == null) {
+      return NO_CLASS_TY;
+    }
+    ImmutableList<TypeAnnotationInfo> typeAnnotations = typeAnnotationsForSupertype(65535);
+    ClassSig sig = sig();
+    if (sig == null || sig.superClass() == null) {
+      return asNonParametricClassTy(
+          superclass(), typeAnnotations, makeScope(env, sym, ImmutableMap.of()));
+    }
+    return BytecodeBinder.bindClassTy(
+        sig.superClass(), makeScope(env, sym, ImmutableMap.of()), typeAnnotations);
+  }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public @Nullable ClassTy superClassType() {
-    return superClassType.get();
+    ClassTy local = this.superClassType;
+    if (local == null) {
+      this.superClassType = local = computeSuperClassType();
+    }
+    return local == NO_CLASS_TY ? null : local;
   }
 
-  private final Supplier<ImmutableList<Type>> interfaceTypes =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<Type>>() {
-            @Override
-            public ImmutableList<Type> get() {
-              ImmutableList<ClassSymbol> interfaces = interfaces();
-              if (interfaces.isEmpty()) {
-                return ImmutableList.of();
-              }
-              ImmutableList.Builder<Type> result = ImmutableList.builder();
-              BytecodeBinder.Scope scope = makeScope(env, sym, ImmutableMap.of());
-              ImmutableList<ClassTySig> sigs = sig.get() == null ? null : sig.get().interfaces();
-              if (sigs == null) {
-                for (int i = 0; i < interfaces.size(); i++) {
-                  result.add(
-                      asNonParametricClassTy(
-                          interfaces.get(i), typeAnnotationsForSupertype(i), scope));
-                }
-              } else {
-                for (int i = 0; i < sigs.size(); i++) {
-                  result.add(
-                      BytecodeBinder.bindClassTy(
-                          sigs.get(i), scope, typeAnnotationsForSupertype(i)));
-                }
-              }
-              return result.build();
-            }
-          });
+  private ImmutableList<Type> computeInterfaceTypes() {
+    ImmutableList<ClassSymbol> interfaces = interfaces();
+    if (interfaces.isEmpty()) {
+      return ImmutableList.of();
+    }
+    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    BytecodeBinder.Scope scope = makeScope(env, sym, ImmutableMap.of());
+    ClassSig sig = sig();
+    ImmutableList<ClassTySig> sigs = sig == null ? null : sig.interfaces();
+    if (sigs == null) {
+      for (int i = 0; i < interfaces.size(); i++) {
+        result.add(
+            asNonParametricClassTy(interfaces.get(i), typeAnnotationsForSupertype(i), scope));
+      }
+    } else {
+      for (int i = 0; i < sigs.size(); i++) {
+        result.add(BytecodeBinder.bindClassTy(sigs.get(i), scope, typeAnnotationsForSupertype(i)));
+      }
+    }
+    return result.build();
+  }
 
   @Override
   public ImmutableList<Type> interfaceTypes() {
-    return interfaceTypes.get();
+    ImmutableList<Type> local = this.interfaceTypes;
+    if (local == null) {
+      this.interfaceTypes = local = computeInterfaceTypes();
+    }
+    return local;
   }
-
-  private final Supplier<ImmutableList<ClassSymbol>> permits =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<ClassSymbol>>() {
-            @Override
-            public ImmutableList<ClassSymbol> get() {
-              ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
-              for (String p : classFile.get().permits()) {
-                result.add(new ClassSymbol(p));
-              }
-              return result.build();
-            }
-          });
 
   @Override
   public ImmutableList<ClassSymbol> permits() {
-    return permits.get();
+    ImmutableList<ClassSymbol> local = this.permits;
+    if (local == null) {
+      ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
+      for (String p : classFile().permits()) {
+        result.add(new ClassSymbol(p));
+      }
+      this.permits = local = result.build();
+    }
+    return local;
   }
 
-  private final Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>> typeParameterTypes =
-      Suppliers.memoize(
-          new Supplier<ImmutableMap<TyVarSymbol, TyVarInfo>>() {
-            @Override
-            public ImmutableMap<TyVarSymbol, TyVarInfo> get() {
-              if (sig.get() == null) {
-                return ImmutableMap.of();
-              }
-              BytecodeBinder.Scope scope = makeScope(env, sym, typeParameters());
-              return bindTypeParams(
-                  sig.get().tyParams(),
-                  typeParameters(),
-                  scope,
-                  TargetType.CLASS_TYPE_PARAMETER,
-                  TargetType.CLASS_TYPE_PARAMETER_BOUND,
-                  classFile.get().typeAnnotations());
-            }
-          });
+  private ImmutableMap<TyVarSymbol, TyVarInfo> computeTypeParameterTypes() {
+    ClassSig sig = sig();
+    if (sig == null) {
+      return ImmutableMap.of();
+    }
+    BytecodeBinder.Scope scope = makeScope(env, sym, typeParameters());
+    return bindTypeParams(
+        sig.tyParams(),
+        typeParameters(),
+        scope,
+        TargetType.CLASS_TYPE_PARAMETER,
+        TargetType.CLASS_TYPE_PARAMETER_BOUND,
+        classFile().typeAnnotations());
+  }
+
+  @Override
+  public ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes() {
+    ImmutableMap<TyVarSymbol, TyVarInfo> local = this.typeParameterTypes;
+    if (local == null) {
+      this.typeParameterTypes = local = computeTypeParameterTypes();
+    }
+    return local;
+  }
 
   private static ImmutableMap<TyVarSymbol, TyVarInfo> bindTypeParams(
       ImmutableList<Sig.TyParamSig> tyParamSigs,
@@ -437,62 +446,58 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return result.build();
   }
 
-  @Override
-  public ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes() {
-    return typeParameterTypes.get();
+  private ImmutableList<FieldInfo> computeFields() {
+    ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
+    for (ClassFile.FieldInfo cfi : classFile().fields()) {
+      FieldSymbol fieldSym = new FieldSymbol(sym, cfi.name());
+      Type type =
+          BytecodeBinder.bindTy(
+              new SigParser(firstNonNull(cfi.signature(), cfi.descriptor())).parseType(),
+              makeScope(env, sym, ImmutableMap.of()),
+              typeAnnotationsForTarget(cfi.typeAnnotations(), TargetType.FIELD));
+      int access = cfi.access();
+      Const.Value value = cfi.value();
+      if (value != null) {
+        value = BytecodeBinder.bindConstValue(type, value);
+      }
+      ImmutableList<AnnoInfo> annotations =
+          BytecodeBinder.bindAnnotations(cfi.annotations(), makeScope(env, sym, ImmutableMap.of()));
+      fields.add(new FieldInfo(fieldSym, type, access, annotations, /* decl= */ null, value));
+    }
+    return fields.build();
   }
-
-  private final Supplier<ImmutableList<FieldInfo>> fields =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<FieldInfo>>() {
-            @Override
-            public ImmutableList<FieldInfo> get() {
-              ImmutableList.Builder<FieldInfo> fields = ImmutableList.builder();
-              for (ClassFile.FieldInfo cfi : classFile.get().fields()) {
-                FieldSymbol fieldSym = new FieldSymbol(sym, cfi.name());
-                Type type =
-                    BytecodeBinder.bindTy(
-                        new SigParser(firstNonNull(cfi.signature(), cfi.descriptor())).parseType(),
-                        makeScope(env, sym, ImmutableMap.of()),
-                        typeAnnotationsForTarget(cfi.typeAnnotations(), TargetType.FIELD));
-                int access = cfi.access();
-                Const.Value value = cfi.value();
-                if (value != null) {
-                  value = BytecodeBinder.bindConstValue(type, value);
-                }
-                ImmutableList<AnnoInfo> annotations =
-                    BytecodeBinder.bindAnnotations(
-                        cfi.annotations(), makeScope(env, sym, ImmutableMap.of()));
-                fields.add(
-                    new FieldInfo(fieldSym, type, access, annotations, /* decl= */ null, value));
-              }
-              return fields.build();
-            }
-          });
 
   @Override
   public ImmutableList<FieldInfo> fields() {
-    return fields.get();
+    ImmutableList<FieldInfo> local = this.fields;
+    if (local == null) {
+      this.fields = local = computeFields();
+    }
+    return local;
   }
 
-  private final Supplier<ImmutableList<MethodInfo>> methods =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<MethodInfo>>() {
-            @Override
-            public ImmutableList<MethodInfo> get() {
-              ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
-              int idx = 0;
-              ClassFile cf = classFile.get();
-              for (ClassFile.MethodInfo m : cf.methods()) {
-                if (m.name().equals("<clinit>")) {
-                  // Don't bother reading class initializers, which we don't need
-                  continue;
-                }
-                methods.add(bindMethod(cf, idx++, m));
-              }
-              return methods.build();
-            }
-          });
+  private ImmutableList<MethodInfo> computeMethods() {
+    ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
+    int idx = 0;
+    ClassFile cf = classFile();
+    for (ClassFile.MethodInfo m : cf.methods()) {
+      if (m.name().equals("<clinit>")) {
+        // Don't bother reading class initializers, which we don't need
+        continue;
+      }
+      methods.add(bindMethod(cf, idx++, m));
+    }
+    return methods.build();
+  }
+
+  @Override
+  public ImmutableList<MethodInfo> methods() {
+    ImmutableList<MethodInfo> local = this.methods;
+    if (local == null) {
+      this.methods = local = computeMethods();
+    }
+    return local;
+  }
 
   private MethodInfo bindMethod(ClassFile classFile, int methodIdx, ClassFile.MethodInfo m) {
     MethodSymbol methodSymbol = new MethodSymbol(methodIdx, sym, m.name());
@@ -616,69 +621,66 @@ public class BytecodeBoundClass implements TypeBoundClass {
         receiver);
   }
 
-  @Override
-  public ImmutableList<MethodInfo> methods() {
-    return methods.get();
+  private ImmutableList<RecordComponentInfo> computeComponents() {
+    var record = classFile().record();
+    if (record == null) {
+      return ImmutableList.of();
+    }
+    ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
+    for (RecordInfo.RecordComponentInfo component : record.recordComponents()) {
+      Type type =
+          BytecodeBinder.bindTy(
+              new SigParser(firstNonNull(component.signature(), component.descriptor()))
+                  .parseType(),
+              makeScope(env, sym, ImmutableMap.of()),
+              typeAnnotationsForTarget(component.typeAnnotations(), TargetType.FIELD));
+      result.add(
+          new RecordComponentInfo(
+              new RecordComponentSymbol(sym, component.name()),
+              type,
+              BytecodeBinder.bindAnnotations(
+                  component.annotations(), makeScope(env, sym, ImmutableMap.of())),
+              /* access= */ 0,
+              /* decl= */ null));
+    }
+    return result.build();
   }
-
-  private final Supplier<ImmutableList<RecordComponentInfo>> components =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<RecordComponentInfo>>() {
-            @Override
-            public ImmutableList<RecordComponentInfo> get() {
-              var record = classFile.get().record();
-              if (record == null) {
-                return ImmutableList.of();
-              }
-              ImmutableList.Builder<RecordComponentInfo> result = ImmutableList.builder();
-              for (RecordInfo.RecordComponentInfo component : record.recordComponents()) {
-                Type type =
-                    BytecodeBinder.bindTy(
-                        new SigParser(firstNonNull(component.signature(), component.descriptor()))
-                            .parseType(),
-                        makeScope(env, sym, ImmutableMap.of()),
-                        typeAnnotationsForTarget(component.typeAnnotations(), TargetType.FIELD));
-                result.add(
-                    new RecordComponentInfo(
-                        new RecordComponentSymbol(sym, component.name()),
-                        type,
-                        BytecodeBinder.bindAnnotations(
-                            component.annotations(), makeScope(env, sym, ImmutableMap.of())),
-                        /* access= */ 0,
-                        /* decl= */ null));
-              }
-              return result.build();
-            }
-          });
 
   @Override
   public ImmutableList<RecordComponentInfo> components() {
-    return components.get();
+    ImmutableList<RecordComponentInfo> local = this.components;
+    if (local == null) {
+      this.components = local = computeComponents();
+    }
+    return local;
   }
 
-  private final Supplier<@Nullable AnnotationMetadata> annotationMetadata =
-      Suppliers.memoize(
-          new Supplier<@Nullable AnnotationMetadata>() {
-            @Override
-            public @Nullable AnnotationMetadata get() {
-              if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
-                return null;
-              }
-              RetentionPolicy retention = null;
-              ImmutableSet<TurbineElementType> target = null;
-              ClassSymbol repeatable = null;
-              for (ClassFile.AnnotationInfo annotation : classFile.get().annotations()) {
-                switch (annotation.typeName()) {
-                  case "Ljava/lang/annotation/Retention;" -> retention = bindRetention(annotation);
-                  case "Ljava/lang/annotation/Target;" -> target = bindTarget(annotation);
-                  case "Ljava/lang/annotation/Repeatable;" ->
-                      repeatable = bindRepeatable(annotation);
-                  default -> {}
-                }
-              }
-              return new AnnotationMetadata(retention, target, repeatable);
-            }
-          });
+  private AnnotationMetadata computeAnnotationMetadata() {
+    if ((access() & TurbineFlag.ACC_ANNOTATION) != TurbineFlag.ACC_ANNOTATION) {
+      return NO_ANNOTATION_METADATA;
+    }
+    RetentionPolicy retention = null;
+    ImmutableSet<TurbineElementType> target = null;
+    ClassSymbol repeatable = null;
+    for (ClassFile.AnnotationInfo annotation : classFile().annotations()) {
+      switch (annotation.typeName()) {
+        case "Ljava/lang/annotation/Retention;" -> retention = bindRetention(annotation);
+        case "Ljava/lang/annotation/Target;" -> target = bindTarget(annotation);
+        case "Ljava/lang/annotation/Repeatable;" -> repeatable = bindRepeatable(annotation);
+        default -> {}
+      }
+    }
+    return new AnnotationMetadata(retention, target, repeatable);
+  }
+
+  @Override
+  public @Nullable AnnotationMetadata annotationMetadata() {
+    AnnotationMetadata local = this.annotationMetadata;
+    if (local == null) {
+      this.annotationMetadata = local = computeAnnotationMetadata();
+    }
+    return local == NO_ANNOTATION_METADATA ? null : local;
+  }
 
   private static @Nullable RetentionPolicy bindRetention(AnnotationInfo annotation) {
     ElementValue val = annotation.elementValuePairs().get("value");
@@ -735,23 +737,15 @@ public class BytecodeBoundClass implements TypeBoundClass {
   }
 
   @Override
-  public @Nullable AnnotationMetadata annotationMetadata() {
-    return annotationMetadata.get();
-  }
-
-  private final Supplier<ImmutableList<AnnoInfo>> annotations =
-      Suppliers.memoize(
-          new Supplier<ImmutableList<AnnoInfo>>() {
-            @Override
-            public ImmutableList<AnnoInfo> get() {
-              return BytecodeBinder.bindAnnotations(
-                  classFile.get().annotations(), makeScope(env, sym, ImmutableMap.of()));
-            }
-          });
-
-  @Override
   public ImmutableList<AnnoInfo> annotations() {
-    return annotations.get();
+    ImmutableList<AnnoInfo> local = this.annotations;
+    if (local == null) {
+      this.annotations =
+          local =
+              BytecodeBinder.bindAnnotations(
+                  classFile().annotations(), makeScope(env, sym, ImmutableMap.of()));
+    }
+    return local;
   }
 
   private static ImmutableList<TypeAnnotationInfo> typeAnnotationsForThrows(
@@ -762,7 +756,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   private ImmutableList<TypeAnnotationInfo> typeAnnotationsForSupertype(int index) {
     return typeAnnotationsForTarget(
-        classFile.get().typeAnnotations(),
+        classFile().typeAnnotations(),
         TargetType.SUPERTYPE,
         TypeAnnotationInfo.SuperTypeTarget.create(index));
   }
@@ -786,19 +780,17 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return result.build();
   }
 
-  private final Supplier<ImmutableMap<ClassSymbol, ClassFile.InnerClass>> innerClasses =
-      Suppliers.memoize(
-          new Supplier<ImmutableMap<ClassSymbol, ClassFile.InnerClass>>() {
-            @Override
-            public ImmutableMap<ClassSymbol, ClassFile.InnerClass> get() {
-              ImmutableMap.Builder<ClassSymbol, ClassFile.InnerClass> result =
-                  ImmutableMap.builder();
-              for (ClassFile.InnerClass inner : classFile.get().innerClasses()) {
-                result.put(new ClassSymbol(inner.innerClass()), inner);
-              }
-              return result.buildOrThrow();
-            }
-          });
+  private ImmutableMap<ClassSymbol, ClassFile.InnerClass> innerClasses() {
+    ImmutableMap<ClassSymbol, ClassFile.InnerClass> local = this.innerClasses;
+    if (local == null) {
+      ImmutableMap.Builder<ClassSymbol, ClassFile.InnerClass> result = ImmutableMap.builder();
+      for (ClassFile.InnerClass inner : classFile().innerClasses()) {
+        result.put(new ClassSymbol(inner.innerClass()), inner);
+      }
+      this.innerClasses = local = result.buildOrThrow();
+    }
+    return local;
+  }
 
   /**
    * Create a scope for resolving type variable symbols declared in the class, and any enclosing
@@ -832,7 +824,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
       @Override
       public @Nullable ClassSymbol outer(ClassSymbol sym) {
-        ClassFile.InnerClass inner = innerClasses.get().get(sym);
+        ClassFile.InnerClass inner = innerClasses().get(sym);
         if (inner == null) {
           return null;
         }
@@ -846,7 +838,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   /** The jar file the symbol was loaded from. */
   public @Nullable String jarFile() {
-    String transitiveJar = classFile.get().transitiveJar();
+    String transitiveJar = classFile().transitiveJar();
     if (transitiveJar != null) {
       return transitiveJar;
     }
@@ -855,6 +847,16 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   /** The class file the symbol was loaded from. */
   public ClassFile classFile() {
-    return classFile.get();
+    ClassFile local = this.classFile;
+    if (local == null) {
+      ClassFile cf = ClassReader.read(jarFile + "!" + sym.binaryName(), bytes.get());
+      verify(
+          cf.name().equals(sym.binaryName()),
+          "expected class data for %s, saw %s instead",
+          sym.binaryName(),
+          cf.name());
+      this.classFile = local = cf;
+    }
+    return local;
   }
 }
