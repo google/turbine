@@ -26,7 +26,6 @@ import java.io.IOError;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Path;
@@ -100,6 +99,44 @@ public final class Zip {
 
   static final long ZIP64_MAGICVAL = 0xFFFFFFFFL;
 
+  /**
+   * Threshold in bytes below which reads use positional I/O ({@code pread64}) into heap buffers
+   * rather than memory-mapping ({@code mmap}).
+   *
+   * <p>Memory-mapping small regions incurs overhead from creating virtual memory areas (VMAs), page
+   * table manipulation, and kernel lock contention ({@code mmap_lock}) during concurrent classpath
+   * scanning across large numbers of JAR files. 64 KiB covers nearly all class files and central
+   * directory headers while remaining well below GC humongous allocation thresholds.
+   */
+  private static final int MMAP_THRESHOLD = 64 * 1024;
+
+  private static ByteBuffer readFully(FileChannel chan, long offset, int length)
+      throws IOException {
+    ByteBuffer buf = ByteBuffer.allocate(length);
+    long pos = offset;
+    while (buf.hasRemaining()) {
+      int read = chan.read(buf, pos);
+      if (read == -1) {
+        throw new ZipException("unexpected EOF");
+      }
+      pos += read;
+    }
+    return buf.flip().order(ByteOrder.LITTLE_ENDIAN);
+  }
+
+  /**
+   * Reads or memory-maps a slice of the channel. For small regions (less than {@value
+   * #MMAP_THRESHOLD} bytes), positional reads into heap buffers are preferred over memory-mapping
+   * to avoid virtual memory area (VMA) allocation overhead and page table / mmap_lock contention.
+   */
+  private static ByteBuffer mapOrRead(FileChannel chan, long offset, long length)
+      throws IOException {
+    if (length < MMAP_THRESHOLD) {
+      return readFully(chan, offset, (int) length);
+    }
+    return chan.map(MapMode.READ_ONLY, offset, length).order(ByteOrder.LITTLE_ENDIAN);
+  }
+
   /** Iterates over a zip archive. */
   static class ZipIterator implements Iterator<Entry> {
 
@@ -108,9 +145,9 @@ public final class Zip {
 
     private final Path path;
     private int cdindex = 0;
-    private final MappedByteBuffer cd;
+    private final ByteBuffer cd;
 
-    ZipIterator(Path path, FileChannel chan, MappedByteBuffer cd) {
+    ZipIterator(Path path, FileChannel chan, ByteBuffer cd) {
       this.path = path;
       this.chan = chan;
       this.cd = cd;
@@ -148,7 +185,7 @@ public final class Zip {
 
     private final Path path;
     private final FileChannel chan;
-    private final MappedByteBuffer cd;
+    private final ByteBuffer cd;
 
     public ZipIterable(Path path) throws IOException {
       this.path = path;
@@ -159,15 +196,13 @@ public final class Zip {
         throw new ZipException("invalid zip archive");
       }
       long eocdOffset = size - ENDHDR;
-      MappedByteBuffer eocd = chan.map(MapMode.READ_ONLY, eocdOffset, ENDHDR);
-      eocd.order(ByteOrder.LITTLE_ENDIAN);
+      ByteBuffer eocd = readFully(chan, eocdOffset, ENDHDR);
       int index = 0;
       int commentSize = 0;
       if (!isSignature(eocd, 0, 5, 6)) {
         // The archive may contain a zip file comment; keep looking for the EOCD.
         long start = Math.max(0, size - ENDHDR - 0xFFFF);
-        eocd = chan.map(MapMode.READ_ONLY, start, (size - start));
-        eocd.order(ByteOrder.LITTLE_ENDIAN);
+        eocd = readFully(chan, start, (int) (size - start));
         index = (int) ((size - start) - ENDHDR);
         while (index > 0) {
           index--;
@@ -207,9 +242,7 @@ public final class Zip {
           // or there was a zip64 extensible data sector, so try going through the
           // locator. This approach doesn't work if data was prepended to the archive
           // without updating the offset in the locator.
-          MappedByteBuffer zip64loc =
-              chan.map(MapMode.READ_ONLY, size - ENDHDR - ZIP64_LOCHDR, ZIP64_LOCHDR);
-          zip64loc.order(ByteOrder.LITTLE_ENDIAN);
+          ByteBuffer zip64loc = readFully(chan, size - ENDHDR - ZIP64_LOCHDR, ZIP64_LOCHDR);
           if (zip64loc.getInt(0) == ZIP64_LOCSIG) {
             zip64eocdOffset = zip64loc.getLong(8);
             zip64cdsize = zip64cdsize(chan, zip64eocdOffset);
@@ -220,13 +253,14 @@ public final class Zip {
           }
         }
       }
-      this.cd = chan.map(MapMode.READ_ONLY, eocdOffset - cdsize, cdsize);
-      cd.order(ByteOrder.LITTLE_ENDIAN);
+      this.cd = mapOrRead(chan, eocdOffset - cdsize, cdsize);
     }
 
     static long zip64cdsize(FileChannel chan, long eocdOffset) throws IOException {
-      MappedByteBuffer zip64eocd = chan.map(MapMode.READ_ONLY, eocdOffset, ZIP64_ENDHDR);
-      zip64eocd.order(ByteOrder.LITTLE_ENDIAN);
+      if (eocdOffset < 0 || eocdOffset + ZIP64_ENDHDR > chan.size()) {
+        return -1;
+      }
+      ByteBuffer zip64eocd = readFully(chan, eocdOffset, ZIP64_ENDHDR);
       if (zip64eocd.getInt(0) == ZIP64_ENDSIG) {
         return zip64eocd.getLong(ZIP64_ENDSIZ);
       }
@@ -312,21 +346,17 @@ public final class Zip {
         throw new IllegalArgumentException("unsupported zip entry size: " + size);
       }
       try {
-        MappedByteBuffer fc =
-            chan.map(
-                MapMode.READ_ONLY,
-                offset,
-                Math.min(
-                    LOCHDR + nameLength + cenExtLength + size + EXTRA_FIELD_SLACK,
-                    chan.size() - offset));
-        fc.order(ByteOrder.LITTLE_ENDIAN);
+        long mapLen =
+            Math.min(
+                LOCHDR + nameLength + cenExtLength + size + EXTRA_FIELD_SLACK,
+                chan.size() - offset);
+        ByteBuffer fc = mapOrRead(chan, offset, mapLen);
         checkSignature(path, fc, /* index= */ 0, 3, 4, "LOCSIG");
         int locExtLength = fc.getChar(LOCEXT);
         if (locExtLength > cenExtLength + EXTRA_FIELD_SLACK) {
           // If the local header's extra fields don't match the central directory and we didn't
-          // leave enough slac, re-map the data section with the correct extra field length.
-          fc = chan.map(MapMode.READ_ONLY, offset + LOCHDR + nameLength + locExtLength, size);
-          fc.order(ByteOrder.LITTLE_ENDIAN);
+          // leave enough slack, re-map the data section with the correct extra field length.
+          fc = mapOrRead(chan, offset + LOCHDR + nameLength + locExtLength, size);
         } else {
           // Otherwise seek past the local header, name, and extra fields to the data.
           fc.position(LOCHDR + nameLength + locExtLength);
@@ -351,8 +381,7 @@ public final class Zip {
     }
   }
 
-  static void checkSignature(
-      Path path, MappedByteBuffer buf, int index, int i, int j, String name) {
+  static void checkSignature(Path path, ByteBuffer buf, int index, int i, int j, String name) {
     if (!isSignature(buf, index, i, j)) {
       throw new AssertionError(
           String.format(
@@ -361,7 +390,7 @@ public final class Zip {
     }
   }
 
-  static boolean isSignature(MappedByteBuffer buf, int index, int i, int j) {
+  static boolean isSignature(ByteBuffer buf, int index, int i, int j) {
     return (buf.get(index) == 'P')
         && (buf.get(index + 1) == 'K')
         && (buf.get(index + 2) == i)
