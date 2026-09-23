@@ -88,7 +88,7 @@ public class SigIntegrationTest {
     forEachBootclass(
         path -> {
           try {
-            ClassFile classFile = ClassReader.read(path.toString(), Files.readAllBytes(path));
+            ClassFile classFile = ClassReader.read(path::toString, Files.readAllBytes(path));
             {
               String signature = classFile.signature();
               if (signature != null) {

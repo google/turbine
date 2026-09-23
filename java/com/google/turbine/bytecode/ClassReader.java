@@ -42,26 +42,21 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /** A JVMS §4 class file reader. */
 public class ClassReader {
 
   /** Reads the given bytes into an {@link ClassFile}. */
-  @Deprecated
-  public static ClassFile read(byte[] bytes) {
-    return read(null, bytes);
-  }
-
-  /** Reads the given bytes into an {@link ClassFile}. */
-  public static ClassFile read(@Nullable String path, byte[] bytes) {
+  public static ClassFile read(Supplier<String> path, byte[] bytes) {
     return new ClassReader(path, bytes).read();
   }
 
-  private final @Nullable String path;
+  private final Supplier<String> path;
   private final ByteReader reader;
 
-  private ClassReader(@Nullable String path, byte[] bytes) {
+  private ClassReader(Supplier<String> path, byte[] bytes) {
     this.path = path;
     this.reader = new ByteReader(bytes, 0);
   }
@@ -70,9 +65,7 @@ public class ClassReader {
   @CheckReturnValue
   Error error(String format, Object... args) {
     StringBuilder sb = new StringBuilder();
-    if (path != null) {
-      sb.append(path).append(": ");
-    }
+    sb.append(path.get()).append(": ");
     sb.append(String.format(format, args));
     return new AssertionError(sb.toString());
   }

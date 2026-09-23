@@ -22,7 +22,6 @@ import static com.google.turbine.binder.bytecode.BytecodeBinder.asNonParametricC
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -61,7 +60,6 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -76,14 +74,6 @@ import org.jspecify.annotations.Nullable;
  */
 public class BytecodeBoundClass implements TypeBoundClass {
 
-  public static Supplier<BytecodeBoundClass> lazy(
-      ClassSymbol sym,
-      Supplier<byte[]> bytes,
-      Env<ClassSymbol, BytecodeBoundClass> env,
-      Path path) {
-    return Suppliers.memoize(() -> new BytecodeBoundClass(sym, bytes, env, path.toString()));
-  }
-
   private static final ClassSymbol NO_CLASS_SYMBOL = new ClassSymbol("<none>");
   private static final ClassSig NO_SIG =
       new ClassSig(ImmutableList.of(), new ClassTySig("", ImmutableList.of()), ImmutableList.of());
@@ -95,7 +85,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
   private final ClassSymbol sym;
   private final Env<ClassSymbol, BytecodeBoundClass> env;
   private final Supplier<byte[]> bytes;
-  private final @Nullable String jarFile;
+  private final Supplier<String> jarFile;
   @LazyInit private @Nullable ClassFile classFile;
   @LazyInit private @Nullable TurbineTyKind kind;
   @LazyInit private @Nullable ClassSymbol owner;
@@ -120,11 +110,11 @@ public class BytecodeBoundClass implements TypeBoundClass {
       ClassSymbol sym,
       Supplier<byte[]> bytes,
       Env<ClassSymbol, BytecodeBoundClass> env,
-      @Nullable String jarFile) {
-    this.sym = sym;
-    this.env = env;
-    this.bytes = bytes;
-    this.jarFile = jarFile;
+      Supplier<String> jarFile) {
+    this.sym = requireNonNull(sym);
+    this.env = requireNonNull(env);
+    this.bytes = requireNonNull(bytes);
+    this.jarFile = requireNonNull(jarFile);
   }
 
   private TurbineTyKind computeKind() {
@@ -837,19 +827,19 @@ public class BytecodeBoundClass implements TypeBoundClass {
   }
 
   /** The jar file the symbol was loaded from. */
-  public @Nullable String jarFile() {
+  public String jarFile() {
     String transitiveJar = classFile().transitiveJar();
     if (transitiveJar != null) {
       return transitiveJar;
     }
-    return jarFile;
+    return jarFile.get();
   }
 
   /** The class file the symbol was loaded from. */
   public ClassFile classFile() {
     ClassFile local = this.classFile;
     if (local == null) {
-      ClassFile cf = ClassReader.read(jarFile + "!" + sym.binaryName(), bytes.get());
+      ClassFile cf = ClassReader.read(() -> jarFile.get() + "!" + sym.binaryName(), bytes.get());
       verify(
           cf.name().equals(sym.binaryName()),
           "expected class data for %s, saw %s instead",

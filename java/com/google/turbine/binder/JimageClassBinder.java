@@ -114,7 +114,7 @@ public class JimageClassBinder {
             return null;
           }
           path = path.resolve("module-info.class");
-          return BytecodeBinder.bindModuleInfo(path.toString(), toByteArrayOrDie(path));
+          return BytecodeBinder.bindModuleInfo(path::toString, toByteArrayOrDie(path));
         });
   }
 
@@ -152,7 +152,7 @@ public class JimageClassBinder {
             ClassSymbol sym = new ClassSymbol(binaryName);
             packageClassesBySimpleName.put(sym.simpleName(), sym);
             packageEnv.put(
-                sym, new BytecodeBoundClass(sym, toByteArrayOrDie(path), env, path.toString()));
+                sym, new BytecodeBoundClass(sym, toByteArrayOrDie(path), env, path::toString));
           }
         } catch (IOException e) {
           throw new UncheckedIOException(e);

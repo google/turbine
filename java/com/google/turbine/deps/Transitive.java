@@ -74,7 +74,8 @@ public final class Transitive {
         continue;
       }
       trimmed.put(
-          sym.getKey(), ClassWriter.writeClass(trimClass(ClassReader.read(sym.getValue()), null)));
+          sym.getKey(),
+          ClassWriter.writeClass(trimClass(ClassReader.read(sym::getKey, sym.getValue()), null)));
     }
     return trimmed.buildOrThrow();
   }

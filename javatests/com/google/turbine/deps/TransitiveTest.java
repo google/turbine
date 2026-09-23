@@ -140,7 +140,8 @@ public class TransitiveTest {
             "b/B.class")
         .inOrder();
 
-    ClassFile a = ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A.turbine"));
+    ClassFile a =
+        ClassReader.read(libb::toString, readJar(libb).get("META-INF/TRANSITIVE/a/A.turbine"));
     // methods and non-constant fields are removed
     assertThat(getOnlyElement(a.fields()).name()).isEqualTo("CONST");
     assertThat(a.methods()).isEmpty();
@@ -149,7 +150,8 @@ public class TransitiveTest {
 
     // annotation interface methods are preserved
     assertThat(
-            ClassReader.read(null, readJar(libb).get("META-INF/TRANSITIVE/a/A$Anno.turbine"))
+            ClassReader.read(
+                    libb::toString, readJar(libb).get("META-INF/TRANSITIVE/a/A$Anno.turbine"))
                 .methods())
         .hasSize(1);
 
@@ -157,7 +159,7 @@ public class TransitiveTest {
     // should record the path to the original liba jar.
     assertThat(a.transitiveJar()).isEqualTo(liba.toString());
     // The transitive jar attribute is only set for transitive classes, not e.g. b.B in libb:
-    ClassFile b = ClassReader.read(null, readJar(libb).get("b/B.class"));
+    ClassFile b = ClassReader.read(libb::toString, readJar(libb).get("b/B.class"));
     assertThat(b.transitiveJar()).isNull();
 
     // A class that references members of the transitive supertype A by simple name
@@ -480,7 +482,8 @@ public class TransitiveTest {
     assertThat(readJar(libb).keySet())
         .containsExactly("META-INF/", "META-INF/MANIFEST.MF", "b/B.class")
         .inOrder();
-    assertThat(ClassReader.read(null, readJar(libb).get("b/B.class")).methods()).isNotEmpty();
+    assertThat(ClassReader.read(libb::toString, readJar(libb).get("b/B.class")).methods())
+        .isNotEmpty();
 
     assertThat(readJar(headerOutput).keySet())
         .containsExactly(
@@ -491,7 +494,10 @@ public class TransitiveTest {
             "META-INF/TRANSITIVE/a/A$Inner.turbine",
             "b/B.class")
         .inOrder();
-    assertThat(ClassReader.read(null, readJar(headerOutput).get("b/B.class")).methods()).isEmpty();
+    assertThat(
+            ClassReader.read(headerOutput::toString, readJar(headerOutput).get("b/B.class"))
+                .methods())
+        .isEmpty();
 
     // The header jar's manifest records the corresponding regular output jar
     Manifest manifest =

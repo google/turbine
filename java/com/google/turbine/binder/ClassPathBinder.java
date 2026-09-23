@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBinder;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
@@ -30,6 +31,7 @@ import com.google.turbine.binder.sym.ModuleSymbol;
 import com.google.turbine.zip.Zip;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,16 +60,15 @@ public final class ClassPathBinder {
 
   /** Creates an environment containing symbols in the given classpath. */
   public static ClassPath bindClasspath(Collection<Path> paths) throws IOException {
-    Map<ClassSymbol, Supplier<BytecodeBoundClass>> transitive = new LinkedHashMap<>();
-    Map<ClassSymbol, Supplier<BytecodeBoundClass>> map = new HashMap<>();
+    Map<ClassSymbol, BytecodeBoundClass> transitive = new LinkedHashMap<>();
+    Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
     Map<String, Supplier<byte[]>> resources = new HashMap<>();
     Env<ClassSymbol, BytecodeBoundClass> env =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
           public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
-            Supplier<BytecodeBoundClass> supplier = map.get(sym);
-            return supplier == null ? null : supplier.get();
+            return map.get(sym);
           }
         };
     for (Path path : paths) {
@@ -77,7 +78,7 @@ public final class ClassPathBinder {
         throw new IOException("error reading " + path, e);
       }
     }
-    for (Map.Entry<ClassSymbol, Supplier<BytecodeBoundClass>> entry : transitive.entrySet()) {
+    for (Map.Entry<ClassSymbol, BytecodeBoundClass> entry : transitive.entrySet()) {
       ClassSymbol symbol = entry.getKey();
       map.putIfAbsent(symbol, entry.getValue());
     }
@@ -106,26 +107,62 @@ public final class ClassPathBinder {
     };
   }
 
+  private static class LazyJarPath implements Supplier<String> {
+    private final Path path;
+    private Zip.@Nullable Entry manifest;
+    @LazyInit private @Nullable String resolved;
+
+    LazyJarPath(Path path) {
+      this.path = path;
+    }
+
+    @Override
+    public String get() {
+      String local = this.resolved;
+      if (local == null) {
+        this.resolved = local = resolve();
+      }
+      return local;
+    }
+
+    private String resolve() {
+      Zip.Entry entry = this.manifest;
+      if (entry != null) {
+        String originalJarPath = readOriginalJarPath(entry);
+        if (originalJarPath != null) {
+          return originalJarPath;
+        }
+      }
+      return path.toString();
+    }
+
+    private @Nullable String readOriginalJarPath(Zip.Entry entry) {
+      try {
+        Manifest m = new Manifest(new ByteArrayInputStream(entry.data()));
+        return (String) m.getMainAttributes().get(ORIGINAL_JAR_PATH);
+      } catch (IOException e) {
+        throw new UncheckedIOException("error reading manifest of " + path, e);
+      }
+    }
+  }
+
   private static void bindJar(
       Path path,
-      Map<ClassSymbol, Supplier<BytecodeBoundClass>> env,
+      Map<ClassSymbol, BytecodeBoundClass> env,
       Map<ModuleSymbol, ModuleInfo> modules,
       Env<ClassSymbol, BytecodeBoundClass> benv,
-      Map<ClassSymbol, Supplier<BytecodeBoundClass>> transitive,
+      Map<ClassSymbol, BytecodeBoundClass> transitive,
       Map<String, Supplier<byte[]>> resources)
       throws IOException {
+    LazyJarPath jarPath = new LazyJarPath(path);
     // TODO(cushon): don't leak file descriptors
     for (Zip.Entry ze : new Zip.ZipIterable(path)) {
       String name = ze.name();
       if (name.equals("META-INF/MANIFEST.MF")) {
-        Manifest manifest = new Manifest(new ByteArrayInputStream(ze.data()));
         // If the classpath jar is a header jar, look up the name of the corresponding regular
         // jar. This path will end up in jdeps and be used for classpath reduced of downstream
         // javac invocations, which need the path of regular compile jar and not the header jar.
-        String originalJarPath = (String) manifest.getMainAttributes().get(ORIGINAL_JAR_PATH);
-        if (originalJarPath != null) {
-          path = Path.of(originalJarPath);
-        }
+        jarPath.manifest = ze;
         continue;
       }
       if (name.startsWith(TRANSITIVE_PREFIX)) {
@@ -136,7 +173,7 @@ public final class ClassPathBinder {
             new ClassSymbol(
                 name.substring(
                     TRANSITIVE_PREFIX.length(), name.length() - TRANSITIVE_SUFFIX.length()));
-        transitive.putIfAbsent(sym, BytecodeBoundClass.lazy(sym, ze, benv, path));
+        transitive.putIfAbsent(sym, new BytecodeBoundClass(sym, ze, benv, jarPath));
         continue;
       }
       if (!name.endsWith(".class")) {
@@ -144,12 +181,12 @@ public final class ClassPathBinder {
         continue;
       }
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.class")) {
-        ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(path.toString(), ze);
+        ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(jarPath, ze);
         modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(0, name.length() - ".class".length()));
-      env.putIfAbsent(sym, BytecodeBoundClass.lazy(sym, ze, benv, path));
+      env.putIfAbsent(sym, new BytecodeBoundClass(sym, ze, benv, jarPath));
     }
   }
 

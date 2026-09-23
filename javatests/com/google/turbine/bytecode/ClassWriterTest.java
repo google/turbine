@@ -107,7 +107,7 @@ public class ClassWriterTest {
     assertWithMessage(collector.getDiagnostics().toString()).that(task.call()).isTrue();
 
     byte[] original = Files.readAllBytes(out.resolve("test/Test.class"));
-    byte[] actual = ClassWriter.writeClass(ClassReader.read(null, original));
+    byte[] actual = ClassWriter.writeClass(ClassReader.read(() -> "test/Test.class", original));
 
     assertThat(AsmUtils.textify(original, /* skipDebug= */ true))
         .isEqualTo(AsmUtils.textify(actual, /* skipDebug= */ true));
@@ -207,13 +207,13 @@ public class ClassWriterTest {
                                         ClassDesc.of("p2i3"));
                           }));
                 });
-    byte[] outputBytes = ClassWriter.writeClass(ClassReader.read("module-info", inputBytes));
+    byte[] outputBytes = ClassWriter.writeClass(ClassReader.read(() -> "module-info", inputBytes));
 
     assertThat(AsmUtils.textify(inputBytes, /* skipDebug= */ true))
         .isEqualTo(AsmUtils.textify(outputBytes, /* skipDebug= */ true));
 
     // test a round trip
-    outputBytes = ClassWriter.writeClass(ClassReader.read("module-info", outputBytes));
+    outputBytes = ClassWriter.writeClass(ClassReader.read(() -> "module-info", outputBytes));
     assertThat(AsmUtils.textify(inputBytes, /* skipDebug= */ true))
         .isEqualTo(AsmUtils.textify(outputBytes, /* skipDebug= */ true));
   }

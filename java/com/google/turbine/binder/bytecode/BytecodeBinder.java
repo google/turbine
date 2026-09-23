@@ -310,7 +310,7 @@ public final class BytecodeBinder {
    * version, and flags are populated, since the directives are not needed by turbine at compile
    * time.
    */
-  public static ModuleInfo bindModuleInfo(String path, Supplier<byte[]> bytes) {
+  public static ModuleInfo bindModuleInfo(Supplier<String> path, Supplier<byte[]> bytes) {
     ClassFile classFile = ClassReader.read(path, bytes.get());
     ClassFile.ModuleInfo module = classFile.module();
     requireNonNull(module, path);

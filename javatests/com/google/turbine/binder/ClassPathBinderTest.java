@@ -48,6 +48,7 @@ import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type.ClassTy;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.Attributes;
@@ -204,7 +205,7 @@ public class ClassPathBinderTest {
             new ClassSymbol("java/util/List"),
             () -> getResourceBytes(getClass(), "/java/util/ArrayList.class"),
             env,
-            null);
+            () -> "test.jar");
     VerifyException e = assertThrows(VerifyException.class, () -> c.owner());
     assertThat(e)
         .hasMessageThat()
@@ -273,5 +274,47 @@ public class ClassPathBinderTest {
     BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
     assertThat(baz).isNotNull();
     assertThat(baz.jarFile()).isEqualTo("original.jar");
+    assertThat(baz.jarFile()).isSameInstanceAs(baz.jarFile());
+  }
+
+  @Test
+  public void originalJarFile_manifestAfterClass() throws Exception {
+    Path path = temporaryFolder.newFile("tmp2.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      jos.putNextEntry(new JarEntry("foo/bar/Baz.class"));
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(52, Opcodes.ACC_PUBLIC, "foo/bar/Baz", null, "java/lang/Object", new String[] {});
+      jos.write(cw.toByteArray());
+
+      jos.putNextEntry(new JarEntry("META-INF/MANIFEST.MF"));
+      Manifest manifest = new Manifest();
+      Attributes attributes = manifest.getMainAttributes();
+      attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+      attributes.put(new Attributes.Name("Original-Jar-Path"), "original2.jar");
+      manifest.write(jos);
+    }
+    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
+    assertThat(baz).isNotNull();
+    assertThat(baz.jarFile()).isEqualTo("original2.jar");
+  }
+
+  @Test
+  public void originalJarFile_malformedManifestThrows() throws Exception {
+    Path path = temporaryFolder.newFile("malformed.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      jos.putNextEntry(new JarEntry("META-INF/MANIFEST.MF"));
+      jos.write(" leading space without header\n".getBytes(UTF_8));
+
+      jos.putNextEntry(new JarEntry("foo/bar/Baz.class"));
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(52, Opcodes.ACC_PUBLIC, "foo/bar/Baz", null, "java/lang/Object", new String[] {});
+      jos.write(cw.toByteArray());
+    }
+    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
+    assertThat(baz).isNotNull();
+    assertThat(baz.superclass()).isEqualTo(new ClassSymbol("java/lang/Object"));
+    assertThrows(UncheckedIOException.class, baz::jarFile);
   }
 }

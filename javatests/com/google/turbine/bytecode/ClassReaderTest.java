@@ -88,7 +88,7 @@ public class ClassReaderTest {
     cw.visitMethod(0, "h", "(I)V", null, null);
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
+    ClassFile classFile = ClassReader.read(() -> "test/Hello.class", bytes);
 
     assertThat(classFile.access())
         .isEqualTo(TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_SUPER);
@@ -141,7 +141,7 @@ public class ClassReaderTest {
     cw.visitEnd();
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
+    ClassFile classFile = ClassReader.read(() -> "test/Hello.class", bytes);
 
     assertThat(classFile.access())
         .isEqualTo(
@@ -188,7 +188,7 @@ public class ClassReaderTest {
     cw.visitEnd();
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
+    ClassFile classFile = ClassReader.read(() -> "test/Hello.class", bytes);
 
     assertThat(classFile.fields()).hasSize(3);
 
@@ -228,7 +228,7 @@ public class ClassReaderTest {
     cw.visitInnerClass("test/Hello$Local", null, "Local", 0);
     byte[] bytes = cw.toByteArray();
 
-    ClassFile classFile = com.google.turbine.bytecode.ClassReader.read(null, bytes);
+    ClassFile classFile = ClassReader.read(() -> "test/Hello$Inner.class", bytes);
 
     assertThat(classFile.innerClasses()).hasSize(2);
 
@@ -252,7 +252,7 @@ public class ClassReaderTest {
     cw.visit(52, Opcodes.ACC_SUPER, jumbo, null, "java/lang/Object", null);
     byte[] bytes = cw.toByteArray();
 
-    ClassFile cf = ClassReader.read(null, bytes);
+    ClassFile cf = ClassReader.read(() -> jumbo + ".class", bytes);
     assertThat(cf.name()).isEqualTo(jumbo);
   }
 
@@ -264,7 +264,7 @@ public class ClassReaderTest {
         "f", "Ljava/lang/String;", new Handle(Opcodes.H_INVOKESTATIC, "A", "f", "()V", false));
     byte[] bytes = cw.toByteArray();
 
-    ClassFile cf = ClassReader.read(null, bytes);
+    ClassFile cf = ClassReader.read(() -> "Test.class", bytes);
     assertThat(cf.name()).isEqualTo("Test");
   }
 
@@ -279,7 +279,7 @@ public class ClassReaderTest {
         null,
         "java/lang/Object",
         null);
-    ClassFile cf = ClassReader.read(null, cw.toByteArray());
+    ClassFile cf = ClassReader.read(() -> "Hello.class", cw.toByteArray());
     assertThat(cf.name()).isEqualTo("Hello");
   }
 
@@ -311,7 +311,7 @@ public class ClassReaderTest {
     mv.visitProvide("p1", "p1i1", "p1i2");
     mv.visitProvide("p2", "p2i1", "p2i2", "p2i3");
 
-    ClassFile cf = ClassReader.read(null, cw.toByteArray());
+    ClassFile cf = ClassReader.read(() -> "module-info.class", cw.toByteArray());
     ModuleInfo module = cf.module();
     assertThat(module.name()).isEqualTo("mod");
     assertThat(module.flags()).isEqualTo(Opcodes.ACC_OPEN);
@@ -392,7 +392,7 @@ public class ClassReaderTest {
             return result;
           }
         });
-    ClassFile cf = ClassReader.read(null, cw.toByteArray());
+    ClassFile cf = ClassReader.read(() -> "Hello.class", cw.toByteArray());
     assertThat(cf.transitiveJar()).isEqualTo("path/to/transitive.jar");
   }
 
@@ -431,11 +431,9 @@ public class ClassReaderTest {
   // Ensure that we skip over JVMS 4.7.20-B target_types, and handle the single API type annotation
   @Test
   public void nonApiTypeAnnotations() throws Exception {
-    byte[] bytes =
-        getClass()
-            .getResourceAsStream("/" + C.class.getName().replace('.', '/') + ".class")
-            .readAllBytes();
-    ClassFile cf = ClassReader.read(null, bytes);
+    String path = "/" + C.class.getName().replace('.', '/') + ".class";
+    byte[] bytes = getClass().getResourceAsStream(path).readAllBytes();
+    ClassFile cf = ClassReader.read(() -> path, bytes);
     ClassFile.MethodInfo m =
         cf.methods().stream().filter(x -> x.name().contains("f")).collect(onlyElement());
     ClassFile.TypeAnnotationInfo ta = getOnlyElement(m.typeAnnotations());

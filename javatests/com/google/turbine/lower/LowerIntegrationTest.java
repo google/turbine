@@ -85,7 +85,7 @@ public class LowerIntegrationTest {
     Map<String, byte[]> bytecode = new LinkedHashMap<>();
     actual.forEach(
         (name, bytes) -> {
-          ClassFile classFile = ClassReader.read(name, bytes);
+          ClassFile classFile = ClassReader.read(() -> name, bytes);
           bytecode.put(name + ".class", ClassWriter.writeClass(classFile));
         });
 

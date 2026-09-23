@@ -216,7 +216,7 @@ public class BytecodeBoundClassTest {
         new ClassSymbol(name),
         () -> toByteArrayOrDie(requireNonNull(getClass().getResourceAsStream(path), path)),
         env,
-        "test.jar");
+        () -> "test.jar");
   }
 
   private BytecodeBoundClass getBytecodeBoundClass(Class<?> clazz, Class<?>... classpath) {

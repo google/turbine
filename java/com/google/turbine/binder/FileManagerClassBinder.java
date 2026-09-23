@@ -116,7 +116,7 @@ public final class FileManagerClassBinder {
                   }
                 },
                 env,
-                /* jarFile= */ null));
+                /* jarFile= */ () -> jfo.toUri().toString()));
       }
       return ImmutableMap.copyOf(result);
     }
