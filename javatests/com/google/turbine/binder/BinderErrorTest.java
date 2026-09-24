@@ -1166,7 +1166,7 @@ public class BinderErrorTest {
                 Binder.bind(
                         TurbineExecutor.direct(),
                         ImmutableList.of(parseLines(source)),
-                        ClassPathBinder.bindClasspath(ImmutableList.of()),
+                        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                         TURBINE_BOOTCLASSPATH,
                         /* moduleVersion= */ Optional.empty())
                     .units());
@@ -1198,7 +1198,7 @@ public class BinderErrorTest {
                 Binder.bind(
                         TurbineExecutor.direct(),
                         ImmutableList.of(parseLines(source)),
-                        ClassPathBinder.bindClasspath(ImmutableList.of()),
+                        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                         ProcessorInfo.create(
                             ImmutableList.of(new HelloWorldProcessor()),
                             /* loader= */ getClass().getClassLoader(),

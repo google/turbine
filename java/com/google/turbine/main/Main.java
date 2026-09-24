@@ -157,7 +157,7 @@ public final class Main {
       throws IOException {
     ImmutableList<CompUnit> units = parseAll(executor, options);
 
-    ClassPath bootclasspath = bootclasspath(options);
+    ClassPath bootclasspath = bootclasspath(executor, options);
 
     BindingResult bound;
     ReducedClasspathMode reducedClasspathMode = options.reducedClasspathMode();
@@ -293,7 +293,7 @@ public final class Main {
     return Binder.bind(
         executor,
         units,
-        ClassPathBinder.bindClasspath(toPaths(classpath)),
+        ClassPathBinder.bindClasspath(executor, toPaths(classpath)),
         Processing.initializeProcessors(
             /* sourceVersion= */ options.languageVersion().sourceVersion(),
             /* javacopts= */ options.javacOpts(),
@@ -317,7 +317,8 @@ public final class Main {
     }
   }
 
-  private static ClassPath bootclasspath(TurbineOptions options) throws IOException {
+  private static ClassPath bootclasspath(TurbineExecutor executor, TurbineOptions options)
+      throws IOException {
     // if both --release and --bootclasspath are specified, --release wins
     OptionalInt release = options.languageVersion().release();
     if (release.isPresent() && options.system().isPresent()) {
@@ -334,7 +335,7 @@ public final class Main {
     }
 
     // the bootclasspath might be empty, e.g. when compiling java.lang
-    return ClassPathBinder.bindClasspath(toPaths(options.bootClassPath()));
+    return ClassPathBinder.bindClasspath(executor, toPaths(options.bootClassPath()));
   }
 
   private static ClassPath release(int release) throws IOException {

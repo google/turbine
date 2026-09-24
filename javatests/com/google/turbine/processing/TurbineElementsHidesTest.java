@@ -235,7 +235,7 @@ public class TurbineElementsHidesTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     Env<ClassSymbol, TypeBoundClass> env =

@@ -209,7 +209,7 @@ public class ErrorTypeTest {
                 Binder.bind(
                     TurbineExecutor.direct(),
                     units,
-                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                     Processing.ProcessorInfo.create(
                         ImmutableList.copyOf(processors),
                         getClass().getClassLoader(),

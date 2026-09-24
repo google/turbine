@@ -59,6 +59,31 @@ public final class TurbineExecutor implements AutoCloseable {
   }
 
   /**
+   * Transforms chunks of the inputs in parallel, returning a collected ImmutableList of the results
+   * in the original chunk order.
+   */
+  public <I, O> ImmutableList<O> mapChunks(
+      ImmutableList<I> inputs, Function<ImmutableList<I>, O> chunkMapper) {
+    if (inputs.isEmpty()) {
+      return ImmutableList.of();
+    }
+    ImmutableList<ImmutableList<I>> chunks = partition(inputs, parallelism);
+    if (chunks.size() <= 1) {
+      return ImmutableList.of(chunkMapper.apply(inputs));
+    }
+
+    List<ListenableFuture<O>> futures = new ArrayList<>(chunks.size());
+    for (ImmutableList<I> chunk : chunks) {
+      futures.add(delegate.submit(() -> chunkMapper.apply(chunk)));
+    }
+    ImmutableList.Builder<O> results = ImmutableList.builderWithExpectedSize(chunks.size());
+    for (ListenableFuture<O> future : futures) {
+      results.add(getUnchecked(future));
+    }
+    return results.build();
+  }
+
+  /**
    * Transforms the inputs in parallel, returning a collected ImmutableList in the original order.
    */
   public <I, O> ImmutableList<O> map(ImmutableList<I> inputs, Function<I, O> mapper) {

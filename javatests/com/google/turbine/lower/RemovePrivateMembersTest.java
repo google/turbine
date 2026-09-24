@@ -348,7 +348,7 @@ public class RemovePrivateMembersTest {
         Binder.bind(
             TurbineExecutor.direct(),
             ImmutableList.of(Parser.parse(source)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
 

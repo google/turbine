@@ -44,10 +44,10 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.tree.Tree.Ident;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type.ClassTy;
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -206,7 +206,7 @@ public class ClassPathBinderTest {
             () -> getResourceBytes(getClass(), "/java/util/ArrayList.class"),
             env,
             () -> "test.jar");
-    VerifyException e = assertThrows(VerifyException.class, () -> c.owner());
+    VerifyException e = assertThrows(VerifyException.class, () -> c.superclass());
     assertThat(e)
         .hasMessageThat()
         .contains("expected class data for java/util/List, saw java/util/ArrayList instead");
@@ -217,8 +217,10 @@ public class ClassPathBinderTest {
     Path lib = temporaryFolder.newFile("NOT_A_JAR").toPath();
     MoreFiles.asCharSink(lib, UTF_8).write("hello");
 
-    IOException e =
-        assertThrows(IOException.class, () -> ClassPathBinder.bindClasspath(ImmutableList.of(lib)));
+    UncheckedIOException e =
+        assertThrows(
+            UncheckedIOException.class,
+            () -> ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)));
     assertThat(e).hasMessageThat().contains("NOT_A_JAR");
   }
 
@@ -231,7 +233,8 @@ public class ClassPathBinderTest {
       jos.putNextEntry(new JarEntry("foo/bar/Baz.class"));
       jos.write("goodbye".getBytes(UTF_8));
     }
-    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    ClassPath classPath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(path));
     assertThat(new String(classPath.resource("foo/bar/hello.txt").get(), UTF_8)).isEqualTo("hello");
     assertThat(classPath.resource("foo/bar/Baz.class")).isNull();
   }
@@ -270,7 +273,8 @@ public class ClassPathBinderTest {
       byte[] bytes = cw.toByteArray();
       jos.write(bytes);
     }
-    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    ClassPath classPath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(path));
     BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
     assertThat(baz).isNotNull();
     assertThat(baz.jarFile()).isEqualTo("original.jar");
@@ -293,7 +297,8 @@ public class ClassPathBinderTest {
       attributes.put(new Attributes.Name("Original-Jar-Path"), "original2.jar");
       manifest.write(jos);
     }
-    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    ClassPath classPath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(path));
     BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
     assertThat(baz).isNotNull();
     assertThat(baz.jarFile()).isEqualTo("original2.jar");
@@ -311,7 +316,8 @@ public class ClassPathBinderTest {
       cw.visit(52, Opcodes.ACC_PUBLIC, "foo/bar/Baz", null, "java/lang/Object", new String[] {});
       jos.write(cw.toByteArray());
     }
-    ClassPath classPath = ClassPathBinder.bindClasspath(ImmutableList.of(path));
+    ClassPath classPath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(path));
     BytecodeBoundClass baz = classPath.env().get(new ClassSymbol("foo/bar/Baz"));
     assertThat(baz).isNotNull();
     assertThat(baz.superclass()).isEqualTo(new ClassSymbol("java/lang/Object"));

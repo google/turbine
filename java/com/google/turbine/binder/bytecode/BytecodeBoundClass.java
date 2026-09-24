@@ -117,6 +117,10 @@ public class BytecodeBoundClass implements TypeBoundClass {
     this.jarFile = requireNonNull(jarFile);
   }
 
+  public ClassSymbol sym() {
+    return sym;
+  }
+
   private TurbineTyKind computeKind() {
     int access = access();
     if ((access & TurbineFlag.ACC_ANNOTATION) == TurbineFlag.ACC_ANNOTATION) {

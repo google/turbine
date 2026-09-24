@@ -79,7 +79,7 @@ public class BinderTest {
         Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of()),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion= */ Optional.empty())
             .units();
@@ -124,7 +124,7 @@ public class BinderTest {
         Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of()),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion= */ Optional.empty())
             .units();
@@ -164,7 +164,7 @@ public class BinderTest {
         Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of()),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion= */ Optional.empty())
             .units();
@@ -197,7 +197,7 @@ public class BinderTest {
                 Binder.bind(
                     TurbineExecutor.direct(),
                     units,
-                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                     TURBINE_BOOTCLASSPATH,
                     /* moduleVersion= */ Optional.empty()));
     assertThat(e).hasMessageThat().contains("cycle in class hierarchy: a.A -> b.B -> a.A");
@@ -216,7 +216,7 @@ public class BinderTest {
         Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of()),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion= */ Optional.empty())
             .units();
@@ -246,7 +246,7 @@ public class BinderTest {
         Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of()),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion= */ Optional.empty())
             .units();
@@ -287,7 +287,7 @@ public class BinderTest {
         Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
                 TURBINE_BOOTCLASSPATH,
                 /* moduleVersion= */ Optional.empty())
             .units();
@@ -305,9 +305,9 @@ public class BinderTest {
             TurbineExecutor.direct(),
             log,
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             Processing.ProcessorInfo.empty(),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             Optional.empty());
     assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
         .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
@@ -327,9 +327,9 @@ public class BinderTest {
             TurbineExecutor.direct(),
             log,
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             Processing.ProcessorInfo.empty(),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             Optional.empty());
     assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
         .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
@@ -360,7 +360,7 @@ public class BinderTest {
             TurbineExecutor.direct(),
             log,
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             Processing.ProcessorInfo.empty(),
             TURBINE_BOOTCLASSPATH,
             Optional.empty());

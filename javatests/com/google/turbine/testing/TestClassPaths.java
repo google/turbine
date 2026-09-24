@@ -25,6 +25,7 @@ import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.JimageClassBinder;
 import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.options.TurbineOptions;
+import com.google.turbine.parallel.TurbineExecutor;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -50,7 +51,7 @@ public final class TestClassPaths {
   private static ClassPath getTurbineBootclasspath() {
     try {
       if (!BOOTCLASSPATH.isEmpty()) {
-        return ClassPathBinder.bindClasspath(BOOTCLASSPATH);
+        return ClassPathBinder.bindClasspath(TurbineExecutor.direct(), BOOTCLASSPATH);
       }
       return JimageClassBinder.bindDefault();
     } catch (IOException e) {

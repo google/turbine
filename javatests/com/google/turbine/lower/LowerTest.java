@@ -281,7 +281,7 @@ public class LowerTest {
                             "    class InnerMost {}",
                             "  }",
                             "}"))),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
@@ -365,7 +365,7 @@ public class LowerTest {
                             "class Test {",
                             "  public @Anno int[][] xs;",
                             "}"))),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
@@ -454,7 +454,7 @@ public class LowerTest {
         Binder.bind(
             TurbineExecutor.direct(),
             ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
@@ -667,7 +667,7 @@ public class LowerTest {
         Binder.bind(
             TurbineExecutor.direct(),
             ImmutableList.of(Parser.parse("class Test {}")),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     Map<String, byte[]> lowered =
@@ -712,7 +712,7 @@ public class LowerTest {
                         + "  private int x;\n"
                         + "  int y;\n"
                         + "}")),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -750,7 +750,7 @@ public class LowerTest {
                       private static final int z = 1;
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -788,7 +788,7 @@ public class LowerTest {
                         + "  private int x;\n"
                         + "  int y;\n"
                         + "}")),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -827,7 +827,7 @@ public class LowerTest {
                       private Inner x;
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -872,7 +872,7 @@ public class LowerTest {
                       private static class Inner {}
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -898,7 +898,7 @@ public class LowerTest {
                       private static class Inner {}
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -930,7 +930,7 @@ public class LowerTest {
                           List<@Anno @Anno Integer> xs;
                           }
                         """))),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     TurbineError turbineError =
@@ -962,7 +962,7 @@ public class LowerTest {
                     "class Test {\n" //
                         + "  void f(int x, int y) {}\n"
                         + "}")),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -1008,7 +1008,7 @@ public class LowerTest {
                     "class Test {\n" //
                         + "  void f(int x, int y) {}\n"
                         + "}")),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -1092,7 +1092,7 @@ public class LowerTest {
                       private static final class B extends Test {}
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -1132,7 +1132,7 @@ public class LowerTest {
                       public static final class B extends Test {}
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -1173,7 +1173,7 @@ public class LowerTest {
                     }
                     class B { public A a; }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
 
@@ -1218,7 +1218,7 @@ public class LowerTest {
                       strictfp void f() {}
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -1274,7 +1274,7 @@ public class LowerTest {
                       }
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =
@@ -1310,7 +1310,7 @@ public class LowerTest {
                       }
                     }
                     """)),
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             TURBINE_BOOTCLASSPATH,
             /* moduleVersion= */ Optional.empty());
     ImmutableMap<String, byte[]> lowered =

@@ -104,7 +104,7 @@ public class DependenciesTest {
           Binder.bind(
               TurbineExecutor.direct(),
               units.build(),
-              ClassPathBinder.bindClasspath(classpath),
+              ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath),
               TestClassPaths.TURBINE_BOOTCLASSPATH,
               /* moduleVersion= */ Optional.empty());
 

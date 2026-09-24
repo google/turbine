@@ -262,7 +262,7 @@ public class TurbineTypeAnnotationMirrorTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             Processing.ProcessorInfo.create(
                 ImmutableList.of(new TypeAnnotationRecorder(turbineSource, elements)),
                 getClass().getClassLoader(),
@@ -299,7 +299,7 @@ public class TurbineTypeAnnotationMirrorTest {
             // Turbine requires sources to be present to do annotation processing.
             // The actual element that will be processed is still 'Test' from the classpath.
             ImmutableList.of(Parser.parse("class Hello {}")),
-            ClassPathBinder.bindClasspath(classpathJar),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpathJar),
             Processing.ProcessorInfo.create(
                 ImmutableList.of(new TypeAnnotationRecorder(turbineBytecode, elements)),
                 getClass().getClassLoader(),

@@ -160,7 +160,7 @@ public class TurbineAnnotationProxyTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of(lib)),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
@@ -277,13 +277,15 @@ public class TurbineAnnotationProxyTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of(lib)),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(
-                ClassPathBinder.bindClasspath(ImmutableList.of(bindingLib)).env())
+                ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(bindingLib))
+                    .env())
             .append(new SimpleEnv<>(bound.units()));
     ModelFactory factory = new ModelFactory(env, bound.tli());
     TurbineTypeElement te = factory.typeElement(new ClassSymbol("Test"));

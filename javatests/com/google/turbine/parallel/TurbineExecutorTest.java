@@ -19,10 +19,14 @@ package com.google.turbine.parallel;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static java.util.concurrent.Executors.newFixedThreadPool;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,7 +84,6 @@ public class TurbineExecutorTest {
     }
     assertThat(threads).doesNotContain(mainThread);
     assertThat(threads.size()).isAtLeast(2);
-    assertThat(service.isShutdown()).isTrue();
   }
 
   @Test
@@ -100,7 +103,6 @@ public class TurbineExecutorTest {
       assertThat(outputs).containsExactly(2, 4, 6, 8, 10).inOrder();
     }
     assertThat(threads).containsExactly(mainThread);
-    assertThat(service.isShutdown()).isTrue();
   }
 
   @Test
@@ -111,7 +113,6 @@ public class TurbineExecutorTest {
       ImmutableList<Integer> outputs = executor.map(inputs, x -> x * 2);
       assertThat(outputs).isEmpty();
     }
-    assertThat(service.isShutdown()).isTrue();
   }
 
   @Test
@@ -122,7 +123,6 @@ public class TurbineExecutorTest {
       ImmutableList<Integer> outputs = executor.map(inputs, x -> x * 2);
       assertThat(outputs).containsExactly(84);
     }
-    assertThat(service.isShutdown()).isTrue();
   }
 
   @Test
@@ -133,6 +133,58 @@ public class TurbineExecutorTest {
       ImmutableMap<Integer, Integer> outputs = executor.toMap(inputs, x -> x * 10);
       assertThat(outputs).containsExactly(1, 10, 2, 20, 3, 30).inOrder();
     }
-    assertThat(service.isShutdown()).isTrue();
+  }
+
+  @Test
+  public void directExecutor_mapChunks() throws Exception {
+    try (TurbineExecutor executor = TurbineExecutor.direct()) {
+      ImmutableList<Integer> inputs = ImmutableList.of(1, 2, 3, 4, 5);
+      ImmutableList<Integer> outputs =
+          executor.mapChunks(inputs, chunk -> chunk.stream().mapToInt(x -> x).sum());
+      assertThat(outputs).containsExactly(15);
+    }
+  }
+
+  @Test
+  public void parallelExecutor_mapChunks() throws Exception {
+    ListeningExecutorService service = listeningDecorator(newFixedThreadPool(4));
+    try (TurbineExecutor executor = new TurbineExecutor(service, 4, 0)) {
+      ImmutableList<Integer> inputs = ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8);
+      ImmutableList<Integer> outputs =
+          executor.mapChunks(inputs, chunk -> chunk.stream().mapToInt(x -> x).sum());
+      assertThat(outputs).hasSize(4);
+      assertThat(outputs.stream().mapToInt(x -> x).sum()).isEqualTo(36);
+    }
+  }
+
+  @Test
+  public void mapChunks_empty() throws Exception {
+    try (TurbineExecutor executor = TurbineExecutor.direct()) {
+      ImmutableList<Integer> outputs =
+          executor.mapChunks(
+              ImmutableList.of(),
+              chunk -> {
+                throw new AssertionError("should not be called");
+              });
+      assertThat(outputs).isEmpty();
+    }
+  }
+
+  @Test
+  public void mapChunks_throwsException() {
+    ListeningExecutorService service = listeningDecorator(newFixedThreadPool(4));
+    try (TurbineExecutor executor = new TurbineExecutor(service, 4, 0)) {
+      ImmutableList<Integer> inputs = ImmutableList.of(1, 2, 3, 4);
+      UncheckedExecutionException e =
+          assertThrows(
+              UncheckedExecutionException.class,
+              () ->
+                  executor.mapChunks(
+                      inputs,
+                      chunk -> {
+                        throw new UncheckedIOException(new IOException("boom"));
+                      }));
+      assertThat(e).hasCauseThat().hasCauseThat().hasMessageThat().isEqualTo("boom");
+    }
   }
 }

@@ -122,7 +122,8 @@ public class ProcessingIntegrationTest {
             "class Test extends NoSuch {",
             "}");
     TurbineExecutor executor = TurbineExecutor.direct();
-    ClassPath classpath = ClassPathBinder.bindClasspath(ImmutableList.of());
+    ClassPath classpath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of());
     ProcessorInfo processorInfo =
         ProcessorInfo.create(
             ImmutableList.of(new CrashingProcessor()),
@@ -246,7 +247,7 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             ProcessorInfo.create(
                 ImmutableList.of(new ResourceProcessor()),
                 getClass().getClassLoader(),
@@ -282,7 +283,7 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             ProcessorInfo.create(
                 ImmutableList.of(new ElementsAnnotatedWithProcessor()),
                 getClass().getClassLoader(),
@@ -516,7 +517,7 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of()),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
             ProcessorInfo.create(
                 ImmutableList.of(new GenerateAnnotationProcessor()),
                 getClass().getClassLoader(),
@@ -715,7 +716,7 @@ public class ProcessingIntegrationTest {
             TurbineExecutor.direct(),
             log,
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
             ProcessorInfo.create(
                 ImmutableList.of(new RecordFromADistanceProcessor()),
                 getClass().getClassLoader(),
@@ -930,7 +931,7 @@ public class ProcessingIntegrationTest {
             TurbineExecutor.direct(),
             log,
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
             ProcessorInfo.create(
                 ImmutableList.of(new MethodAnnotationTypeKindProcessor()),
                 getClass().getClassLoader(),
@@ -1509,7 +1510,7 @@ public class ProcessingIntegrationTest {
             TurbineExecutor.direct(),
             log,
             units,
-            ClassPathBinder.bindClasspath(ImmutableList.of(libJar)),
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
             ProcessorInfo.create(
                 ImmutableList.of(new PermittedSubclasses()),
                 getClass().getClassLoader(),
@@ -1670,7 +1671,7 @@ public class ProcessingIntegrationTest {
             Binder.bind(
                 TurbineExecutor.direct(),
                 units,
-                ClassPathBinder.bindClasspath(ImmutableList.of()),
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                 ProcessorInfo.create(
                     ImmutableList.copyOf(processors),
                     getClass().getClassLoader(),

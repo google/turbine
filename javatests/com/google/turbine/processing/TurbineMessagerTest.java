@@ -223,7 +223,7 @@ public class TurbineMessagerTest {
                 Binder.bind(
                     TurbineExecutor.direct(),
                     units,
-                    ClassPathBinder.bindClasspath(ImmutableList.of()),
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
                     Processing.ProcessorInfo.create(
                         ImmutableList.of(new DiagnosticTesterProcessor()),
                         getClass().getClassLoader(),

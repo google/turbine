@@ -838,7 +838,7 @@ public final class IntegrationTestSupport {
     return Binder.bind(
         TurbineExecutor.direct(),
         units,
-        ClassPathBinder.bindClasspath(classpath),
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath),
         bootClassPath,
         moduleVersion);
   }
