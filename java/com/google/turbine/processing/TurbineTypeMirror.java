@@ -599,7 +599,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
             new Supplier<ImmutableList<TypeMirror>>() {
               @Override
               public ImmutableList<TypeMirror> get() {
-                return factory.asTypeMirrors(TurbineTypes.getBounds(factory, type));
+                return factory.asTypeMirrors(factory.types().getBounds(type));
               }
             });
 

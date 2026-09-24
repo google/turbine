@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.turbine.processing;
+package com.google.turbine.types;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -41,7 +41,7 @@ public class ClassHierarchy {
   private final Map<ClassSymbol, HierarchyNode> cache = new HashMap<>();
   private Env<ClassSymbol, ? extends TypeBoundClass> env;
 
-  ClassHierarchy(Env<ClassSymbol, ? extends TypeBoundClass> env) {
+  public ClassHierarchy(Env<ClassSymbol, ? extends TypeBoundClass> env) {
     this.env = env;
   }
 
@@ -121,7 +121,7 @@ public class ClassHierarchy {
   }
 
   private HierarchyNode get(ClassSymbol sym) {
-    // dont use computeIfAbsent, to support re-entrant lookups
+    // don't use computeIfAbsent, to support re-entrant lookups
     HierarchyNode result = cache.get(sym);
     if (result != null) {
       return result;

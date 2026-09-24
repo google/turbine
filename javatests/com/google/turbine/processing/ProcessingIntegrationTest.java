@@ -946,6 +946,72 @@ public class ProcessingIntegrationTest {
   }
 
   @SupportedAnnotationTypes("*")
+  public static class MissingSupertypeProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      TypeElement b = processingEnv.getElementUtils().getTypeElement("B");
+      for (TypeMirror supertype : processingEnv.getTypeUtils().directSupertypes(b.asType())) {
+        var _ = processingEnv.getTypeUtils().directSupertypes(supertype);
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void missingSupertypeInDirectSupertypes() throws IOException {
+    Map<String, byte[]> library =
+        IntegrationTestSupport.runTurbine(
+            ImmutableMap.of(
+                "A.java", //
+                "class A {}",
+                "B.java",
+                "class B extends A {}"),
+            ImmutableList.of());
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      // deliberately exclude A.class
+      jos.putNextEntry(new JarEntry("B.class"));
+      jos.write(library.get("B"));
+    }
+
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== Y.java ===", //
+            "class Y {}");
+
+    TurbineExecutor executor = TurbineExecutor.direct();
+    TurbineLog log = new TurbineLog();
+    ClassPath classPath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar));
+    ProcessorInfo processorInfo =
+        ProcessorInfo.create(
+            ImmutableList.of(new MissingSupertypeProcessor()),
+            getClass().getClassLoader(),
+            ImmutableMap.of(),
+            SourceVersion.latestSupported());
+    TurbineError e =
+        assertThrows(
+            TurbineError.class,
+            () ->
+                Binder.bind(
+                    executor,
+                    log,
+                    units,
+                    classPath,
+                    processorInfo,
+                    TestClassPaths.TURBINE_BOOTCLASSPATH,
+                    Optional.empty()));
+    assertThat(e.diagnostics().stream().map(TurbineDiagnostic::message))
+        .containsExactly("symbol not found A");
+  }
+
+  @SupportedAnnotationTypes("*")
   public static class RecordComponentProcessor extends AbstractProcessor {
     @Override
     public SourceVersion getSupportedSourceVersion() {

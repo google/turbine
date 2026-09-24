@@ -23,7 +23,6 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
@@ -75,6 +74,8 @@ import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
 import com.google.turbine.type.Type.WildTy;
+import com.google.turbine.types.ClassHierarchy;
+import com.google.turbine.types.Types;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -106,6 +107,7 @@ public class ModelFactory {
     this.tli = tli;
     round.getAndIncrement();
     cha.round(env);
+    this.types = new Types(cha, env);
   }
 
   private final HashMap<Type, TurbineTypeMirror> typeCache = new HashMap<>();
@@ -122,6 +124,7 @@ public class ModelFactory {
   private final HashMap<CharSequence, ClassSymbol> inferSymbolCache = new HashMap<>();
 
   private final ClassHierarchy cha;
+  private Types types;
 
   private TopLevelIndex tli;
 
@@ -129,6 +132,11 @@ public class ModelFactory {
     this.env = requireNonNull(env);
     this.cha = new ClassHierarchy(env);
     this.tli = requireNonNull(tli);
+    this.types = new Types(cha, env);
+  }
+
+  public Types types() {
+    return types;
   }
 
   TypeMirror asTypeMirror(Type type) {
@@ -295,7 +303,7 @@ public class ModelFactory {
    * Returns the {@link TypeBoundClass} for the given {@link ClassSymbol} from the current
    * environment.
    */
-  TypeBoundClass getSymbol(ClassSymbol sym) {
+  public TypeBoundClass getSymbol(ClassSymbol sym) {
     return env.get(sym);
   }
 
@@ -340,16 +348,8 @@ public class ModelFactory {
     throw new AssertionError(symbol);
   }
 
-  TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
-    Symbol owner = tyVar.owner();
-    Verify.verifyNotNull(owner); // TODO(cushon): capture variables
-    ImmutableMap<TyVarSymbol, TyVarInfo> tyParams =
-        switch (owner.symKind()) {
-          case METHOD -> getMethodInfo((MethodSymbol) owner).tyParams();
-          case CLASS -> getSymbol((ClassSymbol) owner).typeParameterTypes();
-          default -> throw new AssertionError(owner.symKind());
-        };
-    return tyParams.get(tyVar);
+  public TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
+    return types.getTyVarInfo(tyVar);
   }
 
   static ClassSymbol enclosingClass(Symbol sym) {
@@ -364,7 +364,7 @@ public class ModelFactory {
     };
   }
 
-  ClassHierarchy cha() {
+  public ClassHierarchy cha() {
     return cha;
   }
 

@@ -38,6 +38,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parallel.TurbineExecutor;
@@ -126,6 +127,8 @@ public class Processing {
     for (Processor processor : processorInfo.processors()) {
       try (var _ = timers.start(processor)) {
         processor.init(processingEnv);
+      } catch (TurbineError turbineError) {
+        throw turbineError;
       } catch (Throwable t) {
         throw new AnnotationProcessingError(processor, t, log.diagnostics());
       }
@@ -174,6 +177,8 @@ public class Processing {
             // discard the result of Processor#process because 'claiming' annotations is a bad idea
             // TODO(cushon): consider disallowing this, or reporting a diagnostic
             processor.process(annotations, roundEnv);
+          } catch (TurbineError turbineError) {
+            throw turbineError;
           } catch (Throwable t) {
             throw new AnnotationProcessingError(processor, t, log.diagnostics());
           }
@@ -217,6 +222,8 @@ public class Processing {
       }
       try (var _ = timers.start(processor)) {
         processor.process(ImmutableSet.of(), roundEnv);
+      } catch (TurbineError turbineError) {
+        throw turbineError;
       } catch (Throwable t) {
         throw new AnnotationProcessingError(processor, t, log.diagnostics());
       }

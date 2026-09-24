@@ -20,6 +20,7 @@ import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -275,5 +276,19 @@ public class TurbineTypeMirrorTest {
                     .asType();
     assertThat(type.getTypeVariables()).hasSize(1);
     assertThat(type.toString()).isEqualTo("<T>(java.util.List<T>,T,T)boolean");
+  }
+
+  @Test
+  public void substEmptyMapping() {
+    Type.ClassTy type =
+        Type.ClassTy.create(
+            ImmutableList.of(
+                Type.ClassTy.SimpleClassTy.create(
+                    new ClassSymbol("java/util/List"),
+                    ImmutableList.of(Type.ClassTy.STRING),
+                    ImmutableList.of())));
+    ImmutableList<Type> types = ImmutableList.of(type);
+    assertThat(factory.types().subst(type, ImmutableMap.of())).isSameInstanceAs(type);
+    assertThat(factory.types().substAll(types, ImmutableMap.of())).isSameInstanceAs(types);
   }
 }
