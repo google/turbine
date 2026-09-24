@@ -183,9 +183,7 @@ public class Processing {
       if (files.isEmpty()) {
         break;
       }
-      for (SourceFile file : files) {
-        units.add(Parser.parse(file));
-      }
+      units.addAll(executor.map(ImmutableList.copyOf(files), Parser::parse));
       errorRaised = log.errorRaised();
       if (errorRaised) {
         break;
@@ -229,9 +227,7 @@ public class Processing {
       // processors aren't supposed to generate sources on the final processing round, but javac
       // tolerates it anyway
       // TODO(cushon): consider disallowing this, or reporting a diagnostic
-      for (SourceFile file : files) {
-        units.add(Parser.parse(file));
-      }
+      units.addAll(executor.map(ImmutableList.copyOf(files), Parser::parse));
       result =
           Binder.bind(
               executor,
