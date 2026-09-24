@@ -174,30 +174,16 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public NestingKind getNestingKind() {
-      TypeBoundClass info = info();
-      return (info != null && info.owner() != null) ? NestingKind.MEMBER : NestingKind.TOP_LEVEL;
+      return TypeBoundClass.isTopLevel(sym, this::info)
+          ? NestingKind.TOP_LEVEL
+          : NestingKind.MEMBER;
     }
 
     private final Supplier<TurbineName> qualifiedName =
         memoize(
-            new Supplier<TurbineName>() {
-              @Override
-              public TurbineName get() {
-                TypeBoundClass info = info();
-                if (info == null || info.owner() == null) {
-                  return new TurbineName(sym.toString());
-                }
-                ClassSymbol sym = sym();
-                Deque<String> flat = new ArrayDeque<>();
-                while (info.owner() != null) {
-                  flat.addFirst(sym.binaryName().substring(info.owner().binaryName().length() + 1));
-                  sym = info.owner();
-                  info = factory.getSymbol(sym);
-                }
-                flat.addFirst(sym.toString());
-                return new TurbineName(Joiner.on('.').join(flat));
-              }
-            });
+            () ->
+                new TurbineName(
+                    TypeBoundClass.canonicalName(sym(), this::info, factory::getSymbol)));
 
     @Override
     public Name getQualifiedName() {
@@ -307,18 +293,7 @@ public abstract class TurbineElement implements Element {
     }
 
     private final Supplier<TurbineName> simpleName =
-        memoize(
-            new Supplier<TurbineName>() {
-              @Override
-              public TurbineName get() {
-                TypeBoundClass info = info();
-                if (info == null || info.owner() == null) {
-                  return new TurbineName(sym.simpleName());
-                }
-                return new TurbineName(
-                    sym.binaryName().substring(info.owner().binaryName().length() + 1));
-              }
-            });
+        memoize(() -> new TurbineName(TypeBoundClass.simpleName(sym(), this::info)));
 
     @Override
     public Name getSimpleName() {
@@ -330,9 +305,10 @@ public abstract class TurbineElement implements Element {
             new Supplier<Element>() {
               @Override
               public Element get() {
-                return getNestingKind().equals(NestingKind.TOP_LEVEL)
+                ClassSymbol owner = TypeBoundClass.owner(sym, TurbineTypeElement.this::info);
+                return owner == null
                     ? factory.packageElement(sym.owner())
-                    : factory.typeElement(info().owner());
+                    : factory.typeElement(owner);
               }
             });
 
@@ -1016,9 +992,8 @@ public abstract class TurbineElement implements Element {
       PackageScope scope = factory.tli().lookupPackage(sym.binaryName());
       requireNonNull(scope); // the current package exists
       for (ClassSymbol key : scope.classes()) {
-        if (key.binaryName().contains("$") && factory.getSymbol(key).owner() != null) {
+        if (!TypeBoundClass.isTopLevel(key, () -> factory.getSymbol(key))) {
           // Skip member classes: only top-level classes are enclosed by the package.
-          // The initial check for '$' is an optimization.
           continue;
         }
         if (key.simpleName().equals("package-info")) {

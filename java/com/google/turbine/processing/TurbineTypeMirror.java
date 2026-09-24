@@ -23,11 +23,10 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
+import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
-import com.google.turbine.model.TurbineFlag;
-import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -185,18 +184,17 @@ public abstract class TurbineTypeMirror implements TypeMirror {
             new Supplier<TypeMirror>() {
               @Override
               public TypeMirror get() {
-                TypeBoundClass info = factory.getSymbol(type.sym());
-                if (info != null
-                    && info.owner() != null
-                    && ((info.access() & TurbineFlag.ACC_STATIC) == 0)
-                    && info.kind() == TurbineTyKind.CLASS) {
-                  if (type.classes().size() > 1) {
-                    return factory.asTypeMirror(
-                        ClassTy.create(type.classes().subList(0, type.classes().size() - 1)));
-                  }
-                  return factory.asTypeMirror(ClassTy.asNonParametricClassTy(info.owner()));
+                ClassSymbol enclosing =
+                    TypeBoundClass.enclosingInstance(
+                        type.sym(), () -> factory.getSymbol(type.sym()));
+                if (enclosing == null) {
+                  return factory.noType();
                 }
-                return factory.noType();
+                if (type.classes().size() > 1) {
+                  return factory.asTypeMirror(
+                      ClassTy.create(type.classes().subList(0, type.classes().size() - 1)));
+                }
+                return factory.asTypeMirror(ClassTy.asNonParametricClassTy(enclosing));
               }
             });
 

@@ -26,12 +26,15 @@ import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.tree.Tree;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /** A bound node that augments {@link HeaderBoundClass} with type information. */
@@ -376,5 +379,80 @@ public interface TypeBoundClass extends HeaderBoundClass {
     public Tree.@Nullable VarDecl decl() {
       return decl;
     }
+  }
+
+  /**
+   * Returns true if this class is guaranteed to be a top-level class without consulting bytecode
+   * attributes or AST parents.
+   *
+   * <p>Inner classes must contain '$' in their binary name. Returning false does not guarantee the
+   * class is an inner class since identifiers may contain '$'; callers must consult {@code
+   * TypeBoundClass.owner()} or the {@code InnerClasses} attribute.
+   */
+  private static boolean isDefinitelyTopLevel(ClassSymbol sym) {
+    return sym.binaryName().indexOf('$') == -1;
+  }
+
+  /**
+   * Returns the enclosing class of {@code sym}, or {@code null} if {@code sym} is a top-level
+   * class.
+   */
+  static @Nullable ClassSymbol owner(ClassSymbol sym, Supplier<@Nullable TypeBoundClass> info) {
+    if (isDefinitelyTopLevel(sym)) {
+      return null;
+    }
+    TypeBoundClass bound = info.get();
+    return bound != null ? bound.owner() : null;
+  }
+
+  /** Returns true if the class is a top-level class. */
+  static boolean isTopLevel(ClassSymbol sym, Supplier<@Nullable TypeBoundClass> info) {
+    return owner(sym, info) == null;
+  }
+
+  /**
+   * Returns the enclosing instance class of {@code sym} if it is a non-static inner class, or
+   * {@code null} if {@code sym} is a top-level or static nested class.
+   */
+  static @Nullable ClassSymbol enclosingInstance(
+      ClassSymbol sym, Supplier<@Nullable TypeBoundClass> info) {
+    if (isDefinitelyTopLevel(sym)) {
+      return null;
+    }
+    TypeBoundClass bound = info.get();
+    if (bound != null
+        && bound.owner() != null
+        && ((bound.access() & TurbineFlag.ACC_STATIC) == 0)
+        && bound.kind() == TurbineTyKind.CLASS) {
+      return bound.owner();
+    }
+    return null;
+  }
+
+  /**
+   * Computes the canonical name of a class recursively from its enclosing class owner hierarchy.
+   */
+  static String canonicalName(
+      ClassSymbol sym,
+      Supplier<@Nullable TypeBoundClass> info,
+      Function<ClassSymbol, ? extends @Nullable TypeBoundClass> env) {
+    ClassSymbol owner = owner(sym, info);
+    if (owner == null) {
+      return sym.binaryName().replace('/', '.');
+    }
+    String ownerCanonical = canonicalName(owner, () -> env.apply(owner), env);
+    String simple = sym.binaryName().substring(owner.binaryName().length() + 1);
+    return ownerCanonical + "." + simple;
+  }
+
+  /**
+   * Returns the simple name of a class from its declared AST or bytecode attribute, avoiding naive
+   * string splitting on '$'.
+   */
+  static String simpleName(ClassSymbol sym, Supplier<@Nullable TypeBoundClass> info) {
+    ClassSymbol owner = owner(sym, info);
+    return owner == null
+        ? sym.simpleName()
+        : sym.binaryName().substring(owner.binaryName().length() + 1);
   }
 }

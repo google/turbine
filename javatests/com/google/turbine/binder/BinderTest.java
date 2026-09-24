@@ -26,6 +26,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
@@ -404,6 +405,87 @@ public class BinderTest {
       }
     }
     return sb.toString();
+  }
+
+  @Test
+  public void classSymbolNames() {
+    ClassSymbol topLevel = new ClassSymbol("com/example/MyClass");
+    assertThat(topLevel.toString()).isEqualTo("com.example.MyClass");
+    assertThat(TypeBoundClass.isTopLevel(topLevel, () -> null)).isTrue();
+    assertThat(
+            TypeBoundClass.isTopLevel(
+                topLevel,
+                () -> {
+                  throw new AssertionError("info should not be called for top-level classes");
+                }))
+        .isTrue();
+
+    ClassSymbol defaultPkg = new ClassSymbol("DefaultClass");
+    assertThat(defaultPkg.toString()).isEqualTo("DefaultClass");
+    assertThat(TypeBoundClass.isTopLevel(defaultPkg, () -> null)).isTrue();
+  }
+
+  @Test
+  public void canonicalNameResolution() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                """
+                package com.example;
+
+                public class Outer {
+                  public class Inner {
+                    public class Deepest {}
+                  }
+                }
+                """));
+
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(
+                TurbineExecutor.direct(),
+                units,
+                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
+                TURBINE_BOOTCLASSPATH,
+                /* moduleVersion= */ Optional.empty())
+            .units();
+
+    ClassSymbol outerSym = new ClassSymbol("com/example/Outer");
+    ClassSymbol innerSym = new ClassSymbol("com/example/Outer$Inner");
+    ClassSymbol deepestSym = new ClassSymbol("com/example/Outer$Inner$Deepest");
+
+    assertThat(TypeBoundClass.isTopLevel(outerSym, () -> bound.get(outerSym))).isTrue();
+    assertThat(TypeBoundClass.isTopLevel(innerSym, () -> bound.get(innerSym))).isFalse();
+    assertThat(TypeBoundClass.isTopLevel(deepestSym, () -> bound.get(deepestSym))).isFalse();
+
+    assertThat(TypeBoundClass.canonicalName(outerSym, () -> bound.get(outerSym), bound::get))
+        .isEqualTo("com.example.Outer");
+    assertThat(TypeBoundClass.canonicalName(innerSym, () -> bound.get(innerSym), bound::get))
+        .isEqualTo("com.example.Outer.Inner");
+    assertThat(TypeBoundClass.canonicalName(deepestSym, () -> bound.get(deepestSym), bound::get))
+        .isEqualTo("com.example.Outer.Inner.Deepest");
+
+    assertThat(TypeBoundClass.simpleName(outerSym, () -> bound.get(outerSym))).isEqualTo("Outer");
+    assertThat(TypeBoundClass.simpleName(innerSym, () -> bound.get(innerSym))).isEqualTo("Inner");
+    assertThat(TypeBoundClass.simpleName(deepestSym, () -> bound.get(deepestSym)))
+        .isEqualTo("Deepest");
+
+    assertThat(
+            TypeBoundClass.canonicalName(
+                outerSym,
+                () -> {
+                  throw new AssertionError("info should not be called for top-level classes");
+                },
+                sym -> {
+                  throw new AssertionError("env should not be called for top-level classes");
+                }))
+        .isEqualTo("com.example.Outer");
+    assertThat(
+            TypeBoundClass.simpleName(
+                outerSym,
+                () -> {
+                  throw new AssertionError("info should not be called for top-level classes");
+                }))
+        .isEqualTo("Outer");
   }
 
   private Tree.CompUnit parseLines(String... lines) {
