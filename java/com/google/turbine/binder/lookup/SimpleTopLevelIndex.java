@@ -16,105 +16,147 @@
 
 package com.google.turbine.binder.lookup;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Iterables;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.sym.ClassSymbol;
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
  * An index of canonical type names where all members are known statically.
  *
- * <p>Qualified names are represented internally as a tree, where each package name part or class
- * name is a node.
+ * <p>Qualified names are represented internally as a tree of package nodes. Leaf classes are stored
+ * directly in their enclosing package node rather than as individual nodes.
  */
-public class SimpleTopLevelIndex implements TopLevelIndex {
+public final class SimpleTopLevelIndex implements TopLevelIndex {
 
-  /** A class symbol or package. */
-  public static class Node {
+  /**
+   * A package node in the top-level index. Represents only package scopes (not classes); member
+   * classes are stored directly in {@code children}.
+   */
+  static final class Node implements PackageScope {
 
-    public @Nullable Node lookup(String bit) {
-      return (children == null) ? null : children.get(bit);
+    // Values are either Node (for subpackages) or ClassSymbol (for classes).
+    private final Map<String, Object> children = new HashMap<>();
+
+    @Override
+    public @Nullable LookupResult lookup(LookupKey lookupKey) {
+      if (children.get(lookupKey.first().value()) instanceof ClassSymbol sym) {
+        return new LookupResult(sym, lookupKey);
+      }
+      return null;
     }
 
-    private final @Nullable ClassSymbol sym;
-    private final @Nullable HashMap<String, Node> children;
-
-    Node(@Nullable ClassSymbol sym) {
-      if (sym == null) {
-        this.sym = null;
-        this.children = new HashMap<>();
-      } else {
-        this.sym = sym;
-        this.children = null;
-      }
+    @Override
+    public Iterable<ClassSymbol> classes() {
+      return Iterables.filter(children.values(), ClassSymbol.class);
     }
 
     /**
-     * Add a child with the given simple name. The given symbol will be null if a package is being
-     * inserted.
+     * Inserts a child package with the given simple name.
      *
-     * @return {@code null} if an existing symbol with the same name has already been inserted.
+     * @return {@code null} if an existing class with the same name has already been inserted.
      */
-    private @Nullable Node insert(String name, @Nullable ClassSymbol sym) {
-      checkNotNull(children, "Cannot insert child into a class node '%s'", this.sym);
-      Node child = children.get(name);
-      if (child != null) {
-        if (child.sym != null) {
-          return null;
-        }
-      } else {
-        child = new Node(sym);
-        children.put(name, child);
+    @CanIgnoreReturnValue
+    private @Nullable Node insertPackage(String name) {
+      Object child = children.get(name);
+      if (child == null) {
+        Node node = new Node();
+        children.put(name, node);
+        return node;
       }
-      return child;
+      if (child instanceof Node node) {
+        return node;
+      }
+      // If we've already inserted a class with the current name, a package cannot override it.
+      return null;
+    }
+
+    /**
+     * Inserts a class symbol into this package.
+     *
+     * <p>If a package with the same name has already been inserted, the class is ignored
+     * (first-match-wins).
+     */
+    private void insertClass(String simpleName, ClassSymbol sym) {
+      children.putIfAbsent(simpleName, sym);
     }
   }
 
   /** A builder for {@link TopLevelIndex}es. */
-  public static class Builder {
+  public static final class Builder {
 
     // If there are a lot of strings, we'll skip the first few map sizes. If not, 1K of memory
     // isn't significant.
     private final StringCache stringCache = new StringCache(1024);
 
-    public TopLevelIndex build() {
-      // Freeze the index. The immutability of nodes is enforced by making insert private, doing
-      // a deep copy here isn't necessary.
-      return new SimpleTopLevelIndex(root);
-    }
-
     /** The root of the lookup tree, effectively the package node of the default package. */
-    final Node root = new Node(null);
+    final Node root = new Node();
+
+    // Jar entries are typically sorted by path (e.g. by Bazel's singlejar and ijar), so classes in
+    // the same package usually appear consecutively. Caching the previous package lets most
+    // insertions skip the tree descent with a single prefix comparison. Unsorted input is still
+    // handled correctly, just with more descents.
+    //
+    // `lastPackageNode` is the package of the most recently inserted class, or null if there is no
+    // cached package. When it is non-null, `lastBinaryName` is that class's binary name and
+    // `lastPackageLength` is the length of its package prefix (-1 for the default package).
+    private @Nullable Node lastPackageNode;
+    private String lastBinaryName = "";
+    private int lastPackageLength;
+
+    // Counts cache misses, i.e. the number of times the package tree was descended. Exists only so
+    // that tests can verify the cache is effective; the increment is negligible in the hot path.
+    @VisibleForTesting int packageLookups = 0;
 
     /** Inserts a {@link ClassSymbol} into the index, creating any needed packages. */
     public void insert(ClassSymbol sym) {
       String binaryName = sym.binaryName();
+      int lastSlash = binaryName.lastIndexOf('/');
+      Node pkg = lastPackageNode;
+      if (pkg == null
+          || lastSlash != lastPackageLength
+          || !binaryName.regionMatches(0, lastBinaryName, 0, lastSlash)) {
+        pkg = lastSlash == -1 ? root : findOrCreatePackage(binaryName);
+        // On a collision, pkg is null and this clears the cache.
+        lastPackageNode = pkg;
+        if (pkg == null) {
+          return;
+        }
+        lastBinaryName = binaryName;
+        lastPackageLength = lastSlash;
+      }
+      // Classname strings are probably unique so not worth caching.
+      String simpleName = binaryName.substring(lastSlash + 1);
+      pkg.insertClass(simpleName, sym);
+    }
+
+    private @Nullable Node findOrCreatePackage(String binaryName) {
+      packageLookups++;
+      Node curr = root;
       int start = 0;
       int end = binaryName.indexOf('/');
-      Node curr = root;
       while (end != -1) {
         String simpleName = stringCache.getSubstring(binaryName, start, end);
-        curr = curr.insert(simpleName, null);
+        curr = curr.insertPackage(simpleName);
         // If we've already inserted something with the current name (either a package or another
         // symbol), bail out. When inserting elements from the classpath, this results in the
         // expected first-match-wins semantics.
         if (curr == null) {
-          return;
+          return null;
         }
         start = end + 1;
         end = binaryName.indexOf('/', start);
       }
-      // Classname strings are probably unique so not worth caching.
-      String simpleName = binaryName.substring(start);
-      curr = curr.insert(simpleName, sym);
-      if (curr == null || !Objects.equals(curr.sym, sym)) {
-        return;
-      }
+      return curr;
+    }
+
+    public TopLevelIndex build() {
+      // Freeze the index. The immutability of nodes is enforced by making insert private, doing
+      // a deep copy here isn't necessary.
+      return new SimpleTopLevelIndex(root);
     }
   }
 
@@ -145,16 +187,18 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
         public @Nullable LookupResult lookup(LookupKey lookupKey) {
           Node curr = root;
           while (true) {
-            curr = curr.lookup(lookupKey.first().value());
-            if (curr == null) {
+            String bit = lookupKey.first().value();
+            Object child = curr.children.get(bit);
+            if (child == null) {
               return null;
             }
-            if (curr.sym != null) {
-              return new LookupResult(curr.sym, lookupKey);
+            if (child instanceof ClassSymbol sym) {
+              return new LookupResult(sym, lookupKey);
             }
             if (!lookupKey.hasNext()) {
               return null;
             }
+            curr = (Node) child;
             lookupKey = lookupKey.rest();
           }
         }
@@ -173,53 +217,11 @@ public class SimpleTopLevelIndex implements TopLevelIndex {
       if (bit.isEmpty()) {
         throw new IllegalArgumentException("Empty package name");
       }
-      curr = curr.lookup(bit);
-      if (curr == null || curr.sym != null) {
+      if (!(curr.children.get(bit) instanceof Node node)) {
         return null;
       }
+      curr = node;
     }
-    return new PackageIndex(curr);
-  }
-
-  static class PackageIndex implements PackageScope {
-
-    private final Node node;
-
-    public PackageIndex(Node node) {
-      this.node = node;
-    }
-
-    @Override
-    public @Nullable LookupResult lookup(LookupKey lookupKey) {
-      Node result = node.lookup(lookupKey.first().value());
-      if (result != null && result.sym != null) {
-        return new LookupResult(result.sym, lookupKey);
-      }
-      return null;
-    }
-
-    private final Supplier<ImmutableList<ClassSymbol>> classes =
-        Suppliers.memoize(
-            new Supplier<ImmutableList<ClassSymbol>>() {
-              @Override
-              public ImmutableList<ClassSymbol> get() {
-                if (node.children == null) {
-                  return ImmutableList.of();
-                }
-
-                ImmutableList.Builder<ClassSymbol> result = ImmutableList.builder();
-                for (Node child : node.children.values()) {
-                  if (child.sym != null) {
-                    result.add(child.sym);
-                  }
-                }
-                return result.build();
-              }
-            });
-
-    @Override
-    public Iterable<ClassSymbol> classes() {
-      return classes.get();
-    }
+    return curr;
   }
 }

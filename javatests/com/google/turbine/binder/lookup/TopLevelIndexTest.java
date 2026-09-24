@@ -109,6 +109,89 @@ public class TopLevelIndexTest {
     assertThrows(NoSuchElementException.class, () -> key.rest());
   }
 
+  @Test
+  public void packageScopeIsNotCopied() {
+    // Package nodes are returned directly instead of being wrapped in a new scope on each lookup.
+    assertThat(index.lookupPackage(ImmutableList.of("java", "util")))
+        .isSameInstanceAs(index.lookupPackage(ImmutableList.of("java", "util")));
+  }
+
+  /**
+   * Classes in JARs are grouped by package, and the builder caches the previous package to avoid
+   * re-descending the tree for each class. {@code packageLookups} counts the descents.
+   */
+  @Test
+  public void packageCache_consecutiveClassesInSamePackage() {
+    assertThat(packageLookups("java/util/Map", "java/util/List", "java/util/Set")).isEqualTo(1);
+  }
+
+  @Test
+  public void packageCache_interleavedPackages() {
+    assertThat(packageLookups("java/util/Map", "java/io/File", "java/util/List")).isEqualTo(3);
+  }
+
+  @Test
+  public void packageCache_distinctPackagesOfEqualLength() {
+    // The cached package length matches, so the contents have to be compared as well.
+    assertThat(packageLookups("java/util/Map", "java/lang/Long")).isEqualTo(2);
+  }
+
+  @Test
+  public void packageCache_subPackage() {
+    // The cached package is a prefix of the next one, so the lengths have to be compared as well.
+    assertThat(packageLookups("java/util/Map", "java/util/concurrent/Future")).isEqualTo(2);
+  }
+
+  @Test
+  public void packageCache_parentPackage() {
+    // As above, but with the cached package the longer of the two: if only the prefix was compared,
+    // `Map` would end up in `java.util.concurrent`.
+    assertThat(packageLookups("java/util/concurrent/Future", "java/util/Map")).isEqualTo(2);
+
+    TopLevelIndex index =
+        SimpleTopLevelIndex.of(
+            ImmutableList.of(
+                new ClassSymbol("java/util/concurrent/Future"), new ClassSymbol("java/util/Map")));
+    assertThat(index.lookupPackage(ImmutableList.of("java", "util")).classes())
+        .containsExactly(new ClassSymbol("java/util/Map"));
+    assertThat(index.lookupPackage(ImmutableList.of("java", "util", "concurrent")).classes())
+        .containsExactly(new ClassSymbol("java/util/concurrent/Future"));
+  }
+
+  @Test
+  public void packageCache_defaultPackage() {
+    // The default package is the root, which doesn't require a descent.
+    assertThat(packageLookups("Foo", "Bar")).isEqualTo(0);
+    // Switching to and from the default package invalidates the cache.
+    assertThat(packageLookups("java/util/Map", "Foo", "java/util/List")).isEqualTo(2);
+
+    TopLevelIndex index =
+        SimpleTopLevelIndex.of(
+            ImmutableList.of(
+                new ClassSymbol("java/util/Map"),
+                new ClassSymbol("Foo"),
+                new ClassSymbol("Bar"),
+                new ClassSymbol("java/util/List")));
+    assertThat(index.lookupPackage(ImmutableList.of()).classes())
+        .containsExactly(new ClassSymbol("Foo"), new ClassSymbol("Bar"));
+    assertThat(index.lookupPackage(ImmutableList.of("java", "util")).classes())
+        .containsExactly(new ClassSymbol("java/util/Map"), new ClassSymbol("java/util/List"));
+  }
+
+  @Test
+  public void packageCache_collisionResetsCache() {
+    // `java/Foo` is a class, so `java/Foo/Bar` can't be inserted and doesn't populate the cache.
+    assertThat(packageLookups("java/Foo", "java/Foo/Bar", "java/Foo/Baz")).isEqualTo(3);
+  }
+
+  private static int packageLookups(String... binaryNames) {
+    SimpleTopLevelIndex.Builder builder = SimpleTopLevelIndex.builder();
+    for (String binaryName : binaryNames) {
+      builder.insert(new ClassSymbol(binaryName));
+    }
+    return builder.packageLookups;
+  }
+
   private LookupKey lookupKey(ImmutableList<String> names) {
     ImmutableList.Builder<Ident> result = ImmutableList.builder();
     for (String name : names) {

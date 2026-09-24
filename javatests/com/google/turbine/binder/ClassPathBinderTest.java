@@ -323,4 +323,56 @@ public class ClassPathBinderTest {
     assertThat(baz.superclass()).isEqualTo(new ClassSymbol("java/lang/Object"));
     assertThrows(UncheckedIOException.class, baz::jarFile);
   }
+
+  /**
+   * The index is built from the binder's class map, so that map has to preserve classpath order for
+   * collisions between a class and a package of the same name to be resolved consistently.
+   */
+  @Test
+  public void classpathOrderIsPreserved() throws Exception {
+    Path classJar = temporaryFolder.newFile("class.jar").toPath();
+    writeClasses(classJar, "foo/Bar");
+    Path packageJar = temporaryFolder.newFile("package.jar").toPath();
+    writeClasses(packageJar, "foo/Bar/Baz");
+
+    {
+      // `foo/Bar` comes first, so it wins and is a class.
+      ClassPath classPath =
+          ClassPathBinder.bindClasspath(
+              TurbineExecutor.direct(), ImmutableList.of(classJar, packageJar));
+      assertThat(classPath.index().lookupPackage(ImmutableList.of("foo", "Bar"))).isNull();
+      assertThat(
+              classPath
+                  .index()
+                  .lookupPackage(ImmutableList.of("foo"))
+                  .lookup(new LookupKey(ImmutableList.of(ident("Bar"))))
+                  .sym())
+          .isEqualTo(new ClassSymbol("foo/Bar"));
+    }
+    {
+      // `foo/Bar/Baz` comes first, so `foo/Bar` is a package and the class is ignored.
+      ClassPath classPath =
+          ClassPathBinder.bindClasspath(
+              TurbineExecutor.direct(), ImmutableList.of(packageJar, classJar));
+      assertThat(classPath.index().lookupPackage(ImmutableList.of("foo", "Bar")).classes())
+          .containsExactly(new ClassSymbol("foo/Bar/Baz"));
+      assertThat(
+              classPath
+                  .index()
+                  .lookupPackage(ImmutableList.of("foo"))
+                  .lookup(new LookupKey(ImmutableList.of(ident("Bar")))))
+          .isNull();
+    }
+  }
+
+  private static void writeClasses(Path path, String... binaryNames) throws Exception {
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(path))) {
+      for (String binaryName : binaryNames) {
+        jos.putNextEntry(new JarEntry(binaryName + ".class"));
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(52, Opcodes.ACC_PUBLIC, binaryName, null, "java/lang/Object", new String[] {});
+        jos.write(cw.toByteArray());
+      }
+    }
+  }
 }
