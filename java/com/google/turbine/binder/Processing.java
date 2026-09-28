@@ -38,7 +38,9 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
+import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parallel.TurbineExecutor;
@@ -71,6 +73,7 @@ import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
 /** Top level annotation processing logic, see also {@link Binder}. */
@@ -93,22 +96,33 @@ public class Processing {
       }
     }
 
+    Env<ClassSymbol, SourceTypeBoundClass> tenv = new SimpleEnv<>(result.units());
+    CompoundEnv<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
+
+    ImmutableSet<ClassSymbol> syms = result.units().keySet();
+    Set<ClassSymbol> allSymbols = new HashSet<>(syms);
+
+    ModelFactory factory = new ModelFactory(env, result.tli());
+
     TurbineFiler filer =
         new TurbineFiler(
             seen,
+            // Types from previous rounds. Types from the current round are tracked by the filer.
+            // This queries names before they are generated, which is safe because inferSymbol
+            // doesn't cache negative results.
+            name -> {
+              ClassSymbol sym = factory.inferSymbol(name);
+              return sym != null && allSymbols.contains(sym);
+            },
             (String input) -> {
-              // TODO(cushon): should annotation processors be allowed to generate code with
+              // TODO(b/566986492): should annotation processors be allowed to generate code with
               // dependencies between source and bytecode, or vice versa?
               // Currently generated classes are not available on the classpath when compiling
               // the compilation sources (including generated sources).
               return classpath.resource(input);
             },
             processorInfo.loader());
-
-    Env<ClassSymbol, SourceTypeBoundClass> tenv = new SimpleEnv<>(result.units());
-    CompoundEnv<ClassSymbol, TypeBoundClass> env =
-        CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
-    ModelFactory factory = new ModelFactory(env, result.tli());
 
     Map<String, byte[]> statistics = new LinkedHashMap<>();
 
@@ -137,8 +151,6 @@ public class Processing {
     ImmutableMap<Processor, SupportedAnnotationTypes> wanted =
         initializeSupportedAnnotationTypes(processorInfo);
 
-    Set<ClassSymbol> allSymbols = new HashSet<>();
-
     ImmutableList.Builder<CompUnit> units =
         ImmutableList.<CompUnit>builder().addAll(initialSources);
 
@@ -146,13 +158,7 @@ public class Processing {
 
     boolean errorRaised = false;
 
-    while (true) {
-      ImmutableSet<ClassSymbol> syms =
-          Sets.difference(result.units().keySet(), allSymbols).immutableCopy();
-      allSymbols.addAll(syms);
-      if (syms.isEmpty()) {
-        break;
-      }
+    while (!syms.isEmpty()) {
       ImmutableSetMultimap<ClassSymbol, Symbol> allAnnotations = getAllAnnotations(env, syms);
       TurbineRoundEnvironment roundEnv = null;
       for (Map.Entry<Processor, SupportedAnnotationTypes> e : wanted.entrySet()) {
@@ -206,6 +212,9 @@ public class Processing {
               moduleVersion);
       tenv = new SimpleEnv<>(result.units());
       env = CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
+      syms = Sets.difference(result.units().keySet(), allSymbols).immutableCopy();
+      allSymbols.addAll(syms);
+      checkGeneratedTypesOnClassPath(processorInfo, result, syms, classpath, bootclasspath);
       factory.round(env, result.tli());
     }
 
@@ -248,11 +257,22 @@ public class Processing {
       if (log.anyErrors()) {
         return null;
       }
+      checkGeneratedTypesOnClassPath(
+          processorInfo,
+          result,
+          Sets.difference(result.units().keySet(), allSymbols),
+          classpath,
+          bootclasspath);
     }
+    // Unlike generated source files, generated classes are currently not available on the classpath
+    // when compiling the compilation sources, so they are checked for conflicts here instead of
+    // after each round. See b/566986492.
+    checkGeneratedClassesOnClassPath(
+        processorInfo, filer.generatedClasses(), classpath, bootclasspath);
 
     if (!filer.generatedClasses().isEmpty()) {
       // add any generated class files to the output
-      // TODO(cushon): consider handling generated classes after each round
+      // TODO(b/566986492): consider handling generated classes after each round
       result = result.withGeneratedClasses(filer.generatedClasses());
     }
     if (!filer.generatedSources().isEmpty()) {
@@ -292,6 +312,64 @@ public class Processing {
     }
   }
 
+  private static void checkGeneratedTypesOnClassPath(
+      ProcessorInfo processorInfo,
+      BindingResult result,
+      Set<ClassSymbol> syms,
+      ClassPath classpath,
+      ClassPath bootclasspath) {
+    if (!processorInfo.rejectGeneratedTypesOnClassPath()) {
+      return;
+    }
+    List<TurbineDiagnostic> diagnostics = new ArrayList<>();
+    for (ClassSymbol sym : syms) {
+      if (!onClassPath(sym, classpath, bootclasspath)) {
+        continue;
+      }
+      SourceTypeBoundClass info = requireNonNull(result.units().get(sym));
+      diagnostics.add(
+          TurbineDiagnostic.format(
+              Diagnostic.Kind.ERROR,
+              info.source(),
+              info.decl().position(),
+              ErrorKind.GENERATED_TYPE_ON_CLASSPATH,
+              sym));
+    }
+    if (!diagnostics.isEmpty()) {
+      throw new TurbineError(ImmutableList.copyOf(diagnostics));
+    }
+  }
+
+  private static void checkGeneratedClassesOnClassPath(
+      ProcessorInfo processorInfo,
+      ImmutableMap<String, byte[]> generatedClasses,
+      ClassPath classpath,
+      ClassPath bootclasspath) {
+    if (!processorInfo.rejectGeneratedTypesOnClassPath()) {
+      return;
+    }
+    List<TurbineDiagnostic> diagnostics = new ArrayList<>();
+    for (String path : generatedClasses.keySet()) {
+      // Resources created in CLASS_OUTPUT are also recorded as generated classes.
+      if (!path.endsWith(".class")) {
+        continue;
+      }
+      ClassSymbol sym = new ClassSymbol(path.substring(0, path.length() - ".class".length()));
+      if (onClassPath(sym, classpath, bootclasspath)) {
+        diagnostics.add(
+            TurbineDiagnostic.format(
+                Diagnostic.Kind.ERROR, ErrorKind.GENERATED_TYPE_ON_CLASSPATH, sym.toString()));
+      }
+    }
+    if (!diagnostics.isEmpty()) {
+      throw new TurbineError(ImmutableList.copyOf(diagnostics));
+    }
+  }
+
+  private static boolean onClassPath(
+      ClassSymbol sym, ClassPath classpath, ClassPath bootclasspath) {
+    return classpath.env().get(sym) != null || bootclasspath.env().get(sym) != null;
+  }
 
   /** Returns a map from annotations present in the compilation to the annotated elements. */
   private static ImmutableSetMultimap<ClassSymbol, Symbol> getAllAnnotations(
@@ -385,7 +463,11 @@ public class Processing {
     }
     ImmutableList<Processor> processors = instantiateProcessors(processorNames, processorLoader);
     return ProcessorInfo.create(
-        processors, processorLoader, javacopts.processorOptions(), sourceVersion);
+        processors,
+        processorLoader,
+        javacopts.processorOptions(),
+        sourceVersion,
+        javacopts.rejectGeneratedTypesOnClassPath());
   }
 
   private static ImmutableList<Processor> instantiateProcessors(
@@ -461,12 +543,16 @@ public class Processing {
 
     public abstract SourceVersion sourceVersion();
 
+    public abstract boolean rejectGeneratedTypesOnClassPath();
+
     public static ProcessorInfo create(
         ImmutableList<Processor> processors,
         @Nullable ClassLoader loader,
         ImmutableMap<String, String> options,
-        SourceVersion sourceVersion) {
-      return new AutoValue_Processing_ProcessorInfo(processors, loader, options, sourceVersion);
+        SourceVersion sourceVersion,
+        boolean rejectGeneratedTypesOnClassPath) {
+      return new AutoValue_Processing_ProcessorInfo(
+          processors, loader, options, sourceVersion, rejectGeneratedTypesOnClassPath);
     }
 
     public static ProcessorInfo empty() {
@@ -474,7 +560,8 @@ public class Processing {
           /* processors= */ ImmutableList.of(),
           /* loader= */ null,
           /* options= */ ImmutableMap.of(),
-          /* sourceVersion= */ SourceVersion.latest());
+          /* sourceVersion= */ SourceVersion.latest(),
+          /* rejectGeneratedTypesOnClassPath= */ false);
     }
   }
 

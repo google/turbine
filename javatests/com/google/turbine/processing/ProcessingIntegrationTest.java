@@ -129,7 +129,8 @@ public class ProcessingIntegrationTest {
             ImmutableList.of(new CrashingProcessor()),
             getClass().getClassLoader(),
             ImmutableMap.of(),
-            SourceVersion.latestSupported());
+            SourceVersion.latestSupported(),
+            /* rejectGeneratedTypesOnClassPath= */ true);
     AnnotationProcessingError e =
         assertThrows(
             AnnotationProcessingError.class,
@@ -252,7 +253,8 @@ public class ProcessingIntegrationTest {
                 ImmutableList.of(new ResourceProcessor()),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported()),
+                SourceVersion.latestSupported(),
+                /* rejectGeneratedTypesOnClassPath= */ true),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
@@ -288,7 +290,8 @@ public class ProcessingIntegrationTest {
                 ImmutableList.of(new ElementsAnnotatedWithProcessor()),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported()),
+                SourceVersion.latestSupported(),
+                /* rejectGeneratedTypesOnClassPath= */ true),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
@@ -522,7 +525,8 @@ public class ProcessingIntegrationTest {
                 ImmutableList.of(new GenerateAnnotationProcessor()),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported()),
+                SourceVersion.latestSupported(),
+                /* rejectGeneratedTypesOnClassPath= */ true),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     assertThat(bound.generatedSources()).containsKey("A.java");
@@ -721,7 +725,8 @@ public class ProcessingIntegrationTest {
                 ImmutableList.of(new RecordFromADistanceProcessor()),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported()),
+                SourceVersion.latestSupported(),
+                /* rejectGeneratedTypesOnClassPath= */ true),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     ImmutableList<String> messages =
@@ -936,7 +941,8 @@ public class ProcessingIntegrationTest {
                 ImmutableList.of(new MethodAnnotationTypeKindProcessor()),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported()),
+                SourceVersion.latestSupported(),
+                /* rejectGeneratedTypesOnClassPath= */ true),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     assertThat(bound.units().keySet()).containsExactly(new ClassSymbol("Y"));
@@ -994,7 +1000,8 @@ public class ProcessingIntegrationTest {
             ImmutableList.of(new MissingSupertypeProcessor()),
             getClass().getClassLoader(),
             ImmutableMap.of(),
-            SourceVersion.latestSupported());
+            SourceVersion.latestSupported(),
+            /* rejectGeneratedTypesOnClassPath= */ false);
     TurbineError e =
         assertThrows(
             TurbineError.class,
@@ -1581,7 +1588,8 @@ public class ProcessingIntegrationTest {
                 ImmutableList.of(new PermittedSubclasses()),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported()),
+                SourceVersion.latestSupported(),
+                /* rejectGeneratedTypesOnClassPath= */ true),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     ImmutableList<String> messages =
@@ -1742,7 +1750,8 @@ public class ProcessingIntegrationTest {
                     ImmutableList.copyOf(processors),
                     getClass().getClassLoader(),
                     ImmutableMap.of(),
-                    SourceVersion.latestSupported()),
+                    SourceVersion.latestSupported(),
+                    /* rejectGeneratedTypesOnClassPath= */ true),
                 TestClassPaths.TURBINE_BOOTCLASSPATH,
                 Optional.empty()));
   }

@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -39,6 +40,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +64,21 @@ public class TurbineFiler implements Filer {
    * Existing paths of file objects that cannot be regenerated, including the original compilation
    * inputs and source or class files generated during any annotation processing round.
    */
-  private final Set<String> seen;
+  private final Set<String> seenPaths;
+
+  /** Type names created by this filer in any round, which cannot be regenerated. */
+  private final Set<String> seenNames = new HashSet<>();
+
+  /**
+   * Existing type names that cannot be regenerated, including original compilation inputs and types
+   * generated during previous annotation processing rounds. Types created during the current round
+   * are tracked by {@link #seenNames}.
+   */
+  private final Predicate<String> existingTypeName;
 
   /**
    * File objects generated during the current processing round. Each entry has a unique path, which
-   * is enforced by {@link #seen}.
+   * is enforced by {@link #seenPaths}.
    */
   private final List<TurbineJavaFileObject> files = new ArrayList<>();
 
@@ -90,8 +102,12 @@ public class TurbineFiler implements Filer {
   }
 
   public TurbineFiler(
-      Set<String> seen, Function<String, Supplier<byte[]>> classPath, ClassLoader loader) {
-    this.seen = seen;
+      Set<String> seenPaths,
+      Predicate<String> existingTypeName,
+      Function<String, Supplier<byte[]>> classPath,
+      ClassLoader loader) {
+    this.seenPaths = seenPaths;
+    this.existingTypeName = existingTypeName;
     this.classPath = classPath;
     this.loader = loader;
   }
@@ -126,17 +142,24 @@ public class TurbineFiler implements Filer {
   @Override
   public JavaFileObject createSourceFile(CharSequence n, Element... originatingElements)
       throws IOException {
-    String name = n.toString();
-    checkArgument(!name.contains("/"), "invalid type name: %s", name);
-    return create(StandardLocation.SOURCE_OUTPUT, Kind.SOURCE, name.replace('.', '/') + ".java");
+    return createType(StandardLocation.SOURCE_OUTPUT, Kind.SOURCE, n.toString(), ".java");
   }
 
   @Override
   public JavaFileObject createClassFile(CharSequence n, Element... originatingElements)
       throws IOException {
-    String name = n.toString();
+    return createType(StandardLocation.CLASS_OUTPUT, Kind.CLASS, n.toString(), ".class");
+  }
+
+  private JavaFileObject createType(
+      StandardLocation location, Kind kind, String name, String extension) throws FilerException {
     checkArgument(!name.contains("/"), "invalid type name: %s", name);
-    return create(StandardLocation.CLASS_OUTPUT, Kind.CLASS, name.replace('.', '/') + ".class");
+    if (existingTypeName.test(name) || seenNames.contains(name)) {
+      throw new FilerException("already created " + name);
+    }
+    JavaFileObject result = create(location, kind, name.replace('.', '/') + extension);
+    seenNames.add(name);
+    return result;
   }
 
   @Override
@@ -154,7 +177,7 @@ public class TurbineFiler implements Filer {
   private JavaFileObject create(StandardLocation location, Kind kind, String path)
       throws FilerException {
     checkArgument(location.isOutputLocation());
-    if (!seen.add(path)) {
+    if (!seenPaths.add(path)) {
       throw new FilerException("already created " + path);
     }
     TurbineJavaFileObject result = new TurbineJavaFileObject(location, kind, path);

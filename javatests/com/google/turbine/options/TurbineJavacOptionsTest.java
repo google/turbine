@@ -221,6 +221,31 @@ public class TurbineJavacOptionsTest {
   }
 
   @Test
+  public void rejectGeneratedTypesOnClassPath() {
+    assertThat(TurbineJavacOptions.parse(ImmutableList.of()).rejectGeneratedTypesOnClassPath())
+        .isFalse();
+    assertThat(
+            TurbineJavacOptions.parse(
+                    ImmutableList.of("-XDturbine.reject_generated_types_on_classpath=true"))
+                .rejectGeneratedTypesOnClassPath())
+        .isTrue();
+    assertThat(
+            TurbineJavacOptions.parse(
+                    ImmutableList.of("-XDturbine.reject_generated_types_on_classpath=false"))
+                .rejectGeneratedTypesOnClassPath())
+        .isFalse();
+    IllegalArgumentException expected =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TurbineJavacOptions.parse(
+                    ImmutableList.of("-XDturbine.reject_generated_types_on_classpath=yes")));
+    assertThat(expected)
+        .hasMessageThat()
+        .contains("invalid boolean value for -XDturbine.reject_generated_types_on_classpath: yes");
+  }
+
+  @Test
   public void skipJavacFlags() {
     // -cp is in ONE_ARG_FLAGS, so the following argument is skipped.
     // Ensure that '-XDnoParallel' is not parsed as parallel(false) because it's skipped.

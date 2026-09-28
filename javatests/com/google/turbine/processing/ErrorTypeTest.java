@@ -214,7 +214,8 @@ public class ErrorTypeTest {
                         ImmutableList.copyOf(processors),
                         getClass().getClassLoader(),
                         ImmutableMap.of(),
-                        SourceVersion.latestSupported()),
+                        SourceVersion.latestSupported(),
+                        /* rejectGeneratedTypesOnClassPath= */ true),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
     return e.diagnostics().stream()

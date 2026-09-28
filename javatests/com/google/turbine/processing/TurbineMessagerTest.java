@@ -228,7 +228,8 @@ public class TurbineMessagerTest {
                         ImmutableList.of(new DiagnosticTesterProcessor()),
                         getClass().getClassLoader(),
                         ImmutableMap.of(),
-                        SourceVersion.latestSupported()),
+                        SourceVersion.latestSupported(),
+                        /* rejectGeneratedTypesOnClassPath= */ true),
                     TestClassPaths.TURBINE_BOOTCLASSPATH,
                     Optional.empty()));
     ImmutableList<String> turbineDiagnostics =

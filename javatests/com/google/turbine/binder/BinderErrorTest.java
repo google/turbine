@@ -1203,7 +1203,8 @@ public class BinderErrorTest {
                             ImmutableList.of(new HelloWorldProcessor()),
                             /* loader= */ getClass().getClassLoader(),
                             /* options= */ ImmutableMap.of(),
-                            SourceVersion.latestSupported()),
+                            SourceVersion.latestSupported(),
+                            /* rejectGeneratedTypesOnClassPath= */ true),
                         TURBINE_BOOTCLASSPATH,
                         /* moduleVersion= */ Optional.empty())
                     .units());

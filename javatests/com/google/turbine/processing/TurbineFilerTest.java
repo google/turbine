@@ -60,7 +60,8 @@ public class TurbineFilerTest {
             return null;
           }
         };
-    this.filer = new TurbineFiler(seen, classpath, TurbineFilerTest.class.getClassLoader());
+    this.filer =
+        new TurbineFiler(seen, _ -> false, classpath, TurbineFilerTest.class.getClassLoader());
   }
 
   @Test
@@ -92,17 +93,49 @@ public class TurbineFilerTest {
   }
 
   @Test
-  public void existing() throws IOException {
-    seen.add("com/foo/Bar.java");
-    seen.add("com/foo/Baz.class");
+  public void cannotCreateSourceAndClassForSameType() throws IOException {
+    var _ = filer.createSourceFile("com.foo.Bar", (Element[]) null);
+    assertThrows(
+        FilerException.class, () -> filer.createClassFile("com.foo.Bar", (Element[]) null));
+  }
 
+  @Test
+  public void cannotCreateClassAndSourceForSameType() throws IOException {
+    var _ = filer.createClassFile("com.foo.Bar", (Element[]) null);
     assertThrows(
         FilerException.class, () -> filer.createSourceFile("com.foo.Bar", (Element[]) null));
-    JavaFileObject unused = filer.createSourceFile("com.foo.Baz", (Element[]) null);
+  }
 
-    unused = filer.createClassFile("com.foo.Bar", (Element[]) null);
+  @Test
+  public void cannotRecreateSourceFile() throws IOException {
+    var _ = filer.createSourceFile("com.foo.Bar", (Element[]) null);
     assertThrows(
-        FilerException.class, () -> filer.createClassFile("com.foo.Baz", (Element[]) null));
+        FilerException.class, () -> filer.createSourceFile("com.foo.Bar", (Element[]) null));
+  }
+
+  @Test
+  public void cannotRecreateClassFile() throws IOException {
+    var _ = filer.createClassFile("com.foo.Bar", (Element[]) null);
+    assertThrows(
+        FilerException.class, () -> filer.createClassFile("com.foo.Bar", (Element[]) null));
+  }
+
+  @Test
+  public void initialTypeCannotBeRecreated() throws IOException {
+    Set<String> seenTypes = new HashSet<>();
+    seenTypes.add("com.foo.Initial");
+    TurbineFiler filerWithInitial =
+        new TurbineFiler(
+            seen,
+            seenTypes::contains,
+            (String input) -> null,
+            TurbineFilerTest.class.getClassLoader());
+    assertThrows(
+        FilerException.class,
+        () -> filerWithInitial.createSourceFile("com.foo.Initial", (Element[]) null));
+    assertThrows(
+        FilerException.class,
+        () -> filerWithInitial.createClassFile("com.foo.Initial", (Element[]) null));
   }
 
   @Test
