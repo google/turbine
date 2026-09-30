@@ -23,6 +23,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -107,6 +108,25 @@ public class ModelFactory {
     round.getAndIncrement();
     cha.round(env);
     this.types = new Types(cha, env);
+  }
+
+  /**
+   * Returns true if {@code sym} is declared in a class loaded from the classpath. The model state
+   * for these symbols is cached across rounds.
+   *
+   * <p>This assumes classpath types are never shadowed by generated sources. If a processor did
+   * generate a source file for a type that already exists on the classpath, elements for that type
+   * created in earlier rounds would continue to reflect the classpath version. Generating such
+   * types is expected to become an error, see {@code
+   * -XDturbine.reject_generated_types_on_classpath}.
+   */
+  boolean isClasspath(Symbol sym) {
+    if (sym instanceof TyVarSymbol tyVar && tyVar.owner() == null) {
+      // Capture variables aren't owned by a class.
+      return false;
+    }
+    TypeBoundClass info = getSymbol(enclosingClass(sym));
+    return info != null && !(info instanceof SourceTypeBoundClass);
   }
 
   int roundNumber() {
@@ -214,16 +234,19 @@ public class ModelFactory {
   }
 
   TurbineFieldElement fieldElement(FieldSymbol symbol) {
-    return fieldCache.computeIfAbsent(symbol, k -> new TurbineFieldElement(this, symbol));
+    return fieldCache.computeIfAbsent(
+        symbol, k -> new TurbineFieldElement(this, symbol, isClasspath(symbol)));
   }
 
   TurbineExecutableElement executableElement(MethodSymbol symbol) {
-    return methodCache.computeIfAbsent(symbol, k -> new TurbineExecutableElement(this, symbol));
+    return methodCache.computeIfAbsent(
+        symbol, k -> new TurbineExecutableElement(this, symbol, isClasspath(symbol)));
   }
 
   public TurbineTypeElement typeElement(ClassSymbol symbol) {
     Verify.verify(!symbol.simpleName().equals("package-info"), "%s", symbol);
-    return classCache.computeIfAbsent(symbol, k -> new TurbineTypeElement(this, symbol));
+    return classCache.computeIfAbsent(
+        symbol, k -> new TurbineTypeElement(this, symbol, isClasspath(symbol)));
   }
 
   TurbinePackageElement packageElement(PackageSymbol symbol) {
@@ -231,16 +254,18 @@ public class ModelFactory {
   }
 
   VariableElement parameterElement(ParamSymbol sym) {
-    return paramCache.computeIfAbsent(sym, k -> new TurbineParameterElement(this, sym));
+    return paramCache.computeIfAbsent(
+        sym, k -> new TurbineParameterElement(this, sym, isClasspath(sym)));
   }
 
   RecordComponentElement recordComponentElement(RecordComponentSymbol sym) {
     return recordComponentCache.computeIfAbsent(
-        sym, k -> new TurbineRecordComponentElement(this, sym));
+        sym, k -> new TurbineRecordComponentElement(this, sym, isClasspath(sym)));
   }
 
   TurbineTypeParameterElement typeParameterElement(TyVarSymbol sym) {
-    return tyParamCache.computeIfAbsent(sym, k -> new TurbineTypeParameterElement(this, sym));
+    return tyParamCache.computeIfAbsent(
+        sym, k -> new TurbineTypeParameterElement(this, sym, isClasspath(sym)));
   }
 
   ImmutableSet<Element> elements(ImmutableSet<? extends Symbol> symbols) {

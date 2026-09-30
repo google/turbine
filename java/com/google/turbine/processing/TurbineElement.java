@@ -98,6 +98,9 @@ public abstract class TurbineElement implements Element {
    * invalidates everything computed in earlier rounds.
    */
   static class ElementState {
+    /** A round number for state that is never invalidated, see {@link #targetRound}. */
+    static final int FOREVER = Integer.MAX_VALUE;
+
     final int round;
     @Nullable TypeMirror type;
     @Nullable ImmutableList<AnnotationMirror> annotationMirrors;
@@ -108,16 +111,22 @@ public abstract class TurbineElement implements Element {
   }
 
   final ModelFactory factory;
+  private final boolean isClasspathElement;
   private @Nullable ElementState state;
 
-  TurbineElement(ModelFactory factory) {
+  TurbineElement(ModelFactory factory, boolean isClasspathElement) {
     this.factory = requireNonNull(factory);
+    this.isClasspathElement = isClasspathElement;
+  }
+
+  private int targetRound() {
+    return isClasspathElement ? ElementState.FOREVER : factory.roundNumber();
   }
 
   abstract ElementState createState(int round);
 
   final ElementState elementState() {
-    int r = factory.roundNumber();
+    int r = targetRound();
     ElementState s = this.state;
     if (s == null || s.round < r) {
       this.state = s = createState(r);
@@ -175,7 +184,6 @@ public abstract class TurbineElement implements Element {
       final @Nullable TypeBoundClass info;
       @Nullable TurbineName qualifiedName;
       @Nullable TurbineName simpleName;
-      @Nullable Element enclosing;
       @Nullable TypeMirror superclass;
       @Nullable List<TypeMirror> interfaces;
       @Nullable ImmutableList<TypeParameterElement> typeParameters;
@@ -197,8 +205,8 @@ public abstract class TurbineElement implements Element {
 
     private final ClassSymbol sym;
 
-    TurbineTypeElement(ModelFactory factory, ClassSymbol sym) {
-      super(factory);
+    TurbineTypeElement(ModelFactory factory, ClassSymbol sym, boolean isClasspath) {
+      super(factory, isClasspath);
       this.sym = requireNonNull(sym);
     }
 
@@ -362,15 +370,8 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Element getEnclosingElement() {
-      TypeElementState s = state();
-      Element local = s.enclosing;
-      if (local == null) {
-        ClassSymbol owner = TypeBoundClass.owner(sym, () -> s.info);
-        s.enclosing =
-            local =
-                owner == null ? factory.packageElement(sym.owner()) : factory.typeElement(owner);
-      }
-      return local;
+      ClassSymbol owner = TypeBoundClass.owner(sym, this::info);
+      return owner == null ? factory.packageElement(sym.owner()) : factory.typeElement(owner);
     }
 
     @Override
@@ -585,8 +586,8 @@ public abstract class TurbineElement implements Element {
 
     private final TyVarSymbol sym;
 
-    TurbineTypeParameterElement(ModelFactory factory, TyVarSymbol sym) {
-      super(factory);
+    TurbineTypeParameterElement(ModelFactory factory, TyVarSymbol sym, boolean isClasspath) {
+      super(factory, isClasspath);
       this.sym = sym;
     }
 
@@ -698,8 +699,8 @@ public abstract class TurbineElement implements Element {
       return state().info;
     }
 
-    TurbineExecutableElement(ModelFactory factory, MethodSymbol sym) {
-      super(factory);
+    TurbineExecutableElement(ModelFactory factory, MethodSymbol sym, boolean isClasspath) {
+      super(factory, isClasspath);
       this.sym = sym;
     }
 
@@ -928,8 +929,8 @@ public abstract class TurbineElement implements Element {
       return state().info;
     }
 
-    TurbineFieldElement(ModelFactory factory, FieldSymbol sym) {
-      super(factory);
+    TurbineFieldElement(ModelFactory factory, FieldSymbol sym, boolean isClasspath) {
+      super(factory, isClasspath);
       this.sym = sym;
     }
 
@@ -1062,7 +1063,8 @@ public abstract class TurbineElement implements Element {
     private final PackageSymbol sym;
 
     TurbinePackageElement(ModelFactory factory, PackageSymbol sym) {
-      super(factory);
+      // Packages can gain members as types are generated, so their state is recomputed each round.
+      super(factory, /* isClasspathElement= */ false);
       this.sym = sym;
     }
 
@@ -1228,8 +1230,8 @@ public abstract class TurbineElement implements Element {
       return state().info;
     }
 
-    TurbineParameterElement(ModelFactory factory, ParamSymbol sym) {
-      super(factory);
+    TurbineParameterElement(ModelFactory factory, ParamSymbol sym, boolean isClasspath) {
+      super(factory, isClasspath);
       this.sym = sym;
     }
 
@@ -1339,8 +1341,9 @@ public abstract class TurbineElement implements Element {
       return state().info;
     }
 
-    TurbineRecordComponentElement(ModelFactory factory, RecordComponentSymbol sym) {
-      super(factory);
+    TurbineRecordComponentElement(
+        ModelFactory factory, RecordComponentSymbol sym, boolean isClasspath) {
+      super(factory, isClasspath);
       this.sym = sym;
     }
 
