@@ -20,7 +20,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Supplier;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -98,7 +97,7 @@ import javax.lang.model.type.TypeMirror;
  */
 public class ModelFactory {
 
-  public Env<ClassSymbol, ? extends TypeBoundClass> env;
+  private Env<ClassSymbol, ? extends TypeBoundClass> env;
 
   private final AtomicInteger round = new AtomicInteger(0);
 
@@ -108,6 +107,10 @@ public class ModelFactory {
     round.getAndIncrement();
     cha.round(env);
     this.types = new Types(cha, env);
+  }
+
+  int roundNumber() {
+    return round.get();
   }
 
   private final HashMap<Type, TurbineTypeMirror> typeCache = new HashMap<>();
@@ -141,30 +144,6 @@ public class ModelFactory {
 
   TypeMirror asTypeMirror(Type type) {
     return typeCache.computeIfAbsent(type, this::createTypeMirror);
-  }
-
-  /**
-   * Returns a supplier that memoizes the result of the input supplier.
-   *
-   * <p>It ensures that the results are invalidated after each annotation processing round, to
-   * support computations that depend on information in the current round and which might change in
-   * future, e.g. as additional types are generated.
-   */
-  <T> Supplier<T> memoize(Supplier<T> s) {
-    return new Supplier<T>() {
-      T v;
-      int initializedInRound = -1;
-
-      @Override
-      public T get() {
-        int r = round.get();
-        if (initializedInRound != r) {
-          v = s.get();
-          initializedInRound = r;
-        }
-        return v;
-      }
-    };
   }
 
   /** Creates a {@link TurbineTypeMirror} backed by a {@link Type}. */
@@ -212,7 +191,7 @@ public class ModelFactory {
     return new TurbinePackageType(this, symbol);
   }
 
-  public NullType nullType() {
+  NullType nullType() {
     return new TurbineNullType(this);
   }
 
@@ -303,7 +282,7 @@ public class ModelFactory {
    * Returns the {@link TypeBoundClass} for the given {@link ClassSymbol} from the current
    * environment.
    */
-  public TypeBoundClass getSymbol(ClassSymbol sym) {
+  TypeBoundClass getSymbol(ClassSymbol sym) {
     return env.get(sym);
   }
 
@@ -348,7 +327,7 @@ public class ModelFactory {
     throw new AssertionError(symbol);
   }
 
-  public TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
+  TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
     return types.getTyVarInfo(tyVar);
   }
 

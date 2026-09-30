@@ -46,6 +46,7 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
@@ -171,6 +172,56 @@ public class ErrorTypeTest {
                 // interested in the diagnostics about the type predicate results.
                 .add("could not resolve NoSuch")
                 .build());
+  }
+
+  @SupportedAnnotationTypes("*")
+  static class ErrorAnnotationProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    private boolean first = true;
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (!first) {
+        return false;
+      }
+      first = false;
+      TypeElement e = processingEnv.getElementUtils().getTypeElement("T");
+      for (AnnotationMirror a : e.getAnnotationMirrors()) {
+        // Emit the annotation kind and element values as an error diagnostic; the test asserts
+        // that this produces "ERROR {} {}" without crashing.
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                String.format(
+                    "%s %s %s",
+                    a.getAnnotationType().getKind(),
+                    a.getElementValues(),
+                    processingEnv.getElementUtils().getElementValuesWithDefaults(a)));
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void errorAnnotationElementValues() throws Exception {
+    IntegrationTestSupport.TestInput input =
+        IntegrationTestSupport.TestInput.parse(
+            """
+            === T.java ===
+            @NoSuch
+            class T {}
+            """);
+
+    // Assert that the processor emitted "ERROR {} {}" (confirming that an unresolved annotation has
+    // TypeKind.ERROR and empty maps for getElementValues and getElementValuesWithDefaults, without
+    // crashing) along with Turbine's resolution error for NoSuch.
+    assertThat(runTurbine(input, new ErrorAnnotationProcessor()))
+        .containsExactly("ERROR {} {}", "could not resolve NoSuch");
   }
 
   private static ImmutableList<String> runJavac(

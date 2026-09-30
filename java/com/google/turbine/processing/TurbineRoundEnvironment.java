@@ -16,10 +16,9 @@
 
 package com.google.turbine.processing;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
@@ -28,6 +27,7 @@ import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import org.jspecify.annotations.Nullable;
 
 /** A {@link RoundEnvironment}. */
 public class TurbineRoundEnvironment implements RoundEnvironment {
@@ -39,24 +39,7 @@ public class TurbineRoundEnvironment implements RoundEnvironment {
   private final ImmutableSetMultimap<ClassSymbol, Symbol> allAnnotations;
 
   // the round environment doesn't outlive the round, so don't worry about resetting this cache
-  private final Supplier<ImmutableSet<TurbineTypeElement>> rootElements =
-      Suppliers.memoize(
-          new Supplier<ImmutableSet<TurbineTypeElement>>() {
-            @Override
-            public ImmutableSet<TurbineTypeElement> get() {
-              ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
-              for (ClassSymbol sym : syms) {
-                if (sym.simpleName().contains("$") && factory.getSymbol(sym).owner() != null) {
-                  continue;
-                }
-                if (sym.simpleName().equals("package-info")) {
-                  continue;
-                }
-                result.add(factory.typeElement(sym));
-              }
-              return result.build();
-            }
-          });
+  private @Nullable ImmutableSet<TurbineTypeElement> rootElements;
 
   public TurbineRoundEnvironment(
       ModelFactory factory,
@@ -83,7 +66,21 @@ public class TurbineRoundEnvironment implements RoundEnvironment {
 
   @Override
   public ImmutableSet<TurbineTypeElement> getRootElements() {
-    return rootElements.get();
+    ImmutableSet<TurbineTypeElement> local = rootElements;
+    if (local == null) {
+      ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
+      for (ClassSymbol sym : syms) {
+        if (!TypeBoundClass.isTopLevel(sym, () -> factory.getSymbol(sym))) {
+          continue;
+        }
+        if (sym.simpleName().equals("package-info")) {
+          continue;
+        }
+        result.add(factory.typeElement(sym));
+      }
+      rootElements = local = result.build();
+    }
+    return local;
   }
 
   @Override

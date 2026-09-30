@@ -20,12 +20,12 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TurbineClassValue;
+import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.Const.ArrayInitValue;
@@ -66,73 +66,57 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
     return new TurbineAnnotationMirror(factory, new TurbineAnnotationValue(anno));
   }
 
+  private static final class AnnotationMirrorState {
+    final int round;
+    @Nullable DeclaredType type;
+    @Nullable ImmutableMap<String, MethodInfo> elements;
+    @Nullable ImmutableMap<ExecutableElement, AnnotationValue> elementValues;
+    @Nullable ImmutableMap<ExecutableElement, AnnotationValue> elementValuesWithDefaults;
+
+    AnnotationMirrorState(int round) {
+      this.round = round;
+    }
+  }
+
+  private final ModelFactory factory;
   private final TurbineAnnotationValue value;
   private final AnnoInfo anno;
-  private final Supplier<DeclaredType> type;
-  private final Supplier<ImmutableMap<String, MethodInfo>> elements;
-  private final Supplier<ImmutableMap<ExecutableElement, AnnotationValue>> elementValues;
-  private final Supplier<ImmutableMap<ExecutableElement, AnnotationValue>>
-      elementValuesWithDefaults;
+  private @Nullable AnnotationMirrorState state;
 
   private TurbineAnnotationMirror(ModelFactory factory, TurbineAnnotationValue value) {
+    this.factory = factory;
     this.value = value;
     this.anno = value.info();
-    this.type =
-        factory.memoize(
-            () -> {
-              if (anno.sym() == null) {
-                return (ErrorType)
-                    factory.asTypeMirror(ErrorTy.create(anno.tree().name().getLast().value()));
-              }
-              return (DeclaredType) factory.typeElement(anno.sym()).asType();
-            });
-    this.elements =
-        factory.memoize(
-            () -> {
-              ImmutableMap.Builder<String, MethodInfo> result = ImmutableMap.builder();
-              for (MethodInfo m : factory.getSymbol(anno.sym()).methods()) {
-                checkState(m.parameters().isEmpty());
-                result.put(m.name(), m);
-              }
-              return result.buildOrThrow();
-            });
-    this.elementValues =
-        factory.memoize(
-            new Supplier<ImmutableMap<ExecutableElement, AnnotationValue>>() {
-              @Override
-              public ImmutableMap<ExecutableElement, AnnotationValue> get() {
-                ImmutableMap.Builder<ExecutableElement, AnnotationValue> result =
-                    ImmutableMap.builder();
-                for (Map.Entry<String, Const> value : anno.values().entrySet()) {
-                  // requireNonNull is safe because `elements` contains an entry for every method.
-                  // Any element values pairs without a corresponding method in the annotation
-                  // definition are weeded out in ConstEvaluator.evaluateAnnotation, and don't
-                  // appear in the AnnoInfo.
-                  MethodInfo methodInfo = requireNonNull(elements.get().get(value.getKey()));
-                  result.put(
-                      factory.executableElement(methodInfo.sym()),
-                      annotationValue(factory, value.getValue()));
-                }
-                return result.buildOrThrow();
-              }
-            });
-    this.elementValuesWithDefaults =
-        factory.memoize(
-            () -> {
-              Map<ExecutableElement, AnnotationValue> result = new LinkedHashMap<>();
-              result.putAll(getElementValues());
-              for (MethodInfo method : elements.get().values()) {
-                if (method.defaultValue() == null) {
-                  continue;
-                }
-                TurbineExecutableElement element = factory.executableElement(method.sym());
-                if (result.containsKey(element)) {
-                  continue;
-                }
-                result.put(element, annotationValue(factory, method.defaultValue()));
-              }
-              return ImmutableMap.copyOf(result);
-            });
+  }
+
+  private AnnotationMirrorState state() {
+    int r = factory.roundNumber();
+    AnnotationMirrorState s = this.state;
+    if (s == null || s.round < r) {
+      this.state = s = new AnnotationMirrorState(r);
+    }
+    return s;
+  }
+
+  private ImmutableMap<String, MethodInfo> elements(AnnotationMirrorState s) {
+    ImmutableMap<String, MethodInfo> local = s.elements;
+    if (local == null) {
+      s.elements = local = computeElements();
+    }
+    return local;
+  }
+
+  private ImmutableMap<String, MethodInfo> computeElements() {
+    TypeBoundClass info = anno.sym() != null ? factory.getSymbol(anno.sym()) : null;
+    if (info == null) {
+      return ImmutableMap.of();
+    }
+    ImmutableMap.Builder<String, MethodInfo> result = ImmutableMap.builder();
+    for (MethodInfo m : info.methods()) {
+      checkState(m.parameters().isEmpty());
+      result.put(m.name(), m);
+    }
+    return result.buildOrThrow();
   }
 
   @Override
@@ -153,17 +137,74 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
 
   @Override
   public DeclaredType getAnnotationType() {
-    return type.get();
+    AnnotationMirrorState s = state();
+    DeclaredType local = s.type;
+    if (local == null) {
+      s.type = local = computeAnnotationType();
+    }
+    return local;
   }
 
-  public Map<? extends ExecutableElement, ? extends AnnotationValue>
-      getElementValuesWithDefaults() {
-    return elementValuesWithDefaults.get();
+  private DeclaredType computeAnnotationType() {
+    if (anno.sym() == null) {
+      return (ErrorType) factory.asTypeMirror(ErrorTy.create(anno.tree().name().getLast().value()));
+    }
+    return (DeclaredType) factory.typeElement(anno.sym()).asType();
+  }
+
+  Map<? extends ExecutableElement, ? extends AnnotationValue> getElementValuesWithDefaults() {
+    AnnotationMirrorState s = state();
+    ImmutableMap<ExecutableElement, AnnotationValue> local = s.elementValuesWithDefaults;
+    if (local == null) {
+      s.elementValuesWithDefaults = local = computeElementValuesWithDefaults(s);
+    }
+    return local;
+  }
+
+  private ImmutableMap<ExecutableElement, AnnotationValue> computeElementValuesWithDefaults(
+      AnnotationMirrorState s) {
+    Map<ExecutableElement, AnnotationValue> result = new LinkedHashMap<>();
+    result.putAll(getElementValues());
+    for (MethodInfo method : elements(s).values()) {
+      if (method.defaultValue() == null) {
+        continue;
+      }
+      TurbineExecutableElement element = factory.executableElement(method.sym());
+      if (result.containsKey(element)) {
+        continue;
+      }
+      result.put(element, annotationValue(factory, method.defaultValue()));
+    }
+    return ImmutableMap.copyOf(result);
   }
 
   @Override
   public Map<? extends ExecutableElement, ? extends AnnotationValue> getElementValues() {
-    return elementValues.get();
+    AnnotationMirrorState s = state();
+    ImmutableMap<ExecutableElement, AnnotationValue> local = s.elementValues;
+    if (local == null) {
+      s.elementValues = local = computeElementValues(s);
+    }
+    return local;
+  }
+
+  private ImmutableMap<ExecutableElement, AnnotationValue> computeElementValues(
+      AnnotationMirrorState s) {
+    if (anno.values().isEmpty()) {
+      return ImmutableMap.of();
+    }
+    ImmutableMap.Builder<ExecutableElement, AnnotationValue> result = ImmutableMap.builder();
+    ImmutableMap<String, MethodInfo> elems = elements(s);
+    for (Map.Entry<String, Const> value : anno.values().entrySet()) {
+      // requireNonNull is safe because `elements` contains an entry for every method.
+      // Any element values pairs without a corresponding method in the annotation
+      // definition are weeded out in ConstEvaluator.evaluateAnnotation, and don't
+      // appear in the AnnoInfo.
+      MethodInfo methodInfo = requireNonNull(elems.get(value.getKey()));
+      result.put(
+          factory.executableElement(methodInfo.sym()), annotationValue(factory, value.getValue()));
+    }
+    return result.buildOrThrow();
   }
 
   @Override
@@ -187,36 +228,42 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
 
   private static class TurbineArrayConstant implements TurbineAnnotationValueMirror {
 
+    private final ModelFactory factory;
     private final ArrayInitValue value;
-    private final Supplier<ImmutableList<AnnotationValue>> elements;
+    // Depends only on the immutable `value`, so it's safe to cache across rounds.
+    private @Nullable ImmutableList<AnnotationValue> elements;
 
     private TurbineArrayConstant(ModelFactory factory, ArrayInitValue value) {
+      this.factory = factory;
       this.value = value;
-      this.elements =
-          factory.memoize(
-              () -> {
-                ImmutableList.Builder<AnnotationValue> values = ImmutableList.builder();
-                for (Const element : value.elements()) {
-                  values.add(annotationValue(factory, element));
-                }
-                return values.build();
-              });
+    }
+
+    private ImmutableList<AnnotationValue> elements() {
+      ImmutableList<AnnotationValue> local = elements;
+      if (local == null) {
+        ImmutableList.Builder<AnnotationValue> values = ImmutableList.builder();
+        for (Const element : value.elements()) {
+          values.add(annotationValue(factory, element));
+        }
+        elements = local = values.build();
+      }
+      return local;
     }
 
     @Override
     public List<AnnotationValue> getValue() {
-      return elements.get();
+      return elements();
     }
 
     @Override
     public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
-      return v.visitArray(elements.get(), p);
+      return v.visitArray(elements(), p);
     }
 
     @Override
     public String toString() {
       StringBuilder sb = new StringBuilder("{");
-      Joiner.on(", ").appendTo(sb, elements.get());
+      Joiner.on(", ").appendTo(sb, elements());
       sb.append("}");
       return sb.toString();
     }

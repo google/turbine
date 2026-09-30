@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.MoreCollectors;
 import com.google.common.testing.EqualsTester;
+import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
@@ -30,6 +32,7 @@ import com.google.turbine.type.Type.ClassTy;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -38,6 +41,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -231,5 +235,43 @@ public class TurbineElementTest {
     assertThat(parameter.getEnclosedElements()).isEmpty();
     assertThat(parameter.getSimpleName().toString()).isNotEmpty();
     assertThat(parameter.getConstantValue()).isNull();
+  }
+
+  @Test
+  public void memoization() {
+    TypeElement e = factory.typeElement(new ClassSymbol("java/util/Map$Entry"));
+    assertThat(e.getQualifiedName()).isSameInstanceAs(e.getQualifiedName());
+    assertThat(e.asType()).isSameInstanceAs(e.asType());
+    assertThat(e.getSuperclass()).isSameInstanceAs(e.getSuperclass());
+    assertThat(e.getInterfaces()).isSameInstanceAs(e.getInterfaces());
+    assertThat(e.getEnclosedElements()).isSameInstanceAs(e.getEnclosedElements());
+    assertThat(e.getTypeParameters()).isSameInstanceAs(e.getTypeParameters());
+    assertThat(e.getAnnotationMirrors()).isSameInstanceAs(e.getAnnotationMirrors());
+
+    ExecutableElement m =
+        ElementFilter.methodsIn(e.getEnclosedElements()).stream()
+            .filter(x -> x.getSimpleName().contentEquals("setValue"))
+            .findFirst()
+            .get();
+    assertThat(m.asType()).isSameInstanceAs(m.asType());
+    assertThat(m.getReturnType()).isSameInstanceAs(m.getReturnType());
+    assertThat(m.getParameters()).isSameInstanceAs(m.getParameters());
+    assertThat(m.getThrownTypes()).isSameInstanceAs(m.getThrownTypes());
+
+    VariableElement p = getOnlyElement(m.getParameters());
+    assertThat(p.asType()).isSameInstanceAs(p.asType());
+
+    DeclaredType t = (DeclaredType) e.asType();
+    assertThat(t.getTypeArguments()).isSameInstanceAs(t.getTypeArguments());
+    assertThat(t.asElement()).isSameInstanceAs(t.asElement());
+    assertThat(t.getEnclosingType()).isSameInstanceAs(t.getEnclosingType());
+
+    Name name1 = e.getQualifiedName();
+    factory.round(
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(TestClassPaths.TURBINE_BOOTCLASSPATH.env()),
+        TestClassPaths.TURBINE_BOOTCLASSPATH.index());
+    Name name2 = e.getQualifiedName();
+    assertThat(name1).isEqualTo(name2);
+    assertThat(name1).isNotSameInstanceAs(name2);
   }
 }

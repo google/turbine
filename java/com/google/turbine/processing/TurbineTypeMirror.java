@@ -19,7 +19,6 @@ package com.google.turbine.processing;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
@@ -159,62 +158,63 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     private final ClassTy type;
+    // `element` and `typeArguments` depend only on `type` and on caches in ModelFactory that are
+    // never invalidated, so they're safe to cache across rounds.
+    private @Nullable Element element;
+    private @Nullable ImmutableList<TypeMirror> typeArguments;
+
+    // `enclosing` depends on the owner, access flags, and kind of the class, which can't change
+    // once the class exists. It is only cached after the class has been found, since a missing
+    // class may be generated in a later round.
+    private @Nullable TypeMirror enclosing;
 
     TurbineDeclaredType(ModelFactory factory, ClassTy type) {
       super(factory);
       this.type = type;
     }
 
-    final Supplier<Element> element =
-        factory.memoize(
-            new Supplier<Element>() {
-              @Override
-              public Element get() {
-                return factory.typeElement(type.sym());
-              }
-            });
-
     @Override
     public Element asElement() {
-      return element.get();
+      Element local = element;
+      if (local == null) {
+        element = local = factory.typeElement(type.sym());
+      }
+      return local;
     }
-
-    final Supplier<TypeMirror> enclosing =
-        factory.memoize(
-            new Supplier<TypeMirror>() {
-              @Override
-              public TypeMirror get() {
-                ClassSymbol enclosing =
-                    TypeBoundClass.enclosingInstance(
-                        type.sym(), () -> factory.getSymbol(type.sym()));
-                if (enclosing == null) {
-                  return factory.noType();
-                }
-                if (type.classes().size() > 1) {
-                  return factory.asTypeMirror(
-                      ClassTy.create(type.classes().subList(0, type.classes().size() - 1)));
-                }
-                return factory.asTypeMirror(ClassTy.asNonParametricClassTy(enclosing));
-              }
-            });
 
     @Override
     public TypeMirror getEnclosingType() {
-      return enclosing.get();
+      TypeMirror local = enclosing;
+      if (local != null) {
+        return local;
+      }
+      TypeBoundClass info = factory.getSymbol(type.sym());
+      local = computeEnclosing(info);
+      if (info != null) {
+        enclosing = local;
+      }
+      return local;
     }
 
-    final Supplier<ImmutableList<TypeMirror>> typeArguments =
-        factory.memoize(
-            new Supplier<ImmutableList<TypeMirror>>() {
-              @Override
-              public ImmutableList<TypeMirror> get() {
-                return factory.asTypeMirrors(type.classes().getLast().targs());
-              }
-            });
+    private TypeMirror computeEnclosing(@Nullable TypeBoundClass info) {
+      ClassSymbol enclosing = TypeBoundClass.enclosingInstance(type.sym(), () -> info);
+      if (enclosing == null) {
+        return factory.noType();
+      }
+      if (type.classes().size() > 1) {
+        return factory.asTypeMirror(
+            ClassTy.create(type.classes().subList(0, type.classes().size() - 1)));
+      }
+      return factory.asTypeMirror(ClassTy.asNonParametricClassTy(enclosing));
+    }
 
     @Override
     public List<? extends TypeMirror> getTypeArguments() {
-      return typeArguments.get();
+      ImmutableList<TypeMirror> local = typeArguments;
+      if (local == null) {
+        typeArguments = local = factory.asTypeMirrors(type.classes().getLast().targs());
+      }
+      return local;
     }
 
     @Override
@@ -454,23 +454,26 @@ public abstract class TurbineTypeMirror implements TypeMirror {
     }
 
     private final TyVar type;
-
-    private final Supplier<TyVarInfo> info =
-        factory.memoize(
-            new Supplier<TyVarInfo>() {
-              @Override
-              public TyVarInfo get() {
-                return factory.getTyVarInfo(type.sym());
-              }
-            });
+    private int cachedRound;
+    private @Nullable TyVarInfo info;
 
     private TyVarInfo info() {
-      return info.get();
+      int r = factory.roundNumber();
+      if (cachedRound < r) {
+        info = null;
+        cachedRound = r;
+      }
+      TyVarInfo local = info;
+      if (local == null) {
+        info = local = factory.getTyVarInfo(type.sym());
+      }
+      return local;
     }
 
     TurbineTypeVariable(ModelFactory factory, Type.TyVar type) {
       super(factory);
       this.type = type;
+      this.cachedRound = -1;
     }
 
     @Override
@@ -594,18 +597,18 @@ public abstract class TurbineTypeMirror implements TypeMirror {
       return v.visitIntersection(this, p);
     }
 
-    final Supplier<ImmutableList<TypeMirror>> bounds =
-        factory.memoize(
-            new Supplier<ImmutableList<TypeMirror>>() {
-              @Override
-              public ImmutableList<TypeMirror> get() {
-                return factory.asTypeMirrors(factory.types().getBounds(type));
-              }
-            });
+    // Depends on `type`, and on whether its first bound is an interface. That can't change once the
+    // bound's class exists, and if it doesn't exist `getBounds` throws instead of returning a
+    // result, so this is safe to cache across rounds.
+    private @Nullable ImmutableList<TypeMirror> bounds;
 
     @Override
     public List<? extends TypeMirror> getBounds() {
-      return bounds.get();
+      ImmutableList<TypeMirror> local = bounds;
+      if (local == null) {
+        bounds = local = factory.asTypeMirrors(factory.types().getBounds(type));
+      }
+      return local;
     }
 
     @Override
