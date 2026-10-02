@@ -193,6 +193,9 @@ public final class CompUnitPreprocessor {
         access |= TurbineFlag.ACC_SUPER | TurbineFlag.ACC_ENUM;
         if (isEnumFinal(decl.members())) {
           access |= TurbineFlag.ACC_FINAL;
+        } else {
+          // enums with constant class bodies are implicitly sealed (JLS 8.9)
+          access |= TurbineFlag.ACC_SEALED;
         }
         yield access;
       }
