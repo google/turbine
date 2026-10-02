@@ -102,15 +102,10 @@ public class JavacModelDiffTest {
    * the causes:
    *
    * <ul>
+   *   <li>anonymous-permits: Turbine doesn't model anonymous classes, so the anonymous permitted
+   *       subclasses of enums read from class files print as {@code Outer.1}.
    *   <li>dollar-in-name: a top-level class named {@code Test$0} prints as {@code Test.0}.
    *   <li>deprecated: {@code Elements.isDeprecated} ignores the javadoc {@code @deprecated} tag.
-   *   <li>enum-abstract-modifier: enums read from class files report {@code abstract}.
-   *   <li>enum-sealed, sealed: enums with constant bodies, and sealed types read from class files,
-   *       aren't {@code sealed}; anonymous permitted subclasses print as {@code Outer.1}.
-   *   <li>package-root-element: package elements from {@code package-info.java} aren't root
-   *       elements.
-   *   <li>private-interface-method: private interface methods are {@code abstract} or {@code
-   *       default}.
    *   <li>record-component-modifiers: record components have no modifiers; javac reports {@code
    *       public}.
    *   <li>type-parameter-annotations: annotations on type parameters differ (javac reports none).
@@ -118,48 +113,31 @@ public class JavacModelDiffTest {
    */
   private static final ImmutableMap<String, String> KNOWN_FAILURES =
       ImmutableMap.<String, String>builder()
-          .put("fromClassPath/B74332665.test", "private-interface-method")
-          .put("fromClassPath/abstractenum.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/abstractenum.test", "anonymous-permits")
           .put("fromClassPath/deprecated.test", "deprecated")
-          .put("fromClassPath/enum_abstract.test", "enum-abstract-modifier, enum-sealed, sealed")
-          .put("fromClassPath/enumimpl.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/enumint2.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/enumint_byte.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/enumint_objectmethod2.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/enuminthacks.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/enumstat.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/enum_abstract.test", "anonymous-permits")
+          .put("fromClassPath/enumimpl.test", "anonymous-permits")
+          .put("fromClassPath/enumint2.test", "anonymous-permits")
+          .put("fromClassPath/enumint_byte.test", "anonymous-permits")
+          .put("fromClassPath/enumint_objectmethod2.test", "anonymous-permits")
+          .put("fromClassPath/enuminthacks.test", "anonymous-permits")
+          .put("fromClassPath/enumstat.test", "anonymous-permits")
           .put("fromClassPath/javadoc_deprecated.test", "deprecated")
-          .put("fromClassPath/permits.test", "enum-sealed, sealed")
           .put("fromClassPath/record.test", "record-component-modifiers")
           .put("fromClassPath/record2.test", "record-component-modifiers")
           .put("fromClassPath/record_ctor.test", "record-component-modifiers")
           .put("fromClassPath/record_fields.test", "record-component-modifiers")
           .put("fromClassPath/record_getter_override.test", "record-component-modifiers")
-          .put("fromClassPath/sealed.test", "enum-sealed, sealed")
-          .put("fromClassPath/sealed_nested.test", "enum-sealed, sealed")
-          .put("fromClassPath/strictfp.test", "enum-abstract-modifier, sealed")
-          .put("fromSource/B74332665.test", "private-interface-method")
-          .put("fromSource/abstractenum.test", "enum-sealed, sealed")
+          .put("fromClassPath/strictfp.test", "anonymous-permits")
           .put("fromSource/anno_repeated.test", "type-parameter-annotations")
           .put("fromSource/deprecated.test", "deprecated")
           .put("fromSource/dollar.test", "dollar-in-name")
-          .put("fromSource/empty_package_info.test", "package-root-element")
-          .put("fromSource/enum_abstract.test", "enum-sealed, sealed")
-          .put("fromSource/enumimpl.test", "enum-sealed, sealed")
-          .put("fromSource/enumint2.test", "enum-sealed, sealed")
-          .put("fromSource/enumint_byte.test", "enum-sealed, sealed")
-          .put("fromSource/enumint_objectmethod2.test", "enum-sealed, sealed")
-          .put("fromSource/enuminthacks.test", "enum-sealed, sealed")
-          .put("fromSource/enumstat.test", "enum-sealed, sealed")
           .put("fromSource/javadoc_deprecated.test", "deprecated")
-          .put("fromSource/package_info.test", "package-root-element")
-          .put("fromSource/packagedecl.test", "package-root-element")
           .put("fromSource/record.test", "deprecated, record-component-modifiers")
           .put("fromSource/record2.test", "record-component-modifiers")
           .put("fromSource/record_ctor.test", "record-component-modifiers")
           .put("fromSource/record_fields.test", "record-component-modifiers")
           .put("fromSource/record_getter_override.test", "record-component-modifiers")
-          .put("fromSource/strictfp.test", "enum-sealed, sealed")
           .buildOrThrow();
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();

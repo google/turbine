@@ -786,7 +786,10 @@ public class TypeBinder {
           access |= TurbineFlag.ACC_PUBLIC;
         }
         if ((access
-                & (TurbineFlag.ACC_DEFAULT | TurbineFlag.ACC_STATIC | TurbineFlag.ACC_SYNTHETIC))
+                & (TurbineFlag.ACC_DEFAULT
+                    | TurbineFlag.ACC_STATIC
+                    | TurbineFlag.ACC_PRIVATE
+                    | TurbineFlag.ACC_SYNTHETIC))
             == 0) {
           access |= TurbineFlag.ACC_ABSTRACT;
         }
