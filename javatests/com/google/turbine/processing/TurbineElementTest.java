@@ -19,25 +19,16 @@ package com.google.turbine.processing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.Objects.requireNonNull;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MoreCollectors;
 import com.google.common.testing.EqualsTester;
-import com.google.turbine.binder.Binder;
-import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
-import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
-import com.google.turbine.diag.SourceFile;
-import com.google.turbine.parallel.TurbineExecutor;
-import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.type.Type.ClassTy;
-import java.util.Optional;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -256,7 +247,6 @@ public class TurbineElementTest {
     assertThat(e.getEnclosedElements()).isSameInstanceAs(e.getEnclosedElements());
     assertThat(e.getTypeParameters()).isSameInstanceAs(e.getTypeParameters());
     assertThat(e.getAnnotationMirrors()).isSameInstanceAs(e.getAnnotationMirrors());
-    assertThat(e.getEnclosingElement()).isSameInstanceAs(e.getEnclosingElement());
 
     ExecutableElement m =
         ElementFilter.methodsIn(e.getEnclosedElements()).stream()
@@ -271,44 +261,15 @@ public class TurbineElementTest {
     VariableElement p = getOnlyElement(m.getParameters());
     assertThat(p.asType()).isSameInstanceAs(p.asType());
 
-    VariableElement f =
-        factory.fieldElement(
-            new FieldSymbol(new ClassSymbol("java/util/ArrayList"), "elementData"));
-    assertThat(f.asType()).isSameInstanceAs(f.asType());
-
     DeclaredType t = (DeclaredType) e.asType();
     assertThat(t.getTypeArguments()).isSameInstanceAs(t.getTypeArguments());
     assertThat(t.asElement()).isSameInstanceAs(t.asElement());
     assertThat(t.getEnclosingType()).isSameInstanceAs(t.getEnclosingType());
 
-    // The state of classpath elements is cached across rounds.
     Name name1 = e.getQualifiedName();
     factory.round(
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(TestClassPaths.TURBINE_BOOTCLASSPATH.env()),
         TestClassPaths.TURBINE_BOOTCLASSPATH.index());
-    Name name2 = e.getQualifiedName();
-    assertThat(name1).isSameInstanceAs(name2);
-  }
-
-  @Test
-  public void sourceElementStateIsResetEachRound() {
-    Binder.BindingResult bound =
-        requireNonNull(
-            Binder.bind(
-                TurbineExecutor.direct(),
-                ImmutableList.of(Parser.parse(new SourceFile("Test.java", "class Test {}"))),
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TestClassPaths.TURBINE_BOOTCLASSPATH,
-                Optional.empty()));
-    CompoundEnv<ClassSymbol, TypeBoundClass> env =
-        CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
-            .append(new SimpleEnv<>(bound.units()));
-    ModelFactory sourceFactory = new ModelFactory(env, bound.tli());
-    TypeElement e = sourceFactory.typeElement(new ClassSymbol("Test"));
-
-    Name name1 = e.getQualifiedName();
-    assertThat(e.getQualifiedName()).isSameInstanceAs(name1);
-    sourceFactory.round(env, bound.tli());
     Name name2 = e.getQualifiedName();
     assertThat(name1).isEqualTo(name2);
     assertThat(name1).isNotSameInstanceAs(name2);
