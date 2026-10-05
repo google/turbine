@@ -40,7 +40,7 @@
     <grpc.version>1.43.2</grpc.version>
     <native.maven.plugin.version>1.1.14</native.maven.plugin.version>
     <truth.version>1.4.5</truth.version>
-    <testparameterinjector.version>1.23</testparameterinjector.version>
+    <testparameterinjector.version>1.24</testparameterinjector.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
   </properties>
 
