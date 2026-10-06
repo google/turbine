@@ -471,8 +471,7 @@ public class JavacModelDiffTest {
                 ImmutableList.of(processor),
                 JavacModelDiffTest.class.getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported(),
-                /* rejectGeneratedTypesOnClassPath= */ true),
+                SourceVersion.latestSupported()),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
     return processor.output();

@@ -267,8 +267,7 @@ public class TurbineTypeAnnotationMirrorTest {
                 ImmutableList.of(new TypeAnnotationRecorder(turbineSource, elements)),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported(),
-                /* rejectGeneratedTypesOnClassPath= */ true),
+                SourceVersion.latestSupported()),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 
@@ -305,8 +304,7 @@ public class TurbineTypeAnnotationMirrorTest {
                 ImmutableList.of(new TypeAnnotationRecorder(turbineBytecode, elements)),
                 getClass().getClassLoader(),
                 ImmutableMap.of(),
-                SourceVersion.latestSupported(),
-                /* rejectGeneratedTypesOnClassPath= */ true),
+                SourceVersion.latestSupported()),
             TestClassPaths.TURBINE_BOOTCLASSPATH,
             Optional.empty());
 

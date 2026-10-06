@@ -30,7 +30,6 @@ import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
@@ -59,7 +58,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.tools.StandardLocation;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -143,46 +141,6 @@ public class GeneratedTypesOnClassPathTest {
         os.write(new byte[] {(byte) 0xca, (byte) 0xfe, (byte) 0xba, (byte) 0xbe});
       } catch (IOException e) {
         throw new UncheckedIOException(e);
-      }
-      return false;
-    }
-  }
-
-  /** Creates the given resources in {@code CLASS_OUTPUT}. */
-  @SupportedAnnotationTypes("*")
-  public static class CreateResourcesProcessor extends AbstractProcessor {
-
-    private final ImmutableList<String> relativeNames;
-    private boolean first = true;
-
-    CreateResourcesProcessor(String... relativeNames) {
-      this.relativeNames = ImmutableList.copyOf(relativeNames);
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-      return SourceVersion.latestSupported();
-    }
-
-    @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-      if (!first) {
-        return false;
-      }
-      first = false;
-      for (String relativeName : relativeNames) {
-        int idx = relativeName.lastIndexOf('/');
-        String pkg = idx == -1 ? "" : relativeName.substring(0, idx).replace('/', '.');
-        String name = relativeName.substring(idx + 1);
-        try (OutputStream os =
-            processingEnv
-                .getFiler()
-                .createResource(StandardLocation.CLASS_OUTPUT, pkg, name)
-                .openOutputStream()) {
-          os.write(new byte[] {1, 2, 3});
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
       }
       return false;
     }
@@ -295,21 +253,12 @@ public class GeneratedTypesOnClassPathTest {
     return libJar;
   }
 
-  private BindingResult bindWithClassPath(
-      Path classPathJar, Processor processor, boolean rejectGeneratedTypesOnClassPath)
+  private BindingResult bindWithClassPath(Path classPathJar, Processor processor)
       throws IOException {
-    return bindWithClassPath(
-        new SourceFile("Test.java", "class Test {}"),
-        classPathJar,
-        processor,
-        rejectGeneratedTypesOnClassPath);
+    return bindWithClassPath(new SourceFile("Test.java", "class Test {}"), classPathJar, processor);
   }
 
-  private BindingResult bindWithClassPath(
-      SourceFile source,
-      Path classPathJar,
-      Processor processor,
-      boolean rejectGeneratedTypesOnClassPath)
+  private BindingResult bindWithClassPath(SourceFile source, Path classPathJar, Processor processor)
       throws IOException {
     return Binder.bind(
         TurbineExecutor.direct(),
@@ -319,27 +268,15 @@ public class GeneratedTypesOnClassPathTest {
             ImmutableList.of(processor),
             getClass().getClassLoader(),
             ImmutableMap.of(),
-            SourceVersion.latestSupported(),
-            rejectGeneratedTypesOnClassPath),
+            SourceVersion.latestSupported()),
         TestClassPaths.TURBINE_BOOTCLASSPATH,
         Optional.empty());
   }
 
-  private TurbineError assertRejected(Path classPathJar, Processor processor) {
-    return assertThrows(
-        TurbineError.class,
-        () ->
-            bindWithClassPath(
-                classPathJar, processor, /* rejectGeneratedTypesOnClassPath= */ true));
-  }
-
   @Test
-  public void generatedTypeOnClassPathIsAllowedByDefault() throws IOException {
+  public void generatedTypeOnClassPathIsAllowed() throws IOException {
     BindingResult bound =
-        bindWithClassPath(
-            libraryJar(),
-            CreateTypesProcessor.of("com.example.Lib"),
-            /* rejectGeneratedTypesOnClassPath= */ false);
+        bindWithClassPath(libraryJar(), CreateTypesProcessor.of("com.example.Lib"));
 
     assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
   }
@@ -387,8 +324,7 @@ public class GeneratedTypesOnClassPathTest {
   @Test
   public void shadowedClasspathTypeReflectsGeneratedSource() throws IOException {
     ShadowClasspathTypeProcessor processor = new ShadowClasspathTypeProcessor();
-    BindingResult bound =
-        bindWithClassPath(libraryJar(), processor, /* rejectGeneratedTypesOnClassPath= */ false);
+    BindingResult bound = bindWithClassPath(libraryJar(), processor);
 
     assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
     assertThat(processor.enclosedElementsByRound)
@@ -511,8 +447,7 @@ public class GeneratedTypesOnClassPathTest {
     Path classPathJar = libraryJar(ImmutableMap.of("com/example/Lib.java", GENERIC_LIB));
     ShadowedMethodsProcessor processor = new ShadowedMethodsProcessor();
 
-    BindingResult bound =
-        bindWithClassPath(classPathJar, processor, /* rejectGeneratedTypesOnClassPath= */ false);
+    BindingResult bound = bindWithClassPath(classPathJar, processor);
 
     assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
     assertThat(processor.output)
@@ -568,8 +503,7 @@ public class GeneratedTypesOnClassPathTest {
                 "package com.example; @Lib(x = 1, y = 2) public class Use {}"));
     ShadowedAnnotationMembersProcessor processor = new ShadowedAnnotationMembersProcessor();
 
-    BindingResult bound =
-        bindWithClassPath(classPathJar, processor, /* rejectGeneratedTypesOnClassPath= */ false);
+    BindingResult bound = bindWithClassPath(classPathJar, processor);
 
     assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
     assertThat(processor.output).containsExactly("x int", "x java.lang.String", "y int").inOrder();
@@ -615,8 +549,7 @@ public class GeneratedTypesOnClassPathTest {
                 "package com.example; public class Sub extends Lib {}"));
     ShadowedSupertypeProcessor processor = new ShadowedSupertypeProcessor();
 
-    BindingResult bound =
-        bindWithClassPath(classPathJar, processor, /* rejectGeneratedTypesOnClassPath= */ false);
+    BindingResult bound = bindWithClassPath(classPathJar, processor);
 
     assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
     assertThat(processor.output).containsExactly("[m1] false", "[run] true").inOrder();
@@ -625,160 +558,43 @@ public class GeneratedTypesOnClassPathTest {
   @Test
   public void deferrableBindingErrorsAreNotEscalated() throws IOException {
     // The first round generates a type referring to a type that doesn't exist until the second
-    // round, so binding the first round leaves an unresolved symbol error in the log. The classpath
-    // check must not escalate it.
-    BindingResult bound =
-        bindWithClassPath(
-            libraryJar(), new ChainedProcessor(), /* rejectGeneratedTypesOnClassPath= */ true);
+    // round, so binding the first round leaves an unresolved symbol error in the log, which must
+    // not
+    // be escalated.
+    BindingResult bound = bindWithClassPath(libraryJar(), new ChainedProcessor());
 
     assertThat(bound.generatedSources().keySet())
         .containsExactly("com/example/A.java", "com/example/B.java");
   }
 
   @Test
-  public void generatedTypeOnClassPathIsRejected() throws IOException {
-    TurbineError e = assertRejected(libraryJar(), CreateTypesProcessor.of("com.example.Lib"));
-
-    assertThat(e)
-        .hasMessageThat()
-        .contains("a type with the same name already exists on the classpath: com.example.Lib");
-  }
-
-  @Test
-  public void generatedTypeOnBootClassPathIsRejected() throws IOException {
-    TurbineError e = assertRejected(libraryJar(), CreateTypesProcessor.of("java.util.Map"));
-
-    assertThat(e)
-        .hasMessageThat()
-        .contains("a type with the same name already exists on the classpath: java.util.Map");
-  }
-
-  @Test
-  public void generatedClassFileOnClassPathIsRejected() throws IOException {
-    TurbineError e = assertRejected(libraryJar(), new CreateClassFileProcessor("com.example.Lib"));
-
-    assertThat(e)
-        .hasMessageThat()
-        .contains("a type with the same name already exists on the classpath: com.example.Lib");
-  }
-
-  @Test
-  public void generatedSecondaryTypeOnClassPathIsRejected() throws IOException {
-    // Only `com.example.Gen` is passed to the filer, so this is invisible to a filer-based check.
-    TurbineError e =
-        assertRejected(
-            libraryJar(),
-            new CreateTypesProcessor(
-                ImmutableMap.of(
-                    "com.example.Gen", "package com.example; class Gen {} class Lib {}")));
-
-    assertThat(e)
-        .hasMessageThat()
-        .contains("a type with the same name already exists on the classpath: com.example.Lib");
-  }
-
-  @Test
-  public void generatedNestedTypeOnClassPathIsRejected() throws IOException {
-    TurbineError e =
-        assertRejected(
-            libraryJar(),
-            new CreateTypesProcessor(
-                ImmutableMap.of(
-                    "com.example.Gen",
-                    "package com.example; class Gen {} class Lib { static class Inner {} }")));
-
-    assertThat(e)
-        .hasMessageThat()
-        .contains(
-            "a type with the same name already exists on the classpath: com.example.Lib$Inner");
-  }
-
-  @Test
-  public void generatedTypeIsReportedByItsDeclaredNameNotTheFilerName() throws IOException {
-    // The name passed to the filer doesn't shadow anything; the declared type does.
-    TurbineError e =
-        assertRejected(
-            libraryJar(),
-            new CreateTypesProcessor(
-                ImmutableMap.of("com.example.Gen", "package com.example; class Lib {}")));
-
-    assertThat(e)
-        .hasMessageThat()
-        .contains("a type with the same name already exists on the classpath: com.example.Lib");
-    assertThat(e).hasMessageThat().doesNotContain("com.example.Gen");
-  }
-
-  @Test
-  public void generatedNestedTypeNameIsAllowed() throws IOException {
-    // `com.example.Lib.Inner` here is a top-level class `Inner` in package `com.example.Lib`, which
-    // is distinct from the nested `com.example.Lib$Inner` on the classpath.
+  public void generatedClassFileOnClassPathIsAllowed() throws IOException {
     BindingResult bound =
-        bindWithClassPath(
-            libraryJar(),
-            CreateTypesProcessor.of("com.example.Lib.Inner"),
-            /* rejectGeneratedTypesOnClassPath= */ true);
-
-    assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib/Inner.java");
-  }
-
-  @Test
-  public void generatedTypeInAPackageOnTheClassPathIsAllowed() throws IOException {
-    // `com.example` is a package on the classpath, but `com.example.Other` is not a type on it.
-    BindingResult bound =
-        bindWithClassPath(
-            libraryJar(),
-            CreateTypesProcessor.of("com.example.Other"),
-            /* rejectGeneratedTypesOnClassPath= */ true);
-
-    assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Other.java");
-  }
-
-  @Test
-  public void generatedResourcesAreNotTreatedAsClassFiles() throws IOException {
-    // `Lib.proto` has a six-character extension, so stripping ".class" would produce
-    // `com/example/Lib`; `a.b` is shorter than ".class".
-    BindingResult bound =
-        bindWithClassPath(
-            libraryJar(),
-            new CreateResourcesProcessor("com/example/Lib.proto", "a.b"),
-            /* rejectGeneratedTypesOnClassPath= */ true);
-
-    assertThat(bound.generatedClasses().keySet()).containsExactly("com/example/Lib.proto", "a.b");
-  }
-
-  @Test
-  public void generatedClassFileOnClassPathIsAllowedByDefault() throws IOException {
-    BindingResult bound =
-        bindWithClassPath(
-            libraryJar(),
-            new CreateClassFileProcessor("com.example.Lib"),
-            /* rejectGeneratedTypesOnClassPath= */ false);
+        bindWithClassPath(libraryJar(), new CreateClassFileProcessor("com.example.Lib"));
 
     assertThat(bound.generatedClasses().keySet()).containsExactly("com/example/Lib.class");
   }
 
   @Test
-  public void generatedTypeOnClassPathInFinalRoundIsRejected() throws IOException {
-    // javac tolerates sources generated in the final round, so they're bound and checked
-    // separately from the other rounds.
-    TurbineError e =
-        assertRejected(
+  public void generatedTypeOnClassPathInFinalRoundIsAllowed() throws IOException {
+    // javac tolerates sources generated in the final round, so they're bound separately from the
+    // other rounds.
+    BindingResult bound =
+        bindWithClassPath(
             libraryJar(),
             new RoundsProcessor(
                 /* rounds= */ ImmutableList.of(),
                 /* finalRound= */ ImmutableMap.of(
                     "com.example.Lib", "package com.example; public class Lib {}")));
 
-    assertThat(e)
-        .hasMessageThat()
-        .contains("a type with the same name already exists on the classpath: com.example.Lib");
+    assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
   }
 
   @Test
   public void recreatingInitialSecondaryTypeIsRejected() throws IOException, Exception {
     // `Extra` is declared in `Test.java`, so its path doesn't match its name and the filer's
     // path-based check doesn't catch it. This matches javac, which rejects recreating types
-    // from the initial inputs. The check is independent of rejectGeneratedTypesOnClassPath.
+    // from the initial inputs.
     SourceFile source = new SourceFile("Test.java", "class Test {} class Extra {}");
     Path classPathJar = libraryJar();
     CreateTypesProcessor processor =
@@ -786,9 +602,7 @@ public class GeneratedTypesOnClassPathTest {
     AnnotationProcessingError e =
         assertThrows(
             AnnotationProcessingError.class,
-            () ->
-                bindWithClassPath(
-                    source, classPathJar, processor, /* rejectGeneratedTypesOnClassPath= */ false));
+            () -> bindWithClassPath(source, classPathJar, processor));
 
     assertThat(e).hasCauseThat().hasCauseThat().isInstanceOf(FilerException.class);
     assertThat(e).hasCauseThat().hasCauseThat().hasMessageThat().contains("Extra");
@@ -809,10 +623,7 @@ public class GeneratedTypesOnClassPathTest {
             /* finalRound= */ ImmutableMap.of());
     AnnotationProcessingError e =
         assertThrows(
-            AnnotationProcessingError.class,
-            () ->
-                bindWithClassPath(
-                    classPathJar, processor, /* rejectGeneratedTypesOnClassPath= */ false));
+            AnnotationProcessingError.class, () -> bindWithClassPath(classPathJar, processor));
 
     assertThat(e).hasCauseThat().hasCauseThat().isInstanceOf(FilerException.class);
     assertThat(e).hasCauseThat().hasCauseThat().hasMessageThat().contains("com.example.Extra");

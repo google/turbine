@@ -16,7 +16,6 @@
 
 package com.google.turbine.options;
 
-
 import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -40,7 +39,6 @@ public record TurbineJavacOptions(
     boolean enablePreview,
     boolean parallel,
     int parallelMinThreshold,
-    boolean rejectGeneratedTypesOnClassPath,
     ImmutableList<String> rawJavacOpts) {
 
   public static Builder builder() {
@@ -51,7 +49,6 @@ public record TurbineJavacOptions(
         .enablePreview(false)
         .parallel(true)
         .parallelMinThreshold(20)
-        .rejectGeneratedTypesOnClassPath(false)
         .rawJavacOpts(ImmutableList.of());
   }
 
@@ -69,9 +66,6 @@ public record TurbineJavacOptions(
     public abstract Builder parallel(boolean parallel);
 
     public abstract Builder parallelMinThreshold(int parallelMinThreshold);
-
-    public abstract Builder rejectGeneratedTypesOnClassPath(
-        boolean rejectGeneratedTypesOnClassPath);
 
     public abstract Builder rawJavacOpts(ImmutableList<String> rawJavacOpts);
 
@@ -195,8 +189,6 @@ public record TurbineJavacOptions(
             switch (flag) {
               case "-XDturbine.parallel.min_threshold" ->
                   builder.parallelMinThreshold(parseInteger(flag, value));
-              case "-XDturbine.reject_generated_types_on_classpath" ->
-                  builder.rejectGeneratedTypesOnClassPath(parseBoolean(flag, value));
               default ->
                   throw new IllegalArgumentException(
                       String.format("unknown Turbine option: %s", flag));
@@ -214,17 +206,6 @@ public record TurbineJavacOptions(
         .lowerOptions(lowerOptionsBuilder.build())
         .processorOptions(ImmutableMap.copyOf(processorOptions))
         .build();
-  }
-
-  private static boolean parseBoolean(String flag, @Nullable String value) {
-    return switch (value) {
-      case "true" -> true;
-      case "false" -> false;
-      case null -> true;
-      default ->
-          throw new IllegalArgumentException(
-              String.format("invalid boolean value for %s: %s", flag, value));
-    };
   }
 
   private static int parseInteger(String flag, @Nullable String value) {

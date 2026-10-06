@@ -64,7 +64,6 @@ public class TurbineError extends Error {
     UNEXPECTED_ANNOTATION("unexpected annotation: %s"),
     INVALID_TYPE_ARGUMENTS("expected %d type arguments for %s, got %d"),
     NO_JAVA_LANG("could not find java.lang on bootclasspath"),
-    GENERATED_TYPE_ON_CLASSPATH("a type with the same name already exists on the classpath: %s"),
     PROC("%s");
 
     private final String message;

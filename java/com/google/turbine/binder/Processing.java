@@ -38,9 +38,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
-import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog;
 import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parallel.TurbineExecutor;
@@ -73,7 +71,6 @@ import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
 /** Top level annotation processing logic, see also {@link Binder}. */
@@ -214,7 +211,6 @@ public class Processing {
       env = CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
       syms = Sets.difference(result.units().keySet(), allSymbols).immutableCopy();
       allSymbols.addAll(syms);
-      checkGeneratedTypesOnClassPath(processorInfo, result, syms, classpath, bootclasspath);
       factory.round(env, result.tli());
     }
 
@@ -257,19 +253,7 @@ public class Processing {
       if (log.anyErrors()) {
         return null;
       }
-      checkGeneratedTypesOnClassPath(
-          processorInfo,
-          result,
-          Sets.difference(result.units().keySet(), allSymbols),
-          classpath,
-          bootclasspath);
     }
-    // Unlike generated source files, generated classes are currently not available on the classpath
-    // when compiling the compilation sources, so they are checked for conflicts here instead of
-    // after each round. See b/566986492.
-    checkGeneratedClassesOnClassPath(
-        processorInfo, filer.generatedClasses(), classpath, bootclasspath);
-
     if (!filer.generatedClasses().isEmpty()) {
       // add any generated class files to the output
       // TODO(b/566986492): consider handling generated classes after each round
@@ -310,65 +294,6 @@ public class Processing {
       return new SupportedAnnotationTypes(
           everything, Pattern.compile(Joiner.on('|').join(patterns)));
     }
-  }
-
-  private static void checkGeneratedTypesOnClassPath(
-      ProcessorInfo processorInfo,
-      BindingResult result,
-      Set<ClassSymbol> syms,
-      ClassPath classpath,
-      ClassPath bootclasspath) {
-    if (!processorInfo.rejectGeneratedTypesOnClassPath()) {
-      return;
-    }
-    List<TurbineDiagnostic> diagnostics = new ArrayList<>();
-    for (ClassSymbol sym : syms) {
-      if (!onClassPath(sym, classpath, bootclasspath)) {
-        continue;
-      }
-      SourceTypeBoundClass info = requireNonNull(result.units().get(sym));
-      diagnostics.add(
-          TurbineDiagnostic.format(
-              Diagnostic.Kind.ERROR,
-              info.source(),
-              info.decl().position(),
-              ErrorKind.GENERATED_TYPE_ON_CLASSPATH,
-              sym));
-    }
-    if (!diagnostics.isEmpty()) {
-      throw new TurbineError(ImmutableList.copyOf(diagnostics));
-    }
-  }
-
-  private static void checkGeneratedClassesOnClassPath(
-      ProcessorInfo processorInfo,
-      ImmutableMap<String, byte[]> generatedClasses,
-      ClassPath classpath,
-      ClassPath bootclasspath) {
-    if (!processorInfo.rejectGeneratedTypesOnClassPath()) {
-      return;
-    }
-    List<TurbineDiagnostic> diagnostics = new ArrayList<>();
-    for (String path : generatedClasses.keySet()) {
-      // Resources created in CLASS_OUTPUT are also recorded as generated classes.
-      if (!path.endsWith(".class")) {
-        continue;
-      }
-      ClassSymbol sym = new ClassSymbol(path.substring(0, path.length() - ".class".length()));
-      if (onClassPath(sym, classpath, bootclasspath)) {
-        diagnostics.add(
-            TurbineDiagnostic.format(
-                Diagnostic.Kind.ERROR, ErrorKind.GENERATED_TYPE_ON_CLASSPATH, sym.toString()));
-      }
-    }
-    if (!diagnostics.isEmpty()) {
-      throw new TurbineError(ImmutableList.copyOf(diagnostics));
-    }
-  }
-
-  private static boolean onClassPath(
-      ClassSymbol sym, ClassPath classpath, ClassPath bootclasspath) {
-    return classpath.env().get(sym) != null || bootclasspath.env().get(sym) != null;
   }
 
   /** Returns a map from annotations present in the compilation to the annotated elements. */
@@ -463,11 +388,7 @@ public class Processing {
     }
     ImmutableList<Processor> processors = instantiateProcessors(processorNames, processorLoader);
     return ProcessorInfo.create(
-        processors,
-        processorLoader,
-        javacopts.processorOptions(),
-        sourceVersion,
-        javacopts.rejectGeneratedTypesOnClassPath());
+        processors, processorLoader, javacopts.processorOptions(), sourceVersion);
   }
 
   private static ImmutableList<Processor> instantiateProcessors(
@@ -543,16 +464,12 @@ public class Processing {
 
     public abstract SourceVersion sourceVersion();
 
-    public abstract boolean rejectGeneratedTypesOnClassPath();
-
     public static ProcessorInfo create(
         ImmutableList<Processor> processors,
         @Nullable ClassLoader loader,
         ImmutableMap<String, String> options,
-        SourceVersion sourceVersion,
-        boolean rejectGeneratedTypesOnClassPath) {
-      return new AutoValue_Processing_ProcessorInfo(
-          processors, loader, options, sourceVersion, rejectGeneratedTypesOnClassPath);
+        SourceVersion sourceVersion) {
+      return new AutoValue_Processing_ProcessorInfo(processors, loader, options, sourceVersion);
     }
 
     public static ProcessorInfo empty() {
@@ -560,8 +477,7 @@ public class Processing {
           /* processors= */ ImmutableList.of(),
           /* loader= */ null,
           /* options= */ ImmutableMap.of(),
-          /* sourceVersion= */ SourceVersion.latest(),
-          /* rejectGeneratedTypesOnClassPath= */ false);
+          /* sourceVersion= */ SourceVersion.latest());
     }
   }
 
