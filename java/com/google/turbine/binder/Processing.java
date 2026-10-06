@@ -103,7 +103,7 @@ public class Processing {
     ImmutableSet<ClassSymbol> syms = result.units().keySet();
     Set<ClassSymbol> allSymbols = new HashSet<>(syms);
 
-    ModelFactory factory = new ModelFactory(env, result.tli());
+    ModelFactory factory = new ModelFactory(env, result.classPathEnv(), result.tli());
 
     TurbineFiler filer =
         new TurbineFiler(

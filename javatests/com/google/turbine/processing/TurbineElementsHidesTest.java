@@ -241,7 +241,7 @@ public class TurbineElementsHidesTest {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));
-    ModelFactory factory = new ModelFactory(env, bound.tli());
+    ModelFactory factory = new ModelFactory(env, bound.classPathEnv(), bound.tli());
     TurbineTypes turbineTypes = new TurbineTypes(factory);
     TurbineElements elements = new TurbineElements(factory, turbineTypes);
     ImmutableList<TurbineTypeElement> typeElements =

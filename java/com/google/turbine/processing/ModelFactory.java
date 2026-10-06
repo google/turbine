@@ -131,8 +131,18 @@ public class ModelFactory {
 
   private TopLevelIndex tli;
 
-  public ModelFactory(Env<ClassSymbol, ? extends TypeBoundClass> env, TopLevelIndex tli) {
+  /**
+   * The classpath, used to look up members of classpath types that have been shadowed by generated
+   * sources, see {@link #classPathFallback}.
+   */
+  private final Env<ClassSymbol, ? extends TypeBoundClass> classPathEnv;
+
+  public ModelFactory(
+      Env<ClassSymbol, ? extends TypeBoundClass> env,
+      Env<ClassSymbol, ? extends TypeBoundClass> classPathEnv,
+      TopLevelIndex tli) {
     this.env = requireNonNull(env);
+    this.classPathEnv = requireNonNull(classPathEnv);
     this.cha = new ClassHierarchy(env);
     this.tli = requireNonNull(tli);
     this.types = new Types(cha, env);
@@ -286,8 +296,30 @@ public class ModelFactory {
     return env.get(sym);
   }
 
+  /**
+   * Returns the classpath version of a class, or {@code null}.
+   *
+   * <p>If a processor generates a source file for a type that already exists on the classpath, the
+   * generated source shadows the classpath type in later rounds. Processors may still hold elements
+   * for methods of the classpath type that they obtained in earlier rounds. Those methods may not
+   * be present in the generated source, even if it declares the same members as the classpath type:
+   * {@link MethodSymbol}s are identified by their index in the enclosing class, and that differs
+   * between class files and sources, for example if the class has an implicit default constructor.
+   * Those methods are looked up in the classpath version of the type.
+   */
+  private TypeBoundClass classPathFallback(ClassSymbol sym) {
+    return classPathEnv.get(sym);
+  }
+
   MethodInfo getMethodInfo(MethodSymbol method) {
-    TypeBoundClass info = getSymbol(method.owner());
+    MethodInfo result = findMethod(getSymbol(method.owner()), method);
+    if (result == null) {
+      result = findMethod(classPathFallback(method.owner()), method);
+    }
+    return result;
+  }
+
+  private static MethodInfo findMethod(TypeBoundClass info, MethodSymbol method) {
     for (MethodInfo m : info.methods()) {
       if (m.sym().equals(method)) {
         return m;
@@ -328,6 +360,15 @@ public class ModelFactory {
   }
 
   TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
+    if (tyVar.owner() instanceof MethodSymbol method) {
+      // The method may only be present in the classpath version of a shadowed type, see {@link
+      // #classPathFallback}.
+      MethodInfo info = getMethodInfo(method);
+      TyVarInfo result = info.tyParams().get(tyVar);
+      if (result != null) {
+        return result;
+      }
+    }
     return types.getTyVarInfo(tyVar);
   }
 

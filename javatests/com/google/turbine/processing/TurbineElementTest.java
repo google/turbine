@@ -51,7 +51,9 @@ public class TurbineElementTest {
 
   private final ModelFactory factory =
       new ModelFactory(
-          TestClassPaths.TURBINE_BOOTCLASSPATH.env(), TestClassPaths.TURBINE_BOOTCLASSPATH.index());
+          TestClassPaths.TURBINE_BOOTCLASSPATH.env(),
+          TestClassPaths.TURBINE_BOOTCLASSPATH.env(),
+          TestClassPaths.TURBINE_BOOTCLASSPATH.index());
 
   @Test
   public void typeElement() {
