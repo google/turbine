@@ -28,12 +28,15 @@ import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.TurbineConstantTypeKind;
+import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
+import com.google.turbine.model.TurbineVisibility;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
@@ -798,6 +801,149 @@ public final class Types {
       type = subst(type, mapping);
     }
     return type;
+  }
+
+  /**
+   * Returns the type of {@code method} viewed as a member of {@code containing}, or {@code null} if
+   * the method's class is not a supertype of {@code containing}.
+   */
+  private @Nullable MethodTy asMemberOf(ClassTy containing, MethodInfo method) {
+    return (MethodTy) asMemberOf(containing, method.asType(), method.sym().owner());
+  }
+
+  /**
+   * Returns true if {@code overrider} overrides {@code overridden} as members of {@code origin}.
+   * This follows javac's {@code Elements.overrides}.
+   *
+   * <p>Either {@code overrider}'s class is a subtype of {@code overridden}'s class, or {@code
+   * origin} inherits {@code overrider} from a superclass that doesn't implement the superinterface
+   * declaring {@code overridden} (JLS 8.4.8.1). For example, {@code AbstractQueue.add(E)} overrides
+   * {@code BlockingQueue.add(E)} in {@code LinkedBlockingQueue}, although {@code AbstractQueue}
+   * doesn't implement {@code BlockingQueue}.
+   */
+  public boolean overrides(MethodInfo overrider, MethodInfo overridden, ClassSymbol origin) {
+    if (!overrider.name().equals(overridden.name())) {
+      return false;
+    }
+    ClassSymbol overriderOwner = overrider.sym().owner();
+    ClassSymbol overriddenOwner = overridden.sym().owner();
+    if (overriderOwner.equals(overriddenOwner)) {
+      return false;
+    }
+    ClassTy originType = asGenericType(origin);
+    if (originType == null) {
+      return false;
+    }
+    if (cha.transitiveSupertypes(overriderOwner).contains(overriddenOwner)
+        && directlyOverrides(overrider, overridden, originType)) {
+      return true;
+    }
+    return overridesByInheritance(overrider, overridden, origin, originType);
+  }
+
+  private boolean directlyOverrides(
+      MethodInfo overrider, MethodInfo overridden, ClassTy originType) {
+    // Use the overrider's declared signature (javac's direct-override check uses
+    // memberType(owner.type, overrider)); only the overridden method is viewed as a member of the
+    // origin type.
+    MethodTy b = asMemberOf(originType, overridden);
+    if (b == null) {
+      return false;
+    }
+    if (!isSubsignature(overrider.asType(), b)) {
+      return false;
+    }
+    return isVisible(
+        overrider.sym().owner().owner(), overridden.sym().owner().owner(), overridden.access());
+  }
+
+  /**
+   * Returns true if {@code overrider} overrides {@code overridden} in {@code origin} through
+   * inheritance (JLS 8.4.8.1): {@code origin} inherits {@code overrider} from a superclass that
+   * doesn't implement the superinterface declaring {@code overridden}.
+   *
+   * <p>Like javac's {@code Elements.overrides}, which calls {@code MethodSymbol#overrides} with
+   * {@code requireConcreteIfInherited}, {@code overrider} must be a concrete class method, and
+   * {@code overridden} must be abstract or default.
+   *
+   * @param overrider a concrete class method inherited by {@code origin}
+   * @param overridden an abstract or default method inherited by {@code origin}
+   * @param origin the class in which {@code overrider} may override {@code overridden}
+   * @param originType the generic type of {@code origin}
+   */
+  private boolean overridesByInheritance(
+      MethodInfo overrider, MethodInfo overridden, ClassSymbol origin, ClassTy originType) {
+    int overriderAccess = overrider.access();
+    int overriddenAccess = overridden.access();
+    // javac requires the inherited overrider to be concrete (requireConcreteIfInherited), although
+    // JLS 8.4.8.1 doesn't. javac's internal flags mark default methods as abstract too, so they
+    // never qualify. (A class can only inherit a default method and an unrelated abstract method
+    // with the same signature from separately compiled classes, see JLS 8.4.8.4.)
+    if ((overriderAccess & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_DEFAULT)) != 0) {
+      return false;
+    }
+    if ((overriddenAccess & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_DEFAULT)) == 0) {
+      return false;
+    }
+    if (((overriderAccess | overriddenAccess) & TurbineFlag.ACC_STATIC) != 0) {
+      return false;
+    }
+    PackageSymbol originPackage = origin.owner();
+    if (!isVisible(originPackage, overridden.sym().owner().owner(), overriddenAccess)
+        || !isVisible(originPackage, overrider.sym().owner().owner(), overriderAccess)) {
+      return false;
+    }
+    MethodTy a = asMemberOf(originType, overrider);
+    if (a == null) {
+      return false;
+    }
+    MethodTy b = asMemberOf(originType, overridden);
+    if (b == null) {
+      return false;
+    }
+    return isSubsignature(a, b);
+  }
+
+  /**
+   * Returns the type of {@code sym} parameterized by its own type parameters, including the
+   * enclosing instance types of inner classes, or {@code null} if {@code sym} cannot be found.
+   */
+  public @Nullable ClassTy asGenericType(ClassSymbol sym) {
+    TypeBoundClass info = classes.get(sym);
+    if (info == null) {
+      return null;
+    }
+    ImmutableList.Builder<SimpleClassTy> simples = ImmutableList.builder();
+    simples.add(genericSimpleClassTy(sym, info));
+    while (info.owner() != null && (info.access() & TurbineFlag.ACC_STATIC) == 0) {
+      sym = info.owner();
+      info = classes.get(sym);
+      if (info == null) {
+        return null;
+      }
+      simples.add(genericSimpleClassTy(sym, info));
+    }
+    return ClassTy.create(simples.build().reverse());
+  }
+
+  private static SimpleClassTy genericSimpleClassTy(ClassSymbol sym, TypeBoundClass info) {
+    ImmutableList.Builder<Type> args = ImmutableList.builder();
+    for (TyVarSymbol t : info.typeParameters().values()) {
+      args.add(TyVar.create(t, ImmutableList.of()));
+    }
+    return SimpleClassTy.create(sym, args.build(), ImmutableList.of());
+  }
+
+  /**
+   * Returns true if a member with the given access flags declared in package {@code to} is visible
+   * from package {@code from}, ignoring nesting (private members are never visible).
+   */
+  public static boolean isVisible(PackageSymbol from, PackageSymbol to, int access) {
+    return switch (TurbineVisibility.fromAccess(access)) {
+      case PUBLIC, PROTECTED -> true;
+      case PACKAGE -> from.equals(to);
+      case PRIVATE -> false;
+    };
   }
 
   private TypeBoundClass getSymbol(ClassSymbol sym) {

@@ -49,11 +49,8 @@ import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
-import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.ErrorTy;
 import java.lang.annotation.Annotation;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -301,26 +298,8 @@ public abstract class TurbineElement implements Element {
     }
 
     private Type asGenericType(ClassSymbol symbol) {
-      TypeBoundClass info = info();
-      if (info == null) {
-        return ErrorTy.create(getQualifiedName().toString());
-      }
-      Deque<Type.ClassTy.SimpleClassTy> simples = new ArrayDeque<>();
-      simples.addFirst(simple(symbol, info));
-      while (info.owner() != null && (info.access() & TurbineFlag.ACC_STATIC) == 0) {
-        symbol = info.owner();
-        info = factory.getSymbol(symbol);
-        simples.addFirst(simple(symbol, info));
-      }
-      return ClassTy.create(ImmutableList.copyOf(simples));
-    }
-
-    private static SimpleClassTy simple(ClassSymbol sym, TypeBoundClass info) {
-      ImmutableList.Builder<Type> args = ImmutableList.builder();
-      for (TyVarSymbol t : info.typeParameters().values()) {
-        args.add(Type.TyVar.create(t, ImmutableList.of()));
-      }
-      return SimpleClassTy.create(sym, args.build(), ImmutableList.of());
+      ClassTy type = factory.types().asGenericType(symbol);
+      return type != null ? type : ErrorTy.create(getQualifiedName().toString());
     }
 
     @Override

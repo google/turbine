@@ -148,6 +148,14 @@ public class ModelFactory {
     this.types = new Types(cha, env);
   }
 
+  /**
+   * Returns the {@link com.google.turbine.types.Types} for the current round. A new instance is
+   * created for each round, so callers shouldn't keep it across rounds.
+   *
+   * <p>This is not the {@link javax.lang.model.util.Types} returned by {@code
+   * ProcessingEnvironment.getTypeUtils()}, which is implemented by {@link TurbineTypes} and does
+   * not have this constraint.
+   */
   public Types types() {
     return types;
   }

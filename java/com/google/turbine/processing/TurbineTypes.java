@@ -254,21 +254,17 @@ public class TurbineTypes implements Types {
    */
   @Override
   public TypeMirror asMemberOf(DeclaredType containing, Element element) {
-    TypeMirror result = asMemberOfInternal(containing, element);
+    ClassTy c = ((TurbineDeclaredType) containing).asTurbineType();
+    Symbol enclosing = ((TurbineElement) element.getEnclosingElement()).sym();
+    Type result =
+        enclosing.symKind().equals(Symbol.Kind.CLASS)
+            ? factory
+                .types()
+                .asMemberOf(c, asTurbineType(element.asType()), (ClassSymbol) enclosing)
+            : null;
     if (result == null) {
       throw new IllegalArgumentException(String.format("asMemberOf(%s, %s)", containing, element));
     }
-    return result;
-  }
-
-  public @Nullable TypeMirror asMemberOfInternal(DeclaredType containing, Element element) {
-    ClassTy c = ((TurbineDeclaredType) containing).asTurbineType();
-    Symbol enclosing = ((TurbineElement) element.getEnclosingElement()).sym();
-    if (!enclosing.symKind().equals(Symbol.Kind.CLASS)) {
-      return null;
-    }
-    Type type = asTurbineType(element.asType());
-    Type result = factory.types().asMemberOf(c, type, (ClassSymbol) enclosing);
-    return result != null ? factory.asTypeMirror(result) : null;
+    return factory.asTypeMirror(result);
   }
 }

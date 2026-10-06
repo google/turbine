@@ -153,6 +153,9 @@ public class TurbineElementsTest {
                   "class Concrete {",
                   "  public void m() {}",
                   "}",
+                  "class ConcreteSub extends Concrete {",
+                  "  public void m() {}",
+                  "}",
                   "abstract class ReAbstract extends Concrete {",
                   "  public abstract void m();",
                   "}",
@@ -308,6 +311,7 @@ public class TurbineElementsTest {
             "ovr.PkgSub",
             "ovr2.Base",
             "ovr.Concrete",
+            "ovr.ConcreteSub",
             "ovr.ReAbstract",
             "ovr.ReAbstractSub");
     for (String originName : types) {
