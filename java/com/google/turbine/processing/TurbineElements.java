@@ -404,6 +404,22 @@ public class TurbineElements implements Elements {
     if (!overrider.getSimpleName().contentEquals(overridden.getSimpleName())) {
       return false;
     }
+    if (overrider.getEnclosingElement().equals(overridden.getEnclosingElement())) {
+      return false;
+    }
+    ClassSymbol overriderSym = (ClassSymbol) asSymbol(overrider.getEnclosingElement());
+    ClassSymbol overriddenSym = (ClassSymbol) asSymbol(overridden.getEnclosingElement());
+    if (factory.cha().transitiveSupertypes(overriderSym).contains(overriddenSym)
+        && directlyOverrides(overrider, overridden, type)) {
+      return true;
+    }
+    return overridesByInheritance(overrider, overridden, type);
+  }
+
+  private boolean directlyOverrides(
+      ExecutableElement overrider, ExecutableElement overridden, TypeElement type) {
+    // Use the overrider's declared signature (javac's direct-override check uses
+    // memberType(owner.type, overrider)); only the overridden method is viewed as a member of type.
     TypeMirror a = overrider.asType();
     TypeMirror b = types.asMemberOfInternal((DeclaredType) type.asType(), overridden);
     if (b == null) {
@@ -416,6 +432,64 @@ public class TurbineElements implements Elements {
         packageSymbol(asSymbol(overrider)),
         packageSymbol(asSymbol(overridden)),
         TurbineVisibility.fromAccess(((TurbineExecutableElement) overridden).info().access()));
+  }
+
+  /**
+   * Returns true if {@code overrider} overrides {@code overridden} in {@code type} through
+   * inheritance (JLS 8.4.8.1): {@code type} inherits {@code overrider} from a superclass that
+   * doesn't implement the superinterface declaring {@code overridden}. For example, {@code
+   * AbstractQueue.add(E)} overrides {@code BlockingQueue.add(E)} in {@code LinkedBlockingQueue},
+   * although {@code AbstractQueue} doesn't implement {@code BlockingQueue}.
+   *
+   * <p>Like javac's {@code Elements.overrides}, which calls {@code MethodSymbol#overrides} with
+   * {@code requireConcreteIfInherited}, {@code overrider} must be a concrete class method, and
+   * {@code overridden} must be abstract or default.
+   *
+   * @param overrider a concrete class method inherited by {@code type}
+   * @param overridden an abstract or default method inherited by {@code type}
+   * @param type the type in which {@code overrider} may override {@code overridden}
+   */
+  private boolean overridesByInheritance(
+      ExecutableElement overrider, ExecutableElement overridden, TypeElement type) {
+    int overriderAccess = ((TurbineExecutableElement) overrider).info().access();
+    int overriddenAccess = ((TurbineExecutableElement) overridden).info().access();
+    // javac requires the inherited overrider to be concrete (requireConcreteIfInherited), although
+    // JLS 8.4.8.1 doesn't. javac's internal flags mark default methods as abstract too, so they
+    // never qualify. (A class can only inherit a default method and an unrelated abstract method
+    // with the same signature from separately compiled classes, see JLS 8.4.8.4.)
+    if ((overriderAccess & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_DEFAULT)) != 0) {
+      return false;
+    }
+    if ((overriddenAccess & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_DEFAULT)) == 0) {
+      return false;
+    }
+    if (((overriderAccess | overriddenAccess) & TurbineFlag.ACC_STATIC) != 0) {
+      return false;
+    }
+    ClassSymbol origin = (ClassSymbol) asSymbol(type);
+    Set<ClassSymbol> originSupertypes = factory.cha().transitiveSupertypes(origin);
+    if (!originSupertypes.contains(asSymbol(overrider.getEnclosingElement()))
+        || !originSupertypes.contains(asSymbol(overridden.getEnclosingElement()))) {
+      return false;
+    }
+    PackageSymbol originPackage = packageSymbol(origin);
+    if (!isVisible(
+            originPackage,
+            packageSymbol(asSymbol(overridden)),
+            TurbineVisibility.fromAccess(overriddenAccess))
+        || !isVisible(
+            originPackage,
+            packageSymbol(asSymbol(overrider)),
+            TurbineVisibility.fromAccess(overriderAccess))) {
+      return false;
+    }
+    DeclaredType originType = (DeclaredType) type.asType();
+    TypeMirror a = types.asMemberOfInternal(originType, overrider);
+    TypeMirror b = types.asMemberOfInternal(originType, overridden);
+    if (a == null || b == null) {
+      return false;
+    }
+    return types.isSubsignature((TurbineExecutableType) a, (TurbineExecutableType) b);
   }
 
   @Override

@@ -25,6 +25,7 @@ import static com.google.common.truth.TruthJUnit.assume;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -35,10 +36,17 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.testing.TestClassPaths;
 import com.sun.source.util.JavacTask;
+import java.io.OutputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -47,7 +55,9 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -115,7 +125,45 @@ public class TurbineElementsTest {
                   "}",
                   "=== com/pkg/B.java ===",
                   "package com.pkg;",
-                  "class B {}"));
+                  "class B {}",
+                  "=== ovr/Overrides.java ===",
+                  "package ovr;",
+                  "interface I {",
+                  "  void m();",
+                  "  default void d() {}",
+                  "  void g(String s);",
+                  "}",
+                  "interface J<T> {",
+                  "  void g(T t);",
+                  "}",
+                  "class Impl {",
+                  "  public void m() {}",
+                  "  public void d() {}",
+                  "  public void g(String s) {}",
+                  "}",
+                  "abstract class AbstractImpl {",
+                  "  public abstract void m();",
+                  "}",
+                  "class Sub extends Impl implements I, J<String> {}",
+                  "abstract class AbstractSub extends AbstractImpl implements I {}",
+                  "class Unrelated {",
+                  "  public void m() {}",
+                  "}",
+                  "abstract class PkgSub extends ovr2.Base implements I {}",
+                  "class Concrete {",
+                  "  public void m() {}",
+                  "}",
+                  "abstract class ReAbstract extends Concrete {",
+                  "  public abstract void m();",
+                  "}",
+                  "abstract class ReAbstractSub extends ReAbstract implements I {}",
+                  "=== ovr2/Base.java ===",
+                  "package ovr2;",
+                  "public class Base {",
+                  "  void m() {}",
+                  "}"));
+
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   Elements javacElements;
   ModelFactory factory;
@@ -244,6 +292,147 @@ public class TurbineElementsTest {
                 .getBinaryName(turbineElements.getTypeElement("java.util.Map.Entry"))
                 .toString())
         .isEqualTo("java.util.Map$Entry");
+  }
+
+  @Test
+  public void overrides() {
+    ImmutableList<String> types =
+        ImmutableList.of(
+            "ovr.I",
+            "ovr.J",
+            "ovr.Impl",
+            "ovr.AbstractImpl",
+            "ovr.Sub",
+            "ovr.AbstractSub",
+            "ovr.Unrelated",
+            "ovr.PkgSub",
+            "ovr2.Base",
+            "ovr.Concrete",
+            "ovr.ReAbstract",
+            "ovr.ReAbstractSub");
+    for (String originName : types) {
+      TypeElement javacOrigin = javacElements.getTypeElement(originName);
+      TypeElement turbineOrigin = turbineElements.getTypeElement(originName);
+      for (String overriderOwner : types) {
+        for (String overriddenOwner : types) {
+          for (ExecutableElement javacOverrider : methods(javacElements, overriderOwner)) {
+            for (ExecutableElement javacOverridden : methods(javacElements, overriddenOwner)) {
+              ExecutableElement turbineOverrider =
+                  method(turbineElements, overriderOwner, javacOverrider);
+              ExecutableElement turbineOverridden =
+                  method(turbineElements, overriddenOwner, javacOverridden);
+              boolean expected =
+                  javacElements.overrides(javacOverrider, javacOverridden, javacOrigin);
+              assertWithMessage(
+                      "%s.%s overrides %s.%s in %s",
+                      overriderOwner, javacOverrider, overriddenOwner, javacOverridden, originName)
+                  .that(
+                      turbineElements.overrides(turbineOverrider, turbineOverridden, turbineOrigin))
+                  .isEqualTo(expected);
+            }
+          }
+        }
+      }
+    }
+    // Impl.m() is inherited by Sub, and implements I.m() there (JLS 8.4.8.1)
+    ExecutableElement implM = methods(turbineElements, "ovr.Impl").get(0);
+    ExecutableElement iM = methods(turbineElements, "ovr.I").get(0);
+    assertThat(implM.getSimpleName().toString()).isEqualTo("m");
+    assertThat(iM.getSimpleName().toString()).isEqualTo("m");
+    assertThat(turbineElements.overrides(implM, iM, turbineElements.getTypeElement("ovr.Sub")))
+        .isTrue();
+    assertThat(turbineElements.overrides(implM, iM, turbineElements.getTypeElement("ovr.Impl")))
+        .isFalse();
+  }
+
+  @Test
+  public void overridesInheritedFromClassPath() {
+    // AbstractQueue.add(E) implements BlockingQueue.add(E) in LinkedBlockingQueue, although
+    // AbstractQueue doesn't implement BlockingQueue.
+    for (Elements elements : ImmutableList.of(javacElements, turbineElements)) {
+      assertWithMessage(elements.getClass().getSimpleName())
+          .that(
+              elements.overrides(
+                  method(elements, "java.util.AbstractQueue", "add(E)"),
+                  method(elements, "java.util.concurrent.BlockingQueue", "add(E)"),
+                  elements.getTypeElement("java.util.concurrent.LinkedBlockingQueue")))
+          .isTrue();
+    }
+  }
+
+  @Test
+  public void overridesInheritedDefault() throws Exception {
+    // C inherits the default method K.m() and the abstract method I.m(). That's an error in source
+    // (JLS 8.4.8.4), so compile C against an abstract K.m() and then make K.m() a default method.
+    Map<String, byte[]> lib =
+        new HashMap<>(
+            IntegrationTestSupport.runJavac(
+                ImmutableMap.of(
+                    "K.java", "public interface K { void m(); }",
+                    "I.java", "public interface I { void m(); }",
+                    "B.java", "public abstract class B implements K {}",
+                    "C.java", "public abstract class C extends B implements I {}"),
+                ImmutableList.of()));
+    lib.putAll(
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of("K.java", "public interface K { default void m() {} }"),
+            ImmutableList.of()));
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      for (Map.Entry<String, byte[]> entry : lib.entrySet()) {
+        jos.putNextEntry(new JarEntry(entry.getKey() + ".class"));
+        jos.write(entry.getValue());
+      }
+    }
+    ImmutableMap<String, String> sources = ImmutableMap.of("T.java", "class T {}");
+
+    JavacTask task =
+        IntegrationTestSupport.runJavacAnalysis(
+            sources, ImmutableList.of(libJar), ImmutableList.of());
+    task.analyze();
+
+    BindingResult bound =
+        IntegrationTestSupport.turbineAnalysis(
+            sources,
+            ImmutableList.of(libJar),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+    Env<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
+            .append(new SimpleEnv<>(bound.units()));
+    ModelFactory factory = new ModelFactory(env, bound.classPathEnv(), bound.tli());
+    TurbineElements turbineElements = new TurbineElements(factory, new TurbineTypes(factory));
+
+    // javac's internal flags mark default methods as abstract, so K.m() isn't an inherited
+    // implementation of I.m() in C.
+    for (Elements elements : ImmutableList.of(task.getElements(), turbineElements)) {
+      assertWithMessage(elements.getClass().getSimpleName())
+          .that(
+              elements.overrides(
+                  method(elements, "K", "m()"),
+                  method(elements, "I", "m()"),
+                  elements.getTypeElement("C")))
+          .isFalse();
+    }
+  }
+
+  private static ImmutableList<ExecutableElement> methods(Elements elements, String owner) {
+    return elements.getTypeElement(owner).getEnclosedElements().stream()
+        .filter(e -> e.getKind() == ElementKind.METHOD)
+        .map(ExecutableElement.class::cast)
+        .collect(toImmutableList());
+  }
+
+  private static ExecutableElement method(
+      Elements elements, String owner, ExecutableElement javacMethod) {
+    return method(elements, owner, javacMethod.toString());
+  }
+
+  private static ExecutableElement method(Elements elements, String owner, String signature) {
+    return methods(elements, owner).stream()
+        .filter(m -> m.toString().equals(signature))
+        .collect(onlyElement());
   }
 
   @Test

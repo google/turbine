@@ -17,7 +17,8 @@
 package com.google.turbine.types;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -164,7 +165,7 @@ public class ClassHierarchy {
    * <p>The iteration order of the results is undefined, and in particular no guarantees are made
    * about the ordering of sub-types and super-types.
    */
-  public Iterable<ClassSymbol> transitiveSupertypes(ClassSymbol s) {
-    return Iterables.concat(ImmutableList.of(s), get(s).closure());
+  public Set<ClassSymbol> transitiveSupertypes(ClassSymbol s) {
+    return Sets.union(ImmutableSet.of(s), get(s).closure());
   }
 }
