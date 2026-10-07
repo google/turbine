@@ -469,9 +469,10 @@ public final class Main {
         JarOutputStream jos = new JarOutputStream(bos)) {
       Manifest manifest = manifest();
       Attributes attributes = manifest.getMainAttributes();
-      if (options.output().isPresent()) {
-        attributes.put(ORIGINAL_JAR_PATH, options.output().get());
-      }
+      options
+          .outputRootRelativePath()
+          .or(options::output)
+          .ifPresent(output -> attributes.put(ORIGINAL_JAR_PATH, output));
       writeManifest(jos, manifest);
       for (Map.Entry<String, byte[]> entry : transitive.entrySet()) {
         addEntry(

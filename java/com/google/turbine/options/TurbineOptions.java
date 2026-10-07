@@ -31,6 +31,7 @@ import java.util.Optional;
  * @param bootClassPath Paths to compilation bootclasspath artifacts.
  * @param system The target platform's system modules.
  * @param output The output jar.
+ * @param outputRootRelativePath The root-relative path of the output jar.
  * @param headerCompilationOutput The header compilation output jar.
  * @param processorPath Paths to annotation processor artifacts.
  * @param processors Annotation processor class names.
@@ -58,6 +59,7 @@ public record TurbineOptions(
     ImmutableSet<String> bootClassPath,
     Optional<String> system,
     Optional<String> output,
+    Optional<String> outputRootRelativePath,
     Optional<String> headerCompilationOutput,
     ImmutableList<String> processorPath,
     ImmutableSet<String> processors,
@@ -85,6 +87,7 @@ public record TurbineOptions(
     requireNonNull(bootClassPath, "bootClassPath");
     requireNonNull(system, "system");
     requireNonNull(output, "output");
+    requireNonNull(outputRootRelativePath, "outputRootRelativePath");
     requireNonNull(headerCompilationOutput, "headerCompilationOutput");
     requireNonNull(processorPath, "processorPath");
     requireNonNull(processors, "processors");
@@ -162,6 +165,8 @@ public record TurbineOptions(
   @AutoBuilder
   public abstract static class Builder {
     public abstract Builder setOutput(String output);
+
+    public abstract Builder setOutputRootRelativePath(String outputRootRelativePath);
 
     public abstract Builder setClassPath(ImmutableList<String> classPath);
 

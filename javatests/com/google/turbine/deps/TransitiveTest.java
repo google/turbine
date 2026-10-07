@@ -505,4 +505,45 @@ public class TransitiveTest {
     assertThat(manifest.getMainAttributes().get(new Attributes.Name("Original-Jar-Path")))
         .isEqualTo(libb.toString());
   }
+
+  @Test
+  public void headerCompilationOutput_outputRootRelativePath() throws Exception {
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/A.java",
+                    """
+                    package a;
+                    public class A {}
+                    """)
+                .build(),
+            ImmutableList.of());
+
+    Path headerOutput = temporaryFolder.newFolder().toPath().resolve("header.jar");
+    Path out = temporaryFolder.newFolder().toPath().resolve("out.jar");
+
+    TurbineOptions options =
+        optionsWithBootclasspath()
+            .setSources(
+                new SourceBuilder()
+                        .addSourceLines("b/B.java", "package b;", "public class B extends a.A {}")
+                        .build()
+                        .stream()
+                        .map(Path::toString)
+                        .collect(toImmutableList()))
+            .setClassPath(ImmutableList.of(liba.toString()))
+            .setOutput(out.toString())
+            .setOutputRootRelativePath("relative/b.jar")
+            .setHeaderCompilationOutput(headerOutput.toString())
+            .setTargetLabel("//foo:foo")
+            .build();
+
+    Main.compile(options);
+
+    Manifest manifest =
+        new Manifest(new ByteArrayInputStream(readJar(headerOutput).get("META-INF/MANIFEST.MF")));
+    assertThat(manifest.getMainAttributes().get(new Attributes.Name("Original-Jar-Path")))
+        .isEqualTo("relative/b.jar");
+  }
 }

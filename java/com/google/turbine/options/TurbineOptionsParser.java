@@ -55,6 +55,8 @@ public final class TurbineOptionsParser {
       String next = argumentDeque.removeFirst();
       switch (next) {
         case "--output" -> builder.setOutput(readOne(next, argumentDeque));
+        case "--output_root_relative_path" ->
+            builder.setOutputRootRelativePath(readOne(next, argumentDeque));
         case "--source_jars" -> builder.setSourceJars(readList(argumentDeque));
         case "--temp_dir" ->
             // TODO(cushon): remove this when Bazel no longer passes the flag

@@ -422,4 +422,14 @@ public class TurbineOptionsTest {
             Iterables.concat(BASE_ARGS, ImmutableList.of("--javacopts", "-XDnoParallel", "--")));
     assertThat(options.parallel()).isFalse();
   }
+
+  @Test
+  public void outputRootRelativePath() throws Exception {
+    TurbineOptions options =
+        TurbineOptionsParser.parse(
+            Iterables.concat(
+                BASE_ARGS, ImmutableList.of("--output_root_relative_path", "relative/out.jar")));
+
+    assertThat(options.outputRootRelativePath()).hasValue("relative/out.jar");
+  }
 }
