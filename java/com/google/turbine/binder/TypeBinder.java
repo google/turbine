@@ -374,7 +374,7 @@ public class TypeBinder {
               Type.PrimTy.create(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
               ImmutableList.of(
                   new ParamInfo(
-                      new ParamSymbol(equalsMethod, "other"),
+                      new ParamSymbol(equalsMethod, "o"),
                       Type.ClassTy.OBJECT,
                       ImmutableList.of(),
                       TurbineFlag.ACC_MANDATED)),

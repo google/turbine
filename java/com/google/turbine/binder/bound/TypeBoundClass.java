@@ -310,7 +310,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
      * class constructor.
      */
     public boolean synthetic() {
-      return (access & (TurbineFlag.ACC_SYNTHETIC | TurbineFlag.ACC_MANDATED)) != 0;
+      if ((access & TurbineFlag.ACC_SYNTHETIC) == TurbineFlag.ACC_SYNTHETIC) {
+        return true;
+      }
+      return (access & TurbineFlag.ACC_MANDATED) == TurbineFlag.ACC_MANDATED
+          && sym.owner().name().equals("<init>");
     }
 
     /** Parameter annotations. */

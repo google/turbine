@@ -109,8 +109,6 @@ public class JavacModelDiffTest {
    *   <li>enum-abstract-modifier: enums read from class files report {@code abstract}.
    *   <li>enum-sealed, sealed: enums with constant bodies, and sealed types read from class files,
    *       aren't {@code sealed}; anonymous permitted subclasses print as {@code Outer.1}.
-   *   <li>implicit-method-params: implicit {@code valueOf(String)} and record {@code
-   *       equals(Object)} have no parameters.
    *   <li>inner-ctor-outer-param: constructors of inner classes read from class files include the
    *       synthetic outer instance parameter.
    *   <li>package-root-element: package elements from {@code package-info.java} aren't root
@@ -262,74 +260,40 @@ public class JavacModelDiffTest {
           .put("fromClassPath/wildboundcanon.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/wildcanon.test", "inner-ctor-outer-param, parameter-final")
           .put("fromSource/B74332665.test", "private-interface-method")
-          .put("fromSource/abstractenum.test", "enum-sealed, implicit-method-params, sealed")
+          .put("fromSource/abstractenum.test", "enum-sealed, sealed")
           .put("fromSource/anno_repeated.test", "type-parameter-annotations")
-          .put("fromSource/annotation_enum_default.test", "implicit-method-params")
-          .put("fromSource/annovis.test", "implicit-method-params")
-          .put("fromSource/c_array.test", "implicit-method-params")
+          .put("fromSource/c_array.test", "type-annotation-tostring")
           .put("fromSource/deprecated.test", "deprecated")
           .put("fromSource/dollar.test", "dollar-in-name")
           .put("fromSource/empty_package_info.test", "package-root-element")
-          .put("fromSource/enum1.test", "implicit-method-params")
-          .put("fromSource/enum_abstract.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/enumctor.test", "implicit-method-params")
-          .put("fromSource/enumctor2.test", "implicit-method-params")
-          .put("fromSource/enumimpl.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/enumingeneric.test", "implicit-method-params")
-          .put("fromSource/enuminner.test", "implicit-method-params")
-          .put("fromSource/enumint.test", "implicit-method-params")
-          .put("fromSource/enumint2.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/enumint3.test", "implicit-method-params")
-          .put("fromSource/enumint_byte.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/enumint_objectmethod.test", "implicit-method-params")
-          .put(
-              "fromSource/enumint_objectmethod2.test",
-              "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/enumint_objectmethod_raw.test", "implicit-method-params")
-          .put("fromSource/enuminthacks.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/enummemberanno.test", "implicit-method-params")
-          .put("fromSource/enumstat.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/firstcomparator.test", "implicit-method-params")
-          .put("fromSource/fuse.test", "implicit-method-params")
-          .put("fromSource/inner_static.test", "implicit-method-params")
-          .put("fromSource/innerclassanno.test", "implicit-method-params")
-          .put("fromSource/innerenum.test", "implicit-method-params")
+          .put("fromSource/enum_abstract.test", "enum-sealed, sealed")
+          .put("fromSource/enumimpl.test", "enum-sealed, sealed")
+          .put("fromSource/enumint2.test", "enum-sealed, sealed")
+          .put("fromSource/enumint_byte.test", "enum-sealed, sealed")
+          .put("fromSource/enumint_objectmethod2.test", "enum-sealed, sealed")
+          .put("fromSource/enuminthacks.test", "enum-sealed, sealed")
+          .put("fromSource/enumstat.test", "enum-sealed, sealed")
           .put("fromSource/javadoc_deprecated.test", "deprecated")
-          .put("fromSource/member_import_clash.test", "implicit-method-params")
           .put("fromSource/package_info.test", "package-root-element")
           .put("fromSource/packagedecl.test", "package-root-element")
-          .put("fromSource/permits.test", "implicit-method-params")
+          .put("fromSource/record.test", "deprecated, record-component-modifiers")
+          .put("fromSource/record2.test", "record-component-modifiers")
           .put(
-              "fromSource/record.test",
-              "deprecated, implicit-method-params, record-component-modifiers")
-          .put("fromSource/record2.test", "implicit-method-params, record-component-modifiers")
-          .put(
-              "fromSource/record_ctor.test",
-              "implicit-method-params, record-component-modifiers, type-annotation-tostring")
-          .put(
-              "fromSource/record_fields.test", "implicit-method-params, record-component-modifiers")
-          .put(
-              "fromSource/record_getter_override.test",
-              "implicit-method-params, record-component-modifiers")
-          .put("fromSource/record_tostring.test", "implicit-method-params")
-          .put("fromSource/self.test", "implicit-method-params")
-          .put("fromSource/strictfp.test", "enum-sealed, implicit-method-params, sealed")
-          .put("fromSource/supplierfunction.test", "implicit-method-params")
-          .put(
-              "fromSource/type_anno_ambiguous.test",
-              "implicit-method-params, type-annotation-tostring")
+              "fromSource/record_ctor.test", "record-component-modifiers, type-annotation-tostring")
+          .put("fromSource/record_fields.test", "record-component-modifiers")
+          .put("fromSource/record_getter_override.test", "record-component-modifiers")
+          .put("fromSource/strictfp.test", "enum-sealed, sealed")
+          .put("fromSource/type_anno_ambiguous.test", "type-annotation-tostring")
           .put("fromSource/type_anno_array_dims.test", "type-annotation-tostring")
           .put("fromSource/type_anno_c_array.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_cstyle_array_dims.test", "implicit-method-params")
+          .put("fromSource/type_anno_cstyle_array_dims.test", "type-annotation-tostring")
           .put("fromSource/type_anno_hello.test", "type-annotation-tostring")
           .put("fromSource/type_anno_nested.test", "type-annotation-tostring")
           .put("fromSource/type_anno_nested_generic.test", "type-annotation-tostring")
           .put("fromSource/type_anno_nested_raw.test", "type-annotation-tostring")
           .put("fromSource/type_anno_qual.test", "type-annotation-tostring")
           .put("fromSource/type_anno_raw.test", "type-annotation-tostring")
-          .put(
-              "fromSource/type_anno_receiver.test",
-              "implicit-method-params, type-annotation-tostring")
+          .put("fromSource/type_anno_receiver.test", "type-annotation-tostring")
           .buildOrThrow();
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
