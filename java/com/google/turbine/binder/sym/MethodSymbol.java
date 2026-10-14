@@ -50,7 +50,7 @@ public class MethodSymbol implements Symbol {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, owner);
+    return Objects.hash(name, owner, idx);
   }
 
   @Override
