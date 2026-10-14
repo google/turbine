@@ -27,5 +27,6 @@ public interface CanonicalSymbolResolver extends ImportScope.ResolveFunction {
   @Nullable ClassSymbol resolveOne(ClassSymbol sym, Tree.Ident bit);
 
   /** Returns true if the given symbol is visible from the current package. */
+  @Override
   boolean visible(ClassSymbol sym);
 }

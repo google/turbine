@@ -1054,7 +1054,6 @@ public class ConstEvaluator {
       Const existing = values.put(key, value);
       if (existing != null) {
         log.error(arg.position(), ErrorKind.INVALID_ANNOTATION_ARGUMENT);
-        continue;
       }
     }
     for (MethodInfo methodInfo : template.values()) {

@@ -499,7 +499,7 @@ public class Processing {
 
       private final Stopwatch sw;
 
-      public Timer(Stopwatch sw) {
+      Timer(Stopwatch sw) {
         this.sw = sw;
       }
 

@@ -81,7 +81,7 @@ public final class StringCache {
     int end;
     int length;
 
-    public void fill(String superstring, int start, int end) {
+    void fill(String superstring, int start, int end) {
       this.superstring = superstring;
       this.start = start;
       this.end = end;

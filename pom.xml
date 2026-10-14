@@ -197,7 +197,7 @@
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
             <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
-            <arg>-Xplugin:ErrorProne -Xep:EqualsIncompatibleType:ERROR -Xep:TruthIncompatibleType:ERROR</arg>
+            <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -Xep:EqualsIncompatibleType:ERROR -Xep:TruthIncompatibleType:ERROR</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
@@ -309,6 +309,7 @@
           <detectJavaApiLink>false</detectJavaApiLink>
           <notimestamp>true</notimestamp>
           <doctitle>turbine ${project.version} API</doctitle>
+          <doclint>all,-missing</doclint>
         </configuration>
       </plugin>
     </plugins>

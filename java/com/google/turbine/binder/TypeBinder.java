@@ -76,7 +76,7 @@ public class TypeBinder {
     private final String name;
     private final Symbol sym;
 
-    public SingletonScope(String name, Symbol sym) {
+    SingletonScope(String name, Symbol sym) {
       this.name = name;
       this.sym = sym;
     }
@@ -94,7 +94,7 @@ public class TypeBinder {
   private static class MapScope implements Scope {
     private final ImmutableMap<String, ? extends Symbol> tps;
 
-    public MapScope(ImmutableMap<String, ? extends Symbol> tps) {
+    MapScope(ImmutableMap<String, ? extends Symbol> tps) {
       this.tps = tps;
     }
 
@@ -113,7 +113,7 @@ public class TypeBinder {
     private final ClassSymbol sym;
     private final Env<ClassSymbol, HeaderBoundClass> env;
 
-    public ClassMemberScope(ClassSymbol sym, Env<ClassSymbol, HeaderBoundClass> env) {
+    ClassMemberScope(ClassSymbol sym, Env<ClassSymbol, HeaderBoundClass> env) {
       this.sym = sym;
       this.env = env;
     }

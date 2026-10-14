@@ -354,6 +354,7 @@ interface Attribute {
   }
 
   /** A JVMS §4.7.30 Record attribute. */
+  @SuppressWarnings("AvoidCommonTypeNames") // Mirrors the JVMS §4.7.30 attribute name
   class Record implements Attribute {
 
     private final ImmutableList<Component> components;

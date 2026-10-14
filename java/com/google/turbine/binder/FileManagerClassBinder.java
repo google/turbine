@@ -134,7 +134,7 @@ public final class FileManagerClassBinder {
           });
     }
 
-    public @Nullable Supplier<byte[]> resource(String resource) {
+    @Nullable Supplier<byte[]> resource(String resource) {
       String dir;
       String name;
       int idx = resource.lastIndexOf('/');
@@ -168,7 +168,7 @@ public final class FileManagerClassBinder {
     private final Env<ClassSymbol, BytecodeBoundClass> env;
     private final PackageLookup packageLookup;
 
-    public FileManagerTopLevelIndex(
+    FileManagerTopLevelIndex(
         Env<ClassSymbol, BytecodeBoundClass> env, PackageLookup packageLookup) {
       this.env = env;
       this.packageLookup = packageLookup;

@@ -216,6 +216,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return new SigParser(signature).parseClassSig();
   }
 
+  @SuppressWarnings("ReferenceEquality") // NO_SIG is a sentinel value
   private @Nullable ClassSig sig() {
     ClassSig local = this.sig;
     if (local == null) {
@@ -667,6 +668,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return new AnnotationMetadata(retention, target, repeatable);
   }
 
+  @SuppressWarnings("ReferenceEquality") // NO_ANNOTATION_METADATA is a sentinel value
   @Override
   public @Nullable AnnotationMetadata annotationMetadata() {
     AnnotationMetadata local = this.annotationMetadata;
