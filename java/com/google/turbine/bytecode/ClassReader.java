@@ -593,6 +593,10 @@ public class ClassReader {
           default -> reader.skip(reader.u4());
         }
       }
+      if ((accessFlags & TurbineFlag.ACC_SYNTHETIC) != 0) {
+        // e.g. this$0 and $VALUES; javac doesn't enter synthetic fields either
+        continue;
+      }
       fields.add(
           new ClassFile.FieldInfo(
               accessFlags,

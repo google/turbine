@@ -118,8 +118,6 @@ public class JavacModelDiffTest {
    *       default}.
    *   <li>record-component-modifiers: record components have no modifiers; javac reports {@code
    *       public}.
-   *   <li>synthetic-field: synthetic fields ({@code $VALUES}, {@code this$0}) from class files are
-   *       visible.
    *   <li>type-annotation-tostring: annotated nested types print as {@code Outer@A .Inner}, and
    *       array dimension annotations print in reverse order.
    *   <li>type-parameter-annotations: annotations on type parameters differ (javac reports none).
@@ -129,46 +127,27 @@ public class JavacModelDiffTest {
       ImmutableMap.<String, String>builder()
           .put("fromClassPath/B70953542.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/B74332665.test", "private-interface-method")
-          .put("fromClassPath/abstractenum.test", "enum-abstract-modifier, sealed, synthetic-field")
+          .put("fromClassPath/abstractenum.test", "enum-abstract-modifier, sealed")
           .put("fromClassPath/anno_const_scope.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/annotation_enum_default.test", "synthetic-field")
           .put("fromClassPath/annouse12.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/annovis.test", "synthetic-field")
           .put("fromClassPath/c_array.test", "inner-ctor-outer-param")
           .put("fromClassPath/canon_class_header.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/canon_recursive.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/ctorvis.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/deprecated.test", "deprecated")
-          .put("fromClassPath/enum1.test", "synthetic-field")
-          .put(
-              "fromClassPath/enum_abstract.test",
-              "enum-abstract-modifier, enum-sealed, sealed, synthetic-field")
-          .put("fromClassPath/enumctor.test", "synthetic-field")
-          .put("fromClassPath/enumctor2.test", "synthetic-field")
-          .put("fromClassPath/enumimpl.test", "enum-abstract-modifier, sealed, synthetic-field")
-          .put("fromClassPath/enumingeneric.test", "synthetic-field")
-          .put(
-              "fromClassPath/enuminner.test",
-              "inner-ctor-outer-param, parameter-final, synthetic-field")
-          .put("fromClassPath/enumint.test", "synthetic-field")
-          .put("fromClassPath/enumint2.test", "enum-abstract-modifier, sealed, synthetic-field")
-          .put("fromClassPath/enumint3.test", "synthetic-field")
-          .put("fromClassPath/enumint_byte.test", "enum-abstract-modifier, sealed, synthetic-field")
-          .put("fromClassPath/enumint_objectmethod.test", "synthetic-field")
-          .put(
-              "fromClassPath/enumint_objectmethod2.test",
-              "enum-abstract-modifier, sealed, synthetic-field")
-          .put("fromClassPath/enumint_objectmethod_raw.test", "synthetic-field")
-          .put("fromClassPath/enuminthacks.test", "enum-abstract-modifier, sealed, synthetic-field")
-          .put("fromClassPath/enummemberanno.test", "synthetic-field")
-          .put("fromClassPath/enumstat.test", "enum-abstract-modifier, sealed, synthetic-field")
+          .put("fromClassPath/enum_abstract.test", "enum-abstract-modifier, enum-sealed, sealed")
+          .put("fromClassPath/enumimpl.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/enuminner.test", "inner-ctor-outer-param, parameter-final")
+          .put("fromClassPath/enumint2.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/enumint_byte.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/enumint_objectmethod2.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/enuminthacks.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/enumstat.test", "enum-abstract-modifier, sealed")
           .put("fromClassPath/extend_self.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/extrainnerclass.test", "inner-ctor-outer-param, parameter-final")
           .put(
               "fromClassPath/filteredkeysetmultimap.test",
               "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/firstcomparator.test", "synthetic-field")
-          .put("fromClassPath/fuse.test", "synthetic-field")
           .put("fromClassPath/genericnoncanon.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/genericnoncanon1.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/genericnoncanon10.test", "inner-ctor-outer-param, parameter-final")
@@ -183,18 +162,13 @@ public class JavacModelDiffTest {
               "fromClassPath/genericnoncanon_method3.test",
               "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/importinner.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/inner_static.test",
-              "inner-ctor-outer-param, parameter-final, synthetic-field")
-          .put("fromClassPath/innerclassanno.test", "synthetic-field")
+          .put("fromClassPath/inner_static.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/innerctor.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/innerenum.test", "synthetic-field")
           .put(
               "fromClassPath/javadoc_deprecated.test",
               "deprecated, inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/lexical4.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/mapentry.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/member_import_clash.test", "synthetic-field")
           .put("fromClassPath/outer.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/outerparam.test", "inner-ctor-outer-param, parameter-final")
           .put(
@@ -217,13 +191,10 @@ public class JavacModelDiffTest {
           .put("fromClassPath/record_getter_override.test", "record-component-modifiers")
           .put("fromClassPath/sealed.test", "enum-sealed, sealed")
           .put("fromClassPath/sealed_nested.test", "enum-sealed, sealed")
-          .put("fromClassPath/self.test", "synthetic-field")
           .put("fromClassPath/shadow_inherited.test", "inner-ctor-outer-param, parameter-final")
           .put(
               "fromClassPath/strictfp.test",
-              "enum-abstract-modifier, inner-ctor-outer-param, parameter-final, sealed,"
-                  + " synthetic-field")
-          .put("fromClassPath/supplierfunction.test", "synthetic-field")
+              "enum-abstract-modifier, inner-ctor-outer-param, parameter-final, sealed")
           .put(
               "fromClassPath/type_anno_ambiguous.test",
               "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
