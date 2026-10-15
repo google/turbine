@@ -45,6 +45,7 @@ import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.IncompleteAnnotationException;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -297,6 +298,208 @@ public class TurbineAnnotationProxyTest {
     assertThat(f.getAnnotation(RS.class)).isNull();
     assertThat(f.getAnnotationsByType(R.class)).isNull();
     assertThat(f.getAnnotationsByType(RS.class)).isNull();
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface D {
+    String s();
+
+    String[] ss() default {"x"};
+
+    boolean z() default false;
+
+    int[] is() default {1, 2};
+
+    long[] ls() default {3};
+
+    B b() default @B(1);
+
+    B[] bs() default {@B(2), @B(3)};
+  }
+
+  @D(
+      s = "a",
+      ss = {"p", "q"},
+      bs = @B(4))
+  static class J {}
+
+  @Test
+  public void hashCodeMatchesAnnotationContract() throws IOException {
+    ModelFactory factory =
+        bindWithLibrary(
+            """
+            === Test.java ===
+            import %s;
+            import %s;
+            @D(s = "a", ss = {"p", "q"}, bs = @B(4))
+            class Test {}
+            @D(
+                s = "a",
+                ss = {"p", "q"},
+                z = false,
+                is = {1, 2},
+                ls = {3},
+                b = @B(1),
+                bs = @B(4))
+            class ExplicitDefaults {}
+            @D(s = "b", ss = {"p", "q"}, bs = @B(4))
+            class Different {}
+            @D(s = "a", ss = {"p"}, bs = @B(4))
+            class DifferentArrayLength {}
+            @D(s = "a", ss = {"p", "r"}, bs = @B(4))
+            class DifferentArrayElement {}
+            """
+                .formatted(D.class.getCanonicalName(), B.class.getCanonicalName()));
+    D test = factory.typeElement(new ClassSymbol("Test")).getAnnotation(D.class);
+    D explicitDefaults =
+        factory.typeElement(new ClassSymbol("ExplicitDefaults")).getAnnotation(D.class);
+    D different = factory.typeElement(new ClassSymbol("Different")).getAnnotation(D.class);
+    D differentArrayLength =
+        factory.typeElement(new ClassSymbol("DifferentArrayLength")).getAnnotation(D.class);
+    D differentArrayElement =
+        factory.typeElement(new ClassSymbol("DifferentArrayElement")).getAnnotation(D.class);
+
+    new EqualsTester()
+        .addEqualityGroup(test, explicitDefaults, J.class.getAnnotation(D.class))
+        .addEqualityGroup(different)
+        .addEqualityGroup(differentArrayLength)
+        .addEqualityGroup(differentArrayElement)
+        .testEquals();
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface E {
+    ElementType e();
+
+    Class<?> c();
+
+    Class<?>[] cs() default {Object.class};
+  }
+
+  @Test
+  public void hashCodeEnumAndClassMembers() throws IOException {
+    ModelFactory factory =
+        bindWithLibrary(
+            """
+            === Test.java ===
+            import %s;
+            import java.lang.annotation.ElementType;
+            @E(e = ElementType.FIELD, c = String.class)
+            class Test {}
+            @E(e = ElementType.FIELD, c = String.class, cs = {Object.class})
+            class Other {}
+            @E(e = ElementType.METHOD, c = String.class)
+            class Different {}
+            """
+                .formatted(E.class.getCanonicalName()));
+    E a = factory.typeElement(new ClassSymbol("Test")).getAnnotation(E.class);
+    E b = factory.typeElement(new ClassSymbol("Other")).getAnnotation(E.class);
+    E c = factory.typeElement(new ClassSymbol("Different")).getAnnotation(E.class);
+
+    new EqualsTester().addEqualityGroup(a, b).addEqualityGroup(c).testEquals();
+  }
+
+  @B(1)
+  static class CompleteB {}
+
+  @Test
+  public void incompleteAnnotation() throws IOException {
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
+      addClass(jos, TurbineAnnotationProxyTest.class);
+      addClass(jos, B.class);
+    }
+
+    TestInput input =
+        TestInput.parse(
+            """
+            === TurbineAnnotationProxyTest.java ===
+            package com.google.turbine.processing;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            public class TurbineAnnotationProxyTest {
+              @Retention(RetentionPolicy.RUNTIME)
+              public @interface B {
+                int value() default 1;
+              }
+            }
+            === Test.java ===
+            import %s;
+            @B
+            class Test {}
+            @B
+            class Other {}
+            @B(1)
+            class Complete {}
+            """
+                .formatted(B.class.getCanonicalName()));
+
+    ImmutableList<CompUnit> units =
+        input.sources().entrySet().stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+
+    Binder.BindingResult bound =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            units,
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+
+    Env<ClassSymbol, ? extends TypeBoundClass> classPathEnv =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)).env();
+    Env<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(new SimpleEnv<>(bound.units()))
+            .append(classPathEnv);
+    ModelFactory factory = new ModelFactory(env, classPathEnv, bound.tli());
+
+    B test = factory.typeElement(new ClassSymbol("Test")).getAnnotation(B.class);
+    B other = factory.typeElement(new ClassSymbol("Other")).getAnnotation(B.class);
+    B complete = factory.typeElement(new ClassSymbol("Complete")).getAnnotation(B.class);
+
+    IncompleteAnnotationException thrown =
+        assertThrows(IncompleteAnnotationException.class, test::value);
+    assertThat(thrown.annotationType()).isEqualTo(B.class);
+    assertThat(thrown.elementName()).isEqualTo("value");
+    assertThat(test.hashCode()).isEqualTo(0);
+
+    new EqualsTester()
+        .addEqualityGroup(test, other)
+        .addEqualityGroup(complete, CompleteB.class.getAnnotation(B.class))
+        .testEquals();
+  }
+
+  private ModelFactory bindWithLibrary(String... lines) throws IOException {
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
+      addClass(jos, TurbineAnnotationProxyTest.class);
+      addClass(jos, B.class);
+      addClass(jos, D.class);
+      addClass(jos, E.class);
+    }
+
+    TestInput input = TestInput.parse(Joiner.on('\n').join(lines));
+
+    ImmutableList<CompUnit> units =
+        input.sources().entrySet().stream()
+            .map(e -> new SourceFile(e.getKey(), e.getValue()))
+            .map(Parser::parse)
+            .collect(toImmutableList());
+
+    Binder.BindingResult bound =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            units,
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)),
+            TestClassPaths.TURBINE_BOOTCLASSPATH,
+            Optional.empty());
+
+    Env<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
+            .append(new SimpleEnv<>(bound.units()));
+    return new ModelFactory(env, bound.classPathEnv(), bound.tli());
   }
 
   private static void addClass(JarOutputStream jos, Class<?> clazz) throws IOException {

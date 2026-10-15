@@ -32,6 +32,7 @@ import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.type.AnnoInfo;
 import java.lang.annotation.Annotation;
+import java.lang.annotation.IncompleteAnnotationException;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -60,6 +61,7 @@ class TurbineAnnotationProxy implements InvocationHandler {
   private final ModelFactory factory;
   private final Class<?> annotationType;
   private final AnnoInfo anno;
+  private @Nullable Integer hashCode;
 
   TurbineAnnotationProxy(ModelFactory factory, Class<?> annotationType, AnnoInfo anno) {
     this.factory = factory;
@@ -118,7 +120,12 @@ class TurbineAnnotationProxy implements InvocationHandler {
     switch (method.getName()) {
       case "hashCode" -> {
         checkArgument(args == null);
-        return anno.hashCode();
+        Integer result = hashCode;
+        if (result == null) {
+          result = annotationHashCode(factory, anno);
+          hashCode = result;
+        }
+        return result;
       }
       case "annotationType" -> {
         checkArgument(args == null);
@@ -134,30 +141,124 @@ class TurbineAnnotationProxy implements InvocationHandler {
       }
       default -> {}
     }
+    return invokeAnnotationMethod(method);
+  }
+
+  private Object invokeAnnotationMethod(Method method) {
     Const value = anno.values().get(method.getName());
     if (value != null) {
       return constValue(method.getReturnType(), factory, value);
     }
     for (TypeBoundClass.MethodInfo m : factory.getSymbol(anno.sym()).methods()) {
-      if (m.name().contentEquals(method.getName())) {
-        return constValue(method.getReturnType(), factory, m.defaultValue());
+      if (m.name().equals(method.getName())) {
+        Const defaultValue = m.defaultValue();
+        if (defaultValue != null) {
+          return constValue(method.getReturnType(), factory, defaultValue);
+        }
+        throw new IncompleteAnnotationException(
+            annotationType.asSubclass(Annotation.class), method.getName());
       }
     }
     throw new NoSuchMethodError(method.getName());
+  }
+
+  /**
+   * Implements the {@link Annotation#hashCode} formula using Turbine's model of the annotation.
+   *
+   * <p>This is implemented here rather than in {@link AnnoInfo#hashCode} because {@link AnnoInfo}
+   * only stores explicitly specified arguments and does not have access to the {@link ModelFactory}
+   * needed to look up default values from the annotation declaration.
+   *
+   * <p>The hash codes of primitive and string {@link Const} values are the same as the hash codes
+   * of the corresponding boxed values, while arrays and nested annotations are hashed recursively
+   * to include default values. Enum constants and class literals can't match the identity-based
+   * hash codes of {@link Enum} and {@link Class} objects, so they use the hash codes of Turbine's
+   * representations, which is consistent with {@link #proxyEquals}.
+   */
+  private static int annotationHashCode(ModelFactory factory, AnnoInfo anno) {
+    int result = 0;
+    for (TypeBoundClass.MethodInfo m : factory.getSymbol(anno.sym()).methods()) {
+      Const value = anno.values().getOrDefault(m.name(), m.defaultValue());
+      if (value == null) {
+        // The member has no default value and was not specified, for example if a required member
+        // was added to the annotation declaration after the annotated class was compiled.
+        continue;
+      }
+      result += (127 * m.name().hashCode()) ^ memberValueHashCode(factory, value);
+    }
+    return result;
+  }
+
+  private static int memberValueHashCode(ModelFactory factory, Const value) {
+    return switch (value) {
+      case TurbineAnnotationValue annotation -> annotationHashCode(factory, annotation.info());
+      case ArrayInitValue array -> {
+        int result = 1;
+        for (Const element : array.elements()) {
+          result = 31 * result + memberValueHashCode(factory, element);
+        }
+        yield result;
+      }
+      default -> value.hashCode();
+    };
   }
 
   public boolean proxyEquals(Object other) {
     if (!annotationType.isInstance(other)) {
       return false;
     }
-    if (!Proxy.isProxyClass(other.getClass())) {
-      return false;
+    if (Proxy.isProxyClass(other.getClass())
+        && Proxy.getInvocationHandler(other) instanceof TurbineAnnotationProxy that) {
+      return annotationEquals(factory, anno, that.anno);
     }
-    InvocationHandler handler = Proxy.getInvocationHandler(other);
-    if (!(handler instanceof TurbineAnnotationProxy that)) {
-      return false;
+    for (Method m : annotationType.getDeclaredMethods()) {
+      try {
+        if (!Objects.deepEquals(invokeAnnotationMethod(m), m.invoke(other))) {
+          return false;
+        }
+      } catch (MirroredTypesException // also MirroredTypeException, for single Class values
+          | IncompleteAnnotationException
+          | ReflectiveOperationException _) {
+        return false;
+      }
     }
-    return anno.equals(that.anno);
+    return true;
+  }
+
+  private static boolean annotationEquals(ModelFactory factory, AnnoInfo a, AnnoInfo b) {
+    for (TypeBoundClass.MethodInfo m : factory.getSymbol(a.sym()).methods()) {
+      Const va = a.values().getOrDefault(m.name(), m.defaultValue());
+      Const vb = b.values().getOrDefault(m.name(), m.defaultValue());
+      if (!memberValueEquals(factory, va, vb)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean memberValueEquals(
+      ModelFactory factory, @Nullable Const a, @Nullable Const b) {
+    if (a == null || b == null) {
+      return a == null && b == null;
+    }
+    return switch (a) {
+      case TurbineAnnotationValue annoA ->
+          annotationEquals(factory, annoA.info(), ((TurbineAnnotationValue) b).info());
+      case ArrayInitValue arrayA -> {
+        ImmutableList<Const> elementsA = arrayA.elements();
+        ImmutableList<Const> elementsB = ((ArrayInitValue) b).elements();
+        if (elementsA.size() != elementsB.size()) {
+          yield false;
+        }
+        for (int i = 0; i < elementsA.size(); i++) {
+          if (!memberValueEquals(factory, elementsA.get(i), elementsB.get(i))) {
+            yield false;
+          }
+        }
+        yield true;
+      }
+      default -> a.equals(b);
+    };
   }
 
   static Object constValue(Class<?> clazz, ModelFactory factory, Const value) {
