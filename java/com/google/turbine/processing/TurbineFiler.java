@@ -34,7 +34,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -88,11 +87,11 @@ public class TurbineFiler implements Filer {
   /** The {@link ClassLoader} for the annotation processor path, for loading resources. */
   private final ClassLoader loader;
 
-  private final Map<String, SourceFile> generatedSources = new LinkedHashMap<>();
+  private final Map<String, byte[]> generatedSources = new LinkedHashMap<>();
   private final Map<String, byte[]> generatedClasses = new LinkedHashMap<>();
 
   /** Generated source file objects from all rounds. */
-  public ImmutableMap<String, SourceFile> generatedSources() {
+  public ImmutableMap<String, byte[]> generatedSources() {
     return ImmutableMap.copyOf(generatedSources);
   }
 
@@ -117,17 +116,19 @@ public class TurbineFiler implements Filer {
    * generated in that round.
    */
   public Collection<SourceFile> finishRound() {
-    Map<String, SourceFile> roundSources = new LinkedHashMap<>();
+    List<SourceFile> roundSources = new ArrayList<>();
     for (TurbineJavaFileObject e : files) {
       String path = e.getName();
       switch (e.getKind()) {
-        case SOURCE -> roundSources.put(path, new SourceFile(path, e.contents()));
+        case SOURCE -> {
+          roundSources.add(new SourceFile(path, e.contents()));
+          generatedSources.put(path, e.bytes());
+        }
         case CLASS -> generatedClasses.put(path, e.bytes());
         case OTHER -> {
           switch (e.location()) {
             case CLASS_OUTPUT -> generatedClasses.put(path, e.bytes());
-            case SOURCE_OUTPUT ->
-                this.generatedSources.put(path, new SourceFile(path, e.contents()));
+            case SOURCE_OUTPUT -> generatedSources.put(path, e.bytes());
             default -> throw new AssertionError(e.location());
           }
         }
@@ -135,8 +136,7 @@ public class TurbineFiler implements Filer {
       }
     }
     files.clear();
-    this.generatedSources.putAll(roundSources);
-    return roundSources.values();
+    return roundSources;
   }
 
   @Override
@@ -203,11 +203,11 @@ public class TurbineFiler implements Filer {
         yield new BytesFileObject(path, Suppliers.ofInstance(generated));
       }
       case SOURCE_OUTPUT -> {
-        SourceFile source = generatedSources.get(path);
+        byte[] source = generatedSources.get(path);
         if (source == null) {
           throw new FileNotFoundException(path);
         }
-        yield new SourceFileObject(path, source.source());
+        yield new BytesFileObject(path, Suppliers.ofInstance(source));
       }
       case ANNOTATION_PROCESSOR_PATH -> {
         if (loader.getResource(path) == null) {
@@ -422,31 +422,6 @@ public class TurbineFiler implements Filer {
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) {
       return new String(bytes.get(), UTF_8);
-    }
-  }
-
-  private static class SourceFileObject extends ReadOnlyFileObject {
-
-    private final String source;
-
-    public SourceFileObject(String path, String source) {
-      super(path);
-      this.source = source;
-    }
-
-    @Override
-    public InputStream openInputStream() {
-      return new ByteArrayInputStream(source.getBytes(UTF_8));
-    }
-
-    @Override
-    public Reader openReader(boolean ignoreEncodingErrors) {
-      return new StringReader(source);
-    }
-
-    @Override
-    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-      return source;
     }
   }
 }

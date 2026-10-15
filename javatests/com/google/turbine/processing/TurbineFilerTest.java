@@ -165,6 +165,20 @@ public class TurbineFilerTest {
   }
 
   @Test
+  public void sourceOutputBinaryResource() throws IOException {
+    byte[] binaryData = new byte[] {0x0a, (byte) 0xb5, 0x01, (byte) 0xfe, (byte) 0xff, 0x00};
+    FileObject resource = filer.createResource(StandardLocation.SOURCE_OUTPUT, "com.foo", "a.pb");
+    try (OutputStream os = resource.openOutputStream()) {
+      os.write(binaryData);
+    }
+    assertThat(filer.finishRound()).isEmpty();
+    assertThat(filer.generatedSources().get("com/foo/a.pb")).isEqualTo(binaryData);
+
+    FileObject output = filer.getResource(StandardLocation.SOURCE_OUTPUT, "com.foo", "a.pb");
+    assertThat(output.openInputStream().readAllBytes()).isEqualTo(binaryData);
+  }
+
+  @Test
   public void classOutput() throws IOException {
     JavaFileObject classFile = filer.createClassFile("com.foo.Baz", (Element[]) null);
     try (OutputStream os = classFile.openOutputStream()) {

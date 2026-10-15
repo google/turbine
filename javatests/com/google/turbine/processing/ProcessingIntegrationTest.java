@@ -262,7 +262,7 @@ public class ProcessingIntegrationTest {
     assertThat(bound.generatedSources().keySet()).containsExactly("Gen.java", "source.txt");
     assertThat(bound.generatedClasses().keySet()).containsExactly("class.txt");
 
-    assertThat(bound.generatedSources().get("source.txt").source())
+    assertThat(new String(bound.generatedSources().get("source.txt"), UTF_8))
         .isEqualTo("hello source output");
     assertThat(new String(bound.generatedClasses().get("class.txt"), UTF_8))
         .isEqualTo("hello class output");

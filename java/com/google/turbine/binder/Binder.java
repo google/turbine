@@ -53,7 +53,6 @@ import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
-import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -140,7 +139,7 @@ public final class Binder {
       TurbineExecutor executor,
       TurbineLog log,
       ImmutableList<CompUnit> units,
-      ImmutableMap<String, SourceFile> generatedSources,
+      ImmutableMap<String, byte[]> generatedSources,
       ImmutableMap<String, byte[]> generatedClasses,
       ClassPath classpath,
       ClassPath bootclasspath,
@@ -561,7 +560,7 @@ public final class Binder {
     private final ImmutableList<SourceModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
     private final TopLevelIndex tli;
-    private final ImmutableMap<String, SourceFile> generatedSources;
+    private final ImmutableMap<String, byte[]> generatedSources;
     private final ImmutableMap<String, byte[]> generatedClasses;
     private final Statistics statistics;
 
@@ -570,7 +569,7 @@ public final class Binder {
         ImmutableList<SourceModuleInfo> modules,
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
         TopLevelIndex tli,
-        ImmutableMap<String, SourceFile> generatedSources,
+        ImmutableMap<String, byte[]> generatedSources,
         ImmutableMap<String, byte[]> generatedClasses,
         Statistics statistics) {
       this.units = units;
@@ -600,7 +599,7 @@ public final class Binder {
       return tli;
     }
 
-    public ImmutableMap<String, SourceFile> generatedSources() {
+    public ImmutableMap<String, byte[]> generatedSources() {
       return generatedSources;
     }
 
@@ -617,7 +616,7 @@ public final class Binder {
           units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
     }
 
-    public BindingResult withGeneratedSources(ImmutableMap<String, SourceFile> generatedSources) {
+    public BindingResult withGeneratedSources(ImmutableMap<String, byte[]> generatedSources) {
       return new BindingResult(
           units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
     }
