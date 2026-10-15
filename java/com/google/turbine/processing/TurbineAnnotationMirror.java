@@ -50,9 +50,9 @@ import org.jspecify.annotations.Nullable;
  * An implementation of {@link AnnotationMirror} and {@link AnnotationValue} backed by {@link
  * AnnoInfo} and {@link Const.Value}.
  */
-class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, AnnotationMirror {
+public class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, AnnotationMirror {
 
-  static TurbineAnnotationValueMirror annotationValue(ModelFactory factory, Const value) {
+  public static TurbineAnnotationValueMirror annotationValue(ModelFactory factory, Const value) {
     return switch (value.kind()) {
       case ARRAY -> new TurbineArrayConstant(factory, (ArrayInitValue) value);
       case PRIMITIVE -> new TurbinePrimitiveConstant((Const.Value) value);
@@ -62,7 +62,7 @@ class TurbineAnnotationMirror implements TurbineAnnotationValueMirror, Annotatio
     };
   }
 
-  static TurbineAnnotationMirror create(ModelFactory factory, AnnoInfo anno) {
+  public static TurbineAnnotationMirror create(ModelFactory factory, AnnoInfo anno) {
     return new TurbineAnnotationMirror(factory, new TurbineAnnotationValue(anno));
   }
 

@@ -30,7 +30,6 @@ import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
-import com.google.turbine.binder.lookup.PackageScope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.MethodSymbol;
@@ -44,6 +43,8 @@ import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineJavadoc;
+import com.google.turbine.symbols.SymbolFacts;
+import com.google.turbine.symbols.SymbolFacts.ModifierOwner;
 import com.google.turbine.tree.Tree.MethDecl;
 import com.google.turbine.tree.Tree.VarDecl;
 import com.google.turbine.type.AnnoInfo;
@@ -166,7 +167,7 @@ public abstract class TurbineElement implements Element {
   abstract ImmutableList<AnnoInfo> annos();
 
   /** A {@link TypeElement} implementation backed by a {@link ClassSymbol}. */
-  static class TurbineTypeElement extends TurbineElement implements TypeElement {
+  public static class TurbineTypeElement extends TurbineElement implements TypeElement {
 
     private static final class TypeElementState extends ElementState {
       final @Nullable TypeBoundClass info;
@@ -208,11 +209,11 @@ public abstract class TurbineElement implements Element {
       return (TypeElementState) elementState();
     }
 
-    @Nullable TypeBoundClass info() {
+    public @Nullable TypeBoundClass info() {
       return state().info;
     }
 
-    TypeBoundClass infoNonNull() {
+    public TypeBoundClass infoNonNull() {
       return infoNonNull(state());
     }
 
@@ -255,13 +256,8 @@ public abstract class TurbineElement implements Element {
     }
 
     private TypeMirror computeSuperclass(TypeBoundClass info) {
-      return switch (info.kind()) {
-        case CLASS, ENUM, RECORD ->
-            info.superClassType() != null
-                ? factory.asTypeMirror(info.superClassType())
-                : factory.noType();
-        case INTERFACE, ANNOTATION -> factory.noType();
-      };
+      Type superClassType = SymbolFacts.superclassType(info);
+      return superClassType != null ? factory.asTypeMirror(superClassType) : factory.noType();
     }
 
     @Override
@@ -381,17 +377,18 @@ public abstract class TurbineElement implements Element {
     }
 
     private ImmutableList<Element> computeEnclosedElements(TypeBoundClass info) {
+      SymbolFacts.Members members = SymbolFacts.members(info);
       ImmutableList.Builder<Element> result = ImmutableList.builder();
-      for (RecordComponentInfo component : info.components()) {
+      for (RecordComponentInfo component : members.components()) {
         result.add(factory.recordComponentElement(component.sym()));
       }
-      for (FieldInfo field : info.fields()) {
+      for (FieldInfo field : members.fields()) {
         result.add(factory.fieldElement(field.sym()));
       }
-      for (MethodInfo method : info.methods()) {
+      for (MethodInfo method : members.methods()) {
         result.add(factory.executableElement(method.sym()));
       }
-      for (ClassSymbol child : info.children().values()) {
+      for (ClassSymbol child : members.children()) {
         result.add(factory.typeElement(child));
       }
       return result.build();
@@ -540,7 +537,8 @@ public abstract class TurbineElement implements Element {
   }
 
   /** A {@link TypeParameterElement} implementation backed by a {@link TyVarSymbol}. */
-  static class TurbineTypeParameterElement extends TurbineElement implements TypeParameterElement {
+  public static class TurbineTypeParameterElement extends TurbineElement
+      implements TypeParameterElement {
 
     @Override
     public int hashCode() {
@@ -578,7 +576,7 @@ public abstract class TurbineElement implements Element {
       return (TypeParameterElementState) elementState();
     }
 
-    @Nullable TyVarInfo info() {
+    public @Nullable TyVarInfo info() {
       return state().info;
     }
 
@@ -650,7 +648,7 @@ public abstract class TurbineElement implements Element {
   }
 
   /** An {@link ExecutableElement} implementation backed by a {@link MethodSymbol}. */
-  static class TurbineExecutableElement extends TurbineElement implements ExecutableElement {
+  public static class TurbineExecutableElement extends TurbineElement implements ExecutableElement {
 
     private static final class ExecutableElementState extends ElementState {
       final @Nullable MethodInfo info;
@@ -673,7 +671,7 @@ public abstract class TurbineElement implements Element {
       return (ExecutableElementState) elementState();
     }
 
-    @Nullable MethodInfo info() {
+    public @Nullable MethodInfo info() {
       return state().info;
     }
 
@@ -851,7 +849,7 @@ public abstract class TurbineElement implements Element {
   }
 
   /** An {@link VariableElement} implementation backed by a {@link FieldSymbol}. */
-  static class TurbineFieldElement extends TurbineElement implements VariableElement {
+  public static class TurbineFieldElement extends TurbineElement implements VariableElement {
 
     private static final class FieldElementState extends ElementState {
       final @Nullable FieldInfo info;
@@ -903,7 +901,7 @@ public abstract class TurbineElement implements Element {
       return decl.javadoc();
     }
 
-    @Nullable FieldInfo info() {
+    public @Nullable FieldInfo info() {
       return state().info;
     }
 
@@ -966,14 +964,8 @@ public abstract class TurbineElement implements Element {
     }
   }
 
-  private enum ModifierOwner {
-    TYPE,
-    PARAMETER,
-    FIELD,
-    METHOD
-  }
-
   private static ImmutableSet<Modifier> asModifierSet(ModifierOwner modifierOwner, int access) {
+    access = SymbolFacts.modifierFlags(modifierOwner, access);
     EnumSet<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
     if ((access & TurbineFlag.ACC_PUBLIC) == TurbineFlag.ACC_PUBLIC) {
       modifiers.add(Modifier.PUBLIC);
@@ -997,12 +989,7 @@ public abstract class TurbineElement implements Element {
       modifiers.add(Modifier.STATIC);
     }
     if ((access & TurbineFlag.ACC_TRANSIENT) == TurbineFlag.ACC_TRANSIENT) {
-      switch (modifierOwner) {
-        case METHOD, PARAMETER -> {
-          // varargs and transient use the same bits
-        }
-        default -> modifiers.add(Modifier.TRANSIENT);
-      }
+      modifiers.add(Modifier.TRANSIENT);
     }
     if ((access & TurbineFlag.ACC_VOLATILE) == TurbineFlag.ACC_VOLATILE) {
       modifiers.add(Modifier.VOLATILE);
@@ -1026,7 +1013,7 @@ public abstract class TurbineElement implements Element {
   }
 
   /** A {@link PackageElement} implementation backed by a {@link PackageSymbol}. */
-  static class TurbinePackageElement extends TurbineElement implements PackageElement {
+  public static class TurbinePackageElement extends TurbineElement implements PackageElement {
 
     private static final class PackageElementState extends ElementState {
       final @Nullable TypeBoundClass info;
@@ -1047,8 +1034,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     ElementState createState(int round) {
-      return new PackageElementState(
-          round, factory.getSymbol(new ClassSymbol(sym.binaryName() + "/package-info")));
+      return new PackageElementState(round, factory.getSymbol(SymbolFacts.packageInfo(sym)));
     }
 
     private PackageElementState state() {
@@ -1094,16 +1080,7 @@ public abstract class TurbineElement implements Element {
     @Override
     public List<TurbineTypeElement> getEnclosedElements() {
       ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
-      PackageScope scope = factory.tli().lookupPackage(sym.binaryName());
-      requireNonNull(scope); // the current package exists
-      for (ClassSymbol key : scope.classes()) {
-        if (!TypeBoundClass.isTopLevel(key, () -> factory.getSymbol(key))) {
-          // Skip member classes: only top-level classes are enclosed by the package.
-          continue;
-        }
-        if (key.simpleName().equals("package-info")) {
-          continue;
-        }
+      for (ClassSymbol key : SymbolFacts.topLevelClasses(factory.tli(), sym, factory::getSymbol)) {
         result.add(factory.typeElement(key));
       }
       return result.build().asList();
@@ -1160,7 +1137,7 @@ public abstract class TurbineElement implements Element {
   }
 
   /** A {@link VariableElement} implementation backed by a {@link ParamSymbol}. */
-  static class TurbineParameterElement extends TurbineElement implements VariableElement {
+  public static class TurbineParameterElement extends TurbineElement implements VariableElement {
 
     private static final class ParameterElementState extends ElementState {
       final @Nullable ParamInfo info;
@@ -1203,7 +1180,7 @@ public abstract class TurbineElement implements Element {
       return (ParameterElementState) elementState();
     }
 
-    @Nullable ParamInfo info() {
+    public @Nullable ParamInfo info() {
       return state().info;
     }
 
@@ -1269,7 +1246,7 @@ public abstract class TurbineElement implements Element {
   }
 
   /** A {@link VariableElement} implementation for a record info. */
-  static class TurbineRecordComponentElement extends TurbineElement
+  public static class TurbineRecordComponentElement extends TurbineElement
       implements RecordComponentElement {
 
     private static final class RecordComponentElementState extends ElementState {
@@ -1314,7 +1291,7 @@ public abstract class TurbineElement implements Element {
       return (RecordComponentElementState) elementState();
     }
 
-    @Nullable RecordComponentInfo info() {
+    public @Nullable RecordComponentInfo info() {
       return state().info;
     }
 

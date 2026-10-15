@@ -106,7 +106,7 @@ public class ModelFactory {
     this.tli = tli;
     round.getAndIncrement();
     cha.round(env);
-    this.types = new Types(cha, env);
+    this.types = new Types(cha, env, classPathEnv);
   }
 
   int roundNumber() {
@@ -133,7 +133,7 @@ public class ModelFactory {
 
   /**
    * The classpath, used to look up members of classpath types that have been shadowed by generated
-   * sources, see {@link #classPathFallback}.
+   * sources, see {@link Types#getMethodInfo}.
    */
   private final Env<ClassSymbol, ? extends TypeBoundClass> classPathEnv;
 
@@ -145,7 +145,7 @@ public class ModelFactory {
     this.classPathEnv = requireNonNull(classPathEnv);
     this.cha = new ClassHierarchy(env);
     this.tli = requireNonNull(tli);
-    this.types = new Types(cha, env);
+    this.types = new Types(cha, env, classPathEnv);
   }
 
   /**
@@ -160,7 +160,7 @@ public class ModelFactory {
     return types;
   }
 
-  TypeMirror asTypeMirror(Type type) {
+  public TypeMirror asTypeMirror(Type type) {
     return typeCache.computeIfAbsent(type, this::createTypeMirror);
   }
 
@@ -201,20 +201,20 @@ public class ModelFactory {
     return result.build();
   }
 
-  NoType noType() {
+  public NoType noType() {
     return (NoType) asTypeMirror(Type.NONE);
   }
 
-  NoType packageType(PackageSymbol symbol) {
+  public NoType packageType(PackageSymbol symbol) {
     return new TurbinePackageType(this, symbol);
   }
 
-  NullType nullType() {
+  public NullType nullType() {
     return new TurbineNullType(this);
   }
 
   /** Creates an {@link Element} backed by the given {@link Symbol}. */
-  Element element(Symbol symbol) {
+  public Element element(Symbol symbol) {
     return switch (symbol.symKind()) {
       case CLASS -> typeElement((ClassSymbol) symbol);
       case TY_PARAM -> typeParameterElement((TyVarSymbol) symbol);
@@ -227,15 +227,15 @@ public class ModelFactory {
     };
   }
 
-  Element noElement(String name) {
+  public Element noElement(String name) {
     return new TurbineNoTypeElement(this, name);
   }
 
-  TurbineFieldElement fieldElement(FieldSymbol symbol) {
+  public TurbineFieldElement fieldElement(FieldSymbol symbol) {
     return fieldCache.computeIfAbsent(symbol, k -> new TurbineFieldElement(this, symbol));
   }
 
-  TurbineExecutableElement executableElement(MethodSymbol symbol) {
+  public TurbineExecutableElement executableElement(MethodSymbol symbol) {
     return methodCache.computeIfAbsent(symbol, k -> new TurbineExecutableElement(this, symbol));
   }
 
@@ -244,20 +244,20 @@ public class ModelFactory {
     return classCache.computeIfAbsent(symbol, k -> new TurbineTypeElement(this, symbol));
   }
 
-  TurbinePackageElement packageElement(PackageSymbol symbol) {
+  public TurbinePackageElement packageElement(PackageSymbol symbol) {
     return packageCache.computeIfAbsent(symbol, k -> new TurbinePackageElement(this, symbol));
   }
 
-  VariableElement parameterElement(ParamSymbol sym) {
+  public VariableElement parameterElement(ParamSymbol sym) {
     return paramCache.computeIfAbsent(sym, k -> new TurbineParameterElement(this, sym));
   }
 
-  RecordComponentElement recordComponentElement(RecordComponentSymbol sym) {
+  public RecordComponentElement recordComponentElement(RecordComponentSymbol sym) {
     return recordComponentCache.computeIfAbsent(
         sym, k -> new TurbineRecordComponentElement(this, sym));
   }
 
-  TurbineTypeParameterElement typeParameterElement(TyVarSymbol sym) {
+  public TurbineTypeParameterElement typeParameterElement(TyVarSymbol sym) {
     return tyParamCache.computeIfAbsent(sym, k -> new TurbineTypeParameterElement(this, sym));
   }
 
@@ -300,43 +300,15 @@ public class ModelFactory {
    * Returns the {@link TypeBoundClass} for the given {@link ClassSymbol} from the current
    * environment.
    */
-  TypeBoundClass getSymbol(ClassSymbol sym) {
+  public TypeBoundClass getSymbol(ClassSymbol sym) {
     return env.get(sym);
   }
 
-  /**
-   * Returns the classpath version of a class, or {@code null}.
-   *
-   * <p>If a processor generates a source file for a type that already exists on the classpath, the
-   * generated source shadows the classpath type in later rounds. Processors may still hold elements
-   * for methods of the classpath type that they obtained in earlier rounds. Those methods may not
-   * be present in the generated source, even if it declares the same members as the classpath type:
-   * {@link MethodSymbol}s are identified by their index in the enclosing class, and that differs
-   * between class files and sources, for example if the class has an implicit default constructor.
-   * Those methods are looked up in the classpath version of the type.
-   */
-  private TypeBoundClass classPathFallback(ClassSymbol sym) {
-    return classPathEnv.get(sym);
+  public MethodInfo getMethodInfo(MethodSymbol method) {
+    return types.getMethodInfo(method);
   }
 
-  MethodInfo getMethodInfo(MethodSymbol method) {
-    MethodInfo result = findMethod(getSymbol(method.owner()), method);
-    if (result == null) {
-      result = findMethod(classPathFallback(method.owner()), method);
-    }
-    return result;
-  }
-
-  private static MethodInfo findMethod(TypeBoundClass info, MethodSymbol method) {
-    for (MethodInfo m : info.methods()) {
-      if (m.sym().equals(method)) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  ParamInfo getParamInfo(ParamSymbol sym) {
+  public ParamInfo getParamInfo(ParamSymbol sym) {
     MethodInfo info = getMethodInfo(sym.owner());
     for (ParamInfo p : info.parameters()) {
       if (p.sym().equals(sym)) {
@@ -346,7 +318,7 @@ public class ModelFactory {
     return null;
   }
 
-  RecordComponentInfo getRecordComponentInfo(RecordComponentSymbol sym) {
+  public RecordComponentInfo getRecordComponentInfo(RecordComponentSymbol sym) {
     TypeBoundClass info = getSymbol(sym.owner());
     for (RecordComponentInfo component : info.components()) {
       if (component.sym().equals(sym)) {
@@ -356,7 +328,7 @@ public class ModelFactory {
     return null;
   }
 
-  FieldInfo getFieldInfo(FieldSymbol symbol) {
+  public FieldInfo getFieldInfo(FieldSymbol symbol) {
     TypeBoundClass info = getSymbol(symbol.owner());
     requireNonNull(info, symbol.owner().toString());
     for (FieldInfo field : info.fields()) {
@@ -367,16 +339,7 @@ public class ModelFactory {
     throw new AssertionError(symbol);
   }
 
-  TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
-    if (tyVar.owner() instanceof MethodSymbol method) {
-      // The method may only be present in the classpath version of a shadowed type, see {@link
-      // #classPathFallback}.
-      MethodInfo info = getMethodInfo(method);
-      TyVarInfo result = info.tyParams().get(tyVar);
-      if (result != null) {
-        return result;
-      }
-    }
+  public TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
     return types.getTyVarInfo(tyVar);
   }
 
@@ -396,7 +359,7 @@ public class ModelFactory {
     return cha;
   }
 
-  TopLevelIndex tli() {
+  public TopLevelIndex tli() {
     return tli;
   }
 }

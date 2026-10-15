@@ -26,7 +26,6 @@ import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineDeclaredType;
-import com.google.turbine.processing.TurbineTypeMirror.TurbineErrorType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
@@ -72,9 +71,8 @@ public class TurbineTypes implements Types {
   @Override
   public @Nullable Element asElement(TypeMirror t) {
     return switch (t.getKind()) {
-      case DECLARED -> ((TurbineDeclaredType) t).asElement();
+      case DECLARED, ERROR -> ((DeclaredType) t).asElement();
       case TYPEVAR -> ((TurbineTypeVariable) t).asElement();
-      case ERROR -> ((TurbineErrorType) t).asElement();
       default -> null;
     };
   }

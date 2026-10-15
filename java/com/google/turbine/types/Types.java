@@ -61,9 +61,19 @@ public final class Types {
   private final ClassHierarchy cha;
   private final Env<ClassSymbol, ? extends TypeBoundClass> classes;
 
-  public Types(ClassHierarchy cha, Env<ClassSymbol, ? extends TypeBoundClass> classes) {
+  /**
+   * The classpath, used to look up members of classpath types that have been shadowed by generated
+   * sources, see {@link #getMethodInfo}.
+   */
+  private final Env<ClassSymbol, ? extends TypeBoundClass> classPath;
+
+  public Types(
+      ClassHierarchy cha,
+      Env<ClassSymbol, ? extends TypeBoundClass> classes,
+      Env<ClassSymbol, ? extends TypeBoundClass> classPath) {
     this.cha = requireNonNull(cha);
     this.classes = requireNonNull(classes);
+    this.classPath = requireNonNull(classPath);
   }
 
   /** Returns true if type {@code a} is structurally equivalent to type {@code b}. */
@@ -815,7 +825,7 @@ public final class Types {
    * Returns the type of {@code method} viewed as a member of {@code containing}, or {@code null} if
    * the method's class is not a supertype of {@code containing}.
    */
-  private @Nullable MethodTy asMemberOf(ClassTy containing, MethodInfo method) {
+  public @Nullable MethodTy asMemberOf(ClassTy containing, MethodInfo method) {
     return (MethodTy) asMemberOf(containing, method.asType(), method.sym().owner());
   }
 
@@ -962,14 +972,37 @@ public final class Types {
     return info;
   }
 
-  private MethodInfo getMethodInfo(MethodSymbol method) {
-    TypeBoundClass info = getSymbol(method.owner());
+  /**
+   * Looks up {@code method} in its owner, falling back to the classpath version of the owner, or
+   * returns {@code null}.
+   *
+   * <p>If a processor generates a source file for a type that already exists on the classpath, the
+   * generated source shadows the classpath type in later rounds. Processors may still hold elements
+   * for methods of the classpath type that they obtained in earlier rounds. Those methods may not
+   * be present in the generated source, even if it declares the same members as the classpath type:
+   * {@link MethodSymbol}s are identified by their index in the enclosing class, and that differs
+   * between class files and sources, for example if the class has an implicit default constructor.
+   * Those methods are looked up in the classpath version of the type.
+   */
+  public @Nullable MethodInfo getMethodInfo(MethodSymbol method) {
+    MethodInfo result = findMethod(classes.get(method.owner()), method);
+    if (result == null) {
+      result = findMethod(classPath.get(method.owner()), method);
+    }
+    return result;
+  }
+
+  public static @Nullable MethodInfo findMethod(
+      @Nullable TypeBoundClass info, MethodSymbol method) {
+    if (info == null) {
+      return null;
+    }
     for (MethodInfo m : info.methods()) {
       if (m.sym().equals(method)) {
         return m;
       }
     }
-    throw new AssertionError(method);
+    return null;
   }
 
   public TyVarInfo getTyVarInfo(TyVarSymbol tyVar) {
@@ -977,7 +1010,14 @@ public final class Types {
     Verify.verifyNotNull(owner); // TODO(cushon): capture variables
     ImmutableMap<TyVarSymbol, TyVarInfo> tyParams =
         switch (owner.symKind()) {
-          case METHOD -> getMethodInfo((MethodSymbol) owner).tyParams();
+          case METHOD -> {
+            MethodSymbol method = (MethodSymbol) owner;
+            MethodInfo info = getMethodInfo(method);
+            if (info == null) {
+              throw new AssertionError(method);
+            }
+            yield info.tyParams();
+          }
           case CLASS -> getSymbol((ClassSymbol) owner).typeParameterTypes();
           default -> throw new AssertionError(owner.symKind());
         };
