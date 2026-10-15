@@ -115,8 +115,6 @@ public class JavacModelDiffTest {
    *       default}.
    *   <li>record-component-modifiers: record components have no modifiers; javac reports {@code
    *       public}.
-   *   <li>type-annotation-tostring: annotated nested types print as {@code Outer@A .Inner}, and
-   *       array dimension annotations print in reverse order.
    *   <li>type-parameter-annotations: annotations on type parameters differ (javac reports none).
    * </ul>
    */
@@ -124,7 +122,6 @@ public class JavacModelDiffTest {
       ImmutableMap.<String, String>builder()
           .put("fromClassPath/B74332665.test", "private-interface-method")
           .put("fromClassPath/abstractenum.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/c_array.test", "type-annotation-tostring")
           .put("fromClassPath/deprecated.test", "deprecated")
           .put("fromClassPath/enum_abstract.test", "enum-abstract-modifier, enum-sealed, sealed")
           .put("fromClassPath/enumimpl.test", "enum-abstract-modifier, sealed")
@@ -137,29 +134,15 @@ public class JavacModelDiffTest {
           .put("fromClassPath/permits.test", "enum-sealed, sealed")
           .put("fromClassPath/record.test", "record-component-modifiers")
           .put("fromClassPath/record2.test", "record-component-modifiers")
-          .put(
-              "fromClassPath/record_ctor.test",
-              "record-component-modifiers, type-annotation-tostring")
+          .put("fromClassPath/record_ctor.test", "record-component-modifiers")
           .put("fromClassPath/record_fields.test", "record-component-modifiers")
           .put("fromClassPath/record_getter_override.test", "record-component-modifiers")
           .put("fromClassPath/sealed.test", "enum-sealed, sealed")
           .put("fromClassPath/sealed_nested.test", "enum-sealed, sealed")
           .put("fromClassPath/strictfp.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/type_anno_ambiguous.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_array_dims.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_c_array.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_cstyle_array_dims.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_hello.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_nested.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_nested_generic.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_nested_raw.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_qual.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_raw.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_receiver.test", "type-annotation-tostring")
           .put("fromSource/B74332665.test", "private-interface-method")
           .put("fromSource/abstractenum.test", "enum-sealed, sealed")
           .put("fromSource/anno_repeated.test", "type-parameter-annotations")
-          .put("fromSource/c_array.test", "type-annotation-tostring")
           .put("fromSource/deprecated.test", "deprecated")
           .put("fromSource/dollar.test", "dollar-in-name")
           .put("fromSource/empty_package_info.test", "package-root-element")
@@ -175,22 +158,10 @@ public class JavacModelDiffTest {
           .put("fromSource/packagedecl.test", "package-root-element")
           .put("fromSource/record.test", "deprecated, record-component-modifiers")
           .put("fromSource/record2.test", "record-component-modifiers")
-          .put(
-              "fromSource/record_ctor.test", "record-component-modifiers, type-annotation-tostring")
+          .put("fromSource/record_ctor.test", "record-component-modifiers")
           .put("fromSource/record_fields.test", "record-component-modifiers")
           .put("fromSource/record_getter_override.test", "record-component-modifiers")
           .put("fromSource/strictfp.test", "enum-sealed, sealed")
-          .put("fromSource/type_anno_ambiguous.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_array_dims.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_c_array.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_cstyle_array_dims.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_hello.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_nested.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_nested_generic.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_nested_raw.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_qual.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_raw.test", "type-annotation-tostring")
-          .put("fromSource/type_anno_receiver.test", "type-annotation-tostring")
           .buildOrThrow();
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();

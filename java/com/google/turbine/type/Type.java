@@ -145,11 +145,11 @@ public interface Type {
       for (SimpleClassTy c : classes()) {
         String binaryName = c.sym().binaryName();
         if (!first) {
+          sb.append('.');
           for (AnnoInfo anno : c.annos()) {
             sb.append(anno);
             sb.append(' ');
           }
-          sb.append('.');
           sb.append(binaryName, binaryName.lastIndexOf('$') + 1, binaryName.length());
         } else {
           int idx = max(binaryName.lastIndexOf('/'), binaryName.lastIndexOf('$')) + 1;
@@ -251,16 +251,24 @@ public interface Type {
 
     @Override
     public final String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append(elementType());
-      if (!annos().isEmpty()) {
-        sb.append(' ');
-        for (AnnoInfo anno : annos()) {
-          sb.append(anno);
-          sb.append(' ');
-        }
+      // The annotations of the outermost array type come first, as in source:
+      // `int @A [] @B []` is an @A array of @B arrays of int.
+      Type elementType = elementType();
+      while (elementType instanceof ArrayTy arrayTy) {
+        elementType = arrayTy.elementType();
       }
-      sb.append("[]");
+      StringBuilder sb = new StringBuilder();
+      sb.append(elementType);
+      for (Type t = this; t instanceof ArrayTy arrayTy; t = arrayTy.elementType()) {
+        if (!arrayTy.annos().isEmpty()) {
+          sb.append(' ');
+          for (AnnoInfo anno : arrayTy.annos()) {
+            sb.append(anno);
+            sb.append(' ');
+          }
+        }
+        sb.append("[]");
+      }
       return sb.toString();
     }
 
