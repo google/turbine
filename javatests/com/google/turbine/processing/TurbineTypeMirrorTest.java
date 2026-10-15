@@ -204,7 +204,6 @@ public class TurbineTypeMirrorTest {
         .containsExactlyElementsIn(
             factory.asTypeMirrors(
                 ImmutableList.of(
-                    Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/lang/Object")),
                     Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/io/Serializable")),
                     Type.ClassTy.asNonParametricClassTy(new ClassSymbol("java/lang/Cloneable")))));
   }

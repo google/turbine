@@ -151,17 +151,25 @@ public final class Types {
 
   public ImmutableList<Type> getBounds(IntersectionTy type) {
     ImmutableList<Type> bounds = type.bounds();
-    if (implicitObjectBound(bounds)) {
+    // Like javac, an intersection only includes its explicit bounds, even if they're all
+    // interfaces. A type variable without explicit bounds is bounded by Object.
+    return bounds.isEmpty() ? ImmutableList.of(ClassTy.OBJECT) : bounds;
+  }
+
+  /**
+   * Returns the components of an intersection type: the explicit bounds, preceded by Object if they
+   * are all interfaces. This matches javac's {@code IntersectionClassType#getComponents}, which
+   * javac uses e.g. to print intersection types.
+   */
+  public ImmutableList<Type> getComponents(IntersectionTy type) {
+    ImmutableList<Type> bounds = getBounds(type);
+    if (isInterface(bounds.getFirst())) {
       return ImmutableList.<Type>builder().add(ClassTy.OBJECT).addAll(bounds).build();
     }
     return bounds;
   }
 
-  private boolean implicitObjectBound(ImmutableList<Type> bounds) {
-    if (bounds.isEmpty()) {
-      return true;
-    }
-    Type bound = bounds.getFirst();
+  private boolean isInterface(Type bound) {
     return switch (bound.tyKind()) {
       case TY_VAR -> false;
       case CLASS_TY -> getSymbol(((ClassTy) bound).sym()).kind().equals(TurbineTyKind.INTERFACE);
@@ -713,7 +721,7 @@ public final class Types {
     return switch (t.tyKind()) {
       case CLASS_TY -> directSupertypes((ClassTy) t);
       case INTERSECTION_TY -> ((IntersectionTy) t).bounds();
-      case TY_VAR -> getBounds(getTyVarInfo(((TyVar) t).sym()).upperBound());
+      case TY_VAR -> getComponents(getTyVarInfo(((TyVar) t).sym()).upperBound());
       case ARRAY_TY -> directSupertypes((ArrayTy) t);
       case PRIM_TY, VOID_TY, WILD_TY, ERROR_TY, NONE_TY -> ImmutableList.of();
       case METHOD_TY -> throw new IllegalArgumentException(t.tyKind().name());

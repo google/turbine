@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.types.Deannotate;
+import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -138,6 +139,17 @@ public class TurbineTypesUnaryTest extends AbstractTurbineTypesTest {
 
     assertThrows(IllegalArgumentException.class, () -> javacTypes.directSupertypes(turbineA));
     assertThrows(IllegalArgumentException.class, () -> turbineTypes.directSupertypes(turbineA));
+  }
+
+  @Test
+  public void intersectionBounds() {
+    assume().that(javacA.getKind()).isEqualTo(TypeKind.INTERSECTION);
+
+    String expected = Joiner.on(", ").join(((IntersectionType) javacA).getBounds());
+    String actual = Joiner.on(", ").join(((IntersectionType) turbineA).getBounds());
+    assertWithMessage("getBounds(`%s`) = getBounds(`%s`)", javacA, turbineA)
+        .that(actual)
+        .isEqualTo(expected);
   }
 
   @Test

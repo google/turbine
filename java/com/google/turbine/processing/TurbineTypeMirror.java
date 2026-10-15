@@ -597,9 +597,7 @@ public abstract class TurbineTypeMirror implements TypeMirror {
       return v.visitIntersection(this, p);
     }
 
-    // Depends on `type`, and on whether its first bound is an interface. That can't change once the
-    // bound's class exists, and if it doesn't exist `getBounds` throws instead of returning a
-    // result, so this is safe to cache across rounds.
+    // Depends only on `type`, so this is safe to cache across rounds.
     private @Nullable ImmutableList<TypeMirror> bounds;
 
     @Override
@@ -613,7 +611,8 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
     @Override
     public String toString() {
-      return Joiner.on('&').join(getBounds());
+      // Like javac, print Object for intersections of interfaces, although getBounds omits it.
+      return Joiner.on('&').join(factory.asTypeMirrors(factory.types().getComponents(type)));
     }
 
     @Override
