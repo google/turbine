@@ -109,11 +109,8 @@ public class JavacModelDiffTest {
    *   <li>enum-abstract-modifier: enums read from class files report {@code abstract}.
    *   <li>enum-sealed, sealed: enums with constant bodies, and sealed types read from class files,
    *       aren't {@code sealed}; anonymous permitted subclasses print as {@code Outer.1}.
-   *   <li>inner-ctor-outer-param: constructors of inner classes read from class files include the
-   *       synthetic outer instance parameter.
    *   <li>package-root-element: package elements from {@code package-info.java} aren't root
    *       elements.
-   *   <li>parameter-final: {@code MethodParameters} {@code final} flags aren't read.
    *   <li>private-interface-method: private interface methods are {@code abstract} or {@code
    *       default}.
    *   <li>record-component-modifiers: record components have no modifiers; javac reports {@code
@@ -125,111 +122,40 @@ public class JavacModelDiffTest {
    */
   private static final ImmutableMap<String, String> KNOWN_FAILURES =
       ImmutableMap.<String, String>builder()
-          .put("fromClassPath/B70953542.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/B74332665.test", "private-interface-method")
           .put("fromClassPath/abstractenum.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/anno_const_scope.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/annouse12.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/c_array.test", "inner-ctor-outer-param")
-          .put("fromClassPath/canon_class_header.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/canon_recursive.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/ctorvis.test", "inner-ctor-outer-param, parameter-final")
+          .put("fromClassPath/c_array.test", "type-annotation-tostring")
           .put("fromClassPath/deprecated.test", "deprecated")
           .put("fromClassPath/enum_abstract.test", "enum-abstract-modifier, enum-sealed, sealed")
           .put("fromClassPath/enumimpl.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/enuminner.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/enumint2.test", "enum-abstract-modifier, sealed")
           .put("fromClassPath/enumint_byte.test", "enum-abstract-modifier, sealed")
           .put("fromClassPath/enumint_objectmethod2.test", "enum-abstract-modifier, sealed")
           .put("fromClassPath/enuminthacks.test", "enum-abstract-modifier, sealed")
           .put("fromClassPath/enumstat.test", "enum-abstract-modifier, sealed")
-          .put("fromClassPath/extend_self.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/extrainnerclass.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/filteredkeysetmultimap.test",
-              "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon1.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon10.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon2.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon3.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon4.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon5.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon6.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon8.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/genericnoncanon9.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/genericnoncanon_method3.test",
-              "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/importinner.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/inner_static.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/innerctor.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/javadoc_deprecated.test",
-              "deprecated, inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/lexical4.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/mapentry.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/outer.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/outerparam.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/packageprivateprotectedinner.test",
-              "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/param_bound.test", "inner-ctor-outer-param, parameter-final")
+          .put("fromClassPath/javadoc_deprecated.test", "deprecated")
           .put("fromClassPath/permits.test", "enum-sealed, sealed")
-          .put("fromClassPath/privateinner.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/raw2.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/raw_canon.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/rawcanon.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/receiver_param.test", "inner-ctor-outer-param, parameter-final")
           .put("fromClassPath/record.test", "record-component-modifiers")
           .put("fromClassPath/record2.test", "record-component-modifiers")
           .put(
               "fromClassPath/record_ctor.test",
-              "inner-ctor-outer-param, parameter-final, record-component-modifiers,"
-                  + " type-annotation-tostring")
+              "record-component-modifiers, type-annotation-tostring")
           .put("fromClassPath/record_fields.test", "record-component-modifiers")
           .put("fromClassPath/record_getter_override.test", "record-component-modifiers")
           .put("fromClassPath/sealed.test", "enum-sealed, sealed")
           .put("fromClassPath/sealed_nested.test", "enum-sealed, sealed")
-          .put("fromClassPath/shadow_inherited.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/strictfp.test",
-              "enum-abstract-modifier, inner-ctor-outer-param, parameter-final, sealed")
-          .put(
-              "fromClassPath/type_anno_ambiguous.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put("fromClassPath/type_anno_ambiguous_param.test", "parameter-final")
-          .put("fromClassPath/type_anno_array_bound.test", "parameter-final")
+          .put("fromClassPath/strictfp.test", "enum-abstract-modifier, sealed")
+          .put("fromClassPath/type_anno_ambiguous.test", "type-annotation-tostring")
           .put("fromClassPath/type_anno_array_dims.test", "type-annotation-tostring")
           .put("fromClassPath/type_anno_c_array.test", "type-annotation-tostring")
-          .put("fromClassPath/type_anno_cstyle_array_dims.test", "inner-ctor-outer-param")
-          .put("fromClassPath/type_anno_hello.test", "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/type_anno_nested.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put(
-              "fromClassPath/type_anno_nested_generic.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put(
-              "fromClassPath/type_anno_nested_raw.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put("fromClassPath/type_anno_order.test", "parameter-final")
-          .put(
-              "fromClassPath/type_anno_parameter_index.test",
-              "inner-ctor-outer-param, parameter-final")
-          .put(
-              "fromClassPath/type_anno_qual.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put(
-              "fromClassPath/type_anno_raw.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put(
-              "fromClassPath/type_anno_receiver.test",
-              "inner-ctor-outer-param, parameter-final, type-annotation-tostring")
-          .put("fromClassPath/type_anno_return.test", "parameter-final")
-          .put("fromClassPath/visible_nested.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/wildboundcanon.test", "inner-ctor-outer-param, parameter-final")
-          .put("fromClassPath/wildcanon.test", "inner-ctor-outer-param, parameter-final")
+          .put("fromClassPath/type_anno_cstyle_array_dims.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_hello.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_nested.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_nested_generic.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_nested_raw.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_qual.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_raw.test", "type-annotation-tostring")
+          .put("fromClassPath/type_anno_receiver.test", "type-annotation-tostring")
           .put("fromSource/B74332665.test", "private-interface-method")
           .put("fromSource/abstractenum.test", "enum-sealed, sealed")
           .put("fromSource/anno_repeated.test", "type-parameter-annotations")

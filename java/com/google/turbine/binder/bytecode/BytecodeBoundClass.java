@@ -208,6 +208,22 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return local;
   }
 
+  /**
+   * Returns true if {@code m} is a constructor of a non-static member class, which takes the
+   * enclosing instance as an additional leading parameter.
+   */
+  private boolean innerClassConstructor(ClassFile.MethodInfo m) {
+    if (!m.name().equals("<init>")) {
+      return false;
+    }
+    for (ClassFile.InnerClass inner : classFile().innerClasses()) {
+      if (sym.binaryName().equals(inner.innerClass())) {
+        return (inner.access() & (TurbineFlag.ACC_STATIC | TurbineFlag.ACC_INTERFACE)) == 0;
+      }
+    }
+    return false;
+  }
+
   private ClassSig computeSig() {
     String signature = classFile().signature();
     if (signature == null) {
@@ -528,17 +544,27 @@ public class BytecodeBoundClass implements TypeBoundClass {
             scope,
             typeAnnotationsForTarget(m.typeAnnotations(), TargetType.METHOD_RETURN));
 
+    ImmutableList<Sig.TySig> paramSigs = sig.params();
+    if (m.signature() == null && innerClassConstructor(m)) {
+      // The descriptor of an inner class constructor includes the enclosing instance as the
+      // first parameter, but it isn't part of the constructor's signature in the model. If the
+      // Signature attribute is present, sig will have come from that, and it already omits the
+      // enclosing instance parameter. As with javac, only member classes are handled, since
+      // local and anonymous classes don't reliably have an enclosing instance.
+      paramSigs = paramSigs.subList(1, paramSigs.size());
+    }
+
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
     int idx = 0;
-    for (Sig.TySig tySig : sig.params()) {
+    for (Sig.TySig tySig : paramSigs) {
       String name;
       int access = 0;
       if (idx < m.parameters().size()) {
+        // ClassReader omits synthetic and mandated parameters, so the remaining entries
+        // correspond to the parameters in the model.
         ParameterInfo paramInfo = m.parameters().get(idx);
         name = paramInfo.name();
-        // ignore parameter modifiers for bug-parity with javac:
-        // https://bugs.openjdk.java.net/browse/JDK-8226216
-        // access = paramInfo.access();
+        access = paramInfo.access();
       } else {
         name = "arg" + idx;
       }
@@ -595,10 +621,12 @@ public class BytecodeBoundClass implements TypeBoundClass {
     ImmutableList<TypeAnnotationInfo> receiverAnnotations =
         typeAnnotationsForTarget(m.typeAnnotations(), TargetType.METHOD_RECEIVER_PARAMETER);
     if (!receiverAnnotations.isEmpty()) {
+      // The receiver parameter of an inner class constructor has the type of the enclosing class.
+      ClassSymbol receiverSym = innerClassConstructor(m) ? requireNonNull(owner()) : sym;
       receiver =
           new ParamInfo(
               new ParamSymbol(methodSymbol, "this"),
-              BytecodeBinder.asNonParametricClassTy(sym, receiverAnnotations, scope),
+              BytecodeBinder.asNonParametricClassTy(receiverSym, receiverAnnotations, scope),
               /* annotations= */ ImmutableList.of(),
               /* access= */ 0);
     }
