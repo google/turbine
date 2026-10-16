@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import java.lang.annotation.Annotation;
@@ -39,7 +40,7 @@ public class TurbineRoundEnvironment implements RoundEnvironment {
   private final ImmutableSetMultimap<ClassSymbol, Symbol> allAnnotations;
 
   // the round environment doesn't outlive the round, so don't worry about resetting this cache
-  private @Nullable ImmutableSet<TurbineTypeElement> rootElements;
+  private @Nullable ImmutableSet<Element> rootElements;
 
   public TurbineRoundEnvironment(
       ModelFactory factory,
@@ -65,15 +66,17 @@ public class TurbineRoundEnvironment implements RoundEnvironment {
   }
 
   @Override
-  public ImmutableSet<TurbineTypeElement> getRootElements() {
-    ImmutableSet<TurbineTypeElement> local = rootElements;
+  public ImmutableSet<Element> getRootElements() {
+    ImmutableSet<Element> local = rootElements;
     if (local == null) {
-      ImmutableSet.Builder<TurbineTypeElement> result = ImmutableSet.builder();
+      ImmutableSet.Builder<Element> result = ImmutableSet.builder();
       for (ClassSymbol sym : syms) {
         if (!TypeBoundClass.isTopLevel(sym, () -> factory.getSymbol(sym))) {
           continue;
         }
         if (sym.simpleName().equals("package-info")) {
+          // the root element for a package-info.java compilation unit is its package
+          result.add(factory.packageElement(new PackageSymbol(sym.packageName())));
           continue;
         }
         result.add(factory.typeElement(sym));

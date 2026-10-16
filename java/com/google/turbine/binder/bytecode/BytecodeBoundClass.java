@@ -196,6 +196,9 @@ public class BytecodeBoundClass implements TypeBoundClass {
         access = inner.access();
       }
     }
+    if (!classFile().permits().isEmpty()) {
+      access |= TurbineFlag.ACC_SEALED;
+    }
     return access;
   }
 
@@ -613,7 +616,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
     int access = m.access();
     if (((classFile.access() & TurbineFlag.ACC_INTERFACE) == TurbineFlag.ACC_INTERFACE)
-        && (access & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_STATIC)) == 0) {
+        && (access & (TurbineFlag.ACC_ABSTRACT | TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PRIVATE))
+            == 0) {
       access |= TurbineFlag.ACC_DEFAULT;
     }
 
