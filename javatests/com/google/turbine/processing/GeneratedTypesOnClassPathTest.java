@@ -330,9 +330,9 @@ public class GeneratedTypesOnClassPathTest {
     assertThat(processor.enclosedElementsByRound)
         .containsExactly(
             ImmutableList.of(
+                "CLASS [public, static] Inner",
                 "CONSTRUCTOR [public] <init>",
-                "METHOD [public] m1",
-                "CLASS [public, static] Inner"),
+                "METHOD [public] m1"),
             ImmutableList.of("CONSTRUCTOR [public] <init>", "METHOD [public] m2"))
         .inOrder();
     // The element for the shadowed type is the same instance, and its state was recomputed.

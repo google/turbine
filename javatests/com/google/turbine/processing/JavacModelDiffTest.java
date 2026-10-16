@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.TruthJUnit.assume;
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.joining;
 
@@ -88,9 +89,6 @@ import org.junit.runner.RunWith;
  */
 @RunWith(TestParameterInjector.class)
 public class JavacModelDiffTest {
-
-  /** Whether to compare the order of enclosed elements; see {@code Dumper#enclosedElements}. */
-  private static final boolean CHECK_MEMBER_ORDER = false;
 
   public static final class TestCaseProvider extends TestParameterValuesProvider {
     @Override
@@ -429,28 +427,32 @@ public class JavacModelDiffTest {
     /**
      * Returns the enclosed elements to dump.
      *
-     * <p>Known difference: Turbine lists member types after fields and methods, and places implicit
-     * members (default constructors, enum {@code values}/{@code valueOf}) differently from javac,
-     * which lists member types first. Until that is fixed, elements are compared in a canonical
-     * order unless {@link #CHECK_MEMBER_ORDER} is set.
+     * <p>The order of enclosed elements is unspecified, and javac interleaves fields and methods in
+     * source order, which Turbine doesn't. Elements are grouped by kind (member types, record
+     * components, fields, then methods) with a stable sort, so the order within each group is still
+     * compared.
      *
      * <p>javac models {@code <clinit>} of class files as a {@code STATIC_INIT} element, which isn't
      * meaningful to processors, so initializers are skipped.
      */
     private static ImmutableList<Element> enclosedElements(Element e) {
-      ImmutableList<Element> enclosed =
-          e.getEnclosedElements().stream()
-              .filter(x -> x.getKind() != ElementKind.STATIC_INIT)
-              .filter(x -> x.getKind() != ElementKind.INSTANCE_INIT)
-              .collect(toImmutableList());
-      if (CHECK_MEMBER_ORDER) {
-        return enclosed;
+      return e.getEnclosedElements().stream()
+          .filter(x -> x.getKind() != ElementKind.STATIC_INIT)
+          .filter(x -> x.getKind() != ElementKind.INSTANCE_INIT)
+          .sorted(comparingInt(Dumper::memberGroup))
+          .collect(toImmutableList());
+    }
+
+    private static int memberGroup(Element e) {
+      ElementKind kind = e.getKind();
+      if (kind.isDeclaredType()) {
+        return 0;
       }
-      return ImmutableList.sortedCopyOf(
-          comparing((Element x) -> x.getKind().toString())
-              .thenComparing(x -> x.getSimpleName().toString())
-              .thenComparing(x -> x.asType().toString()),
-          enclosed);
+      return switch (kind) {
+        case RECORD_COMPONENT -> 1;
+        case ENUM_CONSTANT, FIELD -> 2;
+        default -> 3;
+      };
     }
 
     private void typeElement(TypeElement t, int d) {

@@ -614,10 +614,6 @@ public class TypeBinder {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
     int access = 0;
     access |= (base.access() & TurbineFlag.ACC_STRICT);
-    if (!hasConstructor()) {
-      MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
-      methods.add(syntheticConstructor(symbol, enumCtorParams(symbol), TurbineVisibility.PRIVATE));
-    }
     MethodSymbol valuesMethod = syntheticMethods.create(owner, "values");
     methods.add(
         new MethodInfo(
@@ -649,6 +645,11 @@ public class TypeBinder {
             null,
             ImmutableList.of(),
             null));
+    // javac adds the implicit constructor after values and valueOf
+    if (!hasConstructor()) {
+      MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
+      methods.add(syntheticConstructor(symbol, enumCtorParams(symbol), TurbineVisibility.PRIVATE));
+    }
     return methods.build();
   }
 

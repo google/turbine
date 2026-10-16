@@ -379,6 +379,10 @@ public abstract class TurbineElement implements Element {
     private ImmutableList<Element> computeEnclosedElements(TypeBoundClass info) {
       SymbolFacts.Members members = SymbolFacts.members(info);
       ImmutableList.Builder<Element> result = ImmutableList.builder();
+      // javac lists member types first
+      for (ClassSymbol child : members.children()) {
+        result.add(factory.typeElement(child));
+      }
       for (RecordComponentInfo component : members.components()) {
         result.add(factory.recordComponentElement(component.sym()));
       }
@@ -387,9 +391,6 @@ public abstract class TurbineElement implements Element {
       }
       for (MethodInfo method : members.methods()) {
         result.add(factory.executableElement(method.sym()));
-      }
-      for (ClassSymbol child : members.children()) {
-        result.add(factory.typeElement(child));
       }
       return result.build();
     }
