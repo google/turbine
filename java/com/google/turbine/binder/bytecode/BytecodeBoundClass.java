@@ -196,6 +196,9 @@ public class BytecodeBoundClass implements TypeBoundClass {
         access = inner.access();
       }
     }
+    if (!classFile().permits().isEmpty()) {
+      access |= TurbineFlag.ACC_SEALED;
+    }
     return access;
   }
 
