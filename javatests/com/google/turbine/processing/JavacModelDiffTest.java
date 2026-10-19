@@ -108,8 +108,6 @@ public class JavacModelDiffTest {
    *   <li>deprecated: {@code Elements.isDeprecated} ignores the javadoc {@code @deprecated} tag.
    *   <li>package-root-element: package elements from {@code package-info.java} aren't root
    *       elements.
-   *   <li>private-interface-method: private interface methods are {@code abstract} or {@code
-   *       default}.
    *   <li>record-component-modifiers: record components have no modifiers; javac reports {@code
    *       public}.
    *   <li>type-parameter-annotations: annotations on type parameters differ (javac reports none).
@@ -117,7 +115,6 @@ public class JavacModelDiffTest {
    */
   private static final ImmutableMap<String, String> KNOWN_FAILURES =
       ImmutableMap.<String, String>builder()
-          .put("fromClassPath/B74332665.test", "private-interface-method")
           .put("fromClassPath/abstractenum.test", "anonymous-permits")
           .put("fromClassPath/deprecated.test", "deprecated")
           .put("fromClassPath/enum_abstract.test", "anonymous-permits")
@@ -134,7 +131,6 @@ public class JavacModelDiffTest {
           .put("fromClassPath/record_fields.test", "record-component-modifiers")
           .put("fromClassPath/record_getter_override.test", "record-component-modifiers")
           .put("fromClassPath/strictfp.test", "anonymous-permits")
-          .put("fromSource/B74332665.test", "private-interface-method")
           .put("fromSource/anno_repeated.test", "type-parameter-annotations")
           .put("fromSource/deprecated.test", "deprecated")
           .put("fromSource/dollar.test", "dollar-in-name")
