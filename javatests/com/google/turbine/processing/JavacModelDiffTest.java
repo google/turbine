@@ -106,8 +106,6 @@ public class JavacModelDiffTest {
    *       subclasses of enums read from class files print as {@code Outer.1}.
    *   <li>dollar-in-name: a top-level class named {@code Test$0} prints as {@code Test.0}.
    *   <li>deprecated: {@code Elements.isDeprecated} ignores the javadoc {@code @deprecated} tag.
-   *   <li>package-root-element: package elements from {@code package-info.java} aren't root
-   *       elements.
    *   <li>record-component-modifiers: record components have no modifiers; javac reports {@code
    *       public}.
    *   <li>type-parameter-annotations: annotations on type parameters differ (javac reports none).
@@ -134,10 +132,7 @@ public class JavacModelDiffTest {
           .put("fromSource/anno_repeated.test", "type-parameter-annotations")
           .put("fromSource/deprecated.test", "deprecated")
           .put("fromSource/dollar.test", "dollar-in-name")
-          .put("fromSource/empty_package_info.test", "package-root-element")
           .put("fromSource/javadoc_deprecated.test", "deprecated")
-          .put("fromSource/package_info.test", "package-root-element")
-          .put("fromSource/packagedecl.test", "package-root-element")
           .put("fromSource/record.test", "deprecated, record-component-modifiers")
           .put("fromSource/record2.test", "record-component-modifiers")
           .put("fromSource/record_ctor.test", "record-component-modifiers")
