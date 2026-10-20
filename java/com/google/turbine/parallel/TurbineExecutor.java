@@ -26,8 +26,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineLog;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /** Wrapper executor used by Turbine to manage parallel execution and chunking. */
@@ -117,10 +119,65 @@ public final class TurbineExecutor implements AutoCloseable {
 
   /** Transforms the input keys in parallel, returning a collected ImmutableMap. */
   public <K, V> ImmutableMap<K, V> toMap(ImmutableList<K> inputs, Function<K, V> valueFunction) {
-    ImmutableList<V> values = map(inputs, valueFunction);
-    ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
-    for (int i = 0; i < inputs.size(); i++) {
-      builder.put(inputs.get(i), values.get(i));
+    return zip(inputs, map(inputs, valueFunction));
+  }
+
+  /**
+   * Transforms the inputs in parallel like {@link #map}, and passes each task a {@link TurbineLog}
+   * to report diagnostics to.
+   *
+   * <p>Each chunk of inputs is given its own log, and the diagnostics from all chunks are added to
+   * {@code log} in input order after the chunks complete, so the order of diagnostics is the same
+   * as if the inputs had been processed sequentially, and doesn't depend on thread scheduling.
+   */
+  public <I, O> ImmutableList<O> mapWithLog(
+      TurbineLog log, ImmutableList<I> inputs, BiFunction<I, TurbineLog, O> mapper) {
+    ImmutableList<ImmutableList<I>> chunks = partition(inputs, parallelism);
+    if (chunks.size() <= 1) {
+      ImmutableList.Builder<O> builder = ImmutableList.builder();
+      for (I input : inputs) {
+        builder.add(mapper.apply(input, log));
+      }
+      return builder.build();
+    }
+
+    List<ListenableFuture<ChunkResult<O>>> futures = new ArrayList<>();
+    for (ImmutableList<I> chunk : chunks) {
+      futures.add(
+          delegate.submit(
+              () -> {
+                TurbineLog chunkLog = new TurbineLog();
+                List<O> results = new ArrayList<>();
+                for (I input : chunk) {
+                  results.add(mapper.apply(input, chunkLog));
+                }
+                return new ChunkResult<>(results, chunkLog);
+              }));
+    }
+    ImmutableList.Builder<O> builder = ImmutableList.builder();
+    for (var future : futures) {
+      ChunkResult<O> result = getUnchecked(future);
+      log.addAll(result.log());
+      builder.addAll(result.results());
+    }
+    return builder.build();
+  }
+
+  private record ChunkResult<O>(List<O> results, TurbineLog log) {}
+
+  /**
+   * Transforms the input keys in parallel like {@link #mapWithLog}, returning a collected
+   * ImmutableMap.
+   */
+  public <K, V> ImmutableMap<K, V> toMapWithLog(
+      TurbineLog log, ImmutableList<K> inputs, BiFunction<K, TurbineLog, V> valueFunction) {
+    return zip(inputs, mapWithLog(log, inputs, valueFunction));
+  }
+
+  private static <K, V> ImmutableMap<K, V> zip(ImmutableList<K> keys, ImmutableList<V> values) {
+    ImmutableMap.Builder<K, V> builder = ImmutableMap.builderWithExpectedSize(keys.size());
+    for (int i = 0; i < keys.size(); i++) {
+      builder.put(keys.get(i), values.get(i));
     }
     return builder.buildOrThrow();
   }
