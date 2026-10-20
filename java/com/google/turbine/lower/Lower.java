@@ -123,18 +123,20 @@ public class Lower {
     TurbineLog log = new TurbineLog();
 
     ImmutableList<TaskResult> classResults =
-        executor.map(
+        executor.mapWithLog(
+            log,
             pruned.entrySet().asList(),
-            entry -> {
+            (entry, taskLog) -> {
               ClassSymbol sym = entry.getKey();
               return lower(
-                  sym.binaryName(), entry.getValue(), env, sym, options, log, pruned.keySet());
+                  sym.binaryName(), entry.getValue(), env, sym, options, taskLog, pruned.keySet());
             });
 
     ImmutableList<TaskResult> moduleResults =
-        executor.map(
+        executor.mapWithLog(
+            log,
             modules,
-            module ->
+            (module, taskLog) ->
                 lower(
                     modules.size() == 1
                         // single module mode: the module-info.class file is at the root
@@ -145,7 +147,7 @@ public class Lower {
                     module,
                     env,
                     options,
-                    log));
+                    taskLog));
 
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
     ImmutableSet.Builder<ClassSymbol> symbols = ImmutableSet.builder();

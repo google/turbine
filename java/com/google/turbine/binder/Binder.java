@@ -338,11 +338,12 @@ public final class Binder {
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
       Env<ClassSymbol, HeaderBoundClass> henv) {
     return new SimpleEnv<>(
-        executor.toMap(
+        executor.toMapWithLog(
+            log,
             syms.asList(),
-            sym -> {
+            (sym, taskLog) -> {
               SourceHeaderBoundClass base = shenv.getNonNull(sym);
-              return TypeBinder.bind(log.withSource(base.source()), henv, sym, base);
+              return TypeBinder.bind(taskLog.withSource(base.source()), henv, sym, base);
             }));
   }
 
@@ -353,11 +354,12 @@ public final class Binder {
       Env<ClassSymbol, TypeBoundClass> tenv,
       TurbineLog log) {
     return new SimpleEnv<>(
-        executor.toMap(
+        executor.toMapWithLog(
+            log,
             syms.asList(),
-            sym -> {
+            (sym, taskLog) -> {
               SourceTypeBoundClass base = stenv.getNonNull(sym);
-              return CanonicalTypeBinder.bind(log.withSource(base.source()), sym, base, tenv);
+              return CanonicalTypeBinder.bind(taskLog.withSource(base.source()), sym, base, tenv);
             }));
   }
 
@@ -526,9 +528,11 @@ public final class Binder {
       Env<ClassSymbol, TypeBoundClass> tenv,
       TurbineLog log) {
     return new SimpleEnv<>(
-        executor.toMap(
+        executor.toMapWithLog(
+            log,
             syms.asList(),
-            sym -> DisambiguateTypeAnnotations.bind(stenv.getNonNull(sym), tenv, log)));
+            (sym, taskLog) ->
+                DisambiguateTypeAnnotations.bind(stenv.getNonNull(sym), tenv, taskLog)));
   }
 
   /**

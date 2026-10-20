@@ -25,12 +25,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.google.turbine.diag.TurbineDiagnostic;
+import com.google.turbine.diag.TurbineLog;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import javax.tools.Diagnostic;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -185,6 +189,67 @@ public class TurbineExecutorTest {
                         throw new UncheckedIOException(new IOException("boom"));
                       }));
       assertThat(e).hasCauseThat().hasCauseThat().hasMessageThat().isEqualTo("boom");
+    }
+  }
+
+  @Test
+  public void mapWithLog_diagnosticsInInputOrder() {
+    ListeningExecutorService service = listeningDecorator(newFixedThreadPool(4));
+    try (TurbineExecutor executor = new TurbineExecutor(service, 4, 0)) {
+      // Four chunks of two inputs each. Each chunk waits for the next one to finish, so the chunks
+      // finish (and report their diagnostics) in reverse input order.
+      ImmutableList<Integer> inputs = ImmutableList.of(0, 1, 2, 3, 4, 5, 6, 7);
+      ImmutableList<CountDownLatch> done =
+          ImmutableList.of(
+              new CountDownLatch(1),
+              new CountDownLatch(1),
+              new CountDownLatch(1),
+              new CountDownLatch(1));
+      TurbineLog log = new TurbineLog();
+      ImmutableList<Integer> outputs =
+          executor.mapWithLog(
+              log,
+              inputs,
+              (x, taskLog) -> {
+                int chunk = x / 2;
+                if (x % 2 == 0 && chunk + 1 < done.size()) {
+                  try {
+                    done.get(chunk + 1).await();
+                  } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                  }
+                }
+                taskLog.diagnostic(Diagnostic.Kind.WARNING, "input " + x);
+                if (x % 2 == 1) {
+                  done.get(chunk).countDown();
+                }
+                return x * 2;
+              });
+      assertThat(outputs).containsExactly(0, 2, 4, 6, 8, 10, 12, 14).inOrder();
+      assertThat(log.diagnostics().stream().map(TurbineDiagnostic::message))
+          .containsExactly(
+              "input 0", "input 1", "input 2", "input 3", "input 4", "input 5", "input 6",
+              "input 7")
+          .inOrder();
+    }
+  }
+
+  @Test
+  public void toMapWithLog_direct() {
+    try (TurbineExecutor executor = TurbineExecutor.direct()) {
+      TurbineLog log = new TurbineLog();
+      ImmutableMap<Integer, Integer> outputs =
+          executor.toMapWithLog(
+              log,
+              ImmutableList.of(1, 2, 3),
+              (x, taskLog) -> {
+                taskLog.diagnostic(Diagnostic.Kind.WARNING, "input " + x);
+                return x * 10;
+              });
+      assertThat(outputs).containsExactly(1, 10, 2, 20, 3, 30).inOrder();
+      assertThat(log.diagnostics().stream().map(TurbineDiagnostic::message))
+          .containsExactly("input 1", "input 2", "input 3")
+          .inOrder();
     }
   }
 }

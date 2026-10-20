@@ -45,8 +45,10 @@ public class TurbineLog {
 
   public ImmutableList<TurbineDiagnostic> diagnostics() {
     synchronized (lock) {
-      // Sort by path to handle parallel processing of different compilation units, but otherwise
-      // preserve logged diagnostic order.
+      // Sort by path, so diagnostics from different files are grouped deterministically. Most
+      // phases report diagnostics in input order (see TurbineExecutor#mapWithLog), but diagnostics
+      // from lazily resolved imports can be reported from any worker thread. Within a file,
+      // preserve the order the diagnostics were reported in.
       return ImmutableList.sortedCopyOf(DIAGNOSTIC_COMPARATOR, diagnostics);
     }
   }
@@ -101,6 +103,17 @@ public class TurbineLog {
   public void add(TurbineDiagnostic diagnostic) {
     synchronized (lock) {
       diagnostics.add(diagnostic);
+    }
+  }
+
+  /** Adds all diagnostics reported to {@code other}, in the order they were reported. */
+  public void addAll(TurbineLog other) {
+    ImmutableList<TurbineDiagnostic> toAdd;
+    synchronized (other.lock) {
+      toAdd = ImmutableList.copyOf(other.diagnostics);
+    }
+    synchronized (lock) {
+      diagnostics.addAll(toAdd);
     }
   }
 
