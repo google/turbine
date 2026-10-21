@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.cache.StringCache;
 import java.util.HashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -88,8 +89,7 @@ public final class SimpleTopLevelIndex implements TopLevelIndex {
   /** A builder for {@link TopLevelIndex}es. */
   public static final class Builder {
 
-    // If there are a lot of strings, we'll skip the first few map sizes. If not, 1K of memory
-    // isn't significant.
+    // Caches package name segments, which repeat across the classpath.
     private final StringCache stringCache = new StringCache(1024);
 
     /** The root of the lookup tree, effectively the package node of the default package. */

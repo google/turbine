@@ -21,6 +21,7 @@ import static com.google.turbine.parse.UnicodeEscapePreprocessor.ASCII_SUB;
 import static java.lang.Math.min;
 
 import com.google.common.collect.ImmutableList;
+import com.google.turbine.cache.StringCache;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -29,6 +30,8 @@ import org.jspecify.annotations.Nullable;
 
 /** A {@link Lexer} that streams input from a {@link UnicodeEscapePreprocessor}. */
 public class StreamLexer implements Lexer {
+
+  private static final int STRING_CACHE_EXPECTED_SIZE = 256;
 
   private final UnicodeEscapePreprocessor reader;
 
@@ -46,6 +49,12 @@ public class StreamLexer implements Lexer {
 
   /** A saved javadoc comment. */
   private TurbineJavadoc javadoc = null;
+
+  /**
+   * A cache of strings read from the input, to avoid repeatedly allocating strings for identifiers
+   * that occur multiple times in a compilation unit.
+   */
+  private final StringCache stringCache = new StringCache(STRING_CACHE_EXPECTED_SIZE);
 
   public StreamLexer(UnicodeEscapePreprocessor reader) {
     this.reader = reader;
@@ -78,7 +87,12 @@ public class StreamLexer implements Lexer {
     if (value != null) {
       return value;
     }
-    return reader.readString(readFrom, reader.position());
+    return internedString(readFrom, reader.position());
+  }
+
+  /** Returns {@code reader.readString(from, to)}, reusing a previously read string if possible. */
+  private String internedString(int from, int to) {
+    return stringCache.getSubstring(reader.source().source(), from, to);
   }
 
   @Override

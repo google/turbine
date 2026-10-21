@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.turbine.binder.lookup;
+package com.google.turbine.cache;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -119,6 +119,30 @@ public final class StringCacheTest {
 
     assertThat(cacheNulnulnul0.hashCode()).isEqualTo(0);
     assertThat(cacheNulnulnul0).isSameInstanceAs(nulnulnul0);
+
+    // A shorter string in the same slot as a longer cached string isn't confused with its prefix.
+    assertThat(cache.getSubstring(nulnulnul0, 0, 1)).isEqualTo("\0");
+    assertThat(cache.getSubstring(nulnulnul0, 0, 0)).isEmpty();
+  }
+
+  @Test
+  public void manyStrings_returnsEqualStrings() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 1000; i++) {
+      sb.append("s").append(i).append(' ');
+    }
+    String all = unique(sb.toString());
+
+    // Look up more distinct strings than the cache can hold, twice, so that entries collide.
+    for (int round = 0; round < 2; round++) {
+      int start = 0;
+      for (int i = 0; i < 1000; i++) {
+        int end = all.indexOf(' ', start);
+        assertThat(cache.getSubstring(all, start, end)).isEqualTo("s" + i);
+        assertThat(cache.get(unique("s" + i))).isEqualTo("s" + i);
+        start = end + 1;
+      }
+    }
   }
 
   @SuppressWarnings("StringCopy") // String literals are already canonicalized per class
