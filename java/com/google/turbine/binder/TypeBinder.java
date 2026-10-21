@@ -64,7 +64,9 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 
 /** Type binding. */
@@ -113,6 +115,12 @@ public class TypeBinder {
     private final ClassSymbol sym;
     private final Env<ClassSymbol, HeaderBoundClass> env;
 
+    /**
+     * Memoized results of {@link #lookupSymbol}, which walks the entire type hierarchy of the class
+     * and its enclosing classes.
+     */
+    private final Map<String, Optional<Symbol>> cache = new ConcurrentHashMap<>();
+
     ClassMemberScope(ClassSymbol sym, Env<ClassSymbol, HeaderBoundClass> env) {
       this.sym = sym;
       this.env = env;
@@ -120,16 +128,29 @@ public class TypeBinder {
 
     @Override
     public @Nullable LookupResult lookup(LookupKey lookup) {
+      Ident first = lookup.first();
+      String name = first.value();
+      // The separate get and putIfAbsent calls (rather than computeIfAbsent) are intentional, so
+      // that no lock is held while lookupSymbol walks the type hierarchy.
+      Optional<Symbol> result = cache.get(name);
+      if (result == null) {
+        result = Optional.ofNullable(lookupSymbol(first));
+        cache.putIfAbsent(name, result);
+      }
+      return result.isPresent() ? new LookupResult(result.get(), lookup) : null;
+    }
+
+    private @Nullable Symbol lookupSymbol(Ident first) {
       ClassSymbol curr = sym;
       while (curr != null) {
-        Symbol result = Resolve.resolve(env, sym, curr, lookup.first());
+        Symbol result = Resolve.resolve(env, sym, curr, first);
         if (result != null) {
-          return new LookupResult(result, lookup);
+          return result;
         }
         HeaderBoundClass info = env.getNonNull(curr);
-        result = info.typeParameters().get(lookup.first().value());
+        result = info.typeParameters().get(first.value());
         if (result != null) {
-          return new LookupResult(result, lookup);
+          return result;
         }
         curr = info.owner();
       }
@@ -137,27 +158,48 @@ public class TypeBinder {
     }
   }
 
+  /**
+   * The {@link ClassMemberScope}s of the classes in a compilation, so that a class and the classes
+   * nested inside it share one scope, and its memoized lookups, for the enclosing class.
+   */
+  static final class ClassMemberScopes {
+    private final Env<ClassSymbol, HeaderBoundClass> env;
+    private final Map<ClassSymbol, ClassMemberScope> scopes = new ConcurrentHashMap<>();
+
+    ClassMemberScopes(Env<ClassSymbol, HeaderBoundClass> env) {
+      this.env = env;
+    }
+
+    ClassMemberScope get(ClassSymbol sym) {
+      return scopes.computeIfAbsent(sym, s -> new ClassMemberScope(s, env));
+    }
+  }
+
   /** Creates {@link SourceTypeBoundClass} nodes for a compilation. */
-  public static SourceTypeBoundClass bind(
+  static SourceTypeBoundClass bind(
       TurbineLogWithSource log,
       Env<ClassSymbol, HeaderBoundClass> env,
+      ClassMemberScopes memberScopes,
       ClassSymbol sym,
       SourceHeaderBoundClass base) {
-    return new TypeBinder(log, env, sym, base).bind();
+    return new TypeBinder(log, env, memberScopes, sym, base).bind();
   }
 
   private final TurbineLogWithSource log;
   private final Env<ClassSymbol, HeaderBoundClass> env;
+  private final ClassMemberScopes memberScopes;
   private final ClassSymbol owner;
   private final SourceHeaderBoundClass base;
 
   private TypeBinder(
       TurbineLogWithSource log,
       Env<ClassSymbol, HeaderBoundClass> env,
+      ClassMemberScopes memberScopes,
       ClassSymbol owner,
       SourceHeaderBoundClass base) {
     this.log = log;
     this.env = env;
+    this.memberScopes = memberScopes;
     this.owner = owner;
     this.base = base;
   }
@@ -173,7 +215,7 @@ public class TypeBinder {
             .toScope(Resolve.resolveFunction(env, owner))
             .append(new SingletonScope(base.decl().name().value(), owner));
     if (base.owner() != null) {
-      enclosingScope = enclosingScope.append(new ClassMemberScope(base.owner(), env));
+      enclosingScope = enclosingScope.append(memberScopes.get(base.owner()));
     }
 
     ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
@@ -239,7 +281,7 @@ public class TypeBinder {
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
             .append(new SingletonScope(base.decl().name().value(), owner))
-            .append(new ClassMemberScope(owner, env));
+            .append(memberScopes.get(owner));
 
     SyntheticMethods syntheticMethods = new SyntheticMethods();
 

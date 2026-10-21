@@ -338,13 +338,15 @@ public final class Binder {
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
       Env<ClassSymbol, HeaderBoundClass> henv) {
+    TypeBinder.ClassMemberScopes memberScopes = new TypeBinder.ClassMemberScopes(henv);
     return new SimpleEnv<>(
         executor.toMapWithLog(
             log,
             syms.asList(),
             (sym, taskLog) -> {
               SourceHeaderBoundClass base = shenv.getNonNull(sym);
-              return TypeBinder.bind(taskLog.withSource(base.source()), henv, sym, base);
+              return TypeBinder.bind(
+                  taskLog.withSource(base.source()), henv, memberScopes, sym, base);
             }));
   }
 
