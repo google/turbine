@@ -21,18 +21,25 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.lookup.LookupKey;
 import com.google.turbine.binder.lookup.LookupResult;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree.Ident;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class JimageClassBinderTest {
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
   @Test
   public void testDefaultJimage() throws IOException {
     if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
@@ -77,5 +84,19 @@ public class JimageClassBinderTest {
                         new Ident(-1, "Entry"))));
     assertThat(((ClassSymbol) entrySym.sym()).binaryName()).isEqualTo("java/util/Map");
     assertThat(getOnlyElement(entrySym.remaining()).value()).isEqualTo("Entry");
+  }
+
+  @Test
+  public void skipsNonClassFiles() throws IOException {
+    Path modules = temporaryFolder.newFolder("modules").toPath();
+    Path pkg = Files.createDirectories(modules.resolve("m/p"));
+    Files.write(pkg.resolve("A.class"), new byte[0]);
+    Files.write(pkg.resolve("A.properties"), new byte[0]);
+    Files.write(pkg.resolve("README.html"), new byte[0]);
+    JimageClassBinder binder = new JimageClassBinder(ImmutableMultimap.of("p", "m"), modules);
+
+    JimageClassBinder.PackageInfo packageInfo = binder.getPackage("p");
+
+    assertThat(packageInfo.packageClassesBySimpleName().keySet()).containsExactly("A");
   }
 }

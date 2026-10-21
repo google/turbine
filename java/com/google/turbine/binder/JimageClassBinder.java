@@ -143,12 +143,14 @@ public class JimageClassBinder {
         Path modulePackagePath = modulePath.resolve(packageName);
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(modulePackagePath)) {
           for (Path path : ds) {
-            if (!Files.isRegularFile(path)
-                || path.getFileName().toString().equals("module-info.class")) {
+            String fileName = path.getFileName().toString();
+            if (!fileName.endsWith(".class")
+                || fileName.equals("module-info.class")
+                || !Files.isRegularFile(path)) {
               continue;
             }
-            String binaryName = modulePath.relativize(path).toString();
-            binaryName = binaryName.substring(0, binaryName.length() - ".class".length());
+            String binaryName =
+                packageName + '/' + fileName.substring(0, fileName.length() - ".class".length());
             ClassSymbol sym = new ClassSymbol(binaryName);
             packageClassesBySimpleName.put(sym.simpleName(), sym);
             packageEnv.put(
