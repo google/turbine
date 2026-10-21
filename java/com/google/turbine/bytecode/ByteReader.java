@@ -17,6 +17,7 @@
 package com.google.turbine.bytecode;
 
 import static com.google.common.base.Verify.verify;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
@@ -37,6 +38,46 @@ public class ByteReader {
 
   public ByteArrayDataInput seek(int i) {
     return ByteStreams.newDataInput(bytes, i);
+  }
+
+  /** Reads an unsigned 8-bit integer at the given position, without changing {@link #pos}. */
+  int u1At(int pos) {
+    return bytes[pos] & 0xff;
+  }
+
+  /**
+   * Reads an unsigned 16-bit integer in big-endian byte order at the given position, without
+   * changing {@link #pos}.
+   */
+  int u2At(int pos) {
+    return ((bytes[pos] & 0xff) << 8) | (bytes[pos + 1] & 0xff);
+  }
+
+  /**
+   * Reads a length-prefixed modified UTF-8 string (as in {@link java.io.DataInput#readUTF}) at the
+   * given position, without changing {@link #pos}.
+   */
+  String utf8At(int pos) {
+    // Fast path for ASCII strings, which are encoded identically in modified UTF-8 and ISO-8859-1.
+    // Bytes that are zero or have the high bit set fall back to the full modified UTF-8 decoder.
+    int length = u2At(pos);
+    int start = pos + 2;
+    if (isAscii(start, start + length)) {
+      return new String(bytes, start, length, ISO_8859_1);
+    }
+    return seek(pos).readUTF();
+  }
+
+  private boolean isAscii(int start, int end) {
+    if (end > bytes.length) {
+      return false;
+    }
+    for (int i = start; i < end; i++) {
+      if (bytes[i] <= 0) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** The position in the input buffer. */

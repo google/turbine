@@ -109,23 +109,22 @@ public class ConstantPoolReader {
 
   /** Reads the CONSTANT_Class_info at the given index. */
   public String classInfo(int index) {
-    ByteArrayDataInput reader = byteReader.seek(constantPool[index - 1]);
-    byte tag = reader.readByte();
+    int pos = constantPool[index - 1];
+    int tag = byteReader.u1At(pos);
     if (tag != CONSTANT_CLASS) {
       throw new AssertionError(String.format("bad tag: %x", tag));
     }
-    int nameIndex = reader.readUnsignedShort();
-    return utf8(nameIndex);
+    return utf8(byteReader.u2At(pos + 1));
   }
 
   /** Reads the CONSTANT_Utf8_info at the given index. */
   public String utf8(int index) {
-    ByteArrayDataInput reader = byteReader.seek(constantPool[index - 1]);
-    byte tag = reader.readByte();
+    int pos = constantPool[index - 1];
+    int tag = byteReader.u1At(pos);
     if (tag != CONSTANT_UTF8) {
       throw new AssertionError(String.format("bad tag: %x", tag));
     }
-    return reader.readUTF();
+    return byteReader.utf8At(pos + 1);
   }
 
   /** Reads the CONSTANT_Module_info at the given index. */
@@ -163,7 +162,7 @@ public class ConstantPoolReader {
       case CONSTANT_DOUBLE -> new Const.DoubleValue(reader.readDouble());
       case CONSTANT_INTEGER -> new Const.IntValue(reader.readInt());
       case CONSTANT_STRING -> new Const.StringValue(utf8(reader.readUnsignedShort()));
-      case CONSTANT_UTF8 -> new Const.StringValue(reader.readUTF());
+      case CONSTANT_UTF8 -> new Const.StringValue(utf8(index));
       default -> throw new AssertionError(String.format("bad tag: %x", tag));
     };
   }
