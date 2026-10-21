@@ -386,6 +386,10 @@ public class JavacModelDiffTest {
       if (elements.isDeprecated(e)) {
         line(d, "deprecated");
       }
+      Elements.Origin origin = elements.getOrigin(e);
+      if (origin != Elements.Origin.EXPLICIT) {
+        line(d, "origin: " + origin);
+      }
       switch (e) {
         case PackageElement p -> line(d, "qualified name: " + p.getQualifiedName());
         case TypeElement t -> typeElement(t, d);

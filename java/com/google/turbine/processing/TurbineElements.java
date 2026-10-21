@@ -33,6 +33,7 @@ import com.google.turbine.model.TurbineJavadoc;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
 import com.google.turbine.processing.TurbineElement.TurbineNoTypeElement;
+import com.google.turbine.processing.TurbineElement.TurbineParameterElement;
 import com.google.turbine.processing.TurbineElement.TurbineTypeElement;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineExecutableType;
 import com.google.turbine.type.AnnoInfo;
@@ -373,6 +374,21 @@ public class TurbineElements implements Elements {
       }
     }
     return Types.isVisible(packageSymbol(asSymbol(hider)), packageSymbol(asSymbol(hidden)), access);
+  }
+
+  @Override
+  public Origin getOrigin(Element e) {
+    boolean mandated =
+        switch (e) {
+          case TurbineExecutableElement executable ->
+              (executable.info().access() & TurbineFlag.ACC_SYNTH_CTOR) != 0;
+          case TurbineParameterElement parameter ->
+              (parameter.info().access() & TurbineFlag.ACC_MANDATED) != 0;
+          default -> false;
+        };
+    // Like javac, implicitly declared constructors and mandated parameters are MANDATED, and
+    // everything else is EXPLICIT: synthetic members aren't part of the model.
+    return mandated ? Origin.MANDATED : Origin.EXPLICIT;
   }
 
   @Override

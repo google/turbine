@@ -377,7 +377,7 @@ public class TypeBinder {
                       new ParamSymbol(equalsMethod, "o"),
                       Type.ClassTy.OBJECT,
                       ImmutableList.of(),
-                      TurbineFlag.ACC_MANDATED)),
+                      /* access= */ 0)),
               ImmutableList.of(),
               TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
               null,
