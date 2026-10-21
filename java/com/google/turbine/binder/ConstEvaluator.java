@@ -993,7 +993,11 @@ public class ConstEvaluator {
   }
 
   ImmutableList<AnnoInfo> evaluateAnnotations(ImmutableList<AnnoInfo> annotations) {
-    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
+    if (annotations.isEmpty()) {
+      return annotations;
+    }
+    ImmutableList.Builder<AnnoInfo> result =
+        ImmutableList.builderWithExpectedSize(annotations.size());
     for (AnnoInfo annotation : annotations) {
       result.add(evaluateAnnotation(annotation));
     }

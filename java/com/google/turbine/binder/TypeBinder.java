@@ -905,7 +905,10 @@ public class TypeBinder {
   }
 
   private ImmutableList<Type> bindTyArgs(CompoundScope scope, ImmutableList<Tree.Type> targs) {
-    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    if (targs.isEmpty()) {
+      return ImmutableList.of();
+    }
+    ImmutableList.Builder<Type> result = ImmutableList.builderWithExpectedSize(targs.size());
     for (Tree.Type ty : targs) {
       result.add(bindTyArg(scope, ty));
     }

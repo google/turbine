@@ -177,6 +177,9 @@ public final class DisambiguateTypeAnnotations {
       Type type,
       ImmutableList<AnnoInfo> annotations,
       ImmutableList.Builder<AnnoInfo> declarationAnnotations) {
+    if (annotations.isEmpty()) {
+      return type;
+    }
     // desugar @Repeatable annotations before disambiguating: annotation containers may target
     // a subset of the types targeted by their element annotation
     annotations = groupRepeated(annotations);
@@ -270,6 +273,12 @@ public final class DisambiguateTypeAnnotations {
 
   private static ImmutableList<AnnoInfo> appendAnnotations(
       ImmutableList<AnnoInfo> annos, ImmutableList<AnnoInfo> extra) {
+    if (extra.isEmpty()) {
+      return annos;
+    }
+    if (annos.isEmpty()) {
+      return extra;
+    }
     return ImmutableList.<AnnoInfo>builder().addAll(annos).addAll(extra).build();
   }
 
@@ -288,6 +297,9 @@ public final class DisambiguateTypeAnnotations {
   }
 
   private ImmutableList<AnnoInfo> groupRepeated(ImmutableList<AnnoInfo> annotations) {
+    if (annotations.size() <= 1) {
+      return annotations;
+    }
     Multimap<ClassSymbol, AnnoInfo> repeated =
         MultimapBuilder.linkedHashKeys().arrayListValues().build();
     ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();

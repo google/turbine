@@ -307,7 +307,10 @@ public class ConstBinder {
   }
 
   private ImmutableList<Type> bindTypes(ImmutableList<Type> types) {
-    ImmutableList.Builder<Type> result = ImmutableList.builder();
+    if (types.isEmpty()) {
+      return types;
+    }
+    ImmutableList.Builder<Type> result = ImmutableList.builderWithExpectedSize(types.size());
     for (Type t : types) {
       result.add(bindType(t));
     }
