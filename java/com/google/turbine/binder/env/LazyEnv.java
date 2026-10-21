@@ -33,6 +33,8 @@ import org.jspecify.annotations.Nullable;
  * classes in a topological sort order of that graph. Unfortuntately, we can't produce a suitable
  * sort order until the graph exists.
  *
+ * <p>This class is not thread-safe.
+ *
  * @param <T> the interface type of the bound node {@link V}, shared by any underlying environments.
  * @param <V> a specific implementation of {@code T}. For example, during hierarchy binding {@code
  *     SourceHeaderBoundClass} nodes are being completed from the sources being compiled, and the

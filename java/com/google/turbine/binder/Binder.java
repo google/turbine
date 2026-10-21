@@ -183,6 +183,7 @@ public final class Binder {
 
     tenv =
         constants(
+            executor,
             syms,
             tenv,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
@@ -402,11 +403,54 @@ public final class Binder {
   }
 
   private static Env<ClassSymbol, SourceTypeBoundClass> constants(
+      TurbineExecutor executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
       TurbineLog log) {
 
+    // LazyEnv isn't thread-safe, so first evaluate all constant fields eagerly, and then bind the
+    // rest of each class in parallel using the evaluated values.
+    Env<FieldSymbol, Const.Value> constenv = evaluateConstants(syms, env, baseEnv, log);
+    return new SimpleEnv<>(
+        executor.toMapWithLog(
+            log,
+            syms.asList(),
+            (sym, taskLog) -> {
+              SourceTypeBoundClass base = env.getNonNull(sym);
+              return new ConstBinder(
+                      constenv, sym, baseEnv, base, taskLog.withSource(base.source()))
+                  .bind();
+            }));
+  }
+
+  /** Evaluates all constant fields in the compilation. */
+  private static SimpleEnv<FieldSymbol, Const.Value> evaluateConstants(
+      ImmutableSet<ClassSymbol> syms,
+      Env<ClassSymbol, SourceTypeBoundClass> env,
+      CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
+      TurbineLog log) {
+    Env<FieldSymbol, Const.Value> lazyConstEnv = lazyConstEnv(syms, env, baseEnv, log);
+    SimpleEnv.Builder<FieldSymbol, Const.Value> constValues = SimpleEnv.builder();
+    for (ClassSymbol sym : syms) {
+      for (FieldInfo field : env.getNonNull(sym).fields()) {
+        if (!isConst(field)) {
+          continue;
+        }
+        Const.Value value = lazyConstEnv.get(field.sym());
+        if (value != null) {
+          constValues.put(field.sym(), value);
+        }
+      }
+    }
+    return constValues.build();
+  }
+
+  private static Env<FieldSymbol, Const.Value> lazyConstEnv(
+      ImmutableSet<ClassSymbol> syms,
+      Env<ClassSymbol, SourceTypeBoundClass> env,
+      CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
+      TurbineLog log) {
     // Prepare to lazily evaluate constant fields in each compilation unit.
     // The laziness is necessary since constant fields can reference other
     // constant fields.
@@ -425,17 +469,8 @@ public final class Binder {
     // Create an environment of constant field values that combines
     // lazily evaluated fields in the current compilation unit with
     // constant fields in the classpath (which don't require evaluation).
-    Env<FieldSymbol, Const.Value> constenv =
-        new LazyEnv<>(
-            completers.buildOrThrow(), SimpleEnv.<FieldSymbol, Const.Value>builder().build());
-
-    SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> builder = SimpleEnv.builder();
-    for (ClassSymbol sym : syms) {
-      SourceTypeBoundClass base = env.getNonNull(sym);
-      builder.put(
-          sym, new ConstBinder(constenv, sym, baseEnv, base, log.withSource(base.source())).bind());
-    }
-    return builder.build();
+    return new LazyEnv<>(
+        completers.buildOrThrow(), SimpleEnv.<FieldSymbol, Const.Value>builder().build());
   }
 
   private static class LazyConstCompleter
