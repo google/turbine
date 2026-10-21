@@ -68,6 +68,9 @@ public final class Erasure {
   }
 
   public static Type.ClassTy eraseClassTy(Type.ClassTy ty) {
+    if (!hasTyArgs(ty)) {
+      return ty;
+    }
     ImmutableList.Builder<Type.ClassTy.SimpleClassTy> classes = ImmutableList.builder();
     for (Type.ClassTy.SimpleClassTy c : ty.classes()) {
       if (c.targs().isEmpty()) {
@@ -77,6 +80,15 @@ public final class Erasure {
       }
     }
     return ClassTy.create(classes.build());
+  }
+
+  private static boolean hasTyArgs(Type.ClassTy ty) {
+    for (Type.ClassTy.SimpleClassTy c : ty.classes()) {
+      if (!c.targs().isEmpty()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static Type eraseWildTy(WildTy ty, Function<TyVarSymbol, TyVarInfo> tenv) {

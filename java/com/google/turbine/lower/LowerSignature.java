@@ -98,7 +98,11 @@ public class LowerSignature {
   }
 
   private ImmutableList<TySig> tyArgSigs(SimpleClassTy part) {
-    ImmutableList.Builder<TySig> tyargs = ImmutableList.builder();
+    if (part.targs().isEmpty()) {
+      return ImmutableList.of();
+    }
+    ImmutableList.Builder<TySig> tyargs =
+        ImmutableList.builderWithExpectedSize(part.targs().size());
     for (Type targ : part.targs()) {
       tyargs.add(signature(targ));
     }

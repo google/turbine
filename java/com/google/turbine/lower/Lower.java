@@ -427,6 +427,9 @@ public class Lower {
   }
 
   private ImmutableList<ParameterInfo> methodParameters(MethodInfo m) {
+    if (m.parameters().isEmpty()) {
+      return ImmutableList.of();
+    }
     ImmutableList.Builder<ParameterInfo> result = ImmutableList.builder();
     for (ParamInfo p : m.parameters()) {
       result.add(new ParameterInfo(p.name(), p.access() & PARAMETER_ACCESS_MASK));
@@ -641,6 +644,9 @@ public class Lower {
   }
 
   private ImmutableList<AnnotationInfo> lowerAnnotations(ImmutableList<AnnoInfo> annotations) {
+    if (annotations.isEmpty()) {
+      return ImmutableList.of();
+    }
     ImmutableList.Builder<AnnotationInfo> lowered = ImmutableList.builder();
     for (AnnoInfo annotation : annotations) {
       AnnotationInfo anno = lowerAnnotation(annotation);

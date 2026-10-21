@@ -748,9 +748,11 @@ public class ClassFile {
     @AutoValue
     public abstract static class TypePath {
 
+      private static final TypePath ROOT = create(null, null);
+
       /** The root type_path_kind, used for initialization. */
       public static TypePath root() {
-        return create(null, null);
+        return ROOT;
       }
 
       /** Adds an array type_path_kind entry. */
