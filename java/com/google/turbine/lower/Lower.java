@@ -119,7 +119,7 @@ public class Lower {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
-        RemovePrivateMembers.process(env, units, options);
+        RemovePrivateMembers.process(executor, env, units, options);
     TurbineLog log = new TurbineLog();
 
     ImmutableList<TaskResult> classResults =

@@ -38,6 +38,7 @@ import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.options.LowerOptions;
+import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
@@ -58,6 +59,7 @@ import org.jspecify.annotations.Nullable;
 class RemovePrivateMembers {
 
   static ImmutableMap<ClassSymbol, SourceTypeBoundClass> process(
+      TurbineExecutor executor,
       Env<ClassSymbol, TypeBoundClass> env,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       LowerOptions options) {
@@ -65,9 +67,19 @@ class RemovePrivateMembers {
     // the inputs by outermost enclosing class to make search for usages faster.
     ImmutableTable<ClassSymbol, ClassSymbol, SourceTypeBoundClass> groups =
         groupByTopLevelClass(units);
-    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
-    for (Map<ClassSymbol, SourceTypeBoundClass> compilationUnit : groups.rowMap().values()) {
-      process(env, compilationUnit, options, result);
+    ImmutableList<ImmutableMap<ClassSymbol, SourceTypeBoundClass>> processed =
+        executor.map(
+            ImmutableList.copyOf(groups.rowMap().values()),
+            compilationUnit -> {
+              ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> unitResult =
+                  ImmutableMap.builder();
+              process(env, compilationUnit, options, unitResult);
+              return unitResult.buildOrThrow();
+            });
+    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result =
+        ImmutableMap.builderWithExpectedSize(units.size());
+    for (ImmutableMap<ClassSymbol, SourceTypeBoundClass> unitResult : processed) {
+      result.putAll(unitResult);
     }
     return result.buildOrThrow();
   }
