@@ -16,6 +16,7 @@
 
 package com.google.turbine.deps;
 
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder.BindingResult;
@@ -32,6 +33,7 @@ import com.google.turbine.bytecode.ClassFile.InnerClass;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.model.TurbineFlag;
+import com.google.turbine.parallel.TurbineExecutor;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -45,10 +47,10 @@ import org.jspecify.annotations.Nullable;
 public final class Transitive {
 
   public static ImmutableMap<String, byte[]> collectDeps(
-      ClassPath bootClassPath, BindingResult bound) {
-    ImmutableMap.Builder<String, byte[]> transitive = ImmutableMap.builder();
+      TurbineExecutor executor, ClassPath bootClassPath, BindingResult bound) {
     Set<ClassSymbol> closure = superClosure(bound);
     Dependencies.addPackageInfos(closure, bound);
+    ImmutableList.Builder<BytecodeBoundClass> toTrim = ImmutableList.builder();
     for (ClassSymbol sym : closure) {
       BytecodeBoundClass info = bound.classPathEnv().get(sym);
       if (info == null) {
@@ -59,10 +61,23 @@ public final class Transitive {
         // don't export symbols loaded from the bootclasspath
         continue;
       }
-      transitive.put(
-          sym.binaryName(), ClassWriter.writeClass(trimClass(info.classFile(), info.jarFile())));
+      toTrim.add(info);
+    }
+    ImmutableMap.Builder<String, byte[]> transitive = ImmutableMap.builder();
+    for (TrimmedClass trimmed : executor.map(toTrim.build(), Transitive::trim)) {
+      transitive.put(trimmed.binaryName(), trimmed.bytes());
     }
     return transitive.buildOrThrow();
+  }
+
+  // The array is only carried from the task back to the caller, never compared or hashed.
+  @SuppressWarnings("ArrayRecordComponent")
+  private record TrimmedClass(String binaryName, byte[] bytes) {}
+
+  private static TrimmedClass trim(BytecodeBoundClass info) {
+    return new TrimmedClass(
+        info.sym().binaryName(),
+        ClassWriter.writeClass(trimClass(info.classFile(), info.jarFile())));
   }
 
   public static ImmutableMap<String, byte[]> trimOutput(ImmutableMap<String, byte[]> lowered) {

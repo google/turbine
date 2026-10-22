@@ -235,12 +235,13 @@ public final class Main {
         ImmutableMap<String, byte[]> transitive =
             options.headerCompilationOutput().isPresent()
                 ? ImmutableMap.of()
-                : Transitive.collectDeps(bootclasspath, bound);
+                : Transitive.collectDeps(executor, bootclasspath, bound);
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
       }
       if (options.headerCompilationOutput().isPresent()) {
         ImmutableMap<String, byte[]> trimmed = Transitive.trimOutput(lowered.bytes());
-        ImmutableMap<String, byte[]> transitive = Transitive.collectDeps(bootclasspath, bound);
+        ImmutableMap<String, byte[]> transitive =
+            Transitive.collectDeps(executor, bootclasspath, bound);
         writeHeaderCompilationOutput(options, trimmed, transitive);
       }
       if (options.outputManifest().isPresent()) {
