@@ -164,7 +164,7 @@ public final class Binder {
         CompoundEnv.of(classpath.moduleEnv()).append(bootclasspath.moduleEnv());
 
     BindPackagesResult bindPackagesResult =
-        bindPackages(log, ienv, tli, preProcessedUnits, classPathEnv);
+        bindPackages(executor, log, ienv, tli, preProcessedUnits, classPathEnv);
 
     SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv = bindPackagesResult.classes;
     SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules = bindPackagesResult.modules;
@@ -256,6 +256,7 @@ public final class Binder {
 
   /** Initializes scopes for compilation unit and package-level lookup. */
   private static BindPackagesResult bindPackages(
+      TurbineExecutor executor,
       TurbineLog log,
       Env<ClassSymbol, SourceBoundClass> ienv,
       TopLevelIndex tli,
@@ -271,23 +272,15 @@ public final class Binder {
     } else {
       topLevel = topLevel.append(javaLang);
     }
-    for (PreprocessedCompUnit unit : units) {
-      Scope packageScope = tli.lookupPackage(unit.packageName());
-      CanonicalSymbolResolver importResolver =
-          new CanonicalResolver(
-              unit.packageName(),
-              CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv));
-      ImportScope importScope =
-          ImportIndex.create(log.withSource(unit.source()), importResolver, tli, unit.imports());
-      ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
-      MemberImportIndex memberImports =
-          new MemberImportIndex(unit.source(), importResolver, tli, unit.imports());
-      ImportScope scope = ImportScope.fromScope(topLevel).append(wildImportScope);
-      // Can be null if we're compiling a package-info.java for an empty package
-      if (packageScope != null) {
-        scope = scope.append(ImportScope.fromScope(packageScope));
-      }
-      scope = scope.append(importScope);
+    CompoundScope finalTopLevel = topLevel;
+    ImmutableList<PackageScopes> unitScopes =
+        executor.map(
+            units, unit -> bindPackageScopes(log, ienv, tli, unit, classPathEnv, finalTopLevel));
+    int size = units.size();
+    for (int i = 0; i < size; i++) {
+      PreprocessedCompUnit unit = units.get(i);
+      ImportScope scope = unitScopes.get(i).scope();
+      MemberImportIndex memberImports = unitScopes.get(i).memberImports();
       if (unit.module().isPresent()) {
         ModDecl module = unit.module().get();
         modules.put(
@@ -299,6 +292,33 @@ public final class Binder {
       }
     }
     return new BindPackagesResult(env.build(), modules.build());
+  }
+
+  private record PackageScopes(ImportScope scope, MemberImportIndex memberImports) {}
+
+  private static PackageScopes bindPackageScopes(
+      TurbineLog log,
+      Env<ClassSymbol, SourceBoundClass> ienv,
+      TopLevelIndex tli,
+      PreprocessedCompUnit unit,
+      CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
+      CompoundScope topLevel) {
+    Scope packageScope = tli.lookupPackage(unit.packageName());
+    CanonicalSymbolResolver importResolver =
+        new CanonicalResolver(
+            unit.packageName(), CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv));
+    ImportScope importScope =
+        ImportIndex.create(log.withSource(unit.source()), importResolver, tli, unit.imports());
+    ImportScope wildImportScope = WildImportIndex.create(importResolver, tli, unit.imports());
+    MemberImportIndex memberImports =
+        new MemberImportIndex(unit.source(), importResolver, tli, unit.imports());
+    ImportScope scope = ImportScope.fromScope(topLevel).append(wildImportScope);
+    // Can be null if we're compiling a package-info.java for an empty package
+    if (packageScope != null) {
+      scope = scope.append(ImportScope.fromScope(packageScope));
+    }
+    scope = scope.append(importScope);
+    return new PackageScopes(scope, memberImports);
   }
 
   /** Binds the type hierarchy (superclasses and interfaces) for all classes in the compilation. */
