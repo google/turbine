@@ -212,6 +212,7 @@ public class LexerTest {
                     + "    char       final      interface    static      void\n"
                     + "    class      finally    long         strictfp    volatile\n"
                     + "    const      float      native       super       while\n"
+                    + "    true       false      null\n"
                     + "=   >   <   !   ~   ?   :   ->\n"))
         .containsExactly(
             "ABSTRACT",
@@ -264,6 +265,9 @@ public class LexerTest {
             "NATIVE",
             "SUPER",
             "WHILE",
+            "TRUE",
+            "FALSE",
+            "NULL",
             "ASSIGN",
             "GT",
             "LT",
@@ -273,6 +277,12 @@ public class LexerTest {
             "COLON",
             "ARROW",
             "EOF");
+  }
+
+  @Test
+  public void nearMissKeywords() {
+    lexerComparisonTest(
+        "clas classes Class doo iff nul trues instanceOf synchronize synchronizeds \u0100");
   }
 
   @Test
