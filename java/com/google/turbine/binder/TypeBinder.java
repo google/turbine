@@ -223,7 +223,7 @@ public class TypeBinder {
     CompoundScope bindingScope = enclosingScope;
 
     // type parameters can refer to each other in f-bounds, so update the scope first
-    bindingScope = bindingScope.append(new MapScope(base.typeParameters()));
+    bindingScope = withTypeParameters(bindingScope, base.typeParameters());
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
         bindTyParams(base.decl().typarams(), bindingScope, base.typeParameters());
 
@@ -707,6 +707,9 @@ public class TypeBinder {
   /** Bind type parameter types. */
   private ImmutableMap<TyVarSymbol, TyVarInfo> bindTyParams(
       ImmutableList<Tree.TyParam> trees, CompoundScope scope, Map<String, TyVarSymbol> symbols) {
+    if (trees.isEmpty()) {
+      return ImmutableMap.of();
+    }
     LinkedHashMap<TyVarSymbol, TyVarInfo> result = new LinkedHashMap<>();
     for (Tree.TyParam tree : trees) {
       // `symbols` is constructed to guarantee the requireNonNull call is safe.
@@ -748,8 +751,11 @@ public class TypeBinder {
     MethodSymbol sym = new MethodSymbol(idx, owner, t.name().value());
 
     ImmutableMap<String, TyVarSymbol> typeParameters;
-    {
-      ImmutableMap.Builder<String, TyVarSymbol> builder = ImmutableMap.builder();
+    if (t.typarams().isEmpty()) {
+      typeParameters = ImmutableMap.of();
+    } else {
+      ImmutableMap.Builder<String, TyVarSymbol> builder =
+          ImmutableMap.builderWithExpectedSize(t.typarams().size());
       for (Tree.TyParam pt : t.typarams()) {
         builder.put(pt.name().value(), new TyVarSymbol(sym, pt.name().value()));
       }
@@ -758,7 +764,7 @@ public class TypeBinder {
     }
 
     // type parameters can refer to each other in f-bounds, so update the scope first
-    scope = scope.append(new MapScope(typeParameters));
+    scope = withTypeParameters(scope, typeParameters);
     ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
         bindTyParams(t.typarams(), scope, typeParameters);
 
@@ -866,6 +872,11 @@ public class TypeBinder {
         receiver);
   }
 
+  private static CompoundScope withTypeParameters(
+      CompoundScope scope, ImmutableMap<String, TyVarSymbol> typeParameters) {
+    return typeParameters.isEmpty() ? scope : scope.append(new MapScope(typeParameters));
+  }
+
   private static boolean hasEnclosingInstance(HeaderBoundClass base) {
     return base.kind() == TurbineTyKind.CLASS
         && base.owner() != null
@@ -906,7 +917,10 @@ public class TypeBinder {
 
   private ImmutableList<AnnoInfo> bindAnnotations(
       CompoundScope scope, ImmutableList<Tree.Anno> trees) {
-    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
+    if (trees.isEmpty()) {
+      return ImmutableList.of();
+    }
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builderWithExpectedSize(trees.size());
     for (Tree.Anno tree : trees) {
       ImmutableList<Ident> name = tree.name();
       LookupResult lookupResult = scope.lookup(new LookupKey(name));
@@ -984,6 +998,25 @@ public class TypeBinder {
   }
 
   private Type bindClassTy(CompoundScope scope, Tree.ClassTy t) {
+    // Fast-path unqualified class types (the common case, e.g. `String` or `List<T>`), avoiding
+    // t.flatten(), intermediate name list builders, and bindClassTyRest since there are no
+    // enclosing type qualifiers or remaining member segments to resolve.
+    if (t.base().isEmpty()) {
+      LookupResult result = scope.lookup(new LookupKey(ImmutableList.of(t.name())));
+      if (result != null && result.sym() != null) {
+        Symbol sym = result.sym();
+        ImmutableList<AnnoInfo> annos = bindAnnotations(scope, t.annos());
+        return switch (sym.symKind()) {
+          case CLASS ->
+              Type.ClassTy.create(
+                  ImmutableList.of(
+                      Type.ClassTy.SimpleClassTy.create(
+                          (ClassSymbol) sym, bindTyArgs(scope, t.tyargs()), annos)));
+          case TY_PARAM -> Type.TyVar.create((TyVarSymbol) sym, annos);
+          default -> throw new AssertionError(sym.symKind());
+        };
+      }
+    }
     // flatten the components of a qualified class type
     ImmutableList<Tree.ClassTy> flat = t.flatten();
     // the simple names of all classes in the qualified name
