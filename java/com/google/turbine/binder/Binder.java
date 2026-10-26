@@ -65,6 +65,8 @@ import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.tree.Tree.ModDecl;
 import com.google.turbine.type.Type;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.processing.Processor;
 import javax.tools.Diagnostic;
@@ -171,7 +173,7 @@ public final class Binder {
 
     Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(log, syms, psenv, classPathEnv);
 
-    Env<ClassSymbol, SourceTypeBoundClass> tenv =
+    SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv =
         bindTypes(
             executor,
             log,
@@ -189,14 +191,7 @@ public final class Binder {
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             log);
     tenv =
-        disambiguateTypeAnnotations(
-            executor,
-            syms,
-            tenv,
-            CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
-            log);
-    tenv =
-        canonicalizeTypes(
+        disambiguateAndCanonicalize(
             executor,
             syms,
             tenv,
@@ -211,13 +206,8 @@ public final class Binder {
             moduleVersion,
             log);
 
-    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result = ImmutableMap.builder();
-    for (ClassSymbol sym : syms) {
-      result.put(sym, tenv.getNonNull(sym));
-    }
-
     return new BindingResult(
-        result.buildOrThrow(),
+        tenv.asMap(),
         boundModules,
         classPathEnv,
         tli,
@@ -352,7 +342,7 @@ public final class Binder {
     return new SimpleEnv<>(builder.buildOrThrow());
   }
 
-  private static Env<ClassSymbol, SourceTypeBoundClass> bindTypes(
+  private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> bindTypes(
       TurbineExecutor executor,
       TurbineLog log,
       ImmutableSet<ClassSymbol> syms,
@@ -370,7 +360,7 @@ public final class Binder {
             }));
   }
 
-  private static Env<ClassSymbol, SourceTypeBoundClass> canonicalizeTypes(
+  private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> disambiguateAndCanonicalize(
       TurbineExecutor executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> stenv,
@@ -381,7 +371,8 @@ public final class Binder {
             log,
             syms.asList(),
             (sym, taskLog) -> {
-              SourceTypeBoundClass base = stenv.getNonNull(sym);
+              SourceTypeBoundClass base =
+                  DisambiguateTypeAnnotations.bind(stenv.getNonNull(sym), tenv, taskLog);
               return CanonicalTypeBinder.bind(taskLog.withSource(base.source()), sym, base, tenv);
             }));
   }
@@ -424,7 +415,7 @@ public final class Binder {
     return bound.build();
   }
 
-  private static Env<ClassSymbol, SourceTypeBoundClass> constants(
+  private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> constants(
       TurbineExecutor executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
@@ -452,32 +443,12 @@ public final class Binder {
       Env<ClassSymbol, SourceTypeBoundClass> env,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
       TurbineLog log) {
-    Env<FieldSymbol, Const.Value> lazyConstEnv = lazyConstEnv(syms, env, baseEnv, log);
-    SimpleEnv.Builder<FieldSymbol, Const.Value> constValues = SimpleEnv.builder();
-    for (ClassSymbol sym : syms) {
-      for (FieldInfo field : env.getNonNull(sym).fields()) {
-        if (!isConst(field)) {
-          continue;
-        }
-        Const.Value value = lazyConstEnv.get(field.sym());
-        if (value != null) {
-          constValues.put(field.sym(), value);
-        }
-      }
-    }
-    return constValues.build();
-  }
-
-  private static Env<FieldSymbol, Const.Value> lazyConstEnv(
-      ImmutableSet<ClassSymbol> syms,
-      Env<ClassSymbol, SourceTypeBoundClass> env,
-      CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
-      TurbineLog log) {
     // Prepare to lazily evaluate constant fields in each compilation unit.
     // The laziness is necessary since constant fields can reference other
     // constant fields.
     ImmutableMap.Builder<FieldSymbol, LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>>
         completers = ImmutableMap.builder();
+    List<FieldSymbol> constFields = new ArrayList<>();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass info = env.getNonNull(sym);
       for (FieldInfo field : info.fields()) {
@@ -485,14 +456,23 @@ public final class Binder {
           continue;
         }
         completers.put(field.sym(), new LazyConstCompleter(sym, info, baseEnv, field, log));
+        constFields.add(field.sym());
       }
     }
-
-    // Create an environment of constant field values that combines
-    // lazily evaluated fields in the current compilation unit with
-    // constant fields in the classpath (which don't require evaluation).
-    return new LazyEnv<>(
-        completers.buildOrThrow(), SimpleEnv.<FieldSymbol, Const.Value>builder().build());
+    if (constFields.isEmpty()) {
+      return new SimpleEnv<>(ImmutableMap.of());
+    }
+    Env<FieldSymbol, Const.Value> lazyConstEnv =
+        new LazyEnv<>(completers.buildOrThrow(), new SimpleEnv<>(ImmutableMap.of()));
+    ImmutableMap.Builder<FieldSymbol, Const.Value> constValues =
+        ImmutableMap.builderWithExpectedSize(constFields.size());
+    for (FieldSymbol fieldSym : constFields) {
+      Const.Value value = lazyConstEnv.get(fieldSym);
+      if (value != null) {
+        constValues.put(fieldSym, value);
+      }
+    }
+    return new SimpleEnv<>(constValues.buildOrThrow());
   }
 
   private static class LazyConstCompleter
@@ -572,24 +552,6 @@ public final class Binder {
         return false;
     }
     return true;
-  }
-
-  /**
-   * Disambiguate annotations on field types and method return types that could be declaration or
-   * type annotations.
-   */
-  private static Env<ClassSymbol, SourceTypeBoundClass> disambiguateTypeAnnotations(
-      TurbineExecutor executor,
-      ImmutableSet<ClassSymbol> syms,
-      Env<ClassSymbol, SourceTypeBoundClass> stenv,
-      Env<ClassSymbol, TypeBoundClass> tenv,
-      TurbineLog log) {
-    return new SimpleEnv<>(
-        executor.toMapWithLog(
-            log,
-            syms.asList(),
-            (sym, taskLog) ->
-                DisambiguateTypeAnnotations.bind(stenv.getNonNull(sym), tenv, taskLog)));
   }
 
   /**

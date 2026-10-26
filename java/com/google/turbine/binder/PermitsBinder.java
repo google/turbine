@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
-import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineFlag;
@@ -42,8 +41,8 @@ final class PermitsBinder {
    *     classpath or bootclasspath are not required by this pass, because any implicitly permitted
    *     subtypes are required to be in the same compilation unit as their supertype.
    */
-  static Env<ClassSymbol, SourceTypeBoundClass> bindPermits(
-      ImmutableSet<ClassSymbol> syms, Env<ClassSymbol, SourceTypeBoundClass> tenv) {
+  static SimpleEnv<ClassSymbol, SourceTypeBoundClass> bindPermits(
+      ImmutableSet<ClassSymbol> syms, SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv) {
     Set<ClassSymbol> sealedClassesWithoutExplicitPermits = new HashSet<>();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass info = tenv.getNonNull(sym);
