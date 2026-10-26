@@ -50,6 +50,21 @@ public class UnicodeEscapePreprocessor {
 
   /** Returns the next unescaped Unicode input character. */
   public int next() {
+    // Fast-path BMP characters other than backslash (which may start a Unicode escape) and high
+    // surrogates (which must be paired with a low surrogate in eat()).
+    if (idx < input.length()) {
+      char c = input.charAt(idx);
+      if (c != '\\' && !Character.isHighSurrogate(c)) {
+        idx++;
+        ch = c;
+        evenLeadingSlashes = true;
+        return c;
+      }
+    }
+    return nextSlow();
+  }
+
+  private int nextSlow() {
     eat();
     if (ch == '\\' && evenLeadingSlashes) {
       unicodeEscape();
@@ -57,6 +72,60 @@ public class UnicodeEscapePreprocessor {
       evenLeadingSlashes = true;
     }
     return ch;
+  }
+
+  /**
+   * Advances past contiguous ASCII whitespace characters and returns the next unescaped character.
+   */
+  public int skipWhitespace() {
+    String in = this.input;
+    int len = in.length();
+    int i = this.idx;
+    while (i < len) {
+      char c = in.charAt(i);
+      if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '\f') {
+        i++;
+      } else {
+        break;
+      }
+    }
+    this.idx = i;
+    return next();
+  }
+
+  /**
+   * Advances past contiguous ASCII identifier part characters and returns the next unescaped
+   * character.
+   */
+  public int eatIdentifier() {
+    String in = this.input;
+    int len = in.length();
+    int i = this.idx;
+    while (i < len) {
+      char c = in.charAt(i);
+      if ((c >= 'a' && c <= 'z')
+          || (c >= 'A' && c <= 'Z')
+          || (c >= '0' && c <= '9')
+          || c == '_'
+          || c == '$') {
+        i++;
+      } else {
+        break;
+      }
+    }
+    this.idx = i;
+    return eatIdentifierSlow();
+  }
+
+  private int eatIdentifierSlow() {
+    int c = next();
+    while (Character.isJavaIdentifierPart(c)) {
+      if (c == ASCII_SUB && done()) {
+        break;
+      }
+      c = next();
+    }
+    return c;
   }
 
   /** Returns a substring of the raw (escaped) input. */

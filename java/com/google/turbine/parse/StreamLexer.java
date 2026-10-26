@@ -114,7 +114,7 @@ public class StreamLexer implements Lexer {
     while (true) {
       position = reader.position();
       switch (ch) {
-        case '\r', '\n', ' ', '\t', '\f' -> eat();
+        case '\r', '\n', ' ', '\t', '\f' -> ch = reader.skipWhitespace();
         case '/' -> {
           eat();
           switch (ch) {
@@ -1248,14 +1248,7 @@ public class StreamLexer implements Lexer {
 
   private Token identifier() {
     readFrom();
-    eat();
-    // TODO(cushon): the style guide disallows non-ascii identifiers
-    while (Character.isJavaIdentifierPart(ch)) {
-      if (ch == ASCII_SUB && reader.done()) {
-        break;
-      }
-      eat();
-    }
+    ch = reader.eatIdentifier();
     return makeIdent(reader.source().source(), readFrom, reader.position());
   }
 

@@ -551,4 +551,19 @@ public class LexerTest {
           .containsExactlyElementsIn(JavacLexer.javacLex(input));
     }
   }
+
+  @Test
+  public void identifierAndWhitespaceSlowPaths() {
+    // identifiers containing or ending in characters handled by the slow path
+    lexerComparisonTest("ab\fcd");
+    lexerComparisonTest("a\uD800\uDC00b c");
+    lexerComparisonTest("x\u00e9y z");
+    lexerComparisonTest("abc");
+    // escaped and non-ASCII-fast-path whitespace
+    lexerComparisonTest("  \\u0020  x");
+    lexerComparisonTest(" \f x");
+    // Unicode escapes and identifier-ignorable characters are part of the raw identifier text
+    assertThat(lex("a\\u0062c d")).containsExactly("IDENT(a\\u0062c)", "IDENT(d)", "EOF");
+    assertThat(lex("a\u0000b c")).containsExactly("IDENT(a\u0000b)", "IDENT(c)", "EOF");
+  }
 }
