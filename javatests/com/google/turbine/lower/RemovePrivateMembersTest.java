@@ -330,6 +330,17 @@ public class RemovePrivateMembersTest {
         """,
         ImmutableSet.of("Test", "Test$I", "Test$I$J"),
       },
+      {
+        """
+        class Test {
+          static class A {
+            class B {}
+          }
+          public interface I {}
+        }
+        """,
+        ImmutableSet.of("Test", "Test$A", "Test$A$B", "Test$I"),
+      },
     };
     return Arrays.asList(cases);
   }

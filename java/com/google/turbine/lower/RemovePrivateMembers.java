@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableTable;
 import com.google.turbine.binder.bound.AnnotationMetadata;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -43,8 +42,10 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,11 +66,10 @@ class RemovePrivateMembers {
       LowerOptions options) {
     // Private member classes can only be referenced in the same top-level class, so first group
     // the inputs by outermost enclosing class to make search for usages faster.
-    ImmutableTable<ClassSymbol, ClassSymbol, SourceTypeBoundClass> groups =
-        groupByTopLevelClass(units);
+    Collection<Map<ClassSymbol, SourceTypeBoundClass>> groups = groupByTopLevelClass(units);
     ImmutableList<ImmutableMap<ClassSymbol, SourceTypeBoundClass>> processed =
         executor.map(
-            ImmutableList.copyOf(groups.rowMap().values()),
+            ImmutableList.copyOf(groups),
             compilationUnit -> {
               ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> unitResult =
                   ImmutableMap.builder();
@@ -171,17 +171,22 @@ class RemovePrivateMembers {
       Env<ClassSymbol, TypeBoundClass> env,
       Map<ClassSymbol, SourceTypeBoundClass> unit,
       LowerOptions options) {
-    // A graph from class declarations in the current top level class to classes that they
-    // reference in signatures of non-private APIs.
-    Map<ClassSymbol, ImmutableSet<ClassSymbol>> usages = new HashMap<>();
-    List<ClassSymbol> roots = new ArrayList<>();
-    for (Map.Entry<ClassSymbol, SourceTypeBoundClass> e : unit.entrySet()) {
-      ClassSymbol sym = e.getKey();
-      SourceTypeBoundClass info = e.getValue();
+    List<ClassSymbol> roots = new ArrayList<>(unit.size());
+    for (ClassSymbol sym : unit.keySet()) {
       if (!isEffectivelyPrivate(sym, unit)) {
         roots.add(sym);
       }
-      usages.put(sym, usagesInTopLevelClass(info, env, unit, options));
+    }
+    // If there are no effectively private member classes in the top-level unit, all classes are
+    // already reachable and we can skip scanning their signatures for usages.
+    if (roots.size() == unit.size()) {
+      return unit.keySet();
+    }
+    // A graph from class declarations in the current top level class to classes that they
+    // reference in signatures of non-private APIs.
+    Map<ClassSymbol, ImmutableSet<ClassSymbol>> usages = new HashMap<>();
+    for (Map.Entry<ClassSymbol, SourceTypeBoundClass> e : unit.entrySet()) {
+      usages.put(e.getKey(), usagesInTopLevelClass(e.getValue(), env, unit, options));
     }
     Set<ClassSymbol> reachable = new HashSet<>();
     for (ClassSymbol root : roots) {
@@ -417,17 +422,16 @@ class RemovePrivateMembers {
   }
 
   // Returns (topLevelClass, enclosedClass, boundEnclosedClass)
-  private static ImmutableTable<ClassSymbol, ClassSymbol, SourceTypeBoundClass>
-      groupByTopLevelClass(ImmutableMap<ClassSymbol, SourceTypeBoundClass> units) {
-    ImmutableTable.Builder<ClassSymbol, ClassSymbol, SourceTypeBoundClass> builder =
-        ImmutableTable.builder();
+  private static Collection<Map<ClassSymbol, SourceTypeBoundClass>> groupByTopLevelClass(
+      ImmutableMap<ClassSymbol, SourceTypeBoundClass> units) {
+    Map<ClassSymbol, Map<ClassSymbol, SourceTypeBoundClass>> groups = new LinkedHashMap<>();
     for (Map.Entry<ClassSymbol, SourceTypeBoundClass> entry : units.entrySet()) {
       ClassSymbol sym = entry.getKey();
       SourceTypeBoundClass info = entry.getValue();
       ClassSymbol topLevelClass = topLevelClass(sym, info, units);
-      builder.put(topLevelClass, sym, info);
+      groups.computeIfAbsent(topLevelClass, k -> new LinkedHashMap<>()).put(sym, info);
     }
-    return builder.buildOrThrow();
+    return groups.values();
   }
 
   private static ClassSymbol topLevelClass(
