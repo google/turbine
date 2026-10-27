@@ -546,4 +546,44 @@ public class TransitiveTest {
     assertThat(manifest.getMainAttributes().get(new Attributes.Name("Original-Jar-Path")))
         .isEqualTo("relative/b.jar");
   }
+
+  @Test
+  public void transitiveClassReferencedByName() throws Exception {
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/A.java", //
+                    "package a;",
+                    "public class A {",
+                    "  public static class Inner {}",
+                    "}")
+                .build(),
+            ImmutableList.of());
+
+    Path libb =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines("b/B.java", "package b;", "public class B extends a.A {}")
+                .build(),
+            ImmutableList.of(liba));
+
+    // A class that refers to the transitive class a.A by name, rather than as a member of a
+    // supertype, compiles against just the repackaged version of a.A in libb.
+    Path libc =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "c/C.java", //
+                    "package c;",
+                    "import a.A;",
+                    "public class C {",
+                    "  public A.Inner i;",
+                    "}")
+                .build(),
+            ImmutableList.of(libb));
+
+    ClassFile c = ClassReader.read(libc::toString, readJar(libc).get("c/C.class"));
+    assertThat(getOnlyElement(c.fields()).descriptor()).isEqualTo("La/A$Inner;");
+  }
 }

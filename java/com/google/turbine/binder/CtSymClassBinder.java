@@ -61,6 +61,7 @@ public final class CtSymClassBinder {
     }
     Map<ClassSymbol, BytecodeBoundClass> map = new HashMap<>();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
+    SimpleTopLevelIndex.Builder indexBuilder = SimpleTopLevelIndex.builder();
     Env<ClassSymbol, BytecodeBoundClass> benv =
         new Env<ClassSymbol, BytecodeBoundClass>() {
           @Override
@@ -79,30 +80,34 @@ public final class CtSymClassBinder {
         continue;
       }
       // check if the directory matches the desired release
-      if (ze.name().substring(0, idx).indexOf(releaseChar) == -1) {
+      if (name.indexOf(releaseChar, 0, idx) == -1) {
         continue;
       }
       // JDK >= 12 includes the module name as a prefix
       idx = name.indexOf('/', idx + 1);
-      if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.sig")) {
+      if (name.endsWith("/module-info.sig")) {
         ModuleInfo moduleInfo = BytecodeBinder.bindModuleInfo(() -> ctSym + "!" + name, ze);
         modules.put(new ModuleSymbol(moduleInfo.name()), moduleInfo);
         continue;
       }
       ClassSymbol sym = new ClassSymbol(name.substring(idx + 1, name.length() - ".sig".length()));
-      map.putIfAbsent(sym, new BytecodeBoundClass(sym, ze, benv, () -> ctSym + "!" + ze.name()));
+      var bound =
+          map.putIfAbsent(
+              sym, new BytecodeBoundClass(sym, ze, benv, () -> ctSym + "!" + ze.name()));
+      if (bound == null) {
+        indexBuilder.insert(sym);
+      }
     }
     if (map.isEmpty()) {
       // we didn't find any classes for the desired release
       return null;
     }
-    SimpleEnv<ClassSymbol, BytecodeBoundClass> env = new SimpleEnv<>(ImmutableMap.copyOf(map));
     Env<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.copyOf(modules));
-    TopLevelIndex index = SimpleTopLevelIndex.of(env.asMap().keySet());
+    TopLevelIndex index = indexBuilder.build();
     return new ClassPath() {
       @Override
       public Env<ClassSymbol, BytecodeBoundClass> env() {
-        return env;
+        return benv;
       }
 
       @Override

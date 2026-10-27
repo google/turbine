@@ -93,13 +93,16 @@ public final class ClassPathBinder {
       totalClasses += r.classes.size() + r.transitive.size();
       totalResources += r.resources.size();
     }
-    Map<ClassSymbol, BytecodeBoundClass> map = Maps.newLinkedHashMapWithExpectedSize(totalClasses);
+    Map<ClassSymbol, BytecodeBoundClass> map = HashMap.newHashMap(totalClasses);
     env.map = map;
+    SimpleTopLevelIndex.Builder indexBuilder = SimpleTopLevelIndex.builder();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
     Map<String, Supplier<byte[]>> resources = Maps.newHashMapWithExpectedSize(totalResources);
     for (JarResult r : results) {
       for (BytecodeBoundClass c : r.classes) {
-        map.putIfAbsent(c.sym(), c);
+        if (map.putIfAbsent(c.sym(), c) == null) {
+          indexBuilder.insert(c.sym());
+        }
       }
       for (ModuleInfo m : r.modules) {
         modules.putIfAbsent(new ModuleSymbol(m.name()), m);
@@ -110,11 +113,13 @@ public final class ClassPathBinder {
     }
     for (JarResult r : results) {
       for (BytecodeBoundClass c : r.transitive) {
-        map.putIfAbsent(c.sym(), c);
+        if (map.putIfAbsent(c.sym(), c) == null) {
+          indexBuilder.insert(c.sym());
+        }
       }
     }
     SimpleEnv<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.copyOf(modules));
-    TopLevelIndex index = SimpleTopLevelIndex.of(map.keySet());
+    TopLevelIndex index = indexBuilder.build();
     return new ClassPath() {
       @Override
       public Env<ClassSymbol, BytecodeBoundClass> env() {
