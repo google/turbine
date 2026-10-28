@@ -99,6 +99,19 @@ public interface TypeBoundClass extends HeaderBoundClass {
     public ImmutableList<AnnoInfo> annotations() {
       return annotations;
     }
+
+    /**
+     * Returns this instance if {@code upperBound} is identical ({@code ==}) to the current value,
+     * or else a copy with the new upper bound.
+     */
+    // Identity comparison is intentional: binding passes return their input when nothing changed.
+    @SuppressWarnings("ReferenceEquality")
+    public TyVarInfo withUpperBound(IntersectionTy upperBound) {
+      if (upperBound == this.upperBound) {
+        return this;
+      }
+      return new TyVarInfo(upperBound, lowerBound, annotations);
+    }
   }
 
   /** A field declaration. */
@@ -159,6 +172,19 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** Declaration annotations. */
     public ImmutableList<AnnoInfo> annotations() {
       return annotations;
+    }
+
+    /**
+     * Returns this instance if {@code type} is identical ({@code ==}) to the current value, or else
+     * a copy with the new type.
+     */
+    // Identity comparison is intentional: binding passes return their input when nothing changed.
+    @SuppressWarnings("ReferenceEquality")
+    public FieldInfo withType(Type type) {
+      if (type == this.type) {
+        return this;
+      }
+      return new FieldInfo(sym, type, access, annotations, decl, value);
     }
   }
 
@@ -261,6 +287,47 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return receiver;
     }
 
+    /**
+     * Returns this instance if all arguments are identical ({@code ==}) to the current values, or
+     * else a copy with the new type parameters, return type, parameters, exceptions, and receiver.
+     */
+    // Identity comparison is intentional: binding passes return their input when nothing changed.
+    @SuppressWarnings("ReferenceEquality")
+    public MethodInfo withSignature(
+        ImmutableMap<TyVarSymbol, TyVarInfo> tyParams,
+        Type returnType,
+        ImmutableList<ParamInfo> parameters,
+        ImmutableList<Type> exceptions,
+        @Nullable ParamInfo receiver) {
+      if (tyParams == this.tyParams
+          && returnType == this.returnType
+          && parameters == this.parameters
+          && exceptions == this.exceptions
+          && receiver == this.receiver) {
+        return this;
+      }
+      return new MethodInfo(
+          sym,
+          tyParams,
+          returnType,
+          parameters,
+          exceptions,
+          access,
+          defaultValue,
+          decl,
+          annotations,
+          receiver);
+    }
+
+    /**
+     * Returns this instance if all arguments are identical ({@code ==}) to the current values, or
+     * else a copy with the new parameters and receiver.
+     */
+    public MethodInfo withParametersAndReceiver(
+        ImmutableList<ParamInfo> parameters, @Nullable ParamInfo receiver) {
+      return withSignature(tyParams, returnType, parameters, exceptions, receiver);
+    }
+
     public MethodTy asType() {
       return MethodTy.create(
           tyParams.keySet(),
@@ -330,6 +397,32 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** The parameter's modifiers. */
     public int access() {
       return access;
+    }
+
+    /**
+     * Returns this instance if {@code type} is identical ({@code ==}) to the current value, or else
+     * a copy with the new type.
+     */
+    // Identity comparison is intentional: binding passes return their input when nothing changed.
+    @SuppressWarnings("ReferenceEquality")
+    public ParamInfo withType(Type type) {
+      if (type == this.type) {
+        return this;
+      }
+      return new ParamInfo(sym, type, annotations, access);
+    }
+
+    /**
+     * Returns this instance if all arguments are identical ({@code ==}) to the current values, or
+     * else a copy with the new type and annotations.
+     */
+    // Identity comparison is intentional: binding passes return their input when nothing changed.
+    @SuppressWarnings("ReferenceEquality")
+    public ParamInfo withTypeAndAnnotations(Type type, ImmutableList<AnnoInfo> annotations) {
+      if (type == this.type && annotations == this.annotations) {
+        return this;
+      }
+      return new ParamInfo(sym, type, annotations, access);
     }
   }
 

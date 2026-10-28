@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static com.google.turbine.binder.ImmutableListUtil.mapIfChanged;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -112,55 +114,34 @@ public final class CanonicalTypeBinder {
   }
 
   private ImmutableList<FieldInfo> fields(int position, ImmutableList<FieldInfo> fields) {
-    ImmutableList.Builder<FieldInfo> result = ImmutableList.builder();
-    for (FieldInfo base : fields) {
-      result.add(
-          new FieldInfo(
-              base.sym(),
-              canonicalize(base.decl() != null ? base.decl().position() : position, base.type()),
-              base.access(),
-              base.annotations(),
-              base.decl(),
-              base.value()));
-    }
-    return result.build();
+    return mapIfChanged(fields, base -> field(position, base));
+  }
+
+  private FieldInfo field(int position, FieldInfo base) {
+    int pos = base.decl() != null ? base.decl().position() : position;
+    return base.withType(canonicalize(pos, base.type()));
   }
 
   private ImmutableList<MethodInfo> methods(int position, ImmutableList<MethodInfo> methods) {
-    ImmutableList.Builder<MethodInfo> result = ImmutableList.builder();
-    for (MethodInfo base : methods) {
-      int pos = base.decl() != null ? base.decl().position() : position;
-      ImmutableMap<TyVarSymbol, TyVarInfo> tps = typeParameters(pos, base.tyParams());
-      Type ret = canonicalize(pos, base.returnType());
-      ImmutableList<ParamInfo> parameters = parameters(pos, base.parameters());
-      ImmutableList<Type> exceptions = canonicalizeList(pos, base.exceptions());
-      result.add(
-          new MethodInfo(
-              base.sym(),
-              tps,
-              ret,
-              parameters,
-              exceptions,
-              base.access(),
-              base.defaultValue(),
-              base.decl(),
-              base.annotations(),
-              base.receiver() != null ? param(pos, base.receiver()) : null));
-    }
-    return result.build();
+    return mapIfChanged(methods, base -> method(position, base));
+  }
+
+  private MethodInfo method(int position, MethodInfo base) {
+    int pos = base.decl() != null ? base.decl().position() : position;
+    ImmutableMap<TyVarSymbol, TyVarInfo> tps = typeParameters(pos, base.tyParams());
+    Type ret = canonicalize(pos, base.returnType());
+    ImmutableList<ParamInfo> parameters = parameters(pos, base.parameters());
+    ImmutableList<Type> exceptions = canonicalizeList(pos, base.exceptions());
+    ParamInfo receiver = base.receiver() != null ? param(pos, base.receiver()) : null;
+    return base.withSignature(tps, ret, parameters, exceptions, receiver);
   }
 
   private ImmutableList<ParamInfo> parameters(int pos, ImmutableList<ParamInfo> parameters) {
-    ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
-    for (ParamInfo parameter : parameters) {
-      result.add(param(pos, parameter));
-    }
-    return result.build();
+    return mapIfChanged(parameters, parameter -> param(pos, parameter));
   }
 
   private ParamInfo param(int position, ParamInfo base) {
-    return new ParamInfo(
-        base.sym(), canonicalize(position, base.type()), base.annotations(), base.access());
+    return base.withType(canonicalize(position, base.type()));
   }
 
   private ImmutableList<RecordComponentInfo> components(
@@ -178,22 +159,27 @@ public final class CanonicalTypeBinder {
     return result.build();
   }
 
+  // Identity is intentional: withUpperBound returns its receiver when the bound is unchanged.
+  @SuppressWarnings("ReferenceEquality")
   private ImmutableMap<TyVarSymbol, TyVarInfo> typeParameters(
-      int position, Map<TyVarSymbol, TyVarInfo> tps) {
-    ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
+      int position, ImmutableMap<TyVarSymbol, TyVarInfo> tps) {
+    if (tps.isEmpty()) {
+      return tps;
+    }
+    ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result =
+        ImmutableMap.builderWithExpectedSize(tps.size());
+    boolean changed = false;
     for (Map.Entry<TyVarSymbol, TyVarInfo> e : tps.entrySet()) {
       TyVarInfo info = e.getValue();
-      IntersectionTy upperBound = (IntersectionTy) canonicalize(position, info.upperBound());
-      result.put(e.getKey(), new TyVarInfo(upperBound, /* lowerBound= */ null, info.annotations()));
+      TyVarInfo bound =
+          info.withUpperBound((IntersectionTy) canonicalize(position, info.upperBound()));
+      changed |= bound != info;
+      result.put(e.getKey(), bound);
     }
-    return result.buildOrThrow();
+    return changed ? result.buildOrThrow() : tps;
   }
 
   private ImmutableList<Type> canonicalizeList(int position, ImmutableList<Type> types) {
-    ImmutableList.Builder<Type> result = ImmutableList.builder();
-    for (Type type : types) {
-      result.add(canonicalize(position, type));
-    }
-    return result.build();
+    return mapIfChanged(types, type -> canonicalize(position, type));
   }
 }

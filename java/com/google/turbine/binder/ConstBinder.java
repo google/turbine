@@ -159,16 +159,12 @@ public class ConstBinder {
   }
 
   private ImmutableList<ParamInfo> bindParameters(ImmutableList<ParamInfo> formals) {
-    ImmutableList.Builder<ParamInfo> result = ImmutableList.builder();
-    for (ParamInfo base : formals) {
-      result.add(bindParameter(base));
-    }
-    return result.build();
+    return ImmutableListUtil.mapIfChanged(formals, this::bindParameter);
   }
 
   private ParamInfo bindParameter(ParamInfo base) {
-    ImmutableList<AnnoInfo> annos = constEvaluator.evaluateAnnotations(base.annotations());
-    return new ParamInfo(base.sym(), bindType(base.type()), annos, base.access());
+    return base.withTypeAndAnnotations(
+        bindType(base.type()), constEvaluator.evaluateAnnotations(base.annotations()));
   }
 
   private ImmutableList<RecordComponentInfo> bindRecordComponents(
@@ -319,7 +315,11 @@ public class ConstBinder {
 
   private ImmutableMap<TyVarSymbol, TyVarInfo> bindTypeParameters(
       ImmutableMap<TyVarSymbol, TyVarInfo> typarams) {
-    ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result = ImmutableMap.builder();
+    if (typarams.isEmpty()) {
+      return typarams;
+    }
+    ImmutableMap.Builder<TyVarSymbol, TyVarInfo> result =
+        ImmutableMap.builderWithExpectedSize(typarams.size());
     for (Map.Entry<TyVarSymbol, TyVarInfo> entry : typarams.entrySet()) {
       TyVarInfo info = entry.getValue();
       result.put(
@@ -366,6 +366,12 @@ public class ConstBinder {
   }
 
   private ClassTy bindClassType(ClassTy type) {
+    if (type.classes().size() == 1) {
+      SimpleClassTy c = type.classes().getFirst();
+      if (c.targs().isEmpty() && c.annos().isEmpty()) {
+        return type;
+      }
+    }
     ClassTy classTy = type;
     ImmutableList.Builder<SimpleClassTy> classes = ImmutableList.builder();
     for (SimpleClassTy c : classTy.classes()) {

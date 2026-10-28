@@ -353,22 +353,45 @@ public class Canonicalize {
     return null;
   }
 
+  // Identity comparison is intentional: canonicalization returns its input when nothing changed.
+  @SuppressWarnings("ReferenceEquality")
   private ClassTy canonicalizeClassTy(ClassSymbol base, ClassTy ty) {
-    // canonicalize type arguments first
-    ImmutableList.Builder<ClassTy.SimpleClassTy> args = ImmutableList.builder();
-    for (ClassTy.SimpleClassTy s : ty.classes()) {
-      args.add(SimpleClassTy.create(s.sym(), canonicalize(s.targs(), base), s.annos()));
+    if (ty.classes().size() == 1 && ty.classes().getFirst().targs().isEmpty()) {
+      return canon(base, ty);
     }
-    ty = ClassTy.create(args.build());
+    // canonicalize type arguments first
+    ImmutableList.Builder<ClassTy.SimpleClassTy> args =
+        ImmutableList.builderWithExpectedSize(ty.classes().size());
+    boolean changed = false;
+    for (ClassTy.SimpleClassTy s : ty.classes()) {
+      ImmutableList<Type> targs = canonicalize(s.targs(), base);
+      if (targs != s.targs()) {
+        changed = true;
+        args.add(SimpleClassTy.create(s.sym(), targs, s.annos()));
+      } else {
+        args.add(s);
+      }
+    }
+    if (changed) {
+      ty = ClassTy.create(args.build());
+    }
     return canon(base, ty);
   }
 
+  // Identity comparison is intentional: canonicalization returns its input when nothing changed.
+  @SuppressWarnings("ReferenceEquality")
   private ImmutableList<Type> canonicalize(ImmutableList<Type> targs, ClassSymbol base) {
-    ImmutableList.Builder<Type> result = ImmutableList.builder();
-    for (Type a : targs) {
-      result.add(canonicalize(base, a));
+    if (targs.isEmpty()) {
+      return targs;
     }
-    return result.build();
+    ImmutableList.Builder<Type> result = ImmutableList.builderWithExpectedSize(targs.size());
+    boolean changed = false;
+    for (Type a : targs) {
+      Type c = canonicalize(base, a);
+      changed |= c != a;
+      result.add(c);
+    }
+    return changed ? result.build() : targs;
   }
 
   private Type canonicalizeWildTy(ClassSymbol base, WildTy type) {
