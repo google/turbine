@@ -370,8 +370,9 @@ public final class Main {
       for (String sourceJar : sourceJars) {
         Zip.ZipIterable iterable = closer.register(new Zip.ZipIterable(Path.of(sourceJar)));
         for (Zip.Entry ze : iterable) {
-          if (ze.name().endsWith(".java")) {
-            inputs.add(() -> new SourceFile(ze.name(), new String(ze.data(), UTF_8)));
+          String name = ze.name();
+          if (name.endsWith(".java")) {
+            inputs.add(() -> new SourceFile(name, new String(ze.data(), UTF_8)));
           }
         }
       }

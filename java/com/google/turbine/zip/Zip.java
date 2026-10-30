@@ -166,14 +166,17 @@ public final class Zip {
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);
       int commentLength = cd.getChar(cdindex + CENCOM);
-      Entry entry = new Entry(path, chan, string(cd, cdindex + CENHDR, nameLength), cd, cdindex);
+      Entry entry = new Entry(path, chan, cd, cdindex);
       cdindex += CENHDR + nameLength + extLength + commentLength;
       return entry;
     }
 
-    public String string(ByteBuffer buf, int offset, int length) {
+    public static String string(ByteBuffer buf, int offset, int length) {
       // TODO: cushon - switch to MemorySegment#getString on JDK 27(?)+
       // MemorySegment.ofBuffer(buf).getString(offset, UTF_8, length);
+      if (buf.hasArray()) {
+        return new String(buf.array(), buf.arrayOffset() + offset, length, UTF_8);
+      }
       byte[] bytes = new byte[length];
       buf.get(offset, bytes, 0, length);
       return new String(bytes, UTF_8);
@@ -283,21 +286,22 @@ public final class Zip {
 
     private final Path path;
     private final FileChannel chan;
-    private final String name;
     private final ByteBuffer cd;
     private final int cdindex;
 
-    public Entry(Path path, FileChannel chan, String name, ByteBuffer cd, int cdindex) {
+    public Entry(Path path, FileChannel chan, ByteBuffer cd, int cdindex) {
       this.path = path;
       this.chan = chan;
-      this.name = name;
       this.cd = cd;
       this.cdindex = cdindex;
     }
 
-    /** The entry name. */
+    /**
+     * The entry name. This is decoded on each call rather than stored, since most entries' names
+     * are only read once.
+     */
     public String name() {
-      return name;
+      return ZipIterator.string(cd, cdindex + CENHDR, cd.getChar(cdindex + CENNAM));
     }
 
     /** The entry data. */
@@ -308,7 +312,8 @@ public final class Zip {
       if (offset == ZIP64_MAGICVAL) {
         // TODO(cushon): read the offset from the 'Zip64 Extended Information Extra Field'
         throw new AssertionError(
-            String.format("%s: %s requires missing zip64 support, please file a bug", path, name));
+            String.format(
+                "%s: %s requires missing zip64 support, please file a bug", path, name()));
       }
       int nameLength = cd.getChar(cdindex + CENNAM);
       int extLength = cd.getChar(cdindex + CENEXT);

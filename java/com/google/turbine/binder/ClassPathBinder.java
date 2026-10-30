@@ -107,8 +107,8 @@ public final class ClassPathBinder {
       for (ModuleInfo m : r.modules) {
         modules.putIfAbsent(new ModuleSymbol(m.name()), m);
       }
-      for (Zip.Entry ze : r.resources) {
-        resources.put(ze.name(), ze);
+      for (Resource resource : r.resources) {
+        resources.put(resource.name(), resource.entry());
       }
     }
     for (JarResult r : results) {
@@ -143,11 +143,17 @@ public final class ClassPathBinder {
     };
   }
 
+  /**
+   * A non-class jar entry. The name is stored because {@link Zip.Entry#name()} decodes it on each
+   * call.
+   */
+  private record Resource(String name, Zip.Entry entry) {}
+
   private record JarResult(
       List<BytecodeBoundClass> classes,
       List<BytecodeBoundClass> transitive,
       List<ModuleInfo> modules,
-      List<Zip.Entry> resources) {
+      List<Resource> resources) {
     JarResult() {
       this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
@@ -223,7 +229,7 @@ public final class ClassPathBinder {
       }
       if (!name.endsWith(".class")) {
         var _ = name.hashCode();
-        result.resources.add(ze);
+        result.resources.add(new Resource(name, ze));
         continue;
       }
       if (name.substring(name.lastIndexOf('/') + 1).equals("module-info.class")) {
