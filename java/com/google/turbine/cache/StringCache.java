@@ -32,16 +32,28 @@ import static com.google.common.base.Preconditions.checkArgument;
  * by a different string replaces it. This keeps lookups fast and the cache small, at the cost of
  * occasionally returning a new instance for a string that was seen before.
  *
- * <p>This class is not thread-safe: each instance should be confined to a single thread, or be
- * externally synchronized.
+ * <p>Instances may be shared between threads without synchronization: the cache only stores
+ * references to immutable strings, so a data race can only cause a cache miss.
  */
 public final class StringCache {
+
+  /**
+   * The expected size used by {@link #StringCache()}. It is large enough to cache most of the
+   * distinct identifiers of a large compilation, and small enough to cost little memory for small
+   * ones.
+   */
+  private static final int DEFAULT_EXPECTED_SIZE = 16 * 1024;
 
   /**
    * A direct-mapped cache: each string is stored at an index derived from its hash code, and a
    * colliding string replaces the previous entry.
    */
   private final String[] cache;
+
+  /** Creates a cache with a default size, suitable for the identifiers of a compilation. */
+  public StringCache() {
+    this(DEFAULT_EXPECTED_SIZE);
+  }
 
   /**
    * Creates a cache with room for at least {@code 2 * expectedSize} strings, rounded up to a power

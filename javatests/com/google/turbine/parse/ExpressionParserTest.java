@@ -18,6 +18,7 @@ package com.google.turbine.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.turbine.cache.StringCache;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.tree.Tree;
 import java.util.Arrays;
@@ -162,7 +163,9 @@ public class ExpressionParserTest {
 
   @Test
   public void test() {
-    StreamLexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
+    StreamLexer lexer =
+        new StreamLexer(
+            new UnicodeEscapePreprocessor(new SourceFile(null, input)), new StringCache());
     Tree.Expression expression =
         new ConstExpressionParser(lexer, lexer.next(), lexer.position()).expression();
     if (expected == null) {

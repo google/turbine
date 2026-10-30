@@ -36,6 +36,7 @@ import com.google.turbine.binder.JimageClassBinder;
 import com.google.turbine.binder.Processing;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.cache.StringCache;
 import com.google.turbine.deps.Dependencies;
 import com.google.turbine.deps.Transitive;
 import com.google.turbine.diag.AnnotationProcessingError;
@@ -376,7 +377,10 @@ public final class Main {
           }
         }
       }
-      return executor.map(inputs.build(), input -> Parser.parse(input.get()));
+      // Identifiers are frequently repeated across files, so share one cache for the whole
+      // compilation.
+      StringCache stringCache = new StringCache();
+      return executor.map(inputs.build(), input -> Parser.parse(input.get(), stringCache));
     }
   }
 

@@ -32,11 +32,17 @@ import org.jspecify.annotations.Nullable;
 /** A {@link Lexer} that streams input from a {@link UnicodeEscapePreprocessor}. */
 public class StreamLexer implements Lexer {
 
-  private static final int STRING_CACHE_EXPECTED_SIZE = 256;
   private static final int MAX_KEYWORD_LENGTH = 12;
   private static final Token[][][] KEYWORDS = buildKeywords();
 
   private final UnicodeEscapePreprocessor reader;
+
+  /**
+   * A cache of strings read from the input, to avoid repeatedly allocating strings for identifiers
+   * that occur multiple times. It may be shared with other lexers, since identifiers are frequently
+   * repeated across files.
+   */
+  private final StringCache stringCache;
 
   /** The current input character. */
   private int ch;
@@ -53,14 +59,9 @@ public class StreamLexer implements Lexer {
   /** A saved javadoc comment. */
   private TurbineJavadoc javadoc = null;
 
-  /**
-   * A cache of strings read from the input, to avoid repeatedly allocating strings for identifiers
-   * that occur multiple times in a compilation unit.
-   */
-  private final StringCache stringCache = new StringCache(STRING_CACHE_EXPECTED_SIZE);
-
-  public StreamLexer(UnicodeEscapePreprocessor reader) {
+  public StreamLexer(UnicodeEscapePreprocessor reader, StringCache stringCache) {
     this.reader = reader;
+    this.stringCache = stringCache;
     eat();
   }
 
@@ -659,7 +660,8 @@ public class StreamLexer implements Lexer {
 
   private String translateEscapes(String value) {
     StreamLexer lexer =
-        new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, value + ASCII_SUB)));
+        new StreamLexer(
+            new UnicodeEscapePreprocessor(new SourceFile(null, value + ASCII_SUB)), stringCache);
     try {
       return lexer.translateEscapes();
     } catch (TurbineError e) {

@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
+import com.google.turbine.cache.StringCache;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class ParseErrorTest {
   public void intBound() {
     StreamLexer lexer =
         new StreamLexer(
-            new UnicodeEscapePreprocessor(new SourceFile("<>", String.valueOf("2147483648"))));
+            new UnicodeEscapePreprocessor(new SourceFile("<>", "2147483648")), new StringCache());
     ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next(), lexer.position());
     TurbineError e = assertThrows(TurbineError.class, () -> parser.expression());
     assertThat(e).hasMessageThat().contains("invalid literal");
@@ -44,7 +45,7 @@ public class ParseErrorTest {
   public void hexIntBound() {
     StreamLexer lexer =
         new StreamLexer(
-            new UnicodeEscapePreprocessor(new SourceFile("<>", String.valueOf("0x100000000"))));
+            new UnicodeEscapePreprocessor(new SourceFile("<>", "0x100000000")), new StringCache());
     ConstExpressionParser parser = new ConstExpressionParser(lexer, lexer.next(), lexer.position());
     TurbineError e = assertThrows(TurbineError.class, () -> parser.expression());
     assertThat(e).hasMessageThat().contains("invalid literal");

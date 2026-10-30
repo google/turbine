@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
 
 import com.google.common.truth.Expect;
+import com.google.turbine.cache.StringCache;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.escape.SourceCodeEscapers;
 import com.google.turbine.model.TurbineJavadoc;
@@ -360,7 +361,9 @@ public class LexerTest {
   }
 
   public static List<String> lex(String input) {
-    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
+    Lexer lexer =
+        new StreamLexer(
+            new UnicodeEscapePreprocessor(new SourceFile(null, input)), new StringCache());
     List<String> tokens = new ArrayList<>();
     Token token;
     do {
@@ -420,7 +423,9 @@ public class LexerTest {
   @Test
   public void textBlockEOF() {
     String input = "\"\"\"\n\\";
-    Lexer lexer = new StreamLexer(new UnicodeEscapePreprocessor(new SourceFile(null, input)));
+    Lexer lexer =
+        new StreamLexer(
+            new UnicodeEscapePreprocessor(new SourceFile(null, input)), new StringCache());
     assertThat(lexer.next()).isEqualTo(Token.EOF);
     assertThat(lexer.stringValue()).isEqualTo("\\");
   }

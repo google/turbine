@@ -36,6 +36,7 @@ import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
+import com.google.turbine.cache.StringCache;
 import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
@@ -151,6 +152,9 @@ public class Processing {
     ImmutableList.Builder<CompUnit> units =
         ImmutableList.<CompUnit>builder().addAll(initialSources);
 
+    // Share one cache across all generated sources, since identifiers repeat across files.
+    StringCache stringCache = new StringCache();
+
     Set<Processor> toRun = new LinkedHashSet<>();
 
     boolean errorRaised = false;
@@ -191,7 +195,8 @@ public class Processing {
       if (files.isEmpty()) {
         break;
       }
-      units.addAll(executor.map(ImmutableList.copyOf(files), Parser::parse));
+      units.addAll(
+          executor.map(ImmutableList.copyOf(files), file -> Parser.parse(file, stringCache)));
       errorRaised = log.errorRaised();
       if (errorRaised) {
         break;
@@ -239,7 +244,8 @@ public class Processing {
       // processors aren't supposed to generate sources on the final processing round, but javac
       // tolerates it anyway
       // TODO(cushon): consider disallowing this, or reporting a diagnostic
-      units.addAll(executor.map(ImmutableList.copyOf(files), Parser::parse));
+      units.addAll(
+          executor.map(ImmutableList.copyOf(files), file -> Parser.parse(file, stringCache)));
       result =
           Binder.bind(
               executor,
