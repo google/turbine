@@ -59,10 +59,10 @@ public class VariableInitializerParser {
   }
 
   /** Indices into {@code LT} tokens used for backtracking. */
-  final ArrayDeque<Integer> ltIndices = new ArrayDeque<>();
+  final ArrayDeque<Integer> ltIndices = new ArrayDeque<>(0);
 
   /** Indices into {@code commas} used for backtracking. */
-  final ArrayDeque<Integer> commaIndices = new ArrayDeque<>();
+  final ArrayDeque<Integer> commaIndices = new ArrayDeque<>(0);
 
   /** The saved tokens. */
   List<SavedToken> tokens = new ArrayList<>();
@@ -198,6 +198,11 @@ public class VariableInitializerParser {
           next();
         }
       }
+    }
+    if (commas.isEmpty()) {
+      // Fast path for the common case of a single initializer.
+      tokens.add(new SavedToken(Token.EOF, null, lexer.position()));
+      return ImmutableList.of(tokens);
     }
     List<List<SavedToken>> result = new ArrayList<>();
     int start = 0;

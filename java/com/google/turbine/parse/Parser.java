@@ -958,6 +958,19 @@ public class Parser {
 
   private ImmutableList<Tree> fieldRest(
       int pos, Modifiers modifiers, Tree.Type baseTy, Ident name) {
+    if (token == SEMI) {
+      // Fast path for a single field with no initializer, e.g. `int x;`.
+      eat(Token.SEMI);
+      return ImmutableList.of(
+          new VarDecl(
+              pos,
+              modifiers.access(),
+              modifiers.annos(),
+              baseTy,
+              name,
+              Optional.empty(),
+              modifiers.javadoc()));
+    }
     ImmutableList.Builder<Tree> result = ImmutableList.builder();
     VariableInitializerParser initializerParser = new VariableInitializerParser(token, lexer);
     List<List<SavedToken>> bits = initializerParser.parseInitializers();
