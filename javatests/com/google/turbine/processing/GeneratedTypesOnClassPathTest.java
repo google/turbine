@@ -19,12 +19,13 @@ package com.google.turbine.processing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing.ProcessorInfo;
@@ -43,7 +44,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -260,17 +260,20 @@ public class GeneratedTypesOnClassPathTest {
 
   private BindingResult bindWithClassPath(SourceFile source, Path classPathJar, Processor processor)
       throws IOException {
-    return Binder.bind(
-        TurbineExecutor.direct(),
-        ImmutableList.of(Parser.parse(source)),
-        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(classPathJar)),
-        ProcessorInfo.create(
-            ImmutableList.of(processor),
-            getClass().getClassLoader(),
-            ImmutableMap.of(),
-            SourceVersion.latestSupported()),
-        TestClassPaths.TURBINE_BOOTCLASSPATH,
-        Optional.empty());
+    return bind(
+        BindingRequest.builder()
+            .units(ImmutableList.of(Parser.parse(source)))
+            .classpath(
+                ClassPathBinder.bindClasspath(
+                    TurbineExecutor.direct(), ImmutableList.of(classPathJar)))
+            .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+            .processorInfo(
+                ProcessorInfo.create(
+                    ImmutableList.of(processor),
+                    getClass().getClassLoader(),
+                    ImmutableMap.of(),
+                    SourceVersion.latestSupported()))
+            .build());
   }
 
   @Test

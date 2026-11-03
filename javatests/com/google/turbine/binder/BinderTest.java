@@ -17,7 +17,10 @@
 package com.google.turbine.binder;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
+import static com.google.turbine.testing.TestBinder.bindingRequest;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
@@ -25,6 +28,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -44,7 +48,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import org.junit.Rule;
@@ -76,14 +79,7 @@ public class BinderTest {
                 "public class B extends A {",
                 "}"));
 
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
-            .units();
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = bind(units).units();
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -121,14 +117,7 @@ public class BinderTest {
                 "  class BInner extends IInner {}",
                 "}"));
 
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
-            .units();
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = bind(units).units();
 
     assertThat(bound.keySet())
         .containsExactly(
@@ -161,14 +150,7 @@ public class BinderTest {
                 "public class Foo extends Inner {",
                 "}"));
 
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
-            .units();
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = bind(units).units();
 
     assertThat(getBoundClass(bound, "other/Foo").superclass())
         .isEqualTo(new ClassSymbol("com/test/Test$Inner"));
@@ -191,16 +173,7 @@ public class BinderTest {
                 "  class Inner {}",
                 "}"));
 
-    TurbineError e =
-        assertThrows(
-            TurbineError.class,
-            () ->
-                Binder.bind(
-                    TurbineExecutor.direct(),
-                    units,
-                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                    TURBINE_BOOTCLASSPATH,
-                    /* moduleVersion= */ Optional.empty()));
+    TurbineError e = assertThrows(TurbineError.class, () -> bind(units));
     assertThat(e).hasMessageThat().contains("cycle in class hierarchy: a.A -> b.B -> a.A");
   }
 
@@ -213,14 +186,7 @@ public class BinderTest {
                 "public @interface Annotation {",
                 "}"));
 
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
-            .units();
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = bind(units).units();
 
     SourceTypeBoundClass a = getBoundClass(bound, "com/test/Annotation");
     assertThat(a.access())
@@ -243,14 +209,7 @@ public class BinderTest {
                 "public class A implements Entry {",
                 "}"));
 
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
-            .units();
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = bind(units).units();
 
     SourceTypeBoundClass a = getBoundClass(bound, "a/A");
     assertThat(a.interfaces()).containsExactly(new ClassSymbol("java/util/Map$Entry"));
@@ -285,12 +244,13 @@ public class BinderTest {
                 "}"));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
+        bind(BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TURBINE_BOOTCLASSPATH)
+                .build())
             .units();
 
     SourceTypeBoundClass a = getBoundClass(bound, "C$A");
@@ -305,11 +265,13 @@ public class BinderTest {
         Binder.bind(
             TurbineExecutor.direct(),
             log,
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            Processing.ProcessorInfo.empty(),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            Optional.empty());
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()))
+                .bootclasspath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()))
+                .build());
     assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
         .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = br.units();
@@ -327,11 +289,13 @@ public class BinderTest {
         Binder.bind(
             TurbineExecutor.direct(),
             log,
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            Processing.ProcessorInfo.empty(),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            Optional.empty());
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()))
+                .bootclasspath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()))
+                .build());
     assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
         .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = br.units();
@@ -357,14 +321,7 @@ public class BinderTest {
                 "}"));
     TurbineLog log = new TurbineLog();
     Binder.BindingResult br =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            log,
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            Processing.ProcessorInfo.empty(),
-            TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        Binder.bind(TurbineExecutor.direct(), log, bindingRequest().units(units).build());
     assertThat(
             log.diagnostics().stream()
                 .filter(
@@ -383,6 +340,45 @@ public class BinderTest {
         .containsExactly(
             "f", "No<Foo,Bar>.@Test.A Such<Baz>.I",
             "g", "List<java.lang.String>.@Test.A NoSuch<Foo,Bar>.I");
+  }
+
+  @Test
+  public void retainDecls() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                "class Test {",
+                "  static final int CONST = 42;",
+                "  int field;",
+                "  void method() {}",
+                "}"));
+
+    SourceTypeBoundClass retained =
+        getBoundClass(bind(bindingRequest().units(units).build()).units(), "Test");
+    assertThat(retained.decl()).isNotNull();
+    assertThat(retained.fields().stream().allMatch(f -> f.decl() != null)).isTrue();
+    // the implicit default constructor is synthetic, and never has a declaration
+    assertThat(
+            retained.methods().stream()
+                .filter(m -> m.name().equals("method"))
+                .collect(onlyElement())
+                .decl())
+        .isNotNull();
+
+    SourceTypeBoundClass dropped =
+        getBoundClass(
+            bind(bindingRequest().units(units).retainDecls(false).build()).units(), "Test");
+    assertThat(dropped.decl()).isNull();
+    assertThat(dropped.fields().stream().allMatch(f -> f.decl() == null)).isTrue();
+    assertThat(dropped.methods().stream().allMatch(m -> m.decl() == null)).isTrue();
+    // the constant value is still available after the declaration is dropped
+    assertThat(
+            dropped.fields().stream()
+                .filter(f -> f.name().equals("CONST"))
+                .collect(onlyElement())
+                .value()
+                .getValue())
+        .isEqualTo(42);
   }
 
   private static String printErrorTy(Type.ErrorTy errorTy) {
@@ -440,14 +436,7 @@ public class BinderTest {
                 }
                 """));
 
-    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
-        Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                TURBINE_BOOTCLASSPATH,
-                /* moduleVersion= */ Optional.empty())
-            .units();
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = bind(units).units();
 
     ClassSymbol outerSym = new ClassSymbol("com/example/Outer");
     ClassSymbol innerSym = new ClassSymbol("com/example/Outer$Inner");

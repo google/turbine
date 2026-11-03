@@ -33,7 +33,6 @@ import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.lower.Lower.Lowered;
 import com.google.turbine.model.Const;
 import com.google.turbine.proto.DepsProto;
 import com.google.turbine.type.AnnoInfo;
@@ -55,7 +54,10 @@ import java.util.Set;
 public final class Dependencies {
   /** Creates a jdeps proto for the current compilation. */
   public static DepsProto.Dependencies collectDeps(
-      Optional<String> targetLabel, ClassPath bootclasspath, BindingResult bound, Lowered lowered) {
+      Optional<String> targetLabel,
+      ClassPath bootclasspath,
+      BindingResult bound,
+      Set<ClassSymbol> lowered) {
     DepsProto.Dependencies.Builder deps = DepsProto.Dependencies.newBuilder();
     Set<ClassSymbol> closure = superTypeClosure(bound, lowered);
     addPackageInfos(closure, bound);
@@ -88,12 +90,12 @@ public final class Dependencies {
     return deps.build();
   }
 
-  private static Set<ClassSymbol> superTypeClosure(BindingResult bound, Lowered lowered) {
+  private static Set<ClassSymbol> superTypeClosure(BindingResult bound, Set<ClassSymbol> lowered) {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(new SimpleEnv<>(bound.units()))
             .append(bound.classPathEnv());
-    Set<ClassSymbol> closure = new LinkedHashSet<>(lowered.symbols());
-    for (ClassSymbol sym : lowered.symbols()) {
+    Set<ClassSymbol> closure = new LinkedHashSet<>(lowered);
+    for (ClassSymbol sym : lowered) {
       TypeBoundClass info = env.getNonNull(sym);
       addAnnotations(closure, info.annotations());
       for (MethodInfo method : info.methods()) {

@@ -17,7 +17,8 @@
 package com.google.turbine.binder;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
+import static com.google.turbine.testing.TestBinder.bind;
+import static com.google.turbine.testing.TestBinder.bindingRequest;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
@@ -27,11 +28,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.diag.TurbineError;
-import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.tree.Tree.CompUnit;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -1162,14 +1161,7 @@ public class BinderErrorTest {
         assertThrows(
             Joiner.on('\n').join(source),
             TurbineError.class,
-            () ->
-                Binder.bind(
-                        TurbineExecutor.direct(),
-                        ImmutableList.of(parseLines(source)),
-                        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                        TURBINE_BOOTCLASSPATH,
-                        /* moduleVersion= */ Optional.empty())
-                    .units());
+            () -> bind(ImmutableList.of(parseLines(source))).units());
     assertThat(e).hasMessageThat().isEqualTo(lines(expected));
   }
 
@@ -1195,17 +1187,15 @@ public class BinderErrorTest {
             Joiner.on('\n').join(source),
             TurbineError.class,
             () ->
-                Binder.bind(
-                        TurbineExecutor.direct(),
-                        ImmutableList.of(parseLines(source)),
-                        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                        ProcessorInfo.create(
-                            ImmutableList.of(new HelloWorldProcessor()),
-                            /* loader= */ getClass().getClassLoader(),
-                            /* options= */ ImmutableMap.of(),
-                            SourceVersion.latestSupported()),
-                        TURBINE_BOOTCLASSPATH,
-                        /* moduleVersion= */ Optional.empty())
+                bind(bindingRequest()
+                        .units(ImmutableList.of(parseLines(source)))
+                        .processorInfo(
+                            ProcessorInfo.create(
+                                ImmutableList.of(new HelloWorldProcessor()),
+                                /* loader= */ getClass().getClassLoader(),
+                                /* options= */ ImmutableMap.of(),
+                                SourceVersion.latestSupported()))
+                        .build())
                     .units());
 
     assertThat(e).hasMessageThat().isEqualTo(lines(expected));

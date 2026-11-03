@@ -135,13 +135,11 @@ class RemovePrivateMembers {
               info.kind(),
               children.buildOrThrow(),
               info.typeParameters(),
-              info.enclosingScope(),
-              info.scope(),
-              info.memberImports(),
               info.annotationMetadata(),
               info.annotations(),
               info.source(),
-              info.decl());
+              info.decl(),
+              info.position());
       result.put(sym, rewritten);
     }
   }

@@ -476,7 +476,9 @@ public class BytecodeBoundClass implements TypeBoundClass {
       }
       ImmutableList<AnnoInfo> annotations =
           BytecodeBinder.bindAnnotations(cfi.annotations(), makeScope(env, sym, ImmutableMap.of()));
-      fields.add(new FieldInfo(fieldSym, type, access, annotations, /* decl= */ null, value));
+      fields.add(
+          new FieldInfo(
+              fieldSym, type, access, annotations, /* decl= */ null, /* position= */ -1, value));
     }
     return fields.build();
   }
@@ -644,6 +646,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
         access,
         defaultValue,
         /* decl= */ null,
+        /* position= */ -1,
         annotations,
         receiver);
   }
