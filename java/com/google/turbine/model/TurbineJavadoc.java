@@ -18,6 +18,7 @@ package com.google.turbine.model;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
+import com.google.turbine.diag.SourceFile;
 import javax.lang.model.element.Element;
 
 /**
@@ -29,7 +30,7 @@ import javax.lang.model.element.Element;
  * @param source the source file containing the javadoc comment
  * @param kind the kind of javadoc comment
  */
-public record TurbineJavadoc(int startPosition, int endPosition, String source, Kind kind) {
+public record TurbineJavadoc(int startPosition, int endPosition, SourceFile source, Kind kind) {
 
   /** The kind of javadoc comment. */
   public enum Kind {
@@ -37,11 +38,11 @@ public record TurbineJavadoc(int startPosition, int endPosition, String source, 
     TRADITIONAL
   }
 
-  public static TurbineJavadoc markdown(int startPosition, int endPosition, String source) {
+  public static TurbineJavadoc markdown(int startPosition, int endPosition, SourceFile source) {
     return new TurbineJavadoc(startPosition, endPosition, source, Kind.MARKDOWN);
   }
 
-  public static TurbineJavadoc traditional(int startPosition, int endPosition, String source) {
+  public static TurbineJavadoc traditional(int startPosition, int endPosition, SourceFile source) {
     return new TurbineJavadoc(startPosition, endPosition, source, Kind.TRADITIONAL);
   }
 

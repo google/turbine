@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
@@ -67,7 +68,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -157,7 +157,15 @@ public final class Main {
 
   private static Result compile(TurbineOptions options, TurbineExecutor executor)
       throws IOException {
-    ImmutableList<CompUnit> units = parseAll(executor, options);
+    try (Closer closer = Closer.create()) {
+      return compile(options, executor, closer);
+    }
+  }
+
+  private static Result compile(TurbineOptions options, TurbineExecutor executor, Closer closer)
+      throws IOException {
+    ImmutableList<CompUnit> units =
+        parseAll(executor, closer, options.sources(), options.sourceJars());
 
     ClassPath bootclasspath = bootclasspath(executor, options);
 
@@ -354,41 +362,54 @@ public final class Main {
     throw new UsageException("not a supported release: " + release);
   }
 
-  /** Parse all source files and source jars. */
-  private static ImmutableList<CompUnit> parseAll(TurbineExecutor executor, TurbineOptions options)
-      throws IOException {
-    return parseAll(executor, options.sources(), options.sourceJars());
-  }
-
   static ImmutableList<CompUnit> parseAll(
       TurbineExecutor executor, Iterable<String> sources, Iterable<String> sourceJars)
       throws IOException {
     try (Closer closer = Closer.create()) {
-      ImmutableList.Builder<Supplier<SourceFile>> inputs = ImmutableList.builder();
-      for (String source : sources) {
-        inputs.add(() -> readSourceFile(source));
-      }
-      for (String sourceJar : sourceJars) {
-        Zip.ZipIterable iterable = closer.register(new Zip.ZipIterable(Path.of(sourceJar)));
-        for (Zip.Entry ze : iterable) {
-          String name = ze.name();
-          if (name.endsWith(".java")) {
-            inputs.add(() -> new SourceFile(name, new String(ze.data(), UTF_8)));
-          }
-        }
-      }
-      // Identifiers are frequently repeated across files, so share one cache for the whole
-      // compilation.
-      StringCache stringCache = new StringCache();
-      return executor.map(inputs.build(), input -> Parser.parse(input.get(), stringCache));
+      return parseAll(executor, closer, sources, sourceJars);
     }
   }
 
-  private static SourceFile readSourceFile(String source) {
-    try {
-      return new SourceFile(source, Files.readString(Path.of(source), UTF_8));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
+  static ImmutableList<CompUnit> parseAll(
+      TurbineExecutor executor,
+      Closer closer,
+      Iterable<String> sources,
+      Iterable<String> sourceJars)
+      throws IOException {
+    ImmutableList.Builder<SourceFile> inputs = ImmutableList.builder();
+    for (String source : sources) {
+      inputs.add(new SourceFile(source, new PathSupplier(Path.of(source))));
+    }
+    for (String sourceJar : sourceJars) {
+      Zip.ZipIterable iterable = closer.register(new Zip.ZipIterable(Path.of(sourceJar)));
+      for (Zip.Entry ze : iterable) {
+        String name = ze.name();
+        if (name.endsWith(".java")) {
+          inputs.add(new SourceFile(name, new ZipEntrySupplier(ze)));
+        }
+      }
+    }
+    // Identifiers are frequently repeated across files, so share one cache for the whole
+    // compilation.
+    StringCache stringCache = new StringCache();
+    return executor.map(inputs.build(), input -> Parser.parse(input, stringCache));
+  }
+
+  private record PathSupplier(Path path) implements Supplier<String> {
+    @Override
+    public String get() {
+      try {
+        return Files.readString(path, UTF_8);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+  }
+
+  private record ZipEntrySupplier(Zip.Entry ze) implements Supplier<String> {
+    @Override
+    public String get() {
+      return new String(ze.data(), UTF_8);
     }
   }
 

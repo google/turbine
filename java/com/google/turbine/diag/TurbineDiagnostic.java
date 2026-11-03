@@ -68,6 +68,12 @@ public class TurbineDiagnostic {
     return severity.equals(Diagnostic.Kind.ERROR);
   }
 
+  void initPosition() {
+    if (position != -1 && source != null) {
+      var _ = source.lineMap();
+    }
+  }
+
   /** The diagnostic message. */
   public String diagnostic() {
     StringBuilder sb = new StringBuilder(path().orElse("<>"));

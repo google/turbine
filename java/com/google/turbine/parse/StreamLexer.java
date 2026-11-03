@@ -96,7 +96,7 @@ public class StreamLexer implements Lexer {
 
   /** Returns {@code reader.readString(from, to)}, reusing a previously read string if possible. */
   private String internedString(int from, int to) {
-    return stringCache.getSubstring(reader.source().source(), from, to);
+    return stringCache.getSubstring(reader.input(), from, to);
   }
 
   @Override
@@ -394,7 +394,7 @@ public class StreamLexer implements Lexer {
         case '/' -> {
           if (sawStar) {
             if (isJavadoc) {
-              javadoc = TurbineJavadoc.traditional(position, reader.position(), source().source());
+              javadoc = TurbineJavadoc.traditional(position, reader.position(), source());
             }
             eat();
             return;
@@ -527,7 +527,7 @@ public class StreamLexer implements Lexer {
 
   // Update `javadoc` to be the span of lines up to here.
   private void saveMarkdownJavadoc(int startPosition) {
-    javadoc = TurbineJavadoc.markdown(startPosition, reader.position(), source().source());
+    javadoc = TurbineJavadoc.markdown(startPosition, reader.position(), source());
   }
 
   private Token textBlock() {
@@ -1251,7 +1251,7 @@ public class StreamLexer implements Lexer {
   private Token identifier() {
     readFrom();
     ch = reader.eatIdentifier();
-    return makeIdent(reader.source().source(), readFrom, reader.position());
+    return makeIdent(reader.input(), readFrom, reader.position());
   }
 
   /**

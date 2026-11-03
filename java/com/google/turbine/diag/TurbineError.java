@@ -19,6 +19,7 @@ package com.google.turbine.diag;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.tools.Diagnostic;
 
 /** A compilation error. */
@@ -106,11 +107,20 @@ public class TurbineError extends Error {
 
   public TurbineError(ImmutableList<TurbineDiagnostic> diagnostics, TurbineError cause) {
     super(cause);
-    this.diagnostics = diagnostics;
+    this.diagnostics = initDiagnostics(diagnostics);
   }
 
   public TurbineError(ImmutableList<TurbineDiagnostic> diagnostics) {
-    this.diagnostics = diagnostics;
+    this.diagnostics = initDiagnostics(diagnostics);
+  }
+
+  @CanIgnoreReturnValue
+  private static ImmutableList<TurbineDiagnostic> initDiagnostics(
+      ImmutableList<TurbineDiagnostic> diagnostics) {
+    for (TurbineDiagnostic d : diagnostics) {
+      d.initPosition();
+    }
+    return diagnostics;
   }
 
   @Override

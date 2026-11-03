@@ -25,18 +25,15 @@ import org.jspecify.annotations.Nullable;
 public class SourceFile {
 
   private final String path;
-  private final String source;
+  private final Supplier<String> source;
 
-  private final Supplier<LineMap> lineMap =
-      Suppliers.memoize(
-          new Supplier<LineMap>() {
-            @Override
-            public LineMap get() {
-              return LineMap.create(source);
-            }
-          });
+  private final Supplier<LineMap> lineMap = Suppliers.memoize(() -> LineMap.create(source()));
 
   public SourceFile(String path, String source) {
+    this(path, Suppliers.ofInstance(source));
+  }
+
+  public SourceFile(String path, Supplier<String> source) {
     this.path = path;
     this.source = source;
   }
@@ -48,7 +45,12 @@ public class SourceFile {
 
   /** The source. */
   public String source() {
-    return source;
+    return source.get();
+  }
+
+  /** Returns a substring of the source, memoizing the source in {@link #lineMap()}. */
+  public String substring(int beginIndex, int endIndex) {
+    return lineMap().source().substring(beginIndex, endIndex);
   }
 
   LineMap lineMap() {

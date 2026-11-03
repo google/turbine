@@ -195,9 +195,12 @@ public class UnicodeEscapePreprocessor {
     return source;
   }
 
+  public String input() {
+    return input;
+  }
+
   @CheckReturnValue
   private TurbineError error(ErrorKind kind, Object... args) {
-    throw TurbineError.format(
-        source(), Math.min(position(), source().source().length() - 1), kind, args);
+    throw TurbineError.format(source(), Math.min(position(), input.length() - 1), kind, args);
   }
 }

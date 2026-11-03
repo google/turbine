@@ -33,6 +33,10 @@ public class LineMap {
     this.lines = lines;
   }
 
+  String source() {
+    return source;
+  }
+
   public static LineMap create(String source) {
     int last = 0;
     int line = 1;

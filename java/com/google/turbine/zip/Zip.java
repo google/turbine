@@ -31,9 +31,11 @@ import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fast, minimal, and somewhat garbage zip implementation. This exists because graal <a
@@ -383,6 +385,16 @@ public final class Zip {
     @Override
     public byte[] get() {
       return data();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      return obj instanceof Entry that && cdindex == that.cdindex && path.equals(that.path);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(path, cdindex);
     }
   }
 

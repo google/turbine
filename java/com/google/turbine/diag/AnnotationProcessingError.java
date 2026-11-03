@@ -27,6 +27,9 @@ public class AnnotationProcessingError extends Error {
   public AnnotationProcessingError(
       Processor processor, Throwable cause, ImmutableList<TurbineDiagnostic> diagnostics) {
     super(cause);
+    for (TurbineDiagnostic d : diagnostics) {
+      d.initPosition();
+    }
     this.processor = processor;
     this.diagnostics = diagnostics;
   }
