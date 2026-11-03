@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Sets;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -66,7 +67,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
@@ -77,18 +77,13 @@ import org.jspecify.annotations.Nullable;
 /** Top level annotation processing logic, see also {@link Binder}. */
 public class Processing {
 
-  static @Nullable BindingResult process(
-      TurbineExecutor executor,
-      TurbineLog log,
-      final ImmutableList<CompUnit> initialSources,
-      final ClassPath classpath,
-      ProcessorInfo processorInfo,
-      ClassPath bootclasspath,
-      BindingResult result,
-      Optional<String> moduleVersion) {
+  static BindingResult process(
+      TurbineExecutor executor, TurbineLog log, BindingRequest request, BindingResult result) {
+    ClassPath classpath = request.classpath();
+    ProcessorInfo processorInfo = request.processorInfo();
 
     Set<String> seen = new HashSet<>();
-    for (CompUnit u : initialSources) {
+    for (CompUnit u : request.units()) {
       if (u.source() != null) {
         seen.add(u.source().path());
       }
@@ -150,7 +145,7 @@ public class Processing {
         initializeSupportedAnnotationTypes(processorInfo);
 
     ImmutableList.Builder<CompUnit> units =
-        ImmutableList.<CompUnit>builder().addAll(initialSources);
+        ImmutableList.<CompUnit>builder().addAll(request.units());
 
     // Share one cache across all generated sources, since identifiers repeat across files.
     StringCache stringCache = new StringCache();
@@ -206,12 +201,9 @@ public class Processing {
           Binder.bind(
               executor,
               log,
-              units.build(),
+              request.toBuilder().units(units.build()).build(),
               filer.generatedSources(),
-              filer.generatedClasses(),
-              classpath,
-              bootclasspath,
-              moduleVersion);
+              filer.generatedClasses());
       tenv = new SimpleEnv<>(result.units());
       env = CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
       syms = Sets.difference(result.units().keySet(), allSymbols).immutableCopy();
@@ -250,14 +242,11 @@ public class Processing {
           Binder.bind(
               executor,
               log,
-              units.build(),
+              request.toBuilder().units(units.build()).build(),
               filer.generatedSources(),
-              filer.generatedClasses(),
-              classpath,
-              bootclasspath,
-              moduleVersion);
+              filer.generatedClasses());
       if (log.anyErrors()) {
-        return null;
+        return result;
       }
     }
     if (!filer.generatedClasses().isEmpty()) {

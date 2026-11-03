@@ -16,6 +16,8 @@
 
 package com.google.turbine.processing;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -166,7 +168,7 @@ public class TurbineMessager implements Messager {
     if (!(symbol instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
       return -1;
     }
-    return sourceTypeBoundClass.decl().position();
+    return sourceTypeBoundClass.position();
   }
 
   private int tyParamPosition(TyVarSymbol sym) {
@@ -181,7 +183,8 @@ public class TurbineMessager implements Messager {
           return -1;
         }
         tyVars = cinfo.typeParameterTypes();
-        trees = ((SourceTypeBoundClass) cinfo).decl().typarams();
+        // Declarations are always retained when annotation processors run.
+        trees = requireNonNull(((SourceTypeBoundClass) cinfo).decl()).typarams();
       }
       case METHOD -> {
         MethodInfo minfo = factory.getMethodInfo((MethodSymbol) owner);

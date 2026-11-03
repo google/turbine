@@ -16,7 +16,6 @@
 
 package com.google.turbine.deps;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder.BindingResult;
@@ -30,12 +29,10 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassFile.FieldInfo;
 import com.google.turbine.bytecode.ClassFile.InnerClass;
-import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.parallel.TurbineExecutor;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
@@ -80,21 +77,6 @@ public final class Transitive {
         ClassWriter.writeClass(trimClass(info.classFile(), info.jarFile())));
   }
 
-  public static ImmutableMap<String, byte[]> trimOutput(ImmutableMap<String, byte[]> lowered) {
-    ImmutableMap.Builder<String, byte[]> trimmed = ImmutableMap.builder();
-    for (Map.Entry<String, byte[]> sym : lowered.entrySet()) {
-      if (sym.getKey().equals("module-info")) {
-        // Module attributes get trimmed which make module-infos invalid, and turbine doesn't need
-        // modules anyways, so just drop them for now.
-        continue;
-      }
-      trimmed.put(
-          sym.getKey(),
-          ClassWriter.writeClass(trimClass(ClassReader.read(sym::getKey, sym.getValue()), null)));
-    }
-    return trimmed.buildOrThrow();
-  }
-
   /**
    * Removes information from repackaged classes that will not be needed by upstream compilations.
    */
@@ -136,8 +118,8 @@ public final class Transitive {
             ? cf.methods()
             : ImmutableList.of(),
         fields.build(),
-        // unnecessary annotations are dropped during class reading, the only remaining ones are
-        // well-known @interface meta-annotations (e.g. @Retention, etc.)
+        // class annotations are kept as-is, e.g. downstream compilations need @interface
+        // meta-annotations like @Retention and @Target
         cf.annotations(),
         innerClasses.build(),
         cf.typeAnnotations(),
