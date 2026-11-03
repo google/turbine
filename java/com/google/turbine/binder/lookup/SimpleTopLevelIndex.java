@@ -17,10 +17,12 @@
 package com.google.turbine.binder.lookup;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.cache.StringCache;
+import com.google.turbine.tree.Tree.Ident;
 import java.util.HashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -186,21 +188,19 @@ public final class SimpleTopLevelIndex implements TopLevelIndex {
         @Override
         public @Nullable LookupResult lookup(LookupKey lookupKey) {
           Node curr = root;
-          while (true) {
-            String bit = lookupKey.first().value();
-            Object child = curr.children.get(bit);
+          ImmutableList<Ident> names = lookupKey.simpleNames();
+          for (int i = 0, n = names.size(); i < n; i++) {
+            Object child = curr.children.get(names.get(i).value());
             if (child == null) {
               return null;
             }
             if (child instanceof ClassSymbol sym) {
-              return new LookupResult(sym, lookupKey);
-            }
-            if (!lookupKey.hasNext()) {
-              return null;
+              return new LookupResult(
+                  sym, i + 1 < n ? names.subList(i + 1, n) : ImmutableList.of());
             }
             curr = (Node) child;
-            lookupKey = lookupKey.rest();
           }
+          return null;
         }
       };
 

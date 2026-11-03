@@ -47,7 +47,11 @@ public class LookupResult {
   private final ImmutableList<Tree.Ident> remaining;
 
   public LookupResult(Symbol sym, LookupKey remaining) {
+    this(sym, remaining.restSimpleNames());
+  }
+
+  LookupResult(Symbol sym, ImmutableList<Tree.Ident> remaining) {
     this.sym = requireNonNull(sym);
-    this.remaining = remaining.hasNext() ? remaining.rest().simpleNames() : ImmutableList.of();
+    this.remaining = requireNonNull(remaining);
   }
 }

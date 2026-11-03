@@ -105,8 +105,16 @@ public class TopLevelIndexTest {
 
   @Test
   public void emptyLookup() {
-    LookupKey key = lookupKey(ImmutableList.of("java", "util", "List")).rest().rest();
-    assertThrows(NoSuchElementException.class, () -> key.rest());
+    LookupKey key = lookupKey(ImmutableList.of("java", "util", "List"));
+    assertThat(key.simpleNames()).hasSize(3);
+    key = key.rest();
+    assertThat(key.first().value()).isEqualTo("util");
+    assertThat(key.simpleNames()).hasSize(2);
+    key = key.rest();
+    assertThat(key.first().value()).isEqualTo("List");
+    assertThat(key.simpleNames()).hasSize(1);
+    LookupKey last = key;
+    assertThrows(NoSuchElementException.class, last::rest);
   }
 
   @Test

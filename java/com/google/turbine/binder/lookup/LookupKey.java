@@ -28,18 +28,24 @@ import java.util.NoSuchElementException;
 @Immutable
 public class LookupKey {
   private final ImmutableList<Ident> simpleNames;
+  private final int idx;
 
   public LookupKey(ImmutableList<Ident> simpleNames) {
+    this(simpleNames, 0);
+  }
+
+  private LookupKey(ImmutableList<Ident> simpleNames, int idx) {
     this.simpleNames = simpleNames;
+    this.idx = idx;
   }
 
   /** The first simple name in the qualified type name. */
   public Ident first() {
-    return simpleNames.getFirst();
+    return simpleNames.get(idx);
   }
 
   boolean hasNext() {
-    return simpleNames.size() > 1;
+    return idx + 1 < simpleNames.size();
   }
 
   /**
@@ -59,11 +65,15 @@ public class LookupKey {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
-    return new LookupKey(simpleNames.subList(1, simpleNames.size()));
+    return new LookupKey(simpleNames, idx + 1);
   }
 
   /** The simple names of the type. */
   public ImmutableList<Ident> simpleNames() {
-    return simpleNames;
+    return idx == 0 ? simpleNames : simpleNames.subList(idx, simpleNames.size());
+  }
+
+  ImmutableList<Ident> restSimpleNames() {
+    return hasNext() ? simpleNames.subList(idx + 1, simpleNames.size()) : ImmutableList.of();
   }
 }
