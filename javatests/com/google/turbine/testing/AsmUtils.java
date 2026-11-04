@@ -56,11 +56,14 @@ public final class AsmUtils {
         || bytes[3] != (byte) 0xBE) {
       return bytes;
     }
+    int minor = ((bytes[4] & 0xFF) << 8) | (bytes[5] & 0xFF);
     int major = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
-    if (MAX_ASM_VERSION > 0 && major > MAX_ASM_VERSION) {
+    if (MAX_ASM_VERSION > 0
+        && (major > MAX_ASM_VERSION || (major == MAX_ASM_VERSION && minor != 0))) {
+      int newMajor = minor != 0 ? MAX_ASM_VERSION - 1 : MAX_ASM_VERSION;
       bytes = bytes.clone();
-      bytes[6] = (byte) (MAX_ASM_VERSION >> 8);
-      bytes[7] = (byte) MAX_ASM_VERSION;
+      bytes[6] = (byte) (newMajor >> 8);
+      bytes[7] = (byte) newMajor;
     }
     return bytes;
   }
