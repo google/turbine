@@ -411,7 +411,8 @@ public abstract class TurbineElement implements Element {
       if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      return sourceTypeBoundClass.decl().javadoc();
+      // Declarations are always retained when annotation processors run.
+      return requireNonNull(sourceTypeBoundClass.decl()).javadoc();
     }
 
     @Override
@@ -1103,7 +1104,8 @@ public abstract class TurbineElement implements Element {
       if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      return sourceTypeBoundClass.decl().javadoc();
+      // Declarations are always retained when annotation processors run.
+      return requireNonNull(sourceTypeBoundClass.decl()).javadoc();
     }
 
     @Override

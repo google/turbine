@@ -369,6 +369,21 @@ public class StreamLexer implements Lexer {
     }
   }
 
+  /**
+   * Skips the rest of a balanced {@code { ... }} block without tokenizing it. The opening brace
+   * must be the current token. On success, returns {@code true} and positions the lexer so the next
+   * call to {@link #next} returns the token after the matching closing brace.
+   */
+  @Override
+  public boolean skipBalancedBlock() {
+    int nextCh = reader.skipBalancedBlock();
+    if (nextCh != -1) {
+      ch = nextCh;
+      return true;
+    }
+    return false;
+  }
+
   // the current token prefix is /*, the token is a JLS 3.7 traditional comment
   private void traditionalComment() {
     eat();

@@ -122,6 +122,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final ImmutableList<AnnoInfo> annotations;
 
     private final Tree.@Nullable VarDecl decl;
+    private final int position;
     private final Const.@Nullable Value value;
 
     public FieldInfo(
@@ -130,12 +131,14 @@ public interface TypeBoundClass extends HeaderBoundClass {
         int access,
         ImmutableList<AnnoInfo> annotations,
         Tree.@Nullable VarDecl decl,
+        int position,
         Const.@Nullable Value value) {
       this.sym = sym;
       this.type = type;
       this.access = access;
       this.annotations = annotations;
       this.decl = decl;
+      this.position = position;
       this.value = value;
     }
 
@@ -159,9 +162,20 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return access;
     }
 
-    /** The field's declaration. */
+    /**
+     * The field's declaration, or {@code null} if it was loaded from bytecode or the declaration
+     * was dropped after binding.
+     */
     public Tree.@Nullable VarDecl decl() {
       return decl;
+    }
+
+    /**
+     * The position of the field's declaration (or of the enclosing class declaration for implicit
+     * record fields), or {@code -1} if it was loaded from bytecode.
+     */
+    public int position() {
+      return position;
     }
 
     /** The constant field value. */
@@ -184,7 +198,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
       if (type == this.type) {
         return this;
       }
-      return new FieldInfo(sym, type, access, annotations, decl, value);
+      return new FieldInfo(sym, type, access, annotations, decl, position, value);
     }
   }
 
@@ -198,6 +212,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final int access;
     private final @Nullable Const defaultValue;
     private final @Nullable MethDecl decl;
+    private final int position;
     private final ImmutableList<AnnoInfo> annotations;
     private final @Nullable ParamInfo receiver;
 
@@ -210,6 +225,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
         int access,
         @Nullable Const defaultValue,
         @Nullable MethDecl decl,
+        int position,
         ImmutableList<AnnoInfo> annotations,
         @Nullable ParamInfo receiver) {
       this.sym = sym;
@@ -220,6 +236,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
       this.access = access;
       this.defaultValue = defaultValue;
       this.decl = decl;
+      this.position = position;
       this.annotations = annotations;
       this.receiver = receiver;
     }
@@ -267,14 +284,28 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /**
      * Returns true for annotation members with a default value. The default value may not have been
      * bound yet, in which case {@link #defaultValue} may still return {@code null}.
+     *
+     * <p>If the declaration was dropped after binding, this is based on {@link #defaultValue}, so a
+     * default value that failed to evaluate (which is already an error) is treated as missing.
      */
     public boolean hasDefaultValue() {
       return decl() != null ? decl().defaultValue().isPresent() : defaultValue() != null;
     }
 
-    /** The declaration. */
+    /**
+     * The declaration, or {@code null} if the method is synthetic, was loaded from bytecode, or the
+     * declaration was dropped after binding.
+     */
     public @Nullable MethDecl decl() {
       return decl;
+    }
+
+    /**
+     * The position of the method's declaration (or of the enclosing class declaration for synthetic
+     * methods), or {@code -1} if it was loaded from bytecode.
+     */
+    public int position() {
+      return position;
     }
 
     /** Declaration annotations. */
@@ -315,6 +346,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
           access,
           defaultValue,
           decl,
+          position,
           annotations,
           receiver);
     }

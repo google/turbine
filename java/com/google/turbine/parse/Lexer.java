@@ -35,4 +35,13 @@ public interface Lexer {
 
   /** Returns a saved javadoc comment. */
   TurbineJavadoc javadoc();
+
+  /**
+   * Attempts to skip the rest of a balanced {@code { ... }} block without tokenizing it. The
+   * opening brace must be the current token. Returns {@code true} on success, or {@code false} if
+   * the caller should skip the block token by token.
+   */
+  default boolean skipBalancedBlock() {
+    return false;
+  }
 }
