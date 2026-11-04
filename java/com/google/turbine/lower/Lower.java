@@ -57,9 +57,6 @@ import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TargetType;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.ThrowsTarget;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypePath;
 import com.google.turbine.bytecode.ClassWriter;
-import com.google.turbine.bytecode.sig.Sig;
-import com.google.turbine.bytecode.sig.Sig.MethodSig;
-import com.google.turbine.bytecode.sig.Sig.TySig;
 import com.google.turbine.bytecode.sig.SigWriter;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
@@ -189,6 +186,7 @@ public class Lower {
   }
 
   private final LowerSignature sig = new LowerSignature();
+  private final Function<TyVarSymbol, TyVarInfo> emptyTenv = new TyVarEnv(ImmutableMap.of());
   private final Env<ClassSymbol, TypeBoundClass> env;
   private final TurbineLog log;
   private final LowerOptions lowerOptions;
@@ -311,7 +309,7 @@ public class Lower {
       ImmutableList.Builder<ClassFile.RecordInfo.RecordComponentInfo> components =
           ImmutableList.builder();
       for (RecordComponentInfo component : info.components()) {
-        components.add(lowerComponent(info, component));
+        components.add(lowerComponent(component));
       }
       record = new ClassFile.RecordInfo(components.build());
     }
@@ -373,10 +371,8 @@ public class Lower {
     return ClassWriter.writeClass(classfile);
   }
 
-  private ClassFile.RecordInfo.RecordComponentInfo lowerComponent(
-      SourceTypeBoundClass info, RecordComponentInfo c) {
-    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(info.typeParameterTypes());
-    String desc = SigWriter.type(sig.signature(Erasure.erase(c.type(), tenv)));
+  private ClassFile.RecordInfo.RecordComponentInfo lowerComponent(RecordComponentInfo c) {
+    String desc = sig.fieldDescriptor(c.type(), emptyTenv);
     String signature = sig.fieldSignature(c.type());
     ImmutableList.Builder<TypeAnnotationInfo> typeAnnotations = ImmutableList.builder();
     lowerTypeAnnotations(
@@ -391,9 +387,10 @@ public class Lower {
       // For Java ≥ 17, FP is always strict, and the ACC_STRICT flag is never emitted
       access &= ~TurbineFlag.ACC_STRICT;
     }
-    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(m.tyParams());
+    Function<TyVarSymbol, TyVarInfo> tenv =
+        m.tyParams().isEmpty() ? emptyTenv : new TyVarEnv(m.tyParams());
     String name = m.name();
-    String desc = methodDescriptor(m, tenv);
+    String desc = sig.methodDescriptor(m, tenv);
     String signature = sig.methodSignature(env, m, sym);
     ImmutableList.Builder<String> exceptions = ImmutableList.builder();
     if (!m.exceptions().isEmpty()) {
@@ -465,21 +462,9 @@ public class Lower {
     return annotations.build();
   }
 
-  private String methodDescriptor(MethodInfo m, Function<TyVarSymbol, TyVarInfo> tenv) {
-    ImmutableList<Sig.TyParamSig> typarams = ImmutableList.of();
-    ImmutableList.Builder<TySig> fparams = ImmutableList.builder();
-    for (ParamInfo t : m.parameters()) {
-      fparams.add(sig.signature(Erasure.erase(t.type(), tenv)));
-    }
-    TySig result = sig.signature(Erasure.erase(m.returnType(), tenv));
-    ImmutableList<TySig> excns = ImmutableList.of();
-    return SigWriter.method(new MethodSig(typarams, fparams.build(), result, excns));
-  }
-
   private ClassFile.FieldInfo lowerField(FieldInfo f) {
     final String name = f.name();
-    Function<TyVarSymbol, TyVarInfo> tenv = new TyVarEnv(ImmutableMap.of());
-    String desc = SigWriter.type(sig.signature(Erasure.erase(f.type(), tenv)));
+    String desc = sig.fieldDescriptor(f.type(), emptyTenv);
     String signature = sig.fieldSignature(f.type());
 
     ImmutableList<AnnotationInfo> annotations = lowerAnnotations(f.annotations());

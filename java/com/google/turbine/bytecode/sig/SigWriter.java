@@ -53,7 +53,7 @@ public class SigWriter {
     return writer.toString();
   }
 
-  private final StringBuilder sb = new StringBuilder();
+  private final StringBuilder sb = new StringBuilder(64);
 
   @Override
   public String toString() {

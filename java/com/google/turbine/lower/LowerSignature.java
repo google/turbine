@@ -19,6 +19,8 @@ package com.google.turbine.lower;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -38,6 +40,7 @@ import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
+import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
@@ -46,6 +49,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /** Translator from {@link Type}s to {@link Sig}natures. */
@@ -287,5 +291,74 @@ public class LowerSignature {
 
   String objectType(ClassSymbol sym) {
     return "L" + descriptor(sym) + ";";
+  }
+
+  /** Writes the erased JVM descriptor for a field or record component type. */
+  public String fieldDescriptor(Type type, Function<TyVarSymbol, TyVarInfo> tenv) {
+    return switch (type.tyKind()) {
+      case PRIM_TY -> primDescriptor((PrimTy) type);
+      case VOID_TY -> "V";
+      case CLASS_TY -> objectType(((ClassTy) type).sym());
+      default -> {
+        StringBuilder sb = new StringBuilder();
+        writeDescriptor(sb, type, tenv);
+        yield sb.toString();
+      }
+    };
+  }
+
+  /** Writes the erased JVM descriptor for a method. */
+  public String methodDescriptor(MethodInfo m, Function<TyVarSymbol, TyVarInfo> tenv) {
+    StringBuilder sb = new StringBuilder(64);
+    sb.append('(');
+    for (ParamInfo t : m.parameters()) {
+      writeDescriptor(sb, t.type(), tenv);
+    }
+    sb.append(')');
+    writeDescriptor(sb, m.returnType(), tenv);
+    return sb.toString();
+  }
+
+  private static String primDescriptor(PrimTy type) {
+    return switch (type.primkind()) {
+      case BYTE -> "B";
+      case CHAR -> "C";
+      case DOUBLE -> "D";
+      case FLOAT -> "F";
+      case INT -> "I";
+      case LONG -> "J";
+      case SHORT -> "S";
+      case BOOLEAN -> "Z";
+      default -> throw new AssertionError(type.primkind());
+    };
+  }
+
+  // The erasure logic here should stay consistent with com.google.turbine.types.Erasure.
+  private void writeDescriptor(StringBuilder sb, Type type, Function<TyVarSymbol, TyVarInfo> tenv) {
+    switch (type.tyKind()) {
+      case PRIM_TY -> sb.append(primDescriptor((PrimTy) type));
+      case VOID_TY -> sb.append('V');
+      case CLASS_TY -> sb.append('L').append(descriptor(((ClassTy) type).sym())).append(';');
+      case ARRAY_TY -> {
+        sb.append('[');
+        writeDescriptor(sb, ((ArrayTy) type).elementType(), tenv);
+      }
+      case TY_VAR -> writeDescriptor(sb, tenv.apply(((TyVar) type).sym()).upperBound(), tenv);
+      case INTERSECTION_TY -> {
+        ImmutableList<Type> bounds = ((IntersectionTy) type).bounds();
+        writeDescriptor(sb, bounds.isEmpty() ? ClassTy.OBJECT : bounds.getFirst(), tenv);
+      }
+      case WILD_TY -> {
+        WildTy wildTy = (WildTy) type;
+        writeDescriptor(
+            sb,
+            switch (wildTy.boundKind()) {
+              case NONE, LOWER -> ClassTy.OBJECT;
+              case UPPER -> wildTy.bound();
+            },
+            tenv);
+      }
+      default -> throw new AssertionError(type.tyKind());
+    }
   }
 }
