@@ -58,6 +58,7 @@ import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.ThrowsTarget;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo.TypePath;
 import com.google.turbine.bytecode.ClassWriter;
 import com.google.turbine.bytecode.sig.SigWriter;
+import com.google.turbine.deps.Transitive;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -94,17 +95,30 @@ public class Lower {
     /** Returns the bytecode for classes in the compilation. */
     public abstract ImmutableMap<String, byte[]> bytes();
 
+    /**
+     * Returns the trimmed bytecode for classes in the compilation, for the header compilation
+     * output. This is empty unless {@code trimOutput} was set, and never contains module-infos.
+     */
+    public abstract ImmutableMap<String, byte[]> trimmedBytes();
+
     /** Returns the set of all referenced symbols in the compilation. */
     public abstract ImmutableSet<ClassSymbol> symbols();
 
     public static Lowered create(
-        ImmutableMap<String, byte[]> bytes, ImmutableSet<ClassSymbol> symbols) {
-      return new AutoValue_Lower_Lowered(bytes, symbols);
+        ImmutableMap<String, byte[]> bytes,
+        ImmutableMap<String, byte[]> trimmedBytes,
+        ImmutableSet<ClassSymbol> symbols) {
+      return new AutoValue_Lower_Lowered(bytes, trimmedBytes, symbols);
     }
   }
 
+  // The byte arrays are only carried from the task back to the caller, never compared or hashed.
   @SuppressWarnings("ArrayRecordComponent")
-  private static record TaskResult(String name, byte[] bytes, ImmutableSet<ClassSymbol> symbols) {}
+  private static record TaskResult(
+      String name,
+      byte[] bytes,
+      byte @Nullable [] trimmedBytes,
+      ImmutableSet<ClassSymbol> symbols) {}
 
   /** Lowers all given classes to bytecode. */
   public static Lowered lowerAll(
@@ -112,7 +126,8 @@ public class Lower {
       LowerOptions options,
       ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
       ImmutableList<SourceModuleInfo> modules,
-      Env<ClassSymbol, BytecodeBoundClass> classpath) {
+      Env<ClassSymbol, BytecodeBoundClass> classpath,
+      boolean trimOutput) {
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(classpath).append(new SimpleEnv<>(units));
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> pruned =
@@ -126,7 +141,14 @@ public class Lower {
             (entry, taskLog) -> {
               ClassSymbol sym = entry.getKey();
               return lower(
-                  sym.binaryName(), entry.getValue(), env, sym, options, taskLog, pruned.keySet());
+                  sym.binaryName(),
+                  entry.getValue(),
+                  env,
+                  sym,
+                  options,
+                  taskLog,
+                  pruned.keySet(),
+                  trimOutput);
             });
 
     ImmutableList<TaskResult> moduleResults =
@@ -147,9 +169,13 @@ public class Lower {
                     taskLog));
 
     ImmutableMap.Builder<String, byte[]> result = ImmutableMap.builder();
+    ImmutableMap.Builder<String, byte[]> trimmed = ImmutableMap.builder();
     ImmutableSet.Builder<ClassSymbol> symbols = ImmutableSet.builder();
     for (TaskResult lowered : classResults) {
       result.put(lowered.name(), lowered.bytes());
+      if (lowered.trimmedBytes() != null) {
+        trimmed.put(lowered.name(), lowered.trimmedBytes());
+      }
       symbols.addAll(lowered.symbols());
     }
     for (TaskResult lowered : moduleResults) {
@@ -157,7 +183,7 @@ public class Lower {
       symbols.addAll(lowered.symbols());
     }
     log.maybeThrow();
-    return Lowered.create(result.buildOrThrow(), symbols.build());
+    return Lowered.create(result.buildOrThrow(), trimmed.buildOrThrow(), symbols.build());
   }
 
   /** Lowers a class to bytecode. */
@@ -168,10 +194,16 @@ public class Lower {
       ClassSymbol sym,
       LowerOptions lowerOptions,
       TurbineLog log,
-      Set<ClassSymbol> emitted) {
+      Set<ClassSymbol> emitted,
+      boolean trimOutput) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
-    byte[] bytes = new Lower(env, log, lowerOptions, emitted).lower(info, sym, symbols);
-    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
+    ClassFile classfile = new Lower(env, log, lowerOptions, emitted).lower(info, sym, symbols);
+    byte[] bytes = ClassWriter.writeClass(classfile);
+    byte[] trimmedBytes =
+        trimOutput
+            ? ClassWriter.writeClass(Transitive.trimClass(classfile, /* jarFile= */ null))
+            : null;
+    return new TaskResult(name, bytes, trimmedBytes, ImmutableSet.copyOf(symbols));
   }
 
   private static TaskResult lower(
@@ -182,7 +214,7 @@ public class Lower {
       TurbineLog log) {
     Set<ClassSymbol> symbols = new LinkedHashSet<>();
     byte[] bytes = new Lower(env, log, lowerOptions, null).lower(module, symbols);
-    return new TaskResult(name, bytes, ImmutableSet.copyOf(symbols));
+    return new TaskResult(name, bytes, /* trimmedBytes= */ null, ImmutableSet.copyOf(symbols));
   }
 
   private final LowerSignature sig = new LowerSignature();
@@ -192,7 +224,7 @@ public class Lower {
   private final LowerOptions lowerOptions;
   private final @Nullable Set<ClassSymbol> emitted;
 
-  public Lower(
+  private Lower(
       Env<ClassSymbol, TypeBoundClass> env,
       TurbineLog log,
       LowerOptions lowerOptions,
@@ -201,10 +233,6 @@ public class Lower {
     this.log = log;
     this.lowerOptions = lowerOptions;
     this.emitted = emitted;
-  }
-
-  public Lower(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, LowerOptions lowerOptions) {
-    this(env, log, lowerOptions, null);
   }
 
   private byte[] lower(SourceModuleInfo module, Set<ClassSymbol> symbols) {
@@ -290,7 +318,7 @@ public class Lower {
         provides.build());
   }
 
-  private byte[] lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
+  private ClassFile lower(SourceTypeBoundClass info, ClassSymbol sym, Set<ClassSymbol> symbols) {
     int access = classAccess(info);
     String name = sig.descriptor(sym);
     String signature = sig.classSignature(info, env);
@@ -368,7 +396,7 @@ public class Lower {
 
     symbols.addAll(sig.classes);
 
-    return ClassWriter.writeClass(classfile);
+    return classfile;
   }
 
   private ClassFile.RecordInfo.RecordComponentInfo lowerComponent(RecordComponentInfo c) {

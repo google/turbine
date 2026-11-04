@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.turbine.testing.TestBinder.bind;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -33,17 +34,13 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Streams;
-import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
-import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
-import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
-import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
@@ -55,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -401,13 +397,7 @@ class AbstractTurbineTypesTest {
             .collect(toImmutableMap(e -> e.getSimpleName().toString(), x -> x));
 
     ImmutableList<CompUnit> units = files.stream().map(Parser::parse).collect(toImmutableList());
-    BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+    BindingResult bound = bind(units);
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
             .append(new SimpleEnv<>(bound.units()));

@@ -17,6 +17,8 @@
 package com.google.turbine.lower;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
 
 import com.google.common.collect.ImmutableList;
@@ -24,15 +26,21 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider.Context;
+import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.bytecode.ClassReader;
 import com.google.turbine.bytecode.ClassWriter;
+import com.google.turbine.deps.Transitive;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
+import com.google.turbine.lower.Lower.Lowered;
+import com.google.turbine.options.TurbineJavacOptions;
+import com.google.turbine.parallel.TurbineExecutor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import org.junit.Rule;
@@ -60,19 +68,7 @@ public class LowerIntegrationTest {
   public void test(@TestParameter(valuesProvider = TestCaseProvider.class) TestInput input)
       throws Exception {
 
-    ImmutableList<Path> classpathJar = ImmutableList.of();
-    if (!input.classes().isEmpty()) {
-      Map<String, byte[]> classpath =
-          IntegrationTestSupport.runJavac(input.classes(), ImmutableList.of());
-      Path lib = temporaryFolder.newFile("lib.jar").toPath();
-      try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
-        for (Map.Entry<String, byte[]> entry : classpath.entrySet()) {
-          jos.putNextEntry(new JarEntry(entry.getKey() + ".class"));
-          jos.write(entry.getValue());
-        }
-      }
-      classpathJar = ImmutableList.of(lib);
-    }
+    ImmutableList<Path> classpathJar = classpathJar(input);
 
     Map<String, byte[]> actual =
         IntegrationTestSupport.runTurbine(input.sources(), classpathJar, input.javacopts());
@@ -93,5 +89,68 @@ public class LowerIntegrationTest {
         .isEqualTo(
             IntegrationTestSupport.dump(
                 IntegrationTestSupport.removeUnsupportedAttributes(actual)));
+  }
+
+  /**
+   * Asserts that trimming the in-memory class files during lowering is equivalent to trimming the
+   * class files after reading them back from bytecode.
+   */
+  @Test
+  public void trimmedBytes(@TestParameter(valuesProvider = TestCaseProvider.class) TestInput input)
+      throws Exception {
+    BindingResult bound =
+        IntegrationTestSupport.turbineAnalysis(
+            input.sources(),
+            classpathJar(input),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty(),
+            /* retainDecls= */ false);
+    Lowered lowered =
+        Lower.lowerAll(
+            TurbineExecutor.direct(),
+            TurbineJavacOptions.parse(input.javacopts()).lowerOptions(),
+            bound.units(),
+            bound.modules(),
+            bound.classPathEnv(),
+            /* trimOutput= */ true);
+
+    Map<String, byte[]> expected = new LinkedHashMap<>();
+    lowered
+        .bytes()
+        .forEach(
+            (name, bytes) -> {
+              if (!name.equals("module-info") && !name.endsWith("/module-info")) {
+                expected.put(
+                    name,
+                    ClassWriter.writeClass(
+                        Transitive.trimClass(
+                            ClassReader.read(() -> name, bytes), /* jarFile= */ null)));
+              }
+            });
+
+    assertThat(lowered.trimmedBytes().keySet())
+        .containsExactlyElementsIn(expected.keySet())
+        .inOrder();
+    for (Map.Entry<String, byte[]> entry : expected.entrySet()) {
+      assertWithMessage(entry.getKey())
+          .that(lowered.trimmedBytes().get(entry.getKey()))
+          .isEqualTo(entry.getValue());
+    }
+  }
+
+  private ImmutableList<Path> classpathJar(TestInput input) throws Exception {
+    if (input.classes().isEmpty()) {
+      return ImmutableList.of();
+    }
+    Map<String, byte[]> classpath =
+        IntegrationTestSupport.runJavac(input.classes(), ImmutableList.of());
+    Path lib = temporaryFolder.newFile("lib.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {
+      for (Map.Entry<String, byte[]> entry : classpath.entrySet()) {
+        jos.putNextEntry(new JarEntry(entry.getKey() + ".class"));
+        jos.write(entry.getValue());
+      }
+    }
+    return ImmutableList.of(lib);
   }
 }

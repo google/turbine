@@ -28,6 +28,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Closer;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.ClassPath;
@@ -66,7 +67,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -225,11 +225,13 @@ public final class Main {
               options.javacOpts().lowerOptions(),
               bound.units(),
               bound.modules(),
-              bound.classPathEnv());
+              bound.classPathEnv(),
+              options.headerCompilationOutput().isPresent());
 
       if (options.outputDeps().isPresent()) {
         DepsProto.Dependencies deps =
-            Dependencies.collectDeps(options.targetLabel(), bootclasspath, bound, lowered);
+            Dependencies.collectDeps(
+                options.targetLabel(), bootclasspath, bound, lowered.symbols());
         Path path = Path.of(options.outputDeps().get());
         /*
          * TODO: cpovirk - Consider checking outputDeps for validity earlier so that anyone who
@@ -248,10 +250,9 @@ public final class Main {
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
       }
       if (options.headerCompilationOutput().isPresent()) {
-        ImmutableMap<String, byte[]> trimmed = Transitive.trimOutput(lowered.bytes());
         ImmutableMap<String, byte[]> transitive =
             Transitive.collectDeps(executor, bootclasspath, bound);
-        writeHeaderCompilationOutput(options, trimmed, transitive);
+        writeHeaderCompilationOutput(options, lowered.trimmedBytes(), transitive);
       }
       if (options.outputManifest().isPresent()) {
         writeManifestProto(options, bound.units(), bound.generatedSources());
@@ -303,17 +304,20 @@ public final class Main {
       throws IOException {
     return Binder.bind(
         executor,
-        units,
-        ClassPathBinder.bindClasspath(executor, toPaths(classpath)),
-        Processing.initializeProcessors(
-            /* sourceVersion= */ options.languageVersion().sourceVersion(),
-            /* javacopts= */ options.javacOpts(),
-            /* processorNames= */ options.processors(),
-            Processing.processorLoader(
-                /* processorPath= */ options.processorPath(),
-                /* builtinProcessors= */ options.builtinProcessors())),
-        bootclasspath,
-        /* moduleVersion= */ Optional.empty());
+        BindingRequest.builder()
+            .units(units)
+            .classpath(ClassPathBinder.bindClasspath(executor, toPaths(classpath)))
+            .bootclasspath(bootclasspath)
+            .processorInfo(
+                Processing.initializeProcessors(
+                    /* sourceVersion= */ options.languageVersion().sourceVersion(),
+                    /* javacopts= */ options.javacOpts(),
+                    /* processorNames= */ options.processors(),
+                    Processing.processorLoader(
+                        /* processorPath= */ options.processorPath(),
+                        /* builtinProcessors= */ options.builtinProcessors())))
+            .retainDecls(false)
+            .build());
   }
 
   private static void usage(TurbineOptions options) {

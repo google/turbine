@@ -19,6 +19,8 @@ package com.google.turbine.processing;
 import static com.google.common.collect.Comparators.emptiesFirst;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
+import static com.google.turbine.testing.TestBinder.bindingRequest;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -29,23 +31,18 @@ import com.google.auto.common.AnnotationValues;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.Binder;
-import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.lower.IntegrationTestSupport;
-import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
-import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree;
 import com.sun.source.util.JavacTask;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -220,17 +217,16 @@ public class TurbineMessagerTest {
         assertThrows(
             TurbineError.class,
             () ->
-                Binder.bind(
-                    TurbineExecutor.direct(),
-                    units,
-                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                    Processing.ProcessorInfo.create(
-                        ImmutableList.of(new DiagnosticTesterProcessor()),
-                        getClass().getClassLoader(),
-                        ImmutableMap.of(),
-                        SourceVersion.latestSupported()),
-                    TestClassPaths.TURBINE_BOOTCLASSPATH,
-                    Optional.empty()));
+                bind(
+                    bindingRequest()
+                        .units(units)
+                        .processorInfo(
+                            Processing.ProcessorInfo.create(
+                                ImmutableList.of(new DiagnosticTesterProcessor()),
+                                getClass().getClassLoader(),
+                                ImmutableMap.of(),
+                                SourceVersion.latestSupported()))
+                        .build()));
     ImmutableList<String> turbineDiagnostics =
         e.diagnostics().stream()
             .sorted(

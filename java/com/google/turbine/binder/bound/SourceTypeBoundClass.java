@@ -18,8 +18,6 @@ package com.google.turbine.binder.bound;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.turbine.binder.lookup.CompoundScope;
-import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
@@ -48,12 +46,10 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableList<RecordComponentInfo> components;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
-  private final CompoundScope enclosingScope;
-  private final CompoundScope scope;
-  private final MemberImportIndex memberImports;
   private final @Nullable AnnotationMetadata annotationMetadata;
   private final ImmutableList<AnnoInfo> annotations;
-  private final Tree.TyDecl decl;
+  private final Tree.@Nullable TyDecl decl;
+  private final int position;
   private final SourceFile source;
 
   public SourceTypeBoundClass(
@@ -69,13 +65,11 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       TurbineTyKind kind,
       ImmutableMap<String, ClassSymbol> children,
       ImmutableMap<String, TyVarSymbol> typeParameters,
-      CompoundScope enclosingScope,
-      CompoundScope scope,
-      MemberImportIndex memberImports,
       @Nullable AnnotationMetadata annotationMetadata,
       ImmutableList<AnnoInfo> annotations,
       SourceFile source,
-      Tree.TyDecl decl) {
+      Tree.@Nullable TyDecl decl,
+      int position) {
     this.interfaceTypes = interfaceTypes;
     this.permits = permits;
     this.superClassType = superClassType;
@@ -88,13 +82,11 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.kind = kind;
     this.children = children;
     this.typeParameters = typeParameters;
-    this.enclosingScope = enclosingScope;
-    this.scope = scope;
-    this.memberImports = memberImports;
     this.annotationMetadata = annotationMetadata;
     this.annotations = annotations;
     this.source = source;
     this.decl = decl;
+    this.position = position;
   }
 
   @Override
@@ -189,21 +181,6 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return typeParameterTypes;
   }
 
-  /** The scope of the enclosing declaration or compilation unit. */
-  public CompoundScope enclosingScope() {
-    return enclosingScope;
-  }
-
-  /** The scope of the current class, including its members. */
-  public CompoundScope scope() {
-    return scope;
-  }
-
-  /** The static member import index for the enclosing compilation unit. */
-  public MemberImportIndex memberImports() {
-    return memberImports;
-  }
-
   @Override
   public ImmutableList<AnnoInfo> annotations() {
     return annotations;
@@ -214,7 +191,16 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return source;
   }
 
-  public Tree.TyDecl decl() {
+  /**
+   * The class declaration, or {@code null} if it was dropped after binding because no annotation
+   * processors will run.
+   */
+  public Tree.@Nullable TyDecl decl() {
     return decl;
+  }
+
+  /** The position of the class declaration. */
+  public int position() {
+    return position;
   }
 }

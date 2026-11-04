@@ -18,12 +18,12 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.Binder;
-import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
@@ -32,15 +32,12 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.lower.IntegrationTestSupport;
 import com.google.turbine.lower.IntegrationTestSupport.TestInput;
-import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
-import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.sun.source.util.JavacTask;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.util.Elements;
 import org.junit.Test;
@@ -289,13 +286,7 @@ public class TurbineElementsGetAllMembersTest {
             .map(Parser::parse)
             .collect(toImmutableList());
 
-    Binder.BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+    Binder.BindingResult bound = bind(units);
 
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
