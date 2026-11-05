@@ -369,7 +369,8 @@ public class RemovePrivateMembersTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
 
     assertWithMessage("Source:\n===\n%s\n===", source)

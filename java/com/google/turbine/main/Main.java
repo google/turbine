@@ -225,11 +225,13 @@ public final class Main {
               options.javacOpts().lowerOptions(),
               bound.units(),
               bound.modules(),
-              bound.classPathEnv());
+              bound.classPathEnv(),
+              options.headerCompilationOutput().isPresent());
 
       if (options.outputDeps().isPresent()) {
         DepsProto.Dependencies deps =
-            Dependencies.collectDeps(options.targetLabel(), bootclasspath, bound, lowered);
+            Dependencies.collectDeps(
+                options.targetLabel(), bootclasspath, bound, lowered.symbols());
         Path path = Path.of(options.outputDeps().get());
         /*
          * TODO: cpovirk - Consider checking outputDeps for validity earlier so that anyone who
@@ -248,10 +250,9 @@ public final class Main {
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
       }
       if (options.headerCompilationOutput().isPresent()) {
-        ImmutableMap<String, byte[]> trimmed = Transitive.trimOutput(lowered.bytes());
         ImmutableMap<String, byte[]> transitive =
             Transitive.collectDeps(executor, bootclasspath, bound);
-        writeHeaderCompilationOutput(options, trimmed, transitive);
+        writeHeaderCompilationOutput(options, lowered.trimmedBytes(), transitive);
       }
       if (options.outputManifest().isPresent()) {
         writeManifestProto(options, bound.units(), bound.generatedSources());

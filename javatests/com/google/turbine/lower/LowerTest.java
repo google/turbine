@@ -258,7 +258,8 @@ public class LowerTest {
                 ImmutableMap.of(
                     new ClassSymbol("test/Test"), c, new ClassSymbol("test/Test$Inner"), i),
                 ImmutableList.of(),
-                TURBINE_BOOTCLASSPATH.env())
+                TURBINE_BOOTCLASSPATH.env(),
+                /* trimOutput= */ false)
             .bytes();
 
     assertThat(AsmUtils.textify(bytes.get("test/Test"), /* skipDebug= */ false))
@@ -290,7 +291,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     ClassModel cm = ClassFile.of().parse(lowered.get("Test$Inner$InnerMost"));
     ImmutableList<String> attributes =
@@ -374,7 +376,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     ClassModel cm = ClassFile.of().parse(lowered.get("Test"));
     TypeAnnotation anno =
@@ -463,7 +466,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     ClassModel cm = ClassFile.of().parse(lowered.get("Test"));
     assertThat(cm.findAttribute(Attributes.deprecated())).isPresent();
@@ -680,7 +684,8 @@ public class LowerTest {
                     .build(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     int[] major = {0};
     new ClassReader(lowered.get("Test"))
@@ -721,7 +726,8 @@ public class LowerTest {
                 LowerOptions.builder().emitPrivateFields(true).build(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<String> fields = new ArrayList<>();
     new ClassReader(lowered.get("Test"))
@@ -759,7 +765,8 @@ public class LowerTest {
                 LowerOptions.builder().emitPrivateFieldsInRecords(true).build(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<String> fields = new ArrayList<>();
     new ClassReader(lowered.get("R"))
@@ -797,7 +804,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<String> fields = new ArrayList<>();
     new ClassReader(lowered.get("Test"))
@@ -839,7 +847,8 @@ public class LowerTest {
                     .build(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<String> fields = new ArrayList<>();
     new ClassReader(lowered.get("Test"))
@@ -881,7 +890,8 @@ public class LowerTest {
                 LowerOptions.builder().emitAllPrivateMemberClasses(true).build(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     assertThat(lowered.keySet()).containsExactly("Test", "Test$Inner");
   }
@@ -907,7 +917,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     assertThat(lowered.keySet()).containsExactly("Test");
   }
@@ -942,7 +953,8 @@ public class LowerTest {
                     LowerOptions.createDefault(),
                     bound.units(),
                     bound.modules(),
-                    bound.classPathEnv()));
+                    bound.classPathEnv(),
+                    /* trimOutput= */ false));
     assertThat(turbineError)
         .hasMessageThat()
         .isEqualTo(
@@ -971,7 +983,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     Map<String, Map<String, Integer>> methodParameters = new HashMap<>();
     new ClassReader(lowered.get("Test"))
@@ -1017,7 +1030,8 @@ public class LowerTest {
                 LowerOptions.builder().methodParameters(false).build(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     Map<String, Map<String, Integer>> methodParameters = new HashMap<>();
     new ClassReader(lowered.get("Test"))
@@ -1101,7 +1115,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     assertThat(lowered.keySet()).containsExactly("Test", "Test$S", "Test$B", "Test$A");
 
@@ -1141,7 +1156,8 @@ public class LowerTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     assertThat(lowered.keySet()).containsExactly("Test", "Test$S", "Test$B", "Test$A");
 
@@ -1228,7 +1244,8 @@ public class LowerTest {
                     .lowerOptions(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<Integer> methodAccess = new ArrayList<>();
     new ClassReader(lowered.get("Test"))
@@ -1283,7 +1300,8 @@ public class LowerTest {
                 TurbineJavacOptions.parse(ImmutableList.of("--release", "11")).lowerOptions(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<String> nestMembers = new ArrayList<>();
     new ClassReader(lowered.get("Test"))
@@ -1320,7 +1338,8 @@ public class LowerTest {
                     .lowerOptions(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     List<String> nestMembers = new ArrayList<>();
     new ClassReader(lowered.get("Test"))

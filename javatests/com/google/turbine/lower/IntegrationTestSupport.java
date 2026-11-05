@@ -819,7 +819,8 @@ public final class IntegrationTestSupport {
             TurbineJavacOptions.parse(javacopts).lowerOptions(),
             bound.units(),
             bound.modules(),
-            bound.classPathEnv())
+            bound.classPathEnv(),
+            /* trimOutput= */ false)
         .bytes();
   }
 

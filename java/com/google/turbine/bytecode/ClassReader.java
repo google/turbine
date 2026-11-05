@@ -183,10 +183,8 @@ public class ClassReader {
   }
 
   /**
-   * Processes a JVMS 4.7.16 RuntimeVisibleAnnotations attribute.
-   *
-   * <p>The only annotations that affect header compilation are {@code @Retention} and
-   * {@code @Target} on annotation declarations.
+   * Processes a JVMS 4.7.16 RuntimeVisibleAnnotations or 4.7.17 RuntimeInvisibleAnnotations
+   * attribute.
    */
   private void readAnnotations(
       ImmutableList.Builder<ClassFile.AnnotationInfo> annotations,
@@ -313,10 +311,7 @@ public class ClassReader {
         provides.build());
   }
 
-  /**
-   * Extracts an {@code @Retention} or {@code ElementType} {@link ClassFile.AnnotationInfo}, or else
-   * skips over the annotation.
-   */
+  /** Reads a JVMS 4.7.16 annotation structure. */
   private ClassFile.AnnotationInfo readAnnotation(
       ConstantPoolReader constantPool, RuntimeVisibility runtimeVisibility) {
     int typeIndex = reader.u2();

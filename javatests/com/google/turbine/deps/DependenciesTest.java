@@ -114,10 +114,11 @@ public class DependenciesTest {
               LowerOptions.createDefault(),
               bound.units(),
               bound.modules(),
-              bound.classPathEnv());
+              bound.classPathEnv(),
+              /* trimOutput= */ false);
 
       return Dependencies.collectDeps(
-          Optional.of("//test"), TestClassPaths.TURBINE_BOOTCLASSPATH, bound, lowered);
+          Optional.of("//test"), TestClassPaths.TURBINE_BOOTCLASSPATH, bound, lowered.symbols());
     }
   }
 

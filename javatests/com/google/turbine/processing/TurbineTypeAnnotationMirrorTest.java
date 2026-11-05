@@ -283,7 +283,8 @@ public class TurbineTypeAnnotationMirrorTest {
                 LowerOptions.createDefault(),
                 bound.units(),
                 bound.modules(),
-                bound.classPathEnv())
+                bound.classPathEnv(),
+                /* trimOutput= */ false)
             .bytes();
     Path lib = temporaryFolder.newFile("lib.jar").toPath();
     try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(lib))) {

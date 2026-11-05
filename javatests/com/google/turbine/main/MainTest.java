@@ -185,6 +185,65 @@ public class MainTest {
   }
 
   @Test
+  public void moduleInfos_headerCompilationOutput() throws IOException {
+    if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
+      // only run on JDK 9 and later
+      return;
+    }
+
+    Path srcjar = temporaryFolder.newFile("lib.srcjar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(srcjar))) {
+      jos.putNextEntry(new JarEntry("module-info.java"));
+      jos.write("module foo {}".getBytes(UTF_8));
+      jos.putNextEntry(new JarEntry("bar/module-info.java"));
+      jos.write("module bar {}".getBytes(UTF_8));
+    }
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path headerOutput = temporaryFolder.newFile("header.jar").toPath();
+
+    Main.compile(
+        TurbineOptions.builder()
+            .setJavacOpts(TurbineJavacOptions.parse(ImmutableList.of("--release", "9")))
+            .setSourceJars(ImmutableList.of(srcjar.toString()))
+            .setOutput(output.toString())
+            .setHeaderCompilationOutput(headerOutput.toString())
+            .build());
+
+    assertThat(readJar(output).keySet())
+        .containsExactly("foo/module-info.class", "bar/module-info.class");
+    // module-infos are omitted from the header compilation output in multi-module mode, since
+    // trimming would make them invalid
+    assertThat(readJar(headerOutput).keySet()).containsExactly("META-INF/", "META-INF/MANIFEST.MF");
+  }
+
+  @Test
+  public void moduleInfo_singleModule_headerCompilationOutput() throws IOException {
+    if (Double.parseDouble(JAVA_CLASS_VERSION.value()) < 53) {
+      // only run on JDK 9 and later
+      return;
+    }
+
+    Path src = temporaryFolder.newFile("module-info.java").toPath();
+    Files.writeString(src, "module foo {}");
+
+    Path output = temporaryFolder.newFile("output.jar").toPath();
+    Path headerOutput = temporaryFolder.newFile("header.jar").toPath();
+
+    Main.compile(
+        TurbineOptions.builder()
+            .setJavacOpts(TurbineJavacOptions.parse(ImmutableList.of("--release", "9")))
+            .setSources(ImmutableList.of(src.toString()))
+            .setOutput(output.toString())
+            .setHeaderCompilationOutput(headerOutput.toString())
+            .build());
+
+    assertThat(readJar(output).keySet()).containsExactly("module-info.class");
+    // the module-info is omitted from the header compilation output
+    assertThat(readJar(headerOutput).keySet()).containsExactly("META-INF/", "META-INF/MANIFEST.MF");
+  }
+
+  @Test
   public void testManifest() throws IOException {
     Path src = temporaryFolder.newFile("Foo.java").toPath();
     MoreFiles.asCharSink(src, UTF_8).write("class Foo {}");
