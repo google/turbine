@@ -53,10 +53,6 @@ import com.google.turbine.processing.TurbineRoundEnvironment;
 import com.google.turbine.processing.TurbineTypes;
 import com.google.turbine.tree.Tree.CompUnit;
 import com.google.turbine.type.AnnoInfo;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -410,47 +406,6 @@ public class Processing {
       }
     }
     return processors.build();
-  }
-
-  public static ClassLoader processorLoader(
-      ImmutableList<String> processorPath, ImmutableSet<String> builtinProcessors)
-      throws MalformedURLException {
-    if (processorPath.isEmpty()) {
-      return Processing.class.getClassLoader();
-    }
-    return new URLClassLoader(
-        toUrls(processorPath),
-        new ClassLoader(ClassLoader.getPlatformClassLoader()) {
-          @Override
-          protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")) {
-              return Class.forName(name);
-            }
-            if (!builtinProcessors.isEmpty()) {
-              if (name.startsWith("com.sun.source.")
-                  || name.startsWith("com.sun.tools.")
-                  || name.startsWith("com.google.common.collect.")
-                  || name.startsWith("com.google.common.base.")
-                  || name.startsWith("com.google.common.graph.")
-                  || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
-                  || name.startsWith("dagger.model.")
-                  || name.startsWith("dagger.spi.")
-                  || builtinProcessors.contains(name)) {
-                return Class.forName(name);
-              }
-            }
-            throw new ClassNotFoundException(name);
-          }
-        });
-  }
-
-  private static URL[] toUrls(ImmutableList<String> processorPath) throws MalformedURLException {
-    URL[] urls = new URL[processorPath.size()];
-    int i = 0;
-    for (String path : processorPath) {
-      urls[i++] = Paths.get(path).toUri().toURL();
-    }
-    return urls;
   }
 
   /** Information about any annotation processing performed by this compilation. */

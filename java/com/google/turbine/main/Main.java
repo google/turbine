@@ -35,6 +35,7 @@ import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.CtSymClassBinder;
 import com.google.turbine.binder.JimageClassBinder;
 import com.google.turbine.binder.Processing;
+import com.google.turbine.binder.ProcessorClassLoader;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.cache.StringCache;
@@ -310,7 +311,7 @@ public final class Main {
             /* sourceVersion= */ options.languageVersion().sourceVersion(),
             /* javacopts= */ options.javacOpts(),
             /* processorNames= */ options.processors(),
-            Processing.processorLoader(
+            ProcessorClassLoader.create(
                 /* processorPath= */ options.processorPath(),
                 /* builtinProcessors= */ options.builtinProcessors())),
         bootclasspath,
