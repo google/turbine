@@ -216,12 +216,37 @@ public class ConstEvaluator {
   }
 
   @Nullable FieldInfo resolveField(ConstVarName t) {
+    FieldInfo field = resolveField(env, origin, owner, memberImports, scope, t);
+    if (field == null) {
+      log.error(t.position(), ErrorKind.CANNOT_RESOLVE_FIELD, t.name().getLast());
+    }
+    return field;
+  }
+
+  /**
+   * Resolves a field reference in a constant expression, or returns {@code null} if the field can't
+   * be resolved.
+   *
+   * @param env the class environment
+   * @param origin the symbol of the originating class, for visibility checks
+   * @param owner the symbol of the enclosing class, for lexical field lookups
+   * @param memberImports the member imports of the enclosing compilation unit
+   * @param scope the scope to resolve qualified names in
+   * @param t the field reference
+   */
+  static @Nullable FieldInfo resolveField(
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      @Nullable ClassSymbol origin,
+      @Nullable ClassSymbol owner,
+      MemberImportIndex memberImports,
+      Scope scope,
+      ConstVarName t) {
     Ident simpleName = t.name().getFirst();
-    FieldInfo field = lexicalField(env, owner, simpleName);
+    FieldInfo field = lexicalField(env, origin, owner, simpleName);
     if (field != null) {
       return field;
     }
-    field = resolveQualifiedField(t);
+    field = resolveQualifiedField(env, origin, scope, t);
     if (field != null) {
       return field;
     }
@@ -245,11 +270,14 @@ public class ConstEvaluator {
       }
       return field;
     }
-    log.error(t.position(), ErrorKind.CANNOT_RESOLVE_FIELD, t.name().getLast());
     return null;
   }
 
-  private @Nullable FieldInfo resolveQualifiedField(ConstVarName t) {
+  private static @Nullable FieldInfo resolveQualifiedField(
+      CompoundEnv<ClassSymbol, TypeBoundClass> env,
+      @Nullable ClassSymbol origin,
+      Scope scope,
+      ConstVarName t) {
     if (t.name().size() <= 1) {
       return null;
     }
@@ -272,8 +300,11 @@ public class ConstEvaluator {
   }
 
   /** Search for constant variables in lexically enclosing scopes. */
-  private @Nullable FieldInfo lexicalField(
-      Env<ClassSymbol, TypeBoundClass> env, @Nullable ClassSymbol sym, Ident name) {
+  private static @Nullable FieldInfo lexicalField(
+      Env<ClassSymbol, TypeBoundClass> env,
+      @Nullable ClassSymbol origin,
+      @Nullable ClassSymbol sym,
+      Ident name) {
     while (sym != null) {
       TypeBoundClass info = env.getNonNull(sym);
       FieldInfo field = Resolve.resolveField(env, origin, sym, name);

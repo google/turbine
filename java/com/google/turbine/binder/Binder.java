@@ -634,6 +634,28 @@ public final class Binder {
       return statistics;
     }
 
+    /**
+     * Resolves a reference to a field in a constant expression, such as an annotation argument or a
+     * field initializer, in the scope of a class declared in source.
+     *
+     * <p>This uses the same rules as constant expression evaluation: fields of the class and its
+     * enclosing classes (including inherited fields), qualified names, and static member imports.
+     *
+     * @param sym the class declared in source that contains the reference
+     * @param name the field reference
+     * @return the resolved field, or {@code null} if the field can't be resolved
+     */
+    public @Nullable FieldInfo resolveField(ClassSymbol sym, Tree.ConstVarName name) {
+      SourceTypeBoundClass info = requireNonNull(units.get(sym), sym.binaryName());
+      return ConstEvaluator.resolveField(
+          CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(new SimpleEnv<>(units)),
+          sym,
+          sym,
+          info.memberImports(),
+          info.scope(),
+          name);
+    }
+
     public BindingResult withGeneratedClasses(ImmutableMap<String, byte[]> generatedClasses) {
       return new BindingResult(
           units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);

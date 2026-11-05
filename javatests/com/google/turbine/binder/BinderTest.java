@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
@@ -23,6 +24,7 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -47,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import org.jspecify.annotations.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -103,6 +106,58 @@ public class BinderTest {
 
     SourceTypeBoundClass b = getBoundClass(bound, "b/B");
     assertThat(b.superclass()).isEqualTo(new ClassSymbol("a/A"));
+  }
+
+  @Test
+  public void resolveField() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                """
+                package a;
+                public class A {
+                  public static final int ONE = 1;
+                  public static class Inner {
+                    public static final int TWO = 2;
+                  }
+                }
+                """),
+            parseLines(
+                """
+                package b;
+                import static a.A.ONE;
+                import static a.A.Inner.*;
+                public class B {
+                  static final int THREE = 3;
+                  class C {}
+                }
+                """));
+
+    Binder.BindingResult result =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            units,
+            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
+            TURBINE_BOOTCLASSPATH,
+            /* moduleVersion= */ Optional.empty());
+
+    ClassSymbol c = new ClassSymbol("b/B$C");
+    assertThat(resolveField(result, c, "THREE")).isEqualTo("b/B.THREE");
+    assertThat(resolveField(result, c, "ONE")).isEqualTo("a/A.ONE");
+    assertThat(resolveField(result, c, "TWO")).isEqualTo("a/A$Inner.TWO");
+    assertThat(resolveField(result, c, "a.A.Inner.TWO")).isEqualTo("a/A$Inner.TWO");
+    assertThat(resolveField(result, c, "NONE")).isNull();
+  }
+
+  private static @Nullable String resolveField(
+      Binder.BindingResult result, ClassSymbol sym, String name) {
+    ImmutableList<Tree.Ident> idents =
+        Splitter.on('.')
+            .splitToStream(name)
+            .map(n -> new Tree.Ident(0, n))
+            .collect(toImmutableList());
+    TypeBoundClass.FieldInfo field = result.resolveField(sym, new Tree.ConstVarName(0, idents));
+    return field != null ? field.sym().owner().binaryName() + "." + field.name() : null;
   }
 
   @Test
