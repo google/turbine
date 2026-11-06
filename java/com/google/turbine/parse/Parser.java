@@ -1183,6 +1183,10 @@ public class Parser {
   }
 
   private void dropBlocks() {
+    if (token == Token.LBRACE && lexer.skipBalancedBlock()) {
+      next();
+      return;
+    }
     eat(Token.LBRACE);
     int depth = 1;
     while (depth > 0) {

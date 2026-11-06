@@ -22,17 +22,26 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.turbine.diag.SourceFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import javax.annotation.processing.FilerException;
 import javax.lang.model.element.Element;
@@ -201,5 +210,86 @@ public class TurbineFilerTest {
         .contains("Manifest-Version:");
     assertThat(CharStreams.toString(resource.openReader(true))).contains("Manifest-Version:");
     assertThat(resource.getCharContent(false).toString()).contains("Manifest-Version:");
+  }
+
+  @Test
+  public void concurrentCreateSourceFileAllowsSingleWinner() throws Exception {
+    int threads = 8;
+    CyclicBarrier barrier = new CyclicBarrier(threads);
+    AtomicInteger successes = new AtomicInteger();
+    AtomicInteger filerExceptions = new AtomicInteger();
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    try {
+      var futures = new ArrayList<Future<?>>();
+      for (int i = 0; i < threads; i++) {
+        futures.add(
+            pool.submit(
+                () -> {
+                  barrier.await();
+                  try (Writer w =
+                      filer.createSourceFile("com.foo.Concurrent", (Element[]) null).openWriter()) {
+                    w.write("class Concurrent {}");
+                    successes.incrementAndGet();
+                  } catch (FilerException expected) {
+                    filerExceptions.incrementAndGet();
+                  }
+                  return null;
+                }));
+      }
+      for (Future<?> f : futures) {
+        f.get();
+      }
+    } finally {
+      pool.shutdownNow();
+    }
+    assertThat(successes.get()).isEqualTo(1);
+    assertThat(filerExceptions.get()).isEqualTo(threads - 1);
+    assertThat(filer.finishRound()).hasSize(1);
+  }
+
+  @Test
+  public void preFinishCallbackCanCreateFiles() throws Exception {
+    ExecutorService pool = Executors.newSingleThreadExecutor();
+    try {
+      List<Future<?>> pending = new ArrayList<>();
+      pending.add(
+          pool.submit(
+              () -> {
+                try (Writer w =
+                    filer.createSourceFile("com.foo.Background", (Element[]) null).openWriter()) {
+                  w.write("class Background {}");
+                }
+                return null;
+              }));
+      filer.setPreFinishCallback(
+          () -> {
+            for (Future<?> f : pending) {
+              try {
+                f.get();
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+              } catch (ExecutionException e) {
+                throw new AssertionError(e);
+              }
+            }
+          });
+
+      Collection<SourceFile> sources = filer.finishRound();
+
+      assertThat(sources.stream().map(SourceFile::path)).containsExactly("com/foo/Background.java");
+      assertThat(filer.generatedSources()).containsKey("com/foo/Background.java");
+    } finally {
+      pool.shutdownNow();
+    }
+  }
+
+  @Test
+  public void addGeneratedSourcePathsPreventsRecreation() {
+    filer.addGeneratedSourcePaths(ImmutableList.of("com/foo/External.java"));
+
+    assertThrows(
+        FilerException.class, () -> filer.createSourceFile("com.foo.External", (Element[]) null));
+    assertThat(filer.generatedSources()).isEmpty();
   }
 }

@@ -16,6 +16,7 @@
 
 package com.google.turbine.processing;
 
+import com.google.turbine.kotlin.processing.TurbineKotlinModel;
 import java.util.Locale;
 import java.util.Map;
 import javax.annotation.processing.Filer;
@@ -37,6 +38,7 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
   private final SourceVersion sourceVersion;
   private final Messager messager;
   private final ClassLoader processorLoader;
+  private final @Nullable TurbineKotlinModel kotlinModel;
 
   public TurbineProcessingEnvironment(
       Filer filer,
@@ -47,6 +49,28 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
       SourceVersion sourceVersion,
       @Nullable ClassLoader processorLoader,
       Map<String, byte[]> statistics) {
+    this(
+        filer,
+        types,
+        elements,
+        messager,
+        processorOptions,
+        sourceVersion,
+        processorLoader,
+        statistics,
+        /* kotlinModel= */ null);
+  }
+
+  protected TurbineProcessingEnvironment(
+      Filer filer,
+      Types types,
+      Elements elements,
+      Messager messager,
+      Map<String, String> processorOptions,
+      SourceVersion sourceVersion,
+      @Nullable ClassLoader processorLoader,
+      Map<String, byte[]> statistics,
+      @Nullable TurbineKotlinModel kotlinModel) {
     this.filer = filer;
     this.types = types;
     this.processorOptions = processorOptions;
@@ -55,6 +79,11 @@ public class TurbineProcessingEnvironment implements ProcessingEnvironment {
     this.statistics = statistics;
     this.messager = messager;
     this.processorLoader = processorLoader;
+    this.kotlinModel = kotlinModel;
+  }
+
+  public @Nullable TurbineKotlinModel kotlinModel() {
+    return kotlinModel;
   }
 
   @Override

@@ -46,7 +46,20 @@ public final class Resolve {
       @Nullable ClassSymbol origin,
       ClassSymbol sym,
       Tree.Ident simpleName) {
-    return resolve(env, origin, sym, simpleName, new HashSet<>());
+    return resolve(env, origin, sym, simpleName, new HashSet<>(), /* includeInterfaces= */ true);
+  }
+
+  /**
+   * Performs qualified type name resolution of a type with the given simple name, qualified by the
+   * given symbol, considering members that are inherited from superclasses only (not
+   * superinterfaces).
+   */
+  public static @Nullable ClassSymbol resolveWithoutInterfaces(
+      Env<ClassSymbol, ? extends HeaderBoundClass> env,
+      @Nullable ClassSymbol origin,
+      ClassSymbol sym,
+      Tree.Ident simpleName) {
+    return resolve(env, origin, sym, simpleName, new HashSet<>(), /* includeInterfaces= */ false);
   }
 
   private static @Nullable ClassSymbol resolve(
@@ -54,7 +67,8 @@ public final class Resolve {
       @Nullable ClassSymbol origin,
       ClassSymbol sym,
       Tree.Ident simpleName,
-      Set<ClassSymbol> seen) {
+      Set<ClassSymbol> seen,
+      boolean includeInterfaces) {
     ClassSymbol result;
     if (!seen.add(sym)) {
       // Optimize multiple-interface-inheritance, and don't get stuck in cycles.
@@ -69,15 +83,17 @@ public final class Resolve {
       return result;
     }
     if (bound.superclass() != null) {
-      result = resolve(env, origin, bound.superclass(), simpleName, seen);
+      result = resolve(env, origin, bound.superclass(), simpleName, seen, includeInterfaces);
       if (result != null && visible(origin, result, env.getNonNull(result))) {
         return result;
       }
     }
-    for (ClassSymbol i : bound.interfaces()) {
-      result = resolve(env, origin, i, simpleName, seen);
-      if (result != null && visible(origin, result, env.getNonNull(result))) {
-        return result;
+    if (includeInterfaces) {
+      for (ClassSymbol i : bound.interfaces()) {
+        result = resolve(env, origin, i, simpleName, seen, includeInterfaces);
+        if (result != null && visible(origin, result, env.getNonNull(result))) {
+          return result;
+        }
       }
     }
     return null;
@@ -110,7 +126,11 @@ public final class Resolve {
     };
   }
 
-  static class CanonicalResolver implements CanonicalSymbolResolver {
+  /**
+   * Package-scoped canonical symbol resolver. Subclasses can override the typealias lookups of
+   * {@link CanonicalSymbolResolver}.
+   */
+  public static class CanonicalResolver implements CanonicalSymbolResolver {
     private final String packagename;
     private final CompoundEnv<ClassSymbol, BoundClass> env;
 

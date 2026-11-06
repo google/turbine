@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.util.Objects.requireNonNull;
 
 import com.google.auto.value.AutoValue;
@@ -25,7 +27,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
@@ -45,6 +49,7 @@ import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.processing.ModelFactory;
+import com.google.turbine.processing.ProcessingEnvironmentFactory;
 import com.google.turbine.processing.TurbineElements;
 import com.google.turbine.processing.TurbineFiler;
 import com.google.turbine.processing.TurbineMessager;
@@ -56,14 +61,15 @@ import com.google.turbine.type.AnnoInfo;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
@@ -73,31 +79,35 @@ import org.jspecify.annotations.Nullable;
 /** Top level annotation processing logic, see also {@link Binder}. */
 public class Processing {
 
-  static @Nullable BindingResult process(
-      TurbineExecutor executor,
-      TurbineLog log,
-      final ImmutableList<CompUnit> initialSources,
-      final ClassPath classpath,
-      ProcessorInfo processorInfo,
-      ClassPath bootclasspath,
-      BindingResult result,
-      Optional<String> moduleVersion) {
+  static BindingResult process(
+      TurbineExecutor executor, TurbineLog log, BindingRequest request, BindingResult result) {
+    ClassPath classpath = request.classpath();
+    ProcessorInfo processorInfo = request.processorInfo();
+    KotlinBinder kotlin = request.kotlin();
 
     Set<String> seen = new HashSet<>();
-    for (CompUnit u : initialSources) {
+    for (CompUnit u : request.units()) {
       if (u.source() != null) {
         seen.add(u.source().path());
       }
+    }
+    if (kotlin != null) {
+      seen.addAll(kotlin.sourcePaths());
     }
 
     Env<ClassSymbol, SourceTypeBoundClass> tenv = new SimpleEnv<>(result.units());
     CompoundEnv<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
 
-    ImmutableSet<ClassSymbol> syms = result.units().keySet();
+    ImmutableSet<ClassSymbol> syms = roundSymbols(processorInfo, result, result.units().keySet());
     Set<ClassSymbol> allSymbols = new HashSet<>(syms);
 
     ModelFactory factory = new ModelFactory(env, result.classPathEnv(), result.tli());
+
+    boolean kotlinMode = kotlin != null;
+    if (kotlin != null) {
+      factory.setKotlinHooks(kotlin.createProcessingHooks(factory));
+    }
 
     TurbineFiler filer =
         new TurbineFiler(
@@ -116,21 +126,28 @@ public class Processing {
               // the compilation sources (including generated sources).
               return classpath.resource(input);
             },
-            processorInfo.loader());
+            processorInfo.loader(),
+            kotlinMode);
 
     Map<String, byte[]> statistics = new LinkedHashMap<>();
 
     TurbineTypes turbineTypes = new TurbineTypes(factory);
-    TurbineProcessingEnvironment processingEnv =
-        new TurbineProcessingEnvironment(
+    ProcessingEnvironmentFactory.Inputs inputs =
+        new ProcessingEnvironmentFactory.Inputs(
             filer,
+            factory,
             turbineTypes,
             new TurbineElements(factory, turbineTypes),
             new TurbineMessager(factory, log),
             processorInfo.options(),
             processorInfo.sourceVersion(),
             processorInfo.loader(),
-            statistics);
+            statistics,
+            factory.kotlinModel());
+    ProcessingEnvironmentFactory environmentFactory = processorInfo.processingEnvironmentFactory();
+    TurbineProcessingEnvironment processingEnv =
+        (environmentFactory != null ? environmentFactory : ProcessingEnvironmentFactory.DEFAULT)
+            .create(inputs);
     Timers timers = new Timers();
     for (Processor processor : processorInfo.processors()) {
       try (var _ = timers.start(processor)) {
@@ -141,12 +158,16 @@ public class Processing {
         throw new AnnotationProcessingError(processor, t, log.diagnostics());
       }
     }
+    ImmutableList<RoundParticipant> participants = processorInfo.participants();
+    for (RoundParticipant participant : participants) {
+      participant.init(processingEnv, inputs);
+    }
 
     ImmutableMap<Processor, SupportedAnnotationTypes> wanted =
         initializeSupportedAnnotationTypes(processorInfo);
 
     ImmutableList.Builder<CompUnit> units =
-        ImmutableList.<CompUnit>builder().addAll(initialSources);
+        ImmutableList.<CompUnit>builder().addAll(request.units());
 
     // Share one cache across all generated sources, since identifiers repeat across files.
     StringCache stringCache = new StringCache();
@@ -154,8 +175,22 @@ public class Processing {
     Set<Processor> toRun = new LinkedHashSet<>();
 
     boolean errorRaised = false;
+    int roundNumber = 0;
+    ImmutableSet<String> newSourcePaths = ImmutableSet.of();
 
     while (!syms.isEmpty()) {
+      roundNumber++;
+      List<SourceFile> participantFiles = new ArrayList<>();
+      if (!participants.isEmpty()) {
+        RoundParticipant.Round round =
+            new RoundParticipant.Round(
+                roundNumber, result, units.build(), kotlin, syms, newSourcePaths);
+        for (RoundParticipant participant : participants) {
+          participantFiles.addAll(participant.process(round));
+        }
+        // Processors can't create sources with the same paths as the participants' sources.
+        filer.addGeneratedSourcePaths(Iterables.transform(participantFiles, SourceFile::path));
+      }
       ImmutableSetMultimap<ClassSymbol, Symbol> allAnnotations = getAllAnnotations(env, syms);
       TurbineRoundEnvironment roundEnv = null;
       for (Map.Entry<Processor, SupportedAnnotationTypes> e : wanted.entrySet()) {
@@ -188,29 +223,32 @@ public class Processing {
         }
       }
       Collection<SourceFile> files = filer.finishRound();
+      if (!participantFiles.isEmpty()) {
+        files = ImmutableList.<SourceFile>builder().addAll(participantFiles).addAll(files).build();
+      }
+      boolean participantError = participantErrorRaised(participants);
       if (files.isEmpty()) {
+        errorRaised |= participantError;
         break;
       }
-      units.addAll(
-          executor.map(ImmutableList.copyOf(files), file -> Parser.parse(file, stringCache)));
-      errorRaised = log.errorRaised();
+      kotlin = parseNewFiles(executor, files, units, kotlin, stringCache);
+      errorRaised = log.errorRaised() || participantError;
       if (errorRaised) {
         break;
       }
+      newSourcePaths = files.stream().map(SourceFile::path).collect(toImmutableSet());
       log.clear();
       result =
           Binder.bind(
               executor,
               log,
-              units.build(),
+              request.toBuilder().units(units.build()).kotlin(kotlin).build(),
               filer.generatedSources(),
-              filer.generatedClasses(),
-              classpath,
-              bootclasspath,
-              moduleVersion);
+              filer.generatedClasses());
       tenv = new SimpleEnv<>(result.units());
       env = CompoundEnv.<ClassSymbol, TypeBoundClass>of(result.classPathEnv()).append(tenv);
-      syms = Sets.difference(result.units().keySet(), allSymbols).immutableCopy();
+      syms =
+          roundSymbols(processorInfo, result, Sets.difference(result.units().keySet(), allSymbols));
       allSymbols.addAll(syms);
       factory.round(env, result.tli());
     }
@@ -234,27 +272,27 @@ public class Processing {
         throw new AnnotationProcessingError(processor, t, log.diagnostics());
       }
     }
+    if (!participants.isEmpty()) {
+      boolean finalErrorRaised =
+          errorRaised || log.errorRaised() || participantErrorRaised(participants);
+      for (RoundParticipant participant : participants) {
+        participant.processingOver(finalErrorRaised);
+      }
+    }
 
     Collection<SourceFile> files = filer.finishRound();
     if (!files.isEmpty()) {
       // processors aren't supposed to generate sources on the final processing round, but javac
       // tolerates it anyway
       // TODO(cushon): consider disallowing this, or reporting a diagnostic
-      units.addAll(
-          executor.map(ImmutableList.copyOf(files), file -> Parser.parse(file, stringCache)));
+      kotlin = parseNewFiles(executor, files, units, kotlin, stringCache);
       result =
           Binder.bind(
               executor,
               log,
-              units.build(),
+              request.toBuilder().units(units.build()).kotlin(kotlin).build(),
               filer.generatedSources(),
-              filer.generatedClasses(),
-              classpath,
-              bootclasspath,
-              moduleVersion);
-      if (log.anyErrors()) {
-        return null;
-      }
+              filer.generatedClasses());
     }
     if (!filer.generatedClasses().isEmpty()) {
       // add any generated class files to the output
@@ -269,6 +307,15 @@ public class Processing {
         result.withStatistics(Statistics.create(timers.build(), ImmutableMap.copyOf(statistics)));
 
     return result;
+  }
+
+  private static boolean participantErrorRaised(ImmutableList<RoundParticipant> participants) {
+    for (RoundParticipant participant : participants) {
+      if (participant.errorRaised()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static ImmutableMap<Processor, SupportedAnnotationTypes>
@@ -380,6 +427,15 @@ public class Processing {
     }
   }
 
+  private static ImmutableSet<ClassSymbol> roundSymbols(
+      ProcessorInfo processorInfo, BindingResult result, Set<ClassSymbol> syms) {
+    Function<BindingResult, Comparator<ClassSymbol>> order = processorInfo.roundSymbolOrder();
+    if (order == null) {
+      return ImmutableSet.copyOf(syms);
+    }
+    return ImmutableSet.copyOf(ImmutableList.sortedCopyOf(order.apply(result), syms));
+  }
+
   public static ProcessorInfo initializeProcessors(
       SourceVersion sourceVersion,
       TurbineJavacOptions javacopts,
@@ -425,20 +481,78 @@ public class Processing {
 
     public abstract SourceVersion sourceVersion();
 
+    /**
+     * Participants in processing rounds other than JSR-269 processors, see {@link
+     * RoundParticipant}.
+     */
+    abstract ImmutableList<RoundParticipant> participants();
+
+    /**
+     * Creates the processing environment for processors, or {@code null} for a plain {@link
+     * TurbineProcessingEnvironment}.
+     */
+    abstract @Nullable ProcessingEnvironmentFactory processingEnvironmentFactory();
+
+    /**
+     * Returns the order in which a round's new symbols are presented to processors, given the
+     * round's binding result, or {@code null} for binding order. Processors may depend on that
+     * order, e.g. when they number generated members with a counter. The sort is stable.
+     */
+    abstract @Nullable Function<BindingResult, Comparator<ClassSymbol>> roundSymbolOrder();
+
+    /** Returns true if there is anything to run: JSR-269 processors or round participants. */
+    boolean hasProcessors() {
+      return !processors().isEmpty() || !participants().isEmpty();
+    }
+
     public static ProcessorInfo create(
         ImmutableList<Processor> processors,
         @Nullable ClassLoader loader,
         ImmutableMap<String, String> options,
         SourceVersion sourceVersion) {
-      return new AutoValue_Processing_ProcessorInfo(processors, loader, options, sourceVersion);
+      return builder()
+          .processors(processors)
+          .loader(loader)
+          .options(options)
+          .sourceVersion(sourceVersion)
+          .build();
     }
 
     public static ProcessorInfo empty() {
-      return create(
-          /* processors= */ ImmutableList.of(),
-          /* loader= */ null,
-          /* options= */ ImmutableMap.of(),
-          /* sourceVersion= */ SourceVersion.latest());
+      return builder().build();
+    }
+
+    public static Builder builder() {
+      return new AutoValue_Processing_ProcessorInfo.Builder()
+          .processors(ImmutableList.of())
+          .loader(null)
+          .options(ImmutableMap.of())
+          .sourceVersion(SourceVersion.latest())
+          .participants(ImmutableList.of())
+          .processingEnvironmentFactory(null)
+          .roundSymbolOrder(null);
+    }
+
+    /** A builder for {@link ProcessorInfo}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+      public abstract Builder processors(ImmutableList<Processor> processors);
+
+      public abstract Builder loader(@Nullable ClassLoader loader);
+
+      public abstract Builder options(ImmutableMap<String, String> options);
+
+      public abstract Builder sourceVersion(SourceVersion sourceVersion);
+
+      public abstract Builder participants(ImmutableList<RoundParticipant> participants);
+
+      public abstract Builder processingEnvironmentFactory(
+          @Nullable ProcessingEnvironmentFactory processingEnvironmentFactory);
+
+      public abstract Builder roundSymbolOrder(
+          @Nullable Function<BindingResult, Comparator<ClassSymbol>> roundSymbolOrder);
+
+      public abstract ProcessorInfo build();
     }
   }
 
@@ -478,6 +592,30 @@ public class Processing {
       }
       return result.buildOrThrow();
     }
+  }
+
+  private static @Nullable KotlinBinder parseNewFiles(
+      TurbineExecutor executor,
+      Collection<SourceFile> files,
+      ImmutableList.Builder<CompUnit> units,
+      @Nullable KotlinBinder kotlin,
+      StringCache stringCache) {
+    ImmutableList.Builder<SourceFile> javaFiles = ImmutableList.builder();
+    ImmutableList.Builder<SourceFile> ktFilesBuilder = ImmutableList.builder();
+    for (SourceFile file : files) {
+      if (file.path().endsWith(".kt")) {
+        ktFilesBuilder.add(file);
+      } else {
+        javaFiles.add(file);
+      }
+    }
+    units.addAll(executor.map(javaFiles.build(), file -> Parser.parse(file, stringCache)));
+    ImmutableList<SourceFile> ktFiles = ktFilesBuilder.build();
+    if (!ktFiles.isEmpty()) {
+      checkState(kotlin != null, "unexpected generated Kotlin files in Java compilation");
+      kotlin = requireNonNull(kotlin).withGeneratedSources(executor, ktFiles);
+    }
+    return kotlin;
   }
 
   private Processing() {}

@@ -35,15 +35,30 @@ import org.jspecify.annotations.Nullable;
 public class AnnoInfo {
   private final SourceFile source;
   private final ClassSymbol sym;
-  private final Tree.Anno tree;
+  private final Tree.@Nullable Anno tree;
   private final ImmutableMap<String, Const> values;
+  private final int position;
 
   public AnnoInfo(
-      SourceFile source, ClassSymbol sym, Anno tree, ImmutableMap<String, Const> values) {
+      SourceFile source, ClassSymbol sym, @Nullable Anno tree, ImmutableMap<String, Const> values) {
+    this(source, sym, tree, values, tree != null ? tree.position() : -1);
+  }
+
+  /**
+   * Creates an annotation with an explicit diagnostic position, e.g. for annotations that weren't
+   * parsed from Java source and don't have a {@link #tree}.
+   */
+  public AnnoInfo(
+      SourceFile source,
+      ClassSymbol sym,
+      @Nullable Anno tree,
+      ImmutableMap<String, Const> values,
+      int position) {
     this.source = source;
     this.sym = sym;
     this.tree = tree;
     this.values = requireNonNull(values);
+    this.position = position;
   }
 
   /** The annotation's source, for diagnostics. */
@@ -53,12 +68,12 @@ public class AnnoInfo {
 
   /** The annotation's diagnostic position. */
   public int position() {
-    return tree.position();
+    return position;
   }
 
-  /** Arguments, either assignments or a single expression. */
+  /** Arguments from the Java syntax tree, either assignments or a single expression. */
   public ImmutableList<Expression> args() {
-    return tree.args();
+    return requireNonNull(tree).args();
   }
 
   /** Bound element-value pairs. */
@@ -71,12 +86,13 @@ public class AnnoInfo {
     return sym;
   }
 
-  public Tree.Anno tree() {
+  /** The annotation's syntax tree, or {@code null} if it wasn't parsed from Java source. */
+  public Tree.@Nullable Anno tree() {
     return tree;
   }
 
   public AnnoInfo withValues(ImmutableMap<String, Const> values) {
-    return new AnnoInfo(source, sym, tree, values);
+    return new AnnoInfo(source, sym, tree, values, position);
   }
 
   @Override

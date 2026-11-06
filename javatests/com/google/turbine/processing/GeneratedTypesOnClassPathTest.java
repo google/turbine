@@ -19,12 +19,13 @@ package com.google.turbine.processing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing.ProcessorInfo;
@@ -43,7 +44,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -57,7 +57,9 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Types;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -260,17 +262,20 @@ public class GeneratedTypesOnClassPathTest {
 
   private BindingResult bindWithClassPath(SourceFile source, Path classPathJar, Processor processor)
       throws IOException {
-    return Binder.bind(
-        TurbineExecutor.direct(),
-        ImmutableList.of(Parser.parse(source)),
-        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(classPathJar)),
-        ProcessorInfo.create(
-            ImmutableList.of(processor),
-            getClass().getClassLoader(),
-            ImmutableMap.of(),
-            SourceVersion.latestSupported()),
-        TestClassPaths.TURBINE_BOOTCLASSPATH,
-        Optional.empty());
+    return bind(
+        BindingRequest.builder()
+            .units(ImmutableList.of(Parser.parse(source)))
+            .classpath(
+                ClassPathBinder.bindClasspath(
+                    TurbineExecutor.direct(), ImmutableList.of(classPathJar)))
+            .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+            .processorInfo(
+                ProcessorInfo.create(
+                    ImmutableList.of(processor),
+                    getClass().getClassLoader(),
+                    ImmutableMap.of(),
+                    SourceVersion.latestSupported()))
+            .build());
   }
 
   @Test
@@ -457,6 +462,99 @@ public class GeneratedTypesOnClassPathTest {
   }
 
   /**
+   * Uses {@link Types} on type mirrors that mention the type variables of a method of {@code
+   * com.example.Lib}, which were obtained before it was shadowed by an identical generated source.
+   */
+  static class ShadowedTypeVariablesProcessor extends ShadowingProcessor {
+    private TypeMirror u;
+    private TypeMirror methodType;
+
+    ShadowedTypeVariablesProcessor() {
+      super(GENERIC_LIB);
+    }
+
+    @Override
+    void beforeShadowing() {
+      ExecutableElement m = getOnlyElement(ElementFilter.methodsIn(lib().getEnclosedElements()));
+      u = m.getTypeParameters().get(0).asType();
+      methodType = m.asType();
+    }
+
+    @Override
+    void afterShadowing() {
+      Types types = processingEnv.getTypeUtils();
+      output.add(types.erasure(u).toString());
+      output.add(types.erasure(methodType).toString());
+      output.add(String.valueOf(types.isSubtype(u, types.erasure(u))));
+    }
+  }
+
+  @Test
+  public void shadowedTypeVariablesFromEarlierRounds() throws IOException {
+    Path classPathJar = libraryJar(ImmutableMap.of("com/example/Lib.java", GENERIC_LIB));
+    ShadowedTypeVariablesProcessor processor = new ShadowedTypeVariablesProcessor();
+
+    BindingResult bound = bindWithClassPath(classPathJar, processor);
+
+    assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
+    assertThat(processor.output)
+        .containsExactly(
+            "java.lang.Number", "(java.lang.Object,java.lang.Number)java.lang.Number", "true")
+        .inOrder();
+  }
+
+  private static final String OVERLOADED_LIB =
+      """
+      package com.example;
+      public class Lib {
+        public void m(int x) {}
+        public void m(String x) {}
+      }
+      """;
+
+  /**
+   * Inspects overloads of {@code com.example.Lib} that were obtained before it was shadowed by an
+   * identical generated source.
+   */
+  static class ShadowedOverloadsProcessor extends ShadowingProcessor {
+    private final List<ExecutableElement> methods = new ArrayList<>();
+
+    ShadowedOverloadsProcessor() {
+      super(OVERLOADED_LIB);
+    }
+
+    @Override
+    void beforeShadowing() {
+      methods.addAll(ElementFilter.methodsIn(lib().getEnclosedElements()));
+      output.add(methods.toString());
+    }
+
+    @Override
+    void afterShadowing() {
+      // The implicit constructor is the first method in the class file, and a synthetic method in
+      // the source, so the overloads have different indices in the class file and in the source.
+      output.add(methods.toString());
+      output.add(lib().getEnclosedElements().toString());
+    }
+  }
+
+  @Test
+  public void shadowedOverloadsFromEarlierRounds() throws IOException {
+    Path classPathJar = libraryJar(ImmutableMap.of("com/example/Lib.java", OVERLOADED_LIB));
+    ShadowedOverloadsProcessor processor = new ShadowedOverloadsProcessor();
+
+    BindingResult bound = bindWithClassPath(classPathJar, processor);
+
+    assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
+    assertThat(processor.output)
+        .containsExactly(
+            "[m(int), m(java.lang.String)]",
+            "[m(int), m(java.lang.String)]",
+            "[Lib(), m(int), m(java.lang.String)]")
+        .inOrder();
+  }
+
+  /**
    * Inspects members of the annotation type {@code com.example.Lib} that were obtained from an
    * annotation on a classpath type, without creating an element for the annotation type itself.
    */
@@ -485,9 +583,9 @@ public class GeneratedTypesOnClassPathTest {
 
     @Override
     void afterShadowing() {
-      // x is still present, and reflects the generated source.
+      // Members obtained from the classpath type continue to reflect the classpath type, even if
+      // the generated source declares a member with the same name.
       output.add(x.getSimpleName() + " " + x.getReturnType());
-      // y was removed, and continues to reflect the classpath type.
       output.add(y.getSimpleName() + " " + y.getReturnType());
     }
   }
@@ -506,7 +604,7 @@ public class GeneratedTypesOnClassPathTest {
     BindingResult bound = bindWithClassPath(classPathJar, processor);
 
     assertThat(bound.generatedSources().keySet()).containsExactly("com/example/Lib.java");
-    assertThat(processor.output).containsExactly("x int", "x java.lang.String", "y int").inOrder();
+    assertThat(processor.output).containsExactly("x int", "x int", "y int").inOrder();
   }
 
   /** Inspects a classpath subtype of {@code com.example.Lib} before and after it is shadowed. */

@@ -16,8 +16,6 @@
 
 package com.google.turbine.symbols;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -122,7 +120,9 @@ public final class SymbolFacts {
       PackageSymbol pkg,
       Function<ClassSymbol, @Nullable TypeBoundClass> classLookup) {
     PackageScope scope = tli.lookupPackage(pkg.binaryName());
-    requireNonNull(scope); // the current package exists
+    if (scope == null) {
+      return ImmutableSet.of();
+    }
     ImmutableSet.Builder<ClassSymbol> result = ImmutableSet.builder();
     for (ClassSymbol key : scope.classes()) {
       if (!TypeBoundClass.isTopLevel(key, () -> classLookup.apply(key))) {

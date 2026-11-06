@@ -39,6 +39,7 @@ import com.google.turbine.type.Type.WildTy;
 import com.google.turbine.type.Type.WildTy.BoundKind;
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.type.ArrayType;
@@ -88,9 +89,18 @@ public abstract class TurbineTypeMirror implements TypeMirror {
 
   public abstract Type asTurbineType();
 
+  /** A {@code ?} nullability marker after a Kotlin type name, type arguments or array brackets. */
+  private static final Pattern KOTLIN_NULLABLE_MARKER = Pattern.compile("([\\w>\\]])\\?");
+
   @Override
   public String toString() {
-    return asTurbineType().toString();
+    String str = asTurbineType().toString();
+    if (factory.kotlinModel() == null || str.indexOf('?') == -1) {
+      return str;
+    }
+    // Unresolved types in Kotlin sources keep their name as written, which may be nullable (e.g.
+    // `Foo?`), but Java doesn't have nullable types.
+    return KOTLIN_NULLABLE_MARKER.matcher(str).replaceAll("$1");
   }
 
   /** A {@link PrimitiveType} implementation backed by a {@link PrimTy}. */

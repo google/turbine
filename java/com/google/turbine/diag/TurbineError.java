@@ -65,6 +65,8 @@ public class TurbineError extends Error {
     UNEXPECTED_ANNOTATION("unexpected annotation: %s"),
     INVALID_TYPE_ARGUMENTS("expected %d type arguments for %s, got %d"),
     NO_JAVA_LANG("could not find java.lang on bootclasspath"),
+    CANNOT_INFER_TYPE("cannot infer type for %s; specify the type explicitly"),
+    CONTEXT_PARAMETERS_NOT_SUPPORTED("context parameters are not supported"),
     PROC("%s");
 
     private final String message;

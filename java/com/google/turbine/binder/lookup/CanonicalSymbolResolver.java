@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder.lookup;
 
+import com.google.turbine.binder.lookup.ImportScope.TypeAlias;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.tree.Tree;
 import org.jspecify.annotations.Nullable;
@@ -29,4 +30,14 @@ public interface CanonicalSymbolResolver extends ImportScope.ResolveFunction {
   /** Returns true if the given symbol is visible from the current package. */
   @Override
   boolean visible(ClassSymbol sym);
+
+  /** Resolves a typealias in the given package to its underlying ClassSymbol. */
+  default @Nullable ClassSymbol resolveTypeAlias(String packageName, String aliasName) {
+    return null;
+  }
+
+  /** Finds information about a typealias in the given package. */
+  default @Nullable TypeAlias findTypeAlias(String packageName, String aliasName) {
+    return null;
+  }
 }

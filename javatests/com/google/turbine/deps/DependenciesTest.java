@@ -18,12 +18,13 @@ package com.google.turbine.deps;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.diag.SourceFile;
@@ -101,12 +102,12 @@ public class DependenciesTest {
 
     DepsProto.Dependencies run() throws IOException {
       BindingResult bound =
-          Binder.bind(
-              TurbineExecutor.direct(),
-              units.build(),
-              ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath),
-              TestClassPaths.TURBINE_BOOTCLASSPATH,
-              /* moduleVersion= */ Optional.empty());
+          bind(
+              BindingRequest.builder()
+                  .units(units.build())
+                  .classpath(ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath))
+                  .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                  .build());
 
       Lowered lowered =
           Lower.lowerAll(

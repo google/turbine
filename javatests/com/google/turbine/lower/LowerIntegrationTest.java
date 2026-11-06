@@ -103,7 +103,8 @@ public class LowerIntegrationTest {
             input.sources(),
             classpathJar(input),
             TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+            /* moduleVersion= */ Optional.empty(),
+            /* retainDecls= */ false);
     Lowered lowered =
         Lower.lowerAll(
             TurbineExecutor.direct(),

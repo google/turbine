@@ -51,6 +51,7 @@ import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ErrorTy;
+import com.google.turbine.type.Type.MethodTy;
 import java.lang.annotation.Annotation;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -164,7 +165,7 @@ public abstract class TurbineElement implements Element {
     return getAnnotationMirrors();
   }
 
-  abstract ImmutableList<AnnoInfo> annos();
+  public abstract ImmutableList<AnnoInfo> annos();
 
   /** A {@link TypeElement} implementation backed by a {@link ClassSymbol}. */
   public static class TurbineTypeElement extends TurbineElement implements TypeElement {
@@ -256,8 +257,10 @@ public abstract class TurbineElement implements Element {
     }
 
     private TypeMirror computeSuperclass(TypeBoundClass info) {
-      Type superClassType = SymbolFacts.superclassType(info);
-      return superClassType != null ? factory.asTypeMirror(superClassType) : factory.noType();
+      Type superclass = SymbolFacts.superclassType(info);
+      return superclass != null
+          ? factory.asTypeMirror(factory.processingType(sym, superclass, ImmutableList.of()))
+          : factory.noType();
     }
 
     @Override
@@ -270,7 +273,12 @@ public abstract class TurbineElement implements Element {
       TypeElementState s = state();
       List<TypeMirror> local = s.interfaces;
       if (local == null) {
-        s.interfaces = local = factory.asTypeMirrors(infoNonNull(s).interfaceTypes());
+        ImmutableList.Builder<TypeMirror> interfaces = ImmutableList.builder();
+        for (Type type : infoNonNull(s).interfaceTypes()) {
+          interfaces.add(
+              factory.asTypeMirror(factory.processingType(sym, type, ImmutableList.of())));
+        }
+        s.interfaces = local = interfaces.build();
       }
       return local;
     }
@@ -377,7 +385,11 @@ public abstract class TurbineElement implements Element {
     }
 
     private ImmutableList<Element> computeEnclosedElements(TypeBoundClass info) {
-      SymbolFacts.Members members = SymbolFacts.members(info);
+      KotlinProcessingHooks kotlinHooks = factory.kotlinHooks();
+      SymbolFacts.Members members =
+          kotlinHooks != null
+              ? kotlinHooks.members(info, factory::getSymbol)
+              : SymbolFacts.members(info);
       ImmutableList.Builder<Element> result = ImmutableList.builder();
       // javac lists member types first
       for (ClassSymbol child : members.children()) {
@@ -389,7 +401,11 @@ public abstract class TurbineElement implements Element {
       for (FieldInfo field : members.fields()) {
         result.add(factory.fieldElement(field.sym()));
       }
-      for (MethodInfo method : members.methods()) {
+      ImmutableList<MethodInfo> methods =
+          kotlinHooks != null
+              ? kotlinHooks.kaptStubMethods(info, members, factory::getSymbol)
+              : members.methods();
+      for (MethodInfo method : methods) {
         result.add(factory.executableElement(method.sym()));
       }
       return result.build();
@@ -408,7 +424,8 @@ public abstract class TurbineElement implements Element {
     @Override
     public @Nullable TurbineJavadoc javadoc() {
       TypeBoundClass info = info();
-      if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
+      if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)
+          || sourceTypeBoundClass.decl() == null) {
         return null;
       }
       return sourceTypeBoundClass.decl().javadoc();
@@ -421,7 +438,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       return infoNonNull().annotations();
     }
 
@@ -643,7 +660,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       return info().annotations();
     }
   }
@@ -717,7 +734,9 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public TypeMirror getReturnType() {
-      return factory.asTypeMirror(info().returnType());
+      MethodInfo info = info();
+      return factory.asTypeMirror(
+          factory.processingType(sym.owner(), info.returnType(), info.annotations()));
     }
 
     @Override
@@ -777,7 +796,10 @@ public abstract class TurbineElement implements Element {
     @Override
     public TypeMirror getReceiverType() {
       ParamInfo receiver = info().receiver();
-      return receiver != null ? factory.asTypeMirror(receiver.type()) : factory.noType();
+      return receiver != null
+          ? factory.asTypeMirror(
+              factory.processingType(sym.owner(), receiver.type(), receiver.annotations()))
+          : factory.noType();
     }
 
     @Override
@@ -808,9 +830,32 @@ public abstract class TurbineElement implements Element {
       ExecutableElementState s = state();
       TypeMirror local = s.type;
       if (local == null) {
-        s.type = local = factory.asTypeMirror(requireNonNull(s.info).asType());
+        MethodInfo info = requireNonNull(s.info);
+        s.type =
+            local =
+                factory.asTypeMirror(
+                    factory.kotlinHooks() == null ? info.asType() : processingType(info));
       }
       return local;
+    }
+
+    private MethodTy processingType(MethodInfo info) {
+      ClassSymbol owner = sym.owner();
+      ImmutableList.Builder<Type> parameters = ImmutableList.builder();
+      for (ParamInfo param : info.parameters()) {
+        if (!param.synthetic()) {
+          parameters.add(factory.processingType(owner, param.type(), param.annotations()));
+        }
+      }
+      ParamInfo receiver = info.receiver();
+      return MethodTy.create(
+          info.tyParams().keySet(),
+          factory.processingType(owner, info.returnType(), info.annotations()),
+          receiver != null
+              ? factory.processingType(owner, receiver.type(), receiver.annotations())
+              : null,
+          parameters.build(),
+          info.exceptions());
     }
 
     @Override
@@ -844,7 +889,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       return info().annotations();
     }
   }
@@ -922,7 +967,11 @@ public abstract class TurbineElement implements Element {
       FieldElementState s = state();
       TypeMirror local = s.type;
       if (local == null) {
-        s.type = local = factory.asTypeMirror(requireNonNull(s.info).type());
+        FieldInfo info = requireNonNull(s.info);
+        s.type =
+            local =
+                factory.asTypeMirror(
+                    factory.processingType(sym.owner(), info.type(), info.annotations()));
       }
       return local;
     }
@@ -960,7 +1009,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       return info().annotations();
     }
   }
@@ -1103,7 +1152,8 @@ public abstract class TurbineElement implements Element {
       if (!(info instanceof SourceTypeBoundClass sourceTypeBoundClass)) {
         return null;
       }
-      return sourceTypeBoundClass.decl().javadoc();
+      // Declarations are always retained when annotation processors run.
+      return requireNonNull(sourceTypeBoundClass.decl()).javadoc();
     }
 
     @Override
@@ -1117,12 +1167,12 @@ public abstract class TurbineElement implements Element {
           && sym.equals(turbinePackageElement.sym);
     }
 
-    @Nullable TypeBoundClass info() {
+    public @Nullable TypeBoundClass info() {
       return state().info;
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       PackageElementState s = state();
       ImmutableList<AnnoInfo> local = s.annos;
       if (local == null) {
@@ -1142,6 +1192,7 @@ public abstract class TurbineElement implements Element {
 
     private static final class ParameterElementState extends ElementState {
       final @Nullable ParamInfo info;
+      @Nullable String name;
 
       ParameterElementState(int round, @Nullable ParamInfo info) {
         super(round);
@@ -1200,7 +1251,11 @@ public abstract class TurbineElement implements Element {
       ParameterElementState s = state();
       TypeMirror local = s.type;
       if (local == null) {
-        s.type = local = factory.asTypeMirror(requireNonNull(s.info).type());
+        ParamInfo info = requireNonNull(s.info);
+        s.type =
+            local =
+                factory.asTypeMirror(
+                    factory.processingType(sym.owner().owner(), info.type(), info.annotations()));
       }
       return local;
     }
@@ -1215,9 +1270,32 @@ public abstract class TurbineElement implements Element {
       return asModifierSet(ModifierOwner.PARAMETER, info().access());
     }
 
+    private String parameterName() {
+      KotlinProcessingHooks kotlinHooks = factory.kotlinHooks();
+      if (kotlinHooks == null || factory.kotlinModel() == null) {
+        return sym.name();
+      }
+      ParameterElementState s = state();
+      String local = s.name;
+      if (local == null) {
+        local = resolveParameterName(kotlinHooks, s.info);
+        s.name = local;
+      }
+      return local;
+    }
+
+    private String resolveParameterName(
+        KotlinProcessingHooks kotlinHooks, @Nullable ParamInfo paramInfo) {
+      if (paramInfo == null) {
+        return sym.name();
+      }
+      return kotlinHooks.parameterName(
+          factory.getSymbol(sym.owner().owner()), factory.getMethodInfo(sym.owner()), paramInfo);
+    }
+
     @Override
     public Name getSimpleName() {
-      return new TurbineName(sym.name());
+      return new TurbineName(parameterName());
     }
 
     @Override
@@ -1237,11 +1315,11 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public String toString() {
-      return String.valueOf(sym.name());
+      return String.valueOf(parameterName());
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       return info().annotations();
     }
   }
@@ -1357,7 +1435,7 @@ public abstract class TurbineElement implements Element {
     }
 
     @Override
-    ImmutableList<AnnoInfo> annos() {
+    public ImmutableList<AnnoInfo> annos() {
       return info().annotations();
     }
   }

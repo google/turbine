@@ -50,15 +50,29 @@ public class ClassReader {
 
   /** Reads the given bytes into an {@link ClassFile}. */
   public static ClassFile read(Supplier<String> path, byte[] bytes) {
-    return new ClassReader(path, bytes).read();
+    return new ClassReader(path, bytes, /* includeSyntheticMethods= */ false).read();
+  }
+
+  /**
+   * Reads the given bytes into an {@link ClassFile}, including synthetic methods in {@link
+   * ClassFile#methods()}. Bridge methods are still skipped.
+   *
+   * <p>{@link #read} skips synthetic methods, like javac does, but some synthetic methods carry
+   * information about the source declarations, e.g. Kotlin stores property annotations on synthetic
+   * {@code $annotations} methods.
+   */
+  public static ClassFile readWithSyntheticMethods(Supplier<String> path, byte[] bytes) {
+    return new ClassReader(path, bytes, /* includeSyntheticMethods= */ true).read();
   }
 
   private final Supplier<String> path;
   private final ByteReader reader;
+  private final boolean includeSyntheticMethods;
 
-  private ClassReader(Supplier<String> path, byte[] bytes) {
+  private ClassReader(Supplier<String> path, byte[] bytes, boolean includeSyntheticMethods) {
     this.path = path;
     this.reader = new ByteReader(bytes, 0);
+    this.includeSyntheticMethods = includeSyntheticMethods;
   }
 
   @FormatMethod
@@ -523,7 +537,8 @@ public class ClassReader {
       for (ImmutableList.Builder<AnnotationInfo> x : parameterAnnotationsBuilder) {
         parameterAnnotations.add(x.build());
       }
-      if ((accessFlags & (TurbineFlag.ACC_BRIDGE | TurbineFlag.ACC_SYNTHETIC)) != 0) {
+      if ((accessFlags & TurbineFlag.ACC_BRIDGE) != 0
+          || ((accessFlags & TurbineFlag.ACC_SYNTHETIC) != 0 && !includeSyntheticMethods)) {
         // javac doesn't enter synthetic members for reasons 'lost to history', so we don't either
         continue;
       }

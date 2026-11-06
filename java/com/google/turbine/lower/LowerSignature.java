@@ -195,7 +195,9 @@ public class LowerSignature {
       return null;
     }
     ImmutableList<Sig.TyParamSig> typarams = tyParamSig(info.typeParameterTypes(), env);
-    ClassTySig xtnd = classTySig((ClassTy) info.superClassType());
+    ClassTy superClassType =
+        info.superClassType() != null ? (ClassTy) info.superClassType() : ClassTy.OBJECT;
+    ClassTySig xtnd = classTySig(superClassType);
     ImmutableList.Builder<ClassTySig> impl = ImmutableList.builder();
     for (Type i : info.interfaceTypes()) {
       impl.add(classTySig((ClassTy) i));

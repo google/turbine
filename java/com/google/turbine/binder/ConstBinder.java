@@ -42,7 +42,6 @@ import com.google.turbine.model.Const.ArrayInitValue;
 import com.google.turbine.model.Const.Kind;
 import com.google.turbine.model.Const.Value;
 import com.google.turbine.model.TurbineElementType;
-import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
@@ -66,28 +65,40 @@ public class ConstBinder {
   private final Env<FieldSymbol, Value> constantEnv;
   private final ClassSymbol origin;
   private final SourceTypeBoundClass base;
+  private final ClassScopes scopes;
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
   private final ConstEvaluator constEvaluator;
   private final TurbineLogWithSource log;
 
-  public ConstBinder(
+  /**
+   * Whether to keep field and method declarations. If not, the const field initializers and
+   * annotation element defaults retained by {@link TypeBinder} are dropped once they have been
+   * evaluated.
+   */
+  private final boolean retainDecls;
+
+  ConstBinder(
       Env<FieldSymbol, Value> constantEnv,
       ClassSymbol origin,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       SourceTypeBoundClass base,
-      TurbineLogWithSource log) {
+      ClassScopes scopes,
+      TurbineLogWithSource log,
+      boolean retainDecls) {
     this.constantEnv = constantEnv;
     this.origin = origin;
     this.base = base;
+    this.scopes = scopes;
     this.env = env;
     this.log = log;
+    this.retainDecls = retainDecls;
     this.constEvaluator =
         new ConstEvaluator(
             origin,
             origin,
-            base.memberImports(),
+            scopes.memberImports(),
             base.source(),
-            base.scope(),
+            scopes.scope(),
             constantEnv,
             env,
             log);
@@ -98,9 +109,9 @@ public class ConstBinder {
         new ConstEvaluator(
                 origin,
                 base.owner(),
-                base.memberImports(),
+                scopes.memberImports(),
                 base.source(),
-                base.enclosingScope(),
+                scopes.enclosingScope(),
                 constantEnv,
                 env,
                 log)
@@ -121,13 +132,14 @@ public class ConstBinder {
         base.kind(),
         base.children(),
         base.typeParameters(),
-        base.enclosingScope(),
         base.scope(),
         base.memberImports(),
         bindAnnotationMetadata(base.kind(), annos),
         annos,
         base.source(),
-        base.decl());
+        base.decl(),
+        base.sourceKind(),
+        base.position());
   }
 
   private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> methods) {
@@ -139,7 +151,7 @@ public class ConstBinder {
   }
 
   private MethodInfo bindMethod(MethodInfo base) {
-    Const value = null;
+    Const value = base.defaultValue();
     if (base.decl() != null && base.decl().defaultValue().isPresent()) {
       value =
           constEvaluator.evalAnnotationValue(base.decl().defaultValue().get(), base.returnType());
@@ -153,9 +165,11 @@ public class ConstBinder {
         bindTypes(base.exceptions()),
         base.access(),
         value,
-        base.decl(),
+        retainDecls ? base.decl() : null,
+        base.position(),
         constEvaluator.evaluateAnnotations(base.annotations()),
-        base.receiver() != null ? bindParameter(base.receiver()) : null);
+        base.receiver() != null ? bindParameter(base.receiver()) : null,
+        base.kotlin());
   }
 
   private ImmutableList<ParamInfo> bindParameters(ImmutableList<ParamInfo> formals) {
@@ -179,7 +193,7 @@ public class ConstBinder {
     return result.build();
   }
 
-  static @Nullable AnnotationMetadata bindAnnotationMetadata(
+  public static @Nullable AnnotationMetadata bindAnnotationMetadata(
       TurbineTyKind kind, Iterable<AnnoInfo> annotations) {
     if (kind != TurbineTyKind.ANNOTATION) {
       return null;
@@ -265,39 +279,33 @@ public class ConstBinder {
               bindType(base.type()),
               base.access(),
               constEvaluator.evaluateAnnotations(base.annotations()),
-              base.decl(),
-              value));
+              retainDecls ? base.decl() : null,
+              base.position(),
+              value,
+              base.kotlin()));
     }
     return result.build();
   }
 
   private @Nullable Value fieldValue(TypeBoundClass.FieldInfo base) {
-    if (base.decl() == null || !base.decl().init().isPresent()) {
-      return null;
+    if (base.value() != null) {
+      return base.value();
     }
-    if ((base.access() & TurbineFlag.ACC_FINAL) == 0) {
+    if (!Binder.isConst(base)) {
       return null;
-    }
-    Type type = base.type();
-    switch (type.tyKind()) {
-      case PRIM_TY:
-        break;
-      case CLASS_TY:
-        if (((Type.ClassTy) type).sym().equals(ClassSymbol.STRING)) {
-          break;
-        }
-      // falls through
-      default:
-        return null;
     }
     Value value = constantEnv.get(base.sym());
     if (value == null) {
       return null;
     }
+    Type type = base.type();
     if (type.tyKind().equals(TyKind.PRIM_TY)) {
+      // isConst checks that the declaration and initializer are present
       value =
           constEvaluator.coerce(
-              base.decl().init().get().position(), value, ((Type.PrimTy) type).primkind());
+              requireNonNull(base.decl()).init().get().position(),
+              value,
+              ((Type.PrimTy) type).primkind());
     }
     return value;
   }
@@ -327,7 +335,8 @@ public class ConstBinder {
           new TyVarInfo(
               (IntersectionTy) bindType(info.upperBound()),
               /* lowerBound= */ null,
-              constEvaluator.evaluateAnnotations(info.annotations())));
+              constEvaluator.evaluateAnnotations(info.annotations()),
+              info.kotlin()));
     }
     return result.buildOrThrow();
   }

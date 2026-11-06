@@ -1041,7 +1041,7 @@ public class ConstEvaluator {
    */
   AnnoInfo evaluateAnnotation(AnnoInfo info) {
     // bail if annotation has not been resolved
-    if (info.sym() == null) {
+    if (info.sym() == null || info.tree() == null) {
       return info;
     }
     TypeBoundClass annoClass = env.getNonNull(info.sym());

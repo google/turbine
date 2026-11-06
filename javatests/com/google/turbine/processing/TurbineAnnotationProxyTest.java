@@ -18,6 +18,7 @@ package com.google.turbine.processing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 import static com.google.turbine.testing.TestResources.getResourceBytes;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.ElementType.TYPE_USE;
@@ -30,6 +31,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -54,7 +56,6 @@ import java.lang.annotation.Target;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import javax.lang.model.element.TypeElement;
@@ -158,12 +159,13 @@ public class TurbineAnnotationProxyTest {
             .collect(toImmutableList());
 
     Binder.BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .build());
 
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
@@ -275,12 +277,13 @@ public class TurbineAnnotationProxyTest {
     }
 
     Binder.BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .build());
 
     Env<ClassSymbol, ? extends TypeBoundClass> classPathEnv =
         ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(bindingLib)).env();
@@ -440,13 +443,7 @@ public class TurbineAnnotationProxyTest {
             .map(Parser::parse)
             .collect(toImmutableList());
 
-    Binder.BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+    Binder.BindingResult bound = bind(units);
 
     Env<ClassSymbol, ? extends TypeBoundClass> classPathEnv =
         ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)).env();
@@ -489,12 +486,13 @@ public class TurbineAnnotationProxyTest {
             .collect(toImmutableList());
 
     Binder.BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(lib)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .build());
 
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())

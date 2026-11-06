@@ -65,5 +65,8 @@ public final class TurbineFlag {
   /** Compact record constructor. */
   public static final int ACC_COMPACT_CTOR = 1 << 21;
 
+  /** Emit a {@code Deprecated} attribute (Kotlin declarations that kotlinc marks deprecated). */
+  public static final int ACC_DEPRECATED = 1 << 24;
+
   private TurbineFlag() {}
 }

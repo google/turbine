@@ -38,6 +38,12 @@ public class MemberImportIndex {
 
   private final ImmutableList<Supplier<@Nullable ClassSymbol>> classes;
 
+  private static final MemberImportIndex EMPTY = new MemberImportIndex(ImmutableList.of());
+
+  public static MemberImportIndex empty() {
+    return EMPTY;
+  }
+
   public MemberImportIndex(
       SourceFile source,
       CanonicalSymbolResolver resolve,
@@ -86,6 +92,11 @@ public class MemberImportIndex {
       }
     }
     this.classes = packageScopes.build();
+  }
+
+  /** An index of the given on-demand imported classes, and no single-member imports. */
+  private MemberImportIndex(ImmutableList<Supplier<@Nullable ClassSymbol>> classes) {
+    this.classes = classes;
   }
 
   private static ClassSymbol resolveNext(

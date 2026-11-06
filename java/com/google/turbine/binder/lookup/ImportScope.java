@@ -27,6 +27,9 @@ import org.jspecify.annotations.Nullable;
  */
 public interface ImportScope {
 
+  /** Marker interface for a typealias in an {@link ImportScope}. */
+  interface TypeAlias {}
+
   /**
    * A function that performs non-canonical resolution, see {@link
    * com.google.turbine.binder.Resolve#resolve}.
@@ -40,6 +43,16 @@ public interface ImportScope {
   /** See {@link Scope#lookup(LookupKey)}. */
   @Nullable LookupResult lookup(LookupKey lookupKey, ResolveFunction resolve);
 
+  /** Finds information about a typealias in the given package. */
+  default @Nullable TypeAlias findTypeAlias(String packageName, String aliasName) {
+    return null;
+  }
+
+  /** Looks up a typealias accessible in this scope by simple or qualified name. */
+  default @Nullable TypeAlias lookupTypeAlias(String name) {
+    return null;
+  }
+
   /** Adds a scope to the chain, in the manner of {@link CompoundScope#append(Scope)}. */
   default ImportScope append(ImportScope next) {
     return new ImportScope() {
@@ -50,6 +63,24 @@ public interface ImportScope {
           return result;
         }
         return ImportScope.this.lookup(lookupKey, resolve);
+      }
+
+      @Override
+      public @Nullable TypeAlias findTypeAlias(String packageName, String aliasName) {
+        TypeAlias result = next.findTypeAlias(packageName, aliasName);
+        if (result != null) {
+          return result;
+        }
+        return ImportScope.this.findTypeAlias(packageName, aliasName);
+      }
+
+      @Override
+      public @Nullable TypeAlias lookupTypeAlias(String name) {
+        TypeAlias result = next.lookupTypeAlias(name);
+        if (result != null) {
+          return result;
+        }
+        return ImportScope.this.lookupTypeAlias(name);
       }
     };
   }
