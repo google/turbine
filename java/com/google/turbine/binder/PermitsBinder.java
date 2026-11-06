@@ -93,13 +93,14 @@ final class PermitsBinder {
                 /* kind= */ base.kind(),
                 /* children= */ base.children(),
                 /* typeParameters= */ base.typeParameters(),
-                /* enclosingScope= */ base.enclosingScope(),
                 /* scope= */ base.scope(),
                 /* memberImports= */ base.memberImports(),
                 /* annotationMetadata= */ base.annotationMetadata(),
                 /* annotations= */ base.annotations(),
                 /* source= */ base.source(),
-                /* decl= */ base.decl()));
+                /* decl= */ base.decl(),
+                /* sourceKind= */ base.sourceKind(),
+                /* position= */ base.position()));
       }
     }
     return builder.build();

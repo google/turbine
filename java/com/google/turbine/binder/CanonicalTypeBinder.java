@@ -67,7 +67,7 @@ public final class CanonicalTypeBinder {
       Env<ClassSymbol, TypeBoundClass> env) {
     CanonicalTypeBinder binder = new CanonicalTypeBinder(log, base.source(), env, sym);
     Type superClassType = base.superClassType();
-    int pos = base.decl().position();
+    int pos = base.position();
     if (superClassType != null && superClassType.tyKind() == TyKind.CLASS_TY) {
       superClassType =
           Canonicalize.canonicalizeClassTy(
@@ -85,8 +85,8 @@ public final class CanonicalTypeBinder {
     ImmutableMap<TyVarSymbol, TyVarInfo> typParamTypes =
         binder.typeParameters(pos, base.typeParameterTypes());
     ImmutableList<RecordComponentInfo> components = binder.components(pos, base.components());
-    ImmutableList<MethodInfo> methods = binder.methods(pos, base.methods());
-    ImmutableList<FieldInfo> fields = binder.fields(pos, base.fields());
+    ImmutableList<MethodInfo> methods = binder.methods(base.methods());
+    ImmutableList<FieldInfo> fields = binder.fields(base.fields());
     return new SourceTypeBoundClass(
         interfaceTypes.build(),
         base.permits(),
@@ -100,34 +100,34 @@ public final class CanonicalTypeBinder {
         base.kind(),
         base.children(),
         base.typeParameters(),
-        base.enclosingScope(),
         base.scope(),
         base.memberImports(),
         base.annotationMetadata(),
         base.annotations(),
         base.source(),
-        base.decl());
+        base.decl(),
+        base.sourceKind(),
+        base.position());
   }
 
   private Type canonicalize(int position, Type type) {
     return Canonicalize.canonicalize(log, source, position, env, sym, type);
   }
 
-  private ImmutableList<FieldInfo> fields(int position, ImmutableList<FieldInfo> fields) {
-    return mapIfChanged(fields, base -> field(position, base));
+  private ImmutableList<FieldInfo> fields(ImmutableList<FieldInfo> fields) {
+    return mapIfChanged(fields, this::field);
   }
 
-  private FieldInfo field(int position, FieldInfo base) {
-    int pos = base.decl() != null ? base.decl().position() : position;
-    return base.withType(canonicalize(pos, base.type()));
+  private FieldInfo field(FieldInfo base) {
+    return base.withType(canonicalize(base.position(), base.type()));
   }
 
-  private ImmutableList<MethodInfo> methods(int position, ImmutableList<MethodInfo> methods) {
-    return mapIfChanged(methods, base -> method(position, base));
+  private ImmutableList<MethodInfo> methods(ImmutableList<MethodInfo> methods) {
+    return mapIfChanged(methods, this::method);
   }
 
-  private MethodInfo method(int position, MethodInfo base) {
-    int pos = base.decl() != null ? base.decl().position() : position;
+  private MethodInfo method(MethodInfo base) {
+    int pos = base.position();
     ImmutableMap<TyVarSymbol, TyVarInfo> tps = typeParameters(pos, base.tyParams());
     Type ret = canonicalize(pos, base.returnType());
     ImmutableList<ParamInfo> parameters = parameters(pos, base.parameters());

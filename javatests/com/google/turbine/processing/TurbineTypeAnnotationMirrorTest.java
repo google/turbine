@@ -24,6 +24,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.turbine.testing.TestBinder.bind;
+import static com.google.turbine.testing.TestBinder.bindingRequest;
 import static java.util.Arrays.stream;
 import static org.junit.Assert.fail;
 
@@ -36,6 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing;
 import com.google.turbine.diag.SourceFile;
@@ -54,7 +57,6 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -259,17 +261,16 @@ public class TurbineTypeAnnotationMirrorTest {
             .map(Parser::parse)
             .collect(toImmutableList());
     Binder.BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            Processing.ProcessorInfo.create(
-                ImmutableList.of(new TypeAnnotationRecorder(turbineSource, elements)),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            bindingRequest()
+                .units(units)
+                .processorInfo(
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new TypeAnnotationRecorder(turbineSource, elements)),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
 
     // Ensure that the processor produced the same results on both javac and turbine
     assertWithMessage(test).that(turbineSource).containsExactlyEntriesIn(javacOutput);
@@ -295,19 +296,20 @@ public class TurbineTypeAnnotationMirrorTest {
     }
     ImmutableList<Path> classpathJar = ImmutableList.of(lib);
     var _ =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            // Turbine requires sources to be present to do annotation processing.
-            // The actual element that will be processed is still 'Test' from the classpath.
-            ImmutableList.of(Parser.parse("class Hello {}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpathJar),
-            Processing.ProcessorInfo.create(
-                ImmutableList.of(new TypeAnnotationRecorder(turbineBytecode, elements)),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            BindingRequest.builder()
+                // Turbine requires sources to be present to do annotation processing.
+                // The actual element that will be processed is still 'Test' from the classpath.
+                .units(ImmutableList.of(Parser.parse("class Hello {}")))
+                .classpath(ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpathJar))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .processorInfo(
+                    Processing.ProcessorInfo.create(
+                        ImmutableList.of(new TypeAnnotationRecorder(turbineBytecode, elements)),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
 
     // Ensure that the processor produced the same results on both javac and turbine, when the
     // elements are loaded from class files

@@ -74,15 +74,20 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final IntersectionTy upperBound;
     private final @Nullable Type lowerBound;
     private final ImmutableList<AnnoInfo> annotations;
+    private final @Nullable KotlinTypeParameterInfo kotlin;
 
     public TyVarInfo(
-        IntersectionTy upperBound, @Nullable Type lowerBound, ImmutableList<AnnoInfo> annotations) {
+        IntersectionTy upperBound,
+        @Nullable Type lowerBound,
+        ImmutableList<AnnoInfo> annotations,
+        @Nullable KotlinTypeParameterInfo kotlin) {
       this.upperBound = upperBound;
       if (lowerBound != null) {
         throw new IllegalArgumentException("TODO(cushon): support lower bounds");
       }
       this.lowerBound = lowerBound;
       this.annotations = annotations;
+      this.kotlin = kotlin;
     }
 
     /** The upper bound. */
@@ -100,6 +105,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return annotations;
     }
 
+    /** Kotlin-only information, for type parameters declared in Kotlin source. */
+    public @Nullable KotlinTypeParameterInfo kotlin() {
+      return kotlin;
+    }
+
     /**
      * Returns this instance if {@code upperBound} is identical ({@code ==}) to the current value,
      * or else a copy with the new upper bound.
@@ -110,7 +120,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
       if (upperBound == this.upperBound) {
         return this;
       }
-      return new TyVarInfo(upperBound, lowerBound, annotations);
+      return new TyVarInfo(upperBound, lowerBound, annotations, kotlin);
     }
   }
 
@@ -122,7 +132,9 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final ImmutableList<AnnoInfo> annotations;
 
     private final Tree.@Nullable VarDecl decl;
+    private final int position;
     private final Const.@Nullable Value value;
+    private final @Nullable KotlinMemberInfo kotlin;
 
     public FieldInfo(
         FieldSymbol sym,
@@ -130,13 +142,17 @@ public interface TypeBoundClass extends HeaderBoundClass {
         int access,
         ImmutableList<AnnoInfo> annotations,
         Tree.@Nullable VarDecl decl,
-        Const.@Nullable Value value) {
+        int position,
+        Const.@Nullable Value value,
+        @Nullable KotlinMemberInfo kotlin) {
       this.sym = sym;
       this.type = type;
       this.access = access;
       this.annotations = annotations;
       this.decl = decl;
+      this.position = position;
       this.value = value;
+      this.kotlin = kotlin;
     }
 
     /** The field symbol. */
@@ -159,9 +175,20 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return access;
     }
 
-    /** The field's declaration. */
+    /**
+     * The field's declaration, or {@code null} if it was loaded from bytecode or the declaration
+     * was dropped after binding.
+     */
     public Tree.@Nullable VarDecl decl() {
       return decl;
+    }
+
+    /**
+     * The position of the field's declaration (or of the enclosing class declaration for implicit
+     * record fields), or {@code -1} if it was loaded from bytecode.
+     */
+    public int position() {
+      return position;
     }
 
     /** The constant field value. */
@@ -174,6 +201,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return annotations;
     }
 
+    /** Kotlin-only information, or {@code null} if the field wasn't bound from Kotlin source. */
+    public @Nullable KotlinMemberInfo kotlin() {
+      return kotlin;
+    }
+
     /**
      * Returns this instance if {@code type} is identical ({@code ==}) to the current value, or else
      * a copy with the new type.
@@ -184,7 +216,7 @@ public interface TypeBoundClass extends HeaderBoundClass {
       if (type == this.type) {
         return this;
       }
-      return new FieldInfo(sym, type, access, annotations, decl, value);
+      return new FieldInfo(sym, type, access, annotations, decl, position, value, kotlin);
     }
   }
 
@@ -198,8 +230,10 @@ public interface TypeBoundClass extends HeaderBoundClass {
     private final int access;
     private final @Nullable Const defaultValue;
     private final @Nullable MethDecl decl;
+    private final int position;
     private final ImmutableList<AnnoInfo> annotations;
     private final @Nullable ParamInfo receiver;
+    private final @Nullable KotlinMemberInfo kotlin;
 
     public MethodInfo(
         MethodSymbol sym,
@@ -210,8 +244,10 @@ public interface TypeBoundClass extends HeaderBoundClass {
         int access,
         @Nullable Const defaultValue,
         @Nullable MethDecl decl,
+        int position,
         ImmutableList<AnnoInfo> annotations,
-        @Nullable ParamInfo receiver) {
+        @Nullable ParamInfo receiver,
+        @Nullable KotlinMemberInfo kotlin) {
       this.sym = sym;
       this.tyParams = tyParams;
       this.returnType = returnType;
@@ -220,8 +256,10 @@ public interface TypeBoundClass extends HeaderBoundClass {
       this.access = access;
       this.defaultValue = defaultValue;
       this.decl = decl;
+      this.position = position;
       this.annotations = annotations;
       this.receiver = receiver;
+      this.kotlin = kotlin;
     }
 
     /** The method symbol. */
@@ -267,14 +305,28 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /**
      * Returns true for annotation members with a default value. The default value may not have been
      * bound yet, in which case {@link #defaultValue} may still return {@code null}.
+     *
+     * <p>If the declaration was dropped after binding, this is based on {@link #defaultValue}, so a
+     * default value that failed to evaluate (which is already an error) is treated as missing.
      */
     public boolean hasDefaultValue() {
       return decl() != null ? decl().defaultValue().isPresent() : defaultValue() != null;
     }
 
-    /** The declaration. */
+    /**
+     * The declaration, or {@code null} if the method is synthetic, was loaded from bytecode, or the
+     * declaration was dropped after binding.
+     */
     public @Nullable MethDecl decl() {
       return decl;
+    }
+
+    /**
+     * The position of the method's declaration (or of the enclosing class declaration for synthetic
+     * methods), or {@code -1} if it was loaded from bytecode.
+     */
+    public int position() {
+      return position;
     }
 
     /** Declaration annotations. */
@@ -285,6 +337,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
     /** Receiver parameter (see JLS 8.4.1), or {@code null}. */
     public @Nullable ParamInfo receiver() {
       return receiver;
+    }
+
+    /** Kotlin-only information, or {@code null} if the method wasn't bound from Kotlin source. */
+    public @Nullable KotlinMemberInfo kotlin() {
+      return kotlin;
     }
 
     /**
@@ -315,8 +372,10 @@ public interface TypeBoundClass extends HeaderBoundClass {
           access,
           defaultValue,
           decl,
+          position,
           annotations,
-          receiver);
+          receiver,
+          kotlin);
     }
 
     /**

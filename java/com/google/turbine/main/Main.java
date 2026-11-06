@@ -28,6 +28,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Closer;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.Binder.Statistics;
 import com.google.turbine.binder.ClassPath;
@@ -67,7 +68,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -305,17 +305,20 @@ public final class Main {
       throws IOException {
     return Binder.bind(
         executor,
-        units,
-        ClassPathBinder.bindClasspath(executor, toPaths(classpath)),
-        Processing.initializeProcessors(
-            /* sourceVersion= */ options.languageVersion().sourceVersion(),
-            /* javacopts= */ options.javacOpts(),
-            /* processorNames= */ options.processors(),
-            ProcessorClassLoader.create(
-                /* processorPath= */ options.processorPath(),
-                /* builtinProcessors= */ options.builtinProcessors())),
-        bootclasspath,
-        /* moduleVersion= */ Optional.empty());
+        BindingRequest.builder()
+            .units(units)
+            .classpath(ClassPathBinder.bindClasspath(executor, toPaths(classpath)))
+            .bootclasspath(bootclasspath)
+            .processorInfo(
+                Processing.initializeProcessors(
+                    /* sourceVersion= */ options.languageVersion().sourceVersion(),
+                    /* javacopts= */ options.javacOpts(),
+                    /* processorNames= */ options.processors(),
+                    ProcessorClassLoader.create(
+                        /* processorPath= */ options.processorPath(),
+                        /* builtinProcessors= */ options.builtinProcessors())))
+            .retainDecls(false)
+            .build());
   }
 
   private static void usage(TurbineOptions options) {

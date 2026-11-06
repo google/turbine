@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -75,58 +76,118 @@ import org.jspecify.annotations.Nullable;
 /** The entry point for analysis. */
 public final class Binder {
 
-  /** Binds symbols and types to the given compilation units. */
-  public static @Nullable BindingResult bind(
-      TurbineExecutor executor,
+  /**
+   * The inputs to {@link #bind(TurbineExecutor, BindingRequest)} and {@link #bind(TurbineExecutor,
+   * TurbineLog, BindingRequest)}.
+   *
+   * @param units The compilation units to bind.
+   * @param classpath The classpath to compile against.
+   * @param bootclasspath The bootclasspath (the platform classes) to compile against.
+   * @param processorInfo The annotation processors to run, if any. Processing only happens if there
+   *     are processors and at least one compilation unit.
+   * @param moduleVersion The version to record for any modules declared by the compilation units,
+   *     as with javac's {@code --module-version}.
+   * @param retainDecls Whether to keep the declaration ASTs of the bound classes and their members
+   *     in the result. If not, they're dropped after binding to save memory, and the result can be
+   *     used for lowering and dependency analysis, but not for building a {@code javax.lang.model}
+   *     (e.g. for doc comments and diagnostic positions). Declarations are always kept if
+   *     annotation processors run.
+   * @param kotlin The Kotlin inputs of a Kotlin compilation, or {@code null} for a Java
+   *     compilation. Declarations are always kept if there are Kotlin units, since Kotlin binding
+   *     reads the declarations of Java classes.
+   */
+  public record BindingRequest(
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
-    return bind(
-        executor, units, classpath, Processing.ProcessorInfo.empty(), bootclasspath, moduleVersion);
+      ProcessorInfo processorInfo,
+      Optional<String> moduleVersion,
+      boolean retainDecls,
+      @Nullable KotlinBinder kotlin) {
+
+    /**
+     * Returns a {@link Builder}, with no annotation processors, no module version, and declarations
+     * retained.
+     */
+    public static Builder builder() {
+      return new AutoBuilder_Binder_BindingRequest_Builder()
+          .processorInfo(ProcessorInfo.empty())
+          .moduleVersion(Optional.empty())
+          .retainDecls(true);
+    }
+
+    /** Returns a {@link Builder} initialized with the values of this request. */
+    public Builder toBuilder() {
+      return new AutoBuilder_Binder_BindingRequest_Builder(this);
+    }
+
+    /** A {@link BindingRequest} builder. */
+    @AutoBuilder
+    public abstract static class Builder {
+      public abstract Builder units(ImmutableList<CompUnit> units);
+
+      public abstract Builder classpath(ClassPath classpath);
+
+      public abstract Builder bootclasspath(ClassPath bootclasspath);
+
+      public abstract Builder processorInfo(ProcessorInfo processorInfo);
+
+      public abstract Builder moduleVersion(Optional<String> moduleVersion);
+
+      public abstract Builder retainDecls(boolean retainDecls);
+
+      public abstract Builder kotlin(@Nullable KotlinBinder kotlin);
+
+      public abstract BindingRequest build();
+    }
   }
 
-  /** Binds symbols and types to the given compilation units. */
-  public static @Nullable BindingResult bind(
-      TurbineExecutor executor,
-      ImmutableList<CompUnit> units,
-      ClassPath classpath,
-      ProcessorInfo processorInfo,
-      ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
+  /**
+   * Binds symbols and types to the given compilation units, and runs any annotation processors in
+   * the request.
+   *
+   * @throws TurbineError if any errors are reported, including errors reported by annotation
+   *     processors
+   */
+  public static BindingResult bind(TurbineExecutor executor, BindingRequest request) {
     TurbineLog log = new TurbineLog();
-    BindingResult br =
-        bind(executor, log, units, classpath, processorInfo, bootclasspath, moduleVersion);
+    BindingResult result = bind(executor, log, request);
     log.maybeThrow();
-    return br;
+    return result;
   }
 
-  /** Binds symbols and types to the given compilation units. */
-  public static @Nullable BindingResult bind(
-      TurbineExecutor executor,
-      TurbineLog log,
-      ImmutableList<CompUnit> units,
-      ClassPath classpath,
-      ProcessorInfo processorInfo,
-      ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
-    BindingResult br;
+  /**
+   * Binds symbols and types to the given compilation units, and runs any annotation processors in
+   * the request.
+   *
+   * <p>Errors are reported to {@code log} instead of being thrown, and callers must check for them
+   * (e.g. with {@link TurbineLog#maybeThrow}). Errors that prevent binding from continuing are
+   * thrown as a {@link TurbineError}, which also includes the diagnostics already in {@code log}.
+   */
+  public static BindingResult bind(
+      TurbineExecutor executor, TurbineLog log, BindingRequest request) {
     try {
-      br =
+      if (!request.processorInfo().hasProcessors()
+          || (request.units().isEmpty() && !hasKotlinUnits(request.kotlin()))) {
+        // The request isn't used after this call, so if the caller doesn't retain it either, its
+        // compilation units can be garbage collected during binding.
+        return bind(
+            executor,
+            log,
+            request,
+            /* generatedSources= */ ImmutableMap.of(),
+            /* generatedClasses= */ ImmutableMap.of());
+      }
+      // Annotation processing needs the declarations to build a javax.lang.model.
+      request = request.toBuilder().retainDecls(true).build();
+      BindingResult br =
           bind(
               executor,
               log,
-              units,
+              request,
               /* generatedSources= */ ImmutableMap.of(),
-              /* generatedClasses= */ ImmutableMap.of(),
-              classpath,
-              bootclasspath,
-              moduleVersion);
-      if (!processorInfo.processors().isEmpty() && !units.isEmpty()) {
-        br =
-            Processing.process(
-                executor, log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
-      }
+              /* generatedClasses= */ ImmutableMap.of());
+      return Processing.process(executor, log, request, br);
     } catch (TurbineError turbineError) {
       throw new TurbineError(
           ImmutableList.<TurbineDiagnostic>builder()
@@ -134,22 +195,55 @@ public final class Binder {
               .addAll(turbineError.diagnostics())
               .build());
     }
-    return br;
   }
 
+  /**
+   * Binds symbols and types to the given compilation units, without running annotation processors.
+   * Used by {@link Processing} for each processing round.
+   *
+   * @param generatedSources sources generated by annotation processors so far, recorded in the
+   *     result
+   * @param generatedClasses classes generated by annotation processors so far, recorded in the
+   *     result
+   */
   static BindingResult bind(
       TurbineExecutor executor,
       TurbineLog log,
-      ImmutableList<CompUnit> units,
+      BindingRequest request,
       ImmutableMap<String, byte[]> generatedSources,
-      ImmutableMap<String, byte[]> generatedClasses,
+      ImmutableMap<String, byte[]> generatedClasses) {
+    // Pass the request's fields separately, so bindUnits doesn't retain the request.
+    return bindUnits(
+        executor,
+        log,
+        request.units(),
+        request.classpath(),
+        request.bootclasspath(),
+        request.moduleVersion(),
+        // The Kotlin binder reads the declarations of Java classes while binding Kotlin classes.
+        request.retainDecls() || hasKotlinUnits(request.kotlin()),
+        request.kotlin(),
+        generatedSources,
+        generatedClasses);
+  }
+
+  private static BindingResult bindUnits(
+      TurbineExecutor executor,
+      TurbineLog log,
+      ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
+      Optional<String> moduleVersion,
+      boolean retainDecls,
+      @Nullable KotlinBinder kotlin,
+      ImmutableMap<String, byte[]> generatedSources,
+      ImmutableMap<String, byte[]> generatedClasses) {
     ImmutableList<PreprocessedCompUnit> preProcessedUnits =
         CompUnitPreprocessor.preprocess(log, units);
+    KotlinBinder.Preprocessed ktPreprocessed = kotlin != null ? kotlin.start(log) : null;
 
-    SimpleEnv<ClassSymbol, SourceBoundClass> ienv = bindSourceBoundClasses(preProcessedUnits);
+    SimpleEnv<ClassSymbol, SourceBoundClass> ienv =
+        bindSourceBoundClasses(preProcessedUnits, ktPreprocessed);
 
     ImmutableSet<ClassSymbol> syms = ienv.asMap().keySet();
 
@@ -166,30 +260,42 @@ public final class Binder {
         CompoundEnv.of(classpath.moduleEnv()).append(bootclasspath.moduleEnv());
 
     BindPackagesResult bindPackagesResult =
-        bindPackages(executor, log, ienv, tli, preProcessedUnits, classPathEnv);
+        bindPackages(executor, log, ienv, tli, preProcessedUnits, ktPreprocessed, classPathEnv);
 
     SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv = bindPackagesResult.classes;
     SimpleEnv<ModuleSymbol, PackageSourceBoundModule> modules = bindPackagesResult.modules;
 
-    Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(log, syms, psenv, classPathEnv);
+    Env<ClassSymbol, SourceHeaderBoundClass> henv =
+        bindHierarchy(log, syms, psenv, classPathEnv, ktPreprocessed);
 
-    SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv =
+    KotlinBinder.MemberBinding ktMemberBinding =
+        ktPreprocessed != null
+            ? ktPreprocessed.startMemberBinding(ienv, syms, classPathEnv, classpath, bootclasspath)
+            : null;
+
+    BindTypesResult bindTypesResult =
         bindTypes(
             executor,
             log,
             syms,
             henv,
-            CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
+            CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv),
+            tli,
+            ktMemberBinding,
+            retainDecls);
 
-    tenv = PermitsBinder.bindPermits(syms, tenv);
+    SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv =
+        PermitsBinder.bindPermits(syms, bindTypesResult.tenv());
 
     tenv =
         constants(
             executor,
             syms,
             tenv,
+            bindTypesResult.scopes(),
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
-            log);
+            log,
+            retainDecls);
     tenv =
         disambiguateAndCanonicalize(
             executor,
@@ -197,6 +303,7 @@ public final class Binder {
             tenv,
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             log);
+    tenv = kotlinPostBinding(executor, log, ktMemberBinding, henv, syms, tenv);
 
     ImmutableList<SourceModuleInfo> boundModules =
         bindModules(
@@ -219,6 +326,12 @@ public final class Binder {
   /** Records enclosing declarations of member classes, and group classes by compilation unit. */
   static SimpleEnv<ClassSymbol, SourceBoundClass> bindSourceBoundClasses(
       ImmutableList<PreprocessedCompUnit> units) {
+    return bindSourceBoundClasses(units, /* ktPreprocessed= */ null);
+  }
+
+  static SimpleEnv<ClassSymbol, SourceBoundClass> bindSourceBoundClasses(
+      ImmutableList<PreprocessedCompUnit> units,
+      KotlinBinder.@Nullable Preprocessed ktPreprocessed) {
     SimpleEnv.Builder<ClassSymbol, SourceBoundClass> envBuilder = SimpleEnv.builder();
     for (PreprocessedCompUnit unit : units) {
       for (SourceBoundClass type : unit.types()) {
@@ -228,6 +341,9 @@ public final class Binder {
               unit.source(), type.decl().position(), ErrorKind.DUPLICATE_DECLARATION, type.sym());
         }
       }
+    }
+    if (ktPreprocessed != null) {
+      ktPreprocessed.addSourceBoundClasses(envBuilder);
     }
     return envBuilder.build();
   }
@@ -251,6 +367,7 @@ public final class Binder {
       Env<ClassSymbol, SourceBoundClass> ienv,
       TopLevelIndex tli,
       ImmutableList<PreprocessedCompUnit> units,
+      KotlinBinder.@Nullable Preprocessed ktPreprocessed,
       CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
 
     SimpleEnv.Builder<ClassSymbol, PackageSourceBoundClass> env = SimpleEnv.builder();
@@ -280,6 +397,14 @@ public final class Binder {
       for (SourceBoundClass type : unit.types()) {
         env.put(type.sym(), new PackageSourceBoundClass(type, scope, memberImports, unit.source()));
       }
+    }
+    if (ktPreprocessed != null) {
+      ktPreprocessed.bindPackages(
+          env,
+          log,
+          tli,
+          CompoundEnv.<ClassSymbol, BoundClass>of(classPathEnv).append(ienv),
+          topLevel);
     }
     return new BindPackagesResult(env.build(), modules.build());
   }
@@ -316,7 +441,8 @@ public final class Binder {
       TurbineLog log,
       Iterable<ClassSymbol> syms,
       final SimpleEnv<ClassSymbol, PackageSourceBoundClass> psenv,
-      CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv) {
+      CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
+      KotlinBinder.@Nullable Preprocessed ktPreprocessed) {
     ImmutableMap.Builder<
             ClassSymbol, LazyEnv.Completer<ClassSymbol, HeaderBoundClass, SourceHeaderBoundClass>>
         completers = ImmutableMap.builder();
@@ -328,6 +454,14 @@ public final class Binder {
             public SourceHeaderBoundClass complete(
                 Env<ClassSymbol, HeaderBoundClass> henv, ClassSymbol sym) {
               PackageSourceBoundClass base = psenv.getNonNull(sym);
+              if (ktPreprocessed != null) {
+                SourceHeaderBoundClass ktBound =
+                    ktPreprocessed.bindHierarchy(
+                        log.withSource(base.source()), sym, base.base(), base.scope(), henv);
+                if (ktBound != null) {
+                  return ktBound;
+                }
+              }
               return HierarchyBinder.bind(log.withSource(base.source()), sym, base, henv);
             }
           });
@@ -342,22 +476,80 @@ public final class Binder {
     return new SimpleEnv<>(builder.buildOrThrow());
   }
 
-  private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> bindTypes(
+  /**
+   * The result of type binding: the bound classes, and their lookup scopes for constant evaluation.
+   */
+  private record BindTypesResult(
+      SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv,
+      ImmutableMap<ClassSymbol, ClassScopes> scopes) {}
+
+  private static BindTypesResult bindTypes(
       TurbineExecutor executor,
       TurbineLog log,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
-      Env<ClassSymbol, HeaderBoundClass> henv) {
+      Env<ClassSymbol, HeaderBoundClass> henv,
+      TopLevelIndex tli,
+      KotlinBinder.@Nullable MemberBinding ktMemberBinding,
+      boolean retainDecls) {
     TypeBinder.ClassMemberScopes memberScopes = new TypeBinder.ClassMemberScopes(henv);
-    return new SimpleEnv<>(
+    ImmutableMap<ClassSymbol, TypeBinder.Result> results =
         executor.toMapWithLog(
             log,
             syms.asList(),
             (sym, taskLog) -> {
               SourceHeaderBoundClass base = shenv.getNonNull(sym);
+              if (ktMemberBinding != null) {
+                SourceTypeBoundClass bound =
+                    ktMemberBinding.bindTypes(
+                        taskLog.withSource(base.source()), henv, sym, base, tli);
+                if (bound != null) {
+                  // Kotlin classes are resolved in the class scope, which includes the file scope.
+                  return new TypeBinder.Result(
+                      bound, new ClassScopes(bound.scope(), bound.scope(), bound.memberImports()));
+                }
+              }
               return TypeBinder.bind(
-                  taskLog.withSource(base.source()), henv, memberScopes, sym, base);
-            }));
+                  taskLog.withSource(base.source()), henv, memberScopes, sym, base, retainDecls);
+            });
+    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> bound =
+        ImmutableMap.builderWithExpectedSize(results.size());
+    ImmutableMap.Builder<ClassSymbol, ClassScopes> scopes =
+        ImmutableMap.builderWithExpectedSize(results.size());
+    results.forEach(
+        (sym, result) -> {
+          bound.put(sym, result.bound());
+          scopes.put(sym, result.scopes());
+        });
+    return new BindTypesResult(new SimpleEnv<>(bound.buildOrThrow()), scopes.buildOrThrow());
+  }
+
+  /** Runs the Kotlin binding passes that need the fully bound classes. */
+  private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> kotlinPostBinding(
+      TurbineExecutor executor,
+      TurbineLog log,
+      KotlinBinder.@Nullable MemberBinding ktMemberBinding,
+      Env<ClassSymbol, SourceHeaderBoundClass> henv,
+      ImmutableSet<ClassSymbol> syms,
+      SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv) {
+    if (ktMemberBinding == null) {
+      return tenv;
+    }
+    Env<ClassSymbol, SourceTypeBoundClass> env =
+        ktMemberBinding.postBinding(executor, log, henv, tenv);
+    if (env.equals(tenv)) {
+      return tenv;
+    }
+    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result =
+        ImmutableMap.builderWithExpectedSize(syms.size());
+    for (ClassSymbol sym : syms) {
+      result.put(sym, env.getNonNull(sym));
+    }
+    return new SimpleEnv<>(result.buildOrThrow());
+  }
+
+  private static boolean hasKotlinUnits(@Nullable KotlinBinder kotlin) {
+    return kotlin != null && kotlin.hasUnits();
   }
 
   private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> disambiguateAndCanonicalize(
@@ -419,12 +611,14 @@ public final class Binder {
       TurbineExecutor executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
+      ImmutableMap<ClassSymbol, ClassScopes> scopes,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
-      TurbineLog log) {
+      TurbineLog log,
+      boolean retainDecls) {
 
     // LazyEnv isn't thread-safe, so first evaluate all constant fields eagerly, and then bind the
     // rest of each class in parallel using the evaluated values.
-    Env<FieldSymbol, Const.Value> constenv = evaluateConstants(syms, env, baseEnv, log);
+    Env<FieldSymbol, Const.Value> constenv = evaluateConstants(syms, env, scopes, baseEnv, log);
     return new SimpleEnv<>(
         executor.toMapWithLog(
             log,
@@ -432,7 +626,13 @@ public final class Binder {
             (sym, taskLog) -> {
               SourceTypeBoundClass base = env.getNonNull(sym);
               return new ConstBinder(
-                      constenv, sym, baseEnv, base, taskLog.withSource(base.source()))
+                      constenv,
+                      sym,
+                      baseEnv,
+                      base,
+                      requireNonNull(scopes.get(sym)),
+                      taskLog.withSource(base.source()),
+                      retainDecls)
                   .bind();
             }));
   }
@@ -441,31 +641,39 @@ public final class Binder {
   private static SimpleEnv<FieldSymbol, Const.Value> evaluateConstants(
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
+      ImmutableMap<ClassSymbol, ClassScopes> scopes,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
       TurbineLog log) {
     // Prepare to lazily evaluate constant fields in each compilation unit.
     // The laziness is necessary since constant fields can reference other
     // constant fields.
+    SimpleEnv.Builder<FieldSymbol, Const.Value> constantValues = SimpleEnv.builder();
     ImmutableMap.Builder<FieldSymbol, LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value>>
         completers = ImmutableMap.builder();
     List<FieldSymbol> constFields = new ArrayList<>();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass info = env.getNonNull(sym);
+      ClassScopes classScopes = requireNonNull(scopes.get(sym));
       for (FieldInfo field : info.fields()) {
-        if (!isConst(field)) {
-          continue;
+        if (field.value() != null) {
+          constantValues.put(field.sym(), field.value());
+        } else if (isConst(field)) {
+          completers.put(
+              field.sym(), new LazyConstCompleter(sym, info, classScopes, baseEnv, field, log));
+          constFields.add(field.sym());
         }
-        completers.put(field.sym(), new LazyConstCompleter(sym, info, baseEnv, field, log));
-        constFields.add(field.sym());
       }
     }
+    // Kotlin const values are already known, so they're seeded into the result (and the lazy
+    // environment) instead of being evaluated.
+    SimpleEnv<FieldSymbol, Const.Value> seeded = constantValues.build();
     if (constFields.isEmpty()) {
-      return new SimpleEnv<>(ImmutableMap.of());
+      return seeded;
     }
-    Env<FieldSymbol, Const.Value> lazyConstEnv =
-        new LazyEnv<>(completers.buildOrThrow(), new SimpleEnv<>(ImmutableMap.of()));
+    Env<FieldSymbol, Const.Value> lazyConstEnv = new LazyEnv<>(completers.buildOrThrow(), seeded);
     ImmutableMap.Builder<FieldSymbol, Const.Value> constValues =
-        ImmutableMap.builderWithExpectedSize(constFields.size());
+        ImmutableMap.builderWithExpectedSize(seeded.asMap().size() + constFields.size());
+    constValues.putAll(seeded.asMap());
     for (FieldSymbol fieldSym : constFields) {
       Const.Value value = lazyConstEnv.get(fieldSym);
       if (value != null) {
@@ -479,6 +687,7 @@ public final class Binder {
       implements LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value> {
     private final ClassSymbol sym;
     private final SourceTypeBoundClass info;
+    private final ClassScopes scopes;
     private final CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv;
     private final FieldInfo field;
     private final TurbineLog log;
@@ -486,11 +695,13 @@ public final class Binder {
     LazyConstCompleter(
         ClassSymbol sym,
         SourceTypeBoundClass info,
+        ClassScopes scopes,
         CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
         FieldInfo field,
         TurbineLog log) {
       this.sym = sym;
       this.info = info;
+      this.scopes = scopes;
       this.baseEnv = baseEnv;
       this.field = field;
       this.log = log;
@@ -505,9 +716,9 @@ public final class Binder {
             new ConstEvaluator(
                     sym,
                     sym,
-                    info.memberImports(),
+                    scopes.memberImports(),
                     info.source(),
-                    info.scope(),
+                    scopes.scope(),
                     env,
                     baseEnv,
                     fieldBinderLog.withSource(info.source()))
@@ -530,21 +741,23 @@ public final class Binder {
   }
 
   static boolean isConst(FieldInfo field) {
-    if ((field.access() & TurbineFlag.ACC_FINAL) == 0) {
+    return field.decl() != null && isConst(field.access(), field.decl(), field.type());
+  }
+
+  /** Returns true if a field with the given access, declaration, and type may be a constant. */
+  static boolean isConst(int access, Tree.VarDecl decl, Type type) {
+    if ((access & TurbineFlag.ACC_FINAL) == 0) {
       return false;
     }
-    if (field.decl() == null) {
-      return false;
-    }
-    final Optional<Tree.Expression> init = field.decl().init();
+    final Optional<Tree.Expression> init = decl.init();
     if (!init.isPresent()) {
       return false;
     }
-    switch (field.type().tyKind()) {
+    switch (type.tyKind()) {
       case PRIM_TY:
         break;
       case CLASS_TY:
-        if (((Type.ClassTy) field.type()).sym().equals(ClassSymbol.STRING)) {
+        if (((Type.ClassTy) type).sym().equals(ClassSymbol.STRING)) {
           break;
         }
       // fall through

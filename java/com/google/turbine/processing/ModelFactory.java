@@ -23,6 +23,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
@@ -42,6 +43,8 @@ import com.google.turbine.binder.sym.ParamSymbol;
 import com.google.turbine.binder.sym.RecordComponentSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
+import com.google.turbine.kotlin.processing.TurbineKotlinModel;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.processing.TurbineElement.TurbineExecutableElement;
 import com.google.turbine.processing.TurbineElement.TurbineFieldElement;
@@ -64,26 +67,34 @@ import com.google.turbine.processing.TurbineTypeMirror.TurbineTypeVariable;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineVoidType;
 import com.google.turbine.processing.TurbineTypeMirror.TurbineWildcardType;
 import com.google.turbine.tree.Tree.Ident;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
+import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.ErrorTy;
 import com.google.turbine.type.Type.IntersectionTy;
 import com.google.turbine.type.Type.MethodTy;
 import com.google.turbine.type.Type.PrimTy;
 import com.google.turbine.type.Type.TyVar;
+import com.google.turbine.type.Type.WildLowerBoundedTy;
 import com.google.turbine.type.Type.WildTy;
+import com.google.turbine.type.Type.WildUnboundedTy;
+import com.google.turbine.type.Type.WildUpperBoundedTy;
 import com.google.turbine.types.ClassHierarchy;
 import com.google.turbine.types.Types;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.NoType;
 import javax.lang.model.type.NullType;
 import javax.lang.model.type.TypeMirror;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A factoy for turbine's implementations of {@link Element} and {@link TypeMirror}.
@@ -126,10 +137,15 @@ public class ModelFactory {
 
   private final HashMap<CharSequence, ClassSymbol> inferSymbolCache = new HashMap<>();
 
+  public Env<ClassSymbol, ? extends TypeBoundClass> env() {
+    return env;
+  }
+
   private final ClassHierarchy cha;
   private Types types;
 
   private TopLevelIndex tli;
+  private @Nullable KotlinProcessingHooks kotlinHooks;
 
   /**
    * The classpath, used to look up members of classpath types that have been shadowed by generated
@@ -148,6 +164,20 @@ public class ModelFactory {
     this.types = new Types(cha, env, classPathEnv);
   }
 
+  /** Installs the hooks for Kotlin semantics, before any elements or types are created. */
+  public void setKotlinHooks(KotlinProcessingHooks kotlinHooks) {
+    this.kotlinHooks = kotlinHooks;
+  }
+
+  public @Nullable KotlinProcessingHooks kotlinHooks() {
+    return kotlinHooks;
+  }
+
+  /** The Kotlin model of the installed {@link KotlinProcessingHooks}, or {@code null}. */
+  public @Nullable TurbineKotlinModel kotlinModel() {
+    return kotlinHooks != null ? kotlinHooks.kotlinModel() : null;
+  }
+
   /**
    * Returns the {@link com.google.turbine.types.Types} for the current round. A new instance is
    * created for each round, so callers shouldn't keep it across rounds.
@@ -162,6 +192,79 @@ public class ModelFactory {
 
   public TypeMirror asTypeMirror(Type type) {
     return typeCache.computeIfAbsent(type, this::createTypeMirror);
+  }
+
+  /**
+   * Returns the type of a declaration in {@code owner}, as annotation processors see it.
+   *
+   * <p>For a class declared in Kotlin source, this drops the annotations written at Kotlin type
+   * positions (e.g. {@code Int} in {@code x: @IntDefAnno Int}, or {@code List<@A String>}), and
+   * keeps only those of {@code declarationAnnotations} that also apply to the outermost type. That
+   * is how Java sees the declaration if it's written with fully qualified type names, where
+   * declaration annotations before the type's name apply to its outermost class (JLS 9.7.4). Class
+   * files keep the type annotations.
+   *
+   * <p>Java declarations are returned unchanged, and so are all declarations if there are no {@link
+   * KotlinProcessingHooks}.
+   */
+  Type processingType(
+      ClassSymbol owner, Type type, ImmutableList<AnnoInfo> declarationAnnotations) {
+    if (kotlinHooks == null) {
+      return type;
+    }
+    if (!(getSymbol(owner) instanceof SourceTypeBoundClass info) || !info.isKotlin()) {
+      return type;
+    }
+    return withoutTypePositionAnnotations(type, declarationAnnotations);
+  }
+
+  private static Type withoutTypePositionAnnotations(Type type, ImmutableList<AnnoInfo> keep) {
+    return switch (type) {
+      case ClassTy classTy -> {
+        ImmutableList.Builder<SimpleClassTy> classes = ImmutableList.builder();
+        boolean outermost = true;
+        for (SimpleClassTy simple : classTy.classes()) {
+          ImmutableList.Builder<Type> targs = ImmutableList.builder();
+          for (Type targ : simple.targs()) {
+            targs.add(withoutTypePositionAnnotations(targ, ImmutableList.of()));
+          }
+          classes.add(
+              SimpleClassTy.create(
+                  simple.sym(),
+                  targs.build(),
+                  outermost ? retain(simple.annos(), keep) : ImmutableList.of()));
+          outermost = false;
+        }
+        yield ClassTy.create(classes.build());
+      }
+      case ArrayTy arrayTy ->
+          ArrayTy.create(
+              withoutTypePositionAnnotations(arrayTy.elementType(), keep), ImmutableList.of());
+      case PrimTy primTy -> PrimTy.create(primTy.primkind(), retain(primTy.annos(), keep));
+      case TyVar tyVar -> TyVar.create(tyVar.sym(), retain(tyVar.annos(), keep));
+      case WildUpperBoundedTy wild ->
+          WildUpperBoundedTy.create(
+              withoutTypePositionAnnotations(wild.bound(), ImmutableList.of()), ImmutableList.of());
+      case WildLowerBoundedTy wild ->
+          WildLowerBoundedTy.create(
+              withoutTypePositionAnnotations(wild.bound(), ImmutableList.of()), ImmutableList.of());
+      case WildUnboundedTy _ -> WildUnboundedTy.create(ImmutableList.of());
+      default -> type;
+    };
+  }
+
+  private static ImmutableList<AnnoInfo> retain(
+      ImmutableList<AnnoInfo> annos, ImmutableList<AnnoInfo> keep) {
+    if (annos.isEmpty()) {
+      return annos;
+    }
+    ImmutableList.Builder<AnnoInfo> result = ImmutableList.builder();
+    for (AnnoInfo anno : annos) {
+      if (keep.contains(anno)) {
+        result.add(anno);
+      }
+    }
+    return result.build();
   }
 
   /** Creates a {@link TurbineTypeMirror} backed by a {@link Type}. */
@@ -225,6 +328,14 @@ public class ModelFactory {
       case PACKAGE -> packageElement((PackageSymbol) symbol);
       case MODULE -> throw new AssertionError(symbol.symKind());
     };
+  }
+
+  public AnnotationMirror annotationMirror(AnnoInfo anno) {
+    return TurbineAnnotationMirror.create(this, anno);
+  }
+
+  public AnnotationValue annotationValue(Const value) {
+    return TurbineAnnotationMirror.annotationValue(this, value);
   }
 
   public Element noElement(String name) {
@@ -305,7 +416,16 @@ public class ModelFactory {
   }
 
   public MethodInfo getMethodInfo(MethodSymbol method) {
-    return types.getMethodInfo(method);
+    MethodInfo result = types.getMethodInfo(method);
+    // A Kotlin source property's $annotations method looks like it does in KAPT stubs.
+    if (result != null && kotlinHooks != null) {
+      MethodInfo stub =
+          kotlinHooks.kaptStubAnnotationsMethod(result, getSymbol(method.owner()), this::getSymbol);
+      if (stub != null) {
+        return stub;
+      }
+    }
+    return result;
   }
 
   public ParamInfo getParamInfo(ParamSymbol sym) {

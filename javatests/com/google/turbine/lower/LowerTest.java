@@ -18,7 +18,10 @@ package com.google.turbine.lower;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.lang.classfile.ClassFile.JAVA_8_VERSION;
@@ -30,10 +33,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.objectweb.asm.Opcodes;
-import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
-import com.google.turbine.binder.ClassPathBinder;
+import com.google.turbine.binder.DisambiguateTypeAnnotations;
+import com.google.turbine.binder.bound.AnnotationViews;
+import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.KotlinBuiltinAnnotations;
+import com.google.turbine.binder.bound.KotlinMemberInfo;
+import com.google.turbine.binder.bound.KotlinMemberInfo.Role;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
+import com.google.turbine.binder.bound.SourceTypeBoundClass.SourceKind;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.SimpleEnv;
@@ -46,6 +54,8 @@ import com.google.turbine.bytecode.ByteReader;
 import com.google.turbine.bytecode.ConstantPoolReader;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineError;
+import com.google.turbine.diag.TurbineLog;
+import com.google.turbine.model.Const;
 import com.google.turbine.model.TurbineConstantTypeKind;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
@@ -54,6 +64,7 @@ import com.google.turbine.options.TurbineJavacOptions;
 import com.google.turbine.parallel.TurbineExecutor;
 import com.google.turbine.parse.Parser;
 import com.google.turbine.testing.AsmUtils;
+import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
@@ -66,8 +77,10 @@ import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
 import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
@@ -128,12 +141,13 @@ public class LowerTest {
                                     ImmutableList.of(),
                                     ImmutableList.of()))))),
                 /* lowerBound= */ null,
-                ImmutableList.of()));
+                ImmutableList.of(),
+                /* kotlin= */ null));
     int access = TurbineFlag.ACC_SUPER | TurbineFlag.ACC_PUBLIC;
     ImmutableList<SourceTypeBoundClass.MethodInfo> methods =
         ImmutableList.of(
             new SourceTypeBoundClass.MethodInfo(
-                new MethodSymbol(-1, new ClassSymbol("test/Test"), "f"),
+                new MethodSymbol.Source(new ClassSymbol("test/Test"), "f", -1),
                 ImmutableMap.of(),
                 PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                 ImmutableList.of(),
@@ -141,12 +155,15 @@ public class LowerTest {
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
+                /* position= */ 0,
                 ImmutableList.of(),
-                null),
+                null,
+                /* kotlin= */ null),
             new SourceTypeBoundClass.MethodInfo(
-                new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"),
+                new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1),
                 ImmutableMap.of(
-                    new TyVarSymbol(new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "V"),
+                    new TyVarSymbol(
+                        new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "V"),
                     new SourceTypeBoundClass.TyVarInfo(
                         IntersectionTy.create(
                             ImmutableList.of(
@@ -157,8 +174,10 @@ public class LowerTest {
                                             ImmutableList.of(),
                                             ImmutableList.of()))))),
                         /* lowerBound= */ null,
-                        ImmutableList.of()),
-                    new TyVarSymbol(new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "E"),
+                        ImmutableList.of(),
+                        /* kotlin= */ null),
+                    new TyVarSymbol(
+                        new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
                         IntersectionTy.create(
                             ImmutableList.of(
@@ -169,25 +188,28 @@ public class LowerTest {
                                             ImmutableList.of(),
                                             ImmutableList.of()))))),
                         /* lowerBound= */ null,
-                        ImmutableList.of())),
+                        ImmutableList.of(),
+                        /* kotlin= */ null)),
                 Type.VOID,
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
                         new ParamSymbol(
-                            new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "foo"),
+                            new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "foo"),
                         PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                         ImmutableList.of(),
                         0)),
                 ImmutableList.of(
                     TyVar.create(
                         new TyVarSymbol(
-                            new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "E"),
+                            new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "E"),
                         ImmutableList.of())),
                 TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
+                /* position= */ 0,
                 ImmutableList.of(),
-                null));
+                null,
+                /* kotlin= */ null));
     ImmutableList<SourceTypeBoundClass.FieldInfo> fields =
         ImmutableList.of(
             new SourceTypeBoundClass.FieldInfo(
@@ -196,7 +218,9 @@ public class LowerTest {
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_PUBLIC,
                 ImmutableList.of(),
                 null,
-                null));
+                /* position= */ 0,
+                null,
+                /* kotlin= */ null));
     ClassSymbol owner = null;
     TurbineTyKind kind = TurbineTyKind.CLASS;
     ImmutableMap<String, ClassSymbol> children = ImmutableMap.of();
@@ -220,10 +244,11 @@ public class LowerTest {
             null,
             null,
             null,
-            null,
             ImmutableList.of(),
             null,
-            null);
+            null,
+            SourceTypeBoundClass.SourceKind.JAVA,
+            /* position= */ 0);
 
     SourceTypeBoundClass i =
         new SourceTypeBoundClass(
@@ -242,10 +267,11 @@ public class LowerTest {
             null,
             null,
             null,
-            null,
             ImmutableList.of(),
             null,
-            null);
+            null,
+            SourceTypeBoundClass.SourceKind.JAVA,
+            /* position= */ 0);
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> b = SimpleEnv.builder();
     b.put(new ClassSymbol("test/Test"), c);
@@ -271,8 +297,7 @@ public class LowerTest {
   @Test
   public void innerClassAttributeOrder() throws IOException {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     Joiner.on('\n')
@@ -281,10 +306,7 @@ public class LowerTest {
                             "  class Inner {",
                             "    class InnerMost {}",
                             "  }",
-                            "}"))),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                            "}"))));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -354,8 +376,7 @@ public class LowerTest {
   @Test
   public void typePath() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     Joiner.on('\n')
@@ -366,10 +387,7 @@ public class LowerTest {
                             "@Target({ElementType.TYPE_USE}) @interface Anno {}",
                             "class Test {",
                             "  public @Anno int[][] xs;",
-                            "}"))),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                            "}"))));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -453,13 +471,7 @@ public class LowerTest {
 
   @Test
   public void deprecated() throws Exception {
-    BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+    BindingResult bound = bind(ImmutableList.of(Parser.parse("@Deprecated class Test {}")));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -667,13 +679,7 @@ public class LowerTest {
 
   @Test
   public void minClassVersion() throws Exception {
-    BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            ImmutableList.of(Parser.parse("class Test {}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+    BindingResult bound = bind(ImmutableList.of(Parser.parse("class Test {}")));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -709,17 +715,13 @@ public class LowerTest {
   @Test
   public void privateFields() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  private int x;\n"
                         + "  int y;\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -747,18 +749,14 @@ public class LowerTest {
   @Test
   public void privateFieldsInRecords() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     record R(int x, int y) {
                       private static final int z = 1;
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -787,17 +785,13 @@ public class LowerTest {
   @Test
   public void noPrivateFields() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  private int x;\n"
                         + "  int y;\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -825,8 +819,7 @@ public class LowerTest {
   @Test
   public void privateFieldsPrivateMemberClasses() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -834,10 +827,7 @@ public class LowerTest {
                       private static class Inner {}
                       private Inner x;
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -872,18 +862,14 @@ public class LowerTest {
   @Test
   public void emitAllPrivateMemberClasses() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     class Test {
                       private static class Inner {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -899,18 +885,14 @@ public class LowerTest {
   @Test
   public void noemitAllPrivateMemberClasses() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     class Test {
                       private static class Inner {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -926,8 +908,7 @@ public class LowerTest {
   @Test
   public void repeatedTypeAnnotationError() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     new SourceFile(
@@ -940,10 +921,7 @@ public class LowerTest {
                         class Test {
                           List<@Anno @Anno Integer> xs;
                           }
-                        """))),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        """))));
     TurbineError turbineError =
         assertThrows(
             TurbineError.class,
@@ -967,16 +945,12 @@ public class LowerTest {
   @Test
   public void methodParameters() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  void f(int x, int y) {}\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1014,16 +988,12 @@ public class LowerTest {
   @Test
   public void noMethodParameters() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  void f(int x, int y) {}\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1095,8 +1065,7 @@ public class LowerTest {
   @Test
   public void privateSealedClass() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1105,10 +1074,7 @@ public class LowerTest {
                       private static final class A extends Test {}
                       private static final class B extends Test {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1136,8 +1102,7 @@ public class LowerTest {
   @Test
   public void keepPermits() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1146,10 +1111,7 @@ public class LowerTest {
                       private static final class A extends Test {}
                       public static final class B extends Test {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1177,8 +1139,7 @@ public class LowerTest {
   @Test
   public void usagesInTopLevelClass() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1188,10 +1149,7 @@ public class LowerTest {
                       public static class I {}
                     }
                     class B { public A a; }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> unit =
         Stream.of("A", "A$I")
@@ -1225,18 +1183,14 @@ public class LowerTest {
 
   private static int strictfpAccess(int release) throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     class Test {
                       strictfp void f() {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1279,8 +1233,7 @@ public class LowerTest {
   @Test
   public void emitNestsPrunedPrivateMember() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1290,10 +1243,7 @@ public class LowerTest {
                         }
                       }
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1318,8 +1268,7 @@ public class LowerTest {
 
   private boolean emitNests(int release) throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1327,10 +1276,7 @@ public class LowerTest {
                       class Inner {
                       }
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1352,6 +1298,484 @@ public class LowerTest {
             },
             0);
     return !nestMembers.isEmpty();
+  }
+
+  /** Returns a copy of {@code base} that looks like it was bound from Kotlin source. */
+  private static SourceTypeBoundClass asKotlin(
+      SourceTypeBoundClass base,
+      ImmutableList<TypeBoundClass.MethodInfo> methods,
+      ImmutableList<TypeBoundClass.FieldInfo> fields,
+      ImmutableList<AnnoInfo> annotations) {
+    return new SourceTypeBoundClass(
+        base.interfaceTypes(),
+        base.permits(),
+        base.superClassType(),
+        base.typeParameterTypes(),
+        base.access(),
+        base.components(),
+        methods,
+        fields,
+        base.owner(),
+        base.kind(),
+        base.children(),
+        base.typeParameters(),
+        base.scope(),
+        base.memberImports(),
+        base.annotationMetadata(),
+        annotations,
+        base.source(),
+        /* decl= */ null,
+        SourceKind.KOTLIN_CLASS,
+        base.position());
+  }
+
+  private static SourceTypeBoundClass asKotlin(SourceTypeBoundClass base) {
+    return asKotlin(base, base.methods(), base.fields(), base.annotations());
+  }
+
+  private static BindingResult bindJava(String source) {
+    return bind(ImmutableList.of(Parser.parse(source)));
+  }
+
+  private static ImmutableMap<String, byte[]> lowerUnits(
+      BindingResult bound, ImmutableMap<ClassSymbol, SourceTypeBoundClass> units) {
+    return Lower.lowerAll(
+            TurbineExecutor.direct(),
+            LowerOptions.createDefault(),
+            units,
+            bound.modules(),
+            bound.classPathEnv(),
+            /* trimOutput= */ false)
+        .bytes();
+  }
+
+  private static AnnoInfo anno(SourceTypeBoundClass owner, String binaryName) {
+    return new AnnoInfo(owner.source(), new ClassSymbol(binaryName), null, ImmutableMap.of());
+  }
+
+  /** A method of a Kotlin class {@code Outer}, with a {@code String} parameter. */
+  private static TypeBoundClass.MethodInfo kotlinMethod(
+      int access,
+      Type parameterType,
+      ImmutableList<AnnoInfo> annotations,
+      KotlinMemberInfo kotlin) {
+    MethodSymbol sym =
+        new MethodSymbol.ClassFile(
+            new ClassSymbol("Outer"), "f", "(Ljava/lang/String;)Ljava/lang/Object;");
+    return new TypeBoundClass.MethodInfo(
+        sym,
+        ImmutableMap.of(),
+        Type.ClassTy.OBJECT,
+        ImmutableList.of(
+            new TypeBoundClass.ParamInfo(
+                new ParamSymbol(sym, "x"), parameterType, ImmutableList.of(), 0)),
+        ImmutableList.of(),
+        access,
+        /* defaultValue= */ null,
+        /* decl= */ null,
+        /* position= */ 0,
+        annotations,
+        /* receiver= */ null,
+        kotlin);
+  }
+
+  private static MethodModel loweredMethod(byte[] bytes) {
+    return ClassFile.of().parse(bytes).methods().stream()
+        .filter(m -> m.methodName().equalsString("f"))
+        .collect(onlyElement());
+  }
+
+  private static ImmutableList<String> annotationDescriptors(
+      Optional<RuntimeVisibleAnnotationsAttribute> visible) {
+    return visible.stream()
+        .flatMap(a -> a.annotations().stream())
+        .map(a -> a.classSymbol().descriptorString())
+        .collect(toImmutableList());
+  }
+
+  @Test
+  public void kotlinClassesHaveNoNestAttributes() throws Exception {
+    BindingResult bound =
+        bindJava(
+            """
+            class Outer {
+              static class Nested {}
+            }
+            """);
+    ClassSymbol outer = new ClassSymbol("Outer");
+    ClassSymbol nested = new ClassSymbol("Outer$Nested");
+
+    ImmutableMap<String, byte[]> lowered =
+        lowerUnits(
+            bound,
+            ImmutableMap.of(
+                outer,
+                asKotlin(bound.units().get(outer)),
+                nested,
+                asKotlin(bound.units().get(nested))));
+
+    assertThat(ClassFile.of().parse(lowered.get("Outer")).findAttribute(Attributes.nestMembers()))
+        .isEmpty();
+    assertThat(
+            ClassFile.of().parse(lowered.get("Outer$Nested")).findAttribute(Attributes.nestHost()))
+        .isEmpty();
+  }
+
+  @Test
+  public void privateKotlinClassesAreRetained() throws Exception {
+    BindingResult bound =
+        bindJava(
+            """
+            class Outer {
+              private static class PrivateNested {}
+            }
+            """);
+    ClassSymbol outer = new ClassSymbol("Outer");
+    ClassSymbol nested = new ClassSymbol("Outer$PrivateNested");
+
+    ImmutableMap<String, byte[]> lowered =
+        Lower.lowerAll(
+                TurbineExecutor.direct(),
+                LowerOptions.createDefault(),
+                ImmutableMap.of(
+                    outer,
+                    asKotlin(bound.units().get(outer)),
+                    nested,
+                    asKotlin(bound.units().get(nested))),
+                bound.modules(),
+                bound.classPathEnv(),
+                /* trimOutput= */ true)
+            .bytes();
+
+    // Kotlin metadata and inline function bodies can refer to private classes.
+    assertThat(lowered.keySet()).containsExactly("Outer", "Outer$PrivateNested");
+  }
+
+  @Test
+  public void kotlinNoSignatureMember() throws Exception {
+    BindingResult bound = bindJava("class Outer<T> {}");
+    SourceTypeBoundClass outer = bound.units().get(new ClassSymbol("Outer"));
+    TyVarSymbol t = getOnlyElement(outer.typeParameters().values());
+    TypeBoundClass.MethodInfo method =
+        kotlinMethod(
+            TurbineFlag.ACC_PUBLIC,
+            TyVar.create(t, ImmutableList.of()),
+            ImmutableList.of(),
+            new KotlinMemberInfo(Role.NORMAL, /* propertyName= */ null).withNoSignature(true));
+
+    ImmutableMap<String, byte[]> lowered =
+        lowerUnits(
+            bound,
+            ImmutableMap.of(
+                new ClassSymbol("Outer"),
+                asKotlin(outer, ImmutableList.of(method), ImmutableList.of(), ImmutableList.of())));
+
+    assertThat(loweredMethod(lowered.get("Outer")).findAttribute(Attributes.signature())).isEmpty();
+  }
+
+  @Test
+  public void kotlinSyntheticMethodHasNoTypeAnnotations() throws Exception {
+    BindingResult bound =
+        bindJava(
+            """
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE_USE)
+            @interface TypeAnno {}
+
+            class Outer {}
+            """);
+    SourceTypeBoundClass outer = bound.units().get(new ClassSymbol("Outer"));
+    Type annotatedString =
+        ClassTy.create(
+            ImmutableList.of(
+                SimpleClassTy.create(
+                    new ClassSymbol("java/lang/String"),
+                    ImmutableList.of(),
+                    ImmutableList.of(anno(outer, "TypeAnno")))));
+    TypeBoundClass.MethodInfo method =
+        kotlinMethod(
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_SYNTHETIC,
+            annotatedString,
+            ImmutableList.of(),
+            new KotlinMemberInfo(Role.NORMAL, /* propertyName= */ null));
+
+    ImmutableMap<String, byte[]> lowered =
+        lowerUnits(
+            bound,
+            ImmutableMap.of(
+                new ClassSymbol("TypeAnno"),
+                bound.units().get(new ClassSymbol("TypeAnno")),
+                new ClassSymbol("Outer"),
+                asKotlin(outer, ImmutableList.of(method), ImmutableList.of(), ImmutableList.of())));
+
+    assertThat(
+            loweredMethod(lowered.get("Outer"))
+                .findAttribute(Attributes.runtimeVisibleTypeAnnotations()))
+        .isEmpty();
+  }
+
+  @Test
+  public void builtinKotlinAnnotationRetentionWithoutClassFiles() throws Exception {
+    BindingResult bound = bindJava("class Outer {}");
+    SourceTypeBoundClass outer = bound.units().get(new ClassSymbol("Outer"));
+    TypeBoundClass.MethodInfo method =
+        kotlinMethod(
+            TurbineFlag.ACC_PUBLIC,
+            Type.ClassTy.STRING,
+            ImmutableList.of(
+                anno(outer, "org/jetbrains/annotations/Nullable"),
+                anno(outer, "kotlin/jvm/JvmSynthetic")),
+            new KotlinMemberInfo(Role.NORMAL, /* propertyName= */ null));
+
+    ImmutableMap<String, byte[]> lowered =
+        lowerUnits(
+            bound,
+            ImmutableMap.of(
+                new ClassSymbol("Outer"),
+                asKotlin(
+                    outer,
+                    ImmutableList.of(method),
+                    ImmutableList.of(),
+                    ImmutableList.of(anno(outer, "kotlin/Metadata")))));
+
+    ClassModel outerModel = ClassFile.of().parse(lowered.get("Outer"));
+    assertThat(
+            annotationDescriptors(outerModel.findAttribute(Attributes.runtimeVisibleAnnotations())))
+        .containsExactly("Lkotlin/Metadata;");
+    MethodModel loweredMethod = loweredMethod(lowered.get("Outer"));
+    assertThat(loweredMethod.findAttribute(Attributes.runtimeVisibleAnnotations())).isEmpty();
+    // @JvmSynthetic has SOURCE retention.
+    assertThat(
+            loweredMethod
+                .findAttribute(Attributes.runtimeInvisibleAnnotations())
+                .orElseThrow()
+                .annotations()
+                .stream()
+                .map(a -> a.classSymbol().descriptorString()))
+        .containsExactly("Lorg/jetbrains/annotations/Nullable;");
+  }
+
+  @Test
+  public void annotationClassRetentionTakesPrecedenceOverBuiltinRetention() throws Exception {
+    BindingResult bound =
+        bindJava(
+            """
+            package org.jetbrains.annotations;
+
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Nullable {}
+
+            class Outer {}
+            """);
+    ClassSymbol nullable = new ClassSymbol("org/jetbrains/annotations/Nullable");
+    ClassSymbol outerSym = new ClassSymbol("org/jetbrains/annotations/Outer");
+    SourceTypeBoundClass outer = bound.units().get(outerSym);
+
+    ImmutableMap<String, byte[]> lowered =
+        lowerUnits(
+            bound,
+            ImmutableMap.of(
+                nullable,
+                bound.units().get(nullable),
+                outerSym,
+                asKotlin(
+                    outer,
+                    outer.methods(),
+                    outer.fields(),
+                    ImmutableList.of(anno(outer, nullable.binaryName())))));
+
+    assertThat(
+            annotationDescriptors(
+                ClassFile.of()
+                    .parse(lowered.get(outerSym.binaryName()))
+                    .findAttribute(Attributes.runtimeVisibleAnnotations())))
+        .containsExactly("Lorg/jetbrains/annotations/Nullable;");
+  }
+
+  /**
+   * Returns a copy of the annotation class {@code base} with a {@code @kotlin.annotation.Target}.
+   */
+  private static SourceTypeBoundClass withKotlinTarget(SourceTypeBoundClass base, Const targets) {
+    return new SourceTypeBoundClass(
+        base.interfaceTypes(),
+        base.permits(),
+        base.superClassType(),
+        base.typeParameterTypes(),
+        base.access(),
+        base.components(),
+        base.methods(),
+        base.fields(),
+        base.owner(),
+        base.kind(),
+        base.children(),
+        base.typeParameters(),
+        base.scope(),
+        base.memberImports(),
+        base.annotationMetadata(),
+        ImmutableList.of(
+            new AnnoInfo(
+                base.source(),
+                KotlinBuiltinAnnotations.KOTLIN_TARGET,
+                null,
+                ImmutableMap.of("allowedTargets", targets))),
+        base.source(),
+        base.decl(),
+        base.sourceKind(),
+        base.position());
+  }
+
+  private static EnumConstantValue annotationTarget(String name) {
+    return new EnumConstantValue(
+        new FieldSymbol(new ClassSymbol("kotlin/annotation/AnnotationTarget"), name));
+  }
+
+  @Test
+  public void hasKotlinPropertyTarget() {
+    BindingResult bound = bindJava("@interface A {}");
+    SourceTypeBoundClass a = bound.units().get(new ClassSymbol("A"));
+
+    assertThat(AnnotationViews.hasKotlinPropertyTarget(a)).isFalse();
+    assertThat(AnnotationViews.hasKotlinPropertyTarget(null)).isFalse();
+    assertThat(
+            AnnotationViews.hasKotlinPropertyTarget(
+                withKotlinTarget(
+                    a,
+                    new Const.ArrayInitValue(
+                        ImmutableList.of(
+                            annotationTarget("FIELD"), annotationTarget("PROPERTY"))))))
+        .isTrue();
+    assertThat(
+            AnnotationViews.hasKotlinPropertyTarget(
+                withKotlinTarget(a, annotationTarget("PROPERTY"))))
+        .isTrue();
+    assertThat(
+            AnnotationViews.hasKotlinPropertyTarget(withKotlinTarget(a, annotationTarget("FIELD"))))
+        .isFalse();
+  }
+
+  @Test
+  public void kotlinPropertyAnnotationsMethodKeepsPropertyAnnotations() {
+    BindingResult bound =
+        bindJava(
+            """
+            package p;
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Target;
+
+            @Target({})
+            @interface PropOnly {}
+
+            @Target(ElementType.FIELD)
+            @interface FieldOnly {}
+
+            class Holder {}
+            """);
+    ClassSymbol propOnly = new ClassSymbol("p/PropOnly");
+    SourceTypeBoundClass holder = bound.units().get(new ClassSymbol("p/Holder"));
+    TypeBoundClass.MethodInfo propAnnos =
+        new TypeBoundClass.MethodInfo(
+            new MethodSymbol.ClassFile(new ClassSymbol("p/Holder"), "getProp$annotations", "()V"),
+            ImmutableMap.of(),
+            Type.VOID,
+            ImmutableList.of(),
+            ImmutableList.of(),
+            TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC | TurbineFlag.ACC_SYNTHETIC,
+            /* defaultValue= */ null,
+            /* decl= */ null,
+            /* position= */ 0,
+            ImmutableList.of(anno(holder, "p/PropOnly"), anno(holder, "p/FieldOnly")),
+            /* receiver= */ null,
+            new KotlinMemberInfo(Role.PROPERTY_ANNOTATIONS, "prop"));
+    SourceTypeBoundClass ktHolder =
+        asKotlin(holder, ImmutableList.of(propAnnos), ImmutableList.of(), ImmutableList.of());
+    CompoundEnv<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
+            .append(
+                new SimpleEnv<>(
+                    ImmutableMap.<ClassSymbol, TypeBoundClass>builder()
+                        .putAll(bound.units())
+                        .put(
+                            propOnly,
+                            withKotlinTarget(
+                                bound.units().get(propOnly), annotationTarget("PROPERTY")))
+                        .put(new ClassSymbol("p/Holder"), ktHolder)
+                        .buildKeepingLast()));
+
+    SourceTypeBoundClass disambiguated =
+        DisambiguateTypeAnnotations.bind(ktHolder, env, new TurbineLog());
+
+    assertThat(getOnlyElement(disambiguated.methods()).annotations())
+        .containsExactly(anno(holder, "p/PropOnly"));
+  }
+
+  @Test
+  public void kotlinDeclarationAnnotationBeforeNestedTypeIsNotTypeAnnotation() {
+    BindingResult bound =
+        bindJava(
+            """
+            package p;
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Target;
+
+            @Target({ElementType.FIELD, ElementType.TYPE_USE})
+            @interface Dual {}
+
+            class Holder {
+              static class Nested {}
+            }
+            """);
+    SourceTypeBoundClass holder = bound.units().get(new ClassSymbol("p/Holder"));
+    AnnoInfo dual = anno(holder, "p/Dual");
+    TypeBoundClass.FieldInfo nestedField =
+        new TypeBoundClass.FieldInfo(
+            new FieldSymbol(new ClassSymbol("p/Holder"), "nested"),
+            ClassTy.asNonParametricClassTy(new ClassSymbol("p/Holder$Nested")),
+            TurbineFlag.ACC_PRIVATE,
+            ImmutableList.of(dual),
+            /* decl= */ null,
+            /* position= */ 0,
+            /* value= */ null,
+            new KotlinMemberInfo(Role.NORMAL, "nested"));
+    TypeBoundClass.FieldInfo stringField =
+        new TypeBoundClass.FieldInfo(
+            new FieldSymbol(new ClassSymbol("p/Holder"), "string"),
+            Type.ClassTy.STRING,
+            TurbineFlag.ACC_PRIVATE,
+            ImmutableList.of(dual),
+            /* decl= */ null,
+            /* position= */ 0,
+            /* value= */ null,
+            new KotlinMemberInfo(Role.NORMAL, "string"));
+    SourceTypeBoundClass ktHolder =
+        asKotlin(
+            holder,
+            ImmutableList.of(),
+            ImmutableList.of(nestedField, stringField),
+            ImmutableList.of());
+    CompoundEnv<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(bound.classPathEnv())
+            .append(new SimpleEnv<>(bound.units()));
+
+    SourceTypeBoundClass disambiguated =
+        DisambiguateTypeAnnotations.bind(ktHolder, env, new TurbineLog());
+
+    // Before Holder.Nested, the annotation would apply to Holder (JLS 9.7.4).
+    TypeBoundClass.FieldInfo nested = disambiguated.fields().get(0);
+    assertThat(nested.annotations()).containsExactly(dual);
+    assertThat(((ClassTy) nested.type()).classes().stream().flatMap(c -> c.annos().stream()))
+        .isEmpty();
+    // A top-level class can be annotated.
+    TypeBoundClass.FieldInfo string = disambiguated.fields().get(1);
+    assertThat(string.annotations()).containsExactly(dual);
+    assertThat(((ClassTy) string.type()).classes().getLast().annos()).containsExactly(dual);
   }
 
   static String lines(String... lines) {

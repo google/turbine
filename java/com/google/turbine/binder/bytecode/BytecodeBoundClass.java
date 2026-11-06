@@ -62,6 +62,7 @@ import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -439,7 +440,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return new TyVarInfo(
         IntersectionTy.create(bounds.build()),
         /* lowerBound= */ null,
-        bindTyVarAnnotations(scope, typeParameterIndex, typeParameterTarget, typeAnnotations));
+        bindTyVarAnnotations(scope, typeParameterIndex, typeParameterTarget, typeAnnotations),
+        /* kotlin= */ null);
   }
 
   private static ImmutableList<AnnoInfo> bindTyVarAnnotations(
@@ -476,7 +478,16 @@ public class BytecodeBoundClass implements TypeBoundClass {
       }
       ImmutableList<AnnoInfo> annotations =
           BytecodeBinder.bindAnnotations(cfi.annotations(), makeScope(env, sym, ImmutableMap.of()));
-      fields.add(new FieldInfo(fieldSym, type, access, annotations, /* decl= */ null, value));
+      fields.add(
+          new FieldInfo(
+              fieldSym,
+              type,
+              access,
+              annotations,
+              /* decl= */ null,
+              /* position= */ -1,
+              value,
+              /* kotlin= */ null));
     }
     return fields.build();
   }
@@ -492,14 +503,13 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   private ImmutableList<MethodInfo> computeMethods() {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
-    int idx = 0;
     ClassFile cf = classFile();
     for (ClassFile.MethodInfo m : cf.methods()) {
       if (m.name().equals("<clinit>")) {
         // Don't bother reading class initializers, which we don't need
         continue;
       }
-      methods.add(bindMethod(cf, idx++, m));
+      methods.add(bindMethod(cf, m));
     }
     return methods.build();
   }
@@ -513,8 +523,55 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return local;
   }
 
-  private MethodInfo bindMethod(ClassFile classFile, int methodIdx, ClassFile.MethodInfo m) {
-    MethodSymbol methodSymbol = new MethodSymbol(methodIdx, sym, m.name());
+  /**
+   * Returns the bound synthetic methods of this class whose name and descriptor {@code filter}
+   * accepts.
+   *
+   * <p>Synthetic methods aren't part of {@link #methods()}, since javac doesn't enter them, but
+   * some carry information about source declarations, e.g. Kotlin stores property annotations on
+   * synthetic {@code $annotations} methods. This re-reads the class file, so callers that need
+   * several synthetic methods should ask for them together and cache the result.
+   */
+  public ImmutableList<MethodInfo> syntheticMethods(BiPredicate<String, String> filter) {
+    ClassFile cf = ClassReader.readWithSyntheticMethods(this::path, bytes.get());
+    ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
+    for (ClassFile.MethodInfo m : cf.methods()) {
+      if ((m.access() & TurbineFlag.ACC_SYNTHETIC) != 0 && filter.test(m.name(), m.descriptor())) {
+        methods.add(bindMethod(cf, m));
+      }
+    }
+    return methods.build();
+  }
+
+  /**
+   * Re-reads the class file the symbol was loaded from, including its synthetic methods. Callers
+   * should cache the result.
+   */
+  public ClassFile classFileWithSyntheticMethods() {
+    return ClassReader.readWithSyntheticMethods(this::path, bytes.get());
+  }
+
+  /**
+   * Returns the class file method that {@code method} was bound from, or {@code null} if {@code
+   * method} isn't a method of this class. Gives access to facts the bound model doesn't carry, like
+   * the exact JVM descriptor and whether the class file recorded parameter names.
+   */
+  public ClassFile.@Nullable MethodInfo classFileMethod(MethodSymbol method) {
+    if (!(method instanceof MethodSymbol.ClassFile classFileMethod)
+        || !method.owner().equals(sym)) {
+      return null;
+    }
+    for (ClassFile.MethodInfo m : classFile().methods()) {
+      if (m.name().equals(classFileMethod.name())
+          && m.descriptor().equals(classFileMethod.descriptor())) {
+        return m;
+      }
+    }
+    return null;
+  }
+
+  private MethodInfo bindMethod(ClassFile classFile, ClassFile.MethodInfo m) {
+    MethodSymbol methodSymbol = new MethodSymbol.ClassFile(sym, m.name(), m.descriptor());
     Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
 
     ImmutableMap<String, TyVarSymbol> tyParams;
@@ -644,8 +701,10 @@ public class BytecodeBoundClass implements TypeBoundClass {
         access,
         defaultValue,
         /* decl= */ null,
+        /* position= */ -1,
         annotations,
-        receiver);
+        receiver,
+        /* kotlin= */ null);
   }
 
   private ImmutableList<RecordComponentInfo> computeComponents() {
@@ -873,11 +932,15 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return jarFile.get();
   }
 
+  private String path() {
+    return jarFile.get() + "!" + sym.binaryName();
+  }
+
   /** The class file the symbol was loaded from. */
   public ClassFile classFile() {
     ClassFile local = this.classFile;
     if (local == null) {
-      ClassFile cf = ClassReader.read(() -> jarFile.get() + "!" + sym.binaryName(), bytes.get());
+      ClassFile cf = ClassReader.read(this::path, bytes.get());
       verify(
           cf.name().equals(sym.binaryName()),
           "expected class data for %s, saw %s instead",

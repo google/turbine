@@ -126,6 +126,11 @@ public class TurbineLog {
       this.source = source;
     }
 
+    /** The source file this log reports diagnostics for. */
+    public SourceFile source() {
+      return source;
+    }
+
     public void diagnostic(Diagnostic.Kind severity, int position, ErrorKind kind, Object... args) {
       add(TurbineDiagnostic.format(severity, source, position, kind, args));
     }

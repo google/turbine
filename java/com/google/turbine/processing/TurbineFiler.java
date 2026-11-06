@@ -55,6 +55,7 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
+import org.jspecify.annotations.Nullable;
 
 /** Turbine's implementation of {@link Filer}. */
 public class TurbineFiler implements Filer {
@@ -90,14 +91,53 @@ public class TurbineFiler implements Filer {
   private final Map<String, byte[]> generatedSources = new LinkedHashMap<>();
   private final Map<String, byte[]> generatedClasses = new LinkedHashMap<>();
 
-  /** Generated source file objects from all rounds. */
+  /**
+   * Generated source file objects from all rounds. This doesn't include sources that {@link
+   * #addGeneratedSourcePaths} registers.
+   */
   public ImmutableMap<String, byte[]> generatedSources() {
-    return ImmutableMap.copyOf(generatedSources);
+    synchronized (lock) {
+      return ImmutableMap.copyOf(generatedSources);
+    }
   }
 
   /** Generated class file objects from all rounds. */
   public ImmutableMap<String, byte[]> generatedClasses() {
-    return ImmutableMap.copyOf(generatedClasses);
+    synchronized (lock) {
+      return ImmutableMap.copyOf(generatedClasses);
+    }
+  }
+
+  /**
+   * Records the paths of sources that were generated outside the filer, so processors can't create
+   * files with the same paths.
+   */
+  public void addGeneratedSourcePaths(Iterable<String> paths) {
+    synchronized (lock) {
+      for (String path : paths) {
+        seenPaths.add(path);
+      }
+    }
+  }
+
+  private final boolean kotlinMode;
+
+  /**
+   * Guards the state that file creation and {@link #finishRound} share ({@link #seenPaths}, {@link
+   * #seenNames}, {@link #files}, {@link #generatedSources} and {@link #generatedClasses}), since
+   * processors may create files from several threads.
+   */
+  private final Object lock = new Object();
+
+  private @Nullable Runnable preFinishCallback;
+
+  /**
+   * Sets a callback that {@link #finishRound} runs before it collects the round's files, e.g. to
+   * wait for files that are being written in the background. The callback runs without holding the
+   * filer's lock, so it may create files.
+   */
+  public void setPreFinishCallback(Runnable callback) {
+    this.preFinishCallback = callback;
   }
 
   public TurbineFiler(
@@ -105,10 +145,20 @@ public class TurbineFiler implements Filer {
       Predicate<String> existingTypeName,
       Function<String, Supplier<byte[]>> classPath,
       ClassLoader loader) {
+    this(seenPaths, existingTypeName, classPath, loader, /* kotlinMode= */ false);
+  }
+
+  public TurbineFiler(
+      Set<String> seenPaths,
+      Predicate<String> existingTypeName,
+      Function<String, Supplier<byte[]>> classPath,
+      ClassLoader loader,
+      boolean kotlinMode) {
     this.seenPaths = seenPaths;
     this.existingTypeName = existingTypeName;
     this.classPath = classPath;
     this.loader = loader;
+    this.kotlinMode = kotlinMode;
   }
 
   /**
@@ -116,6 +166,15 @@ public class TurbineFiler implements Filer {
    * generated in that round.
    */
   public Collection<SourceFile> finishRound() {
+    if (preFinishCallback != null) {
+      preFinishCallback.run();
+    }
+    synchronized (lock) {
+      return finishRoundLocked();
+    }
+  }
+
+  private List<SourceFile> finishRoundLocked() {
     List<SourceFile> roundSources = new ArrayList<>();
     for (TurbineJavaFileObject e : files) {
       String path = e.getName();
@@ -128,7 +187,12 @@ public class TurbineFiler implements Filer {
         case OTHER -> {
           switch (e.location()) {
             case CLASS_OUTPUT -> generatedClasses.put(path, e.bytes());
-            case SOURCE_OUTPUT -> generatedSources.put(path, e.bytes());
+            case SOURCE_OUTPUT -> {
+              if (kotlinMode && (path.endsWith(".java") || path.endsWith(".kt"))) {
+                roundSources.add(new SourceFile(path, e.contents()));
+              }
+              generatedSources.put(path, e.bytes());
+            }
             default -> throw new AssertionError(e.location());
           }
         }
@@ -154,12 +218,14 @@ public class TurbineFiler implements Filer {
   private JavaFileObject createType(
       StandardLocation location, Kind kind, String name, String extension) throws FilerException {
     checkArgument(!name.contains("/"), "invalid type name: %s", name);
-    if (existingTypeName.test(name) || seenNames.contains(name)) {
-      throw new FilerException("already created " + name);
+    synchronized (lock) {
+      if (existingTypeName.test(name) || seenNames.contains(name)) {
+        throw new FilerException("already created " + name);
+      }
+      JavaFileObject result = create(location, kind, name.replace('.', '/') + extension);
+      seenNames.add(name);
+      return result;
     }
-    JavaFileObject result = create(location, kind, name.replace('.', '/') + extension);
-    seenNames.add(name);
-    return result;
   }
 
   @Override
@@ -177,12 +243,14 @@ public class TurbineFiler implements Filer {
   private JavaFileObject create(StandardLocation location, Kind kind, String path)
       throws FilerException {
     checkArgument(location.isOutputLocation());
-    if (!seenPaths.add(path)) {
-      throw new FilerException("already created " + path);
+    synchronized (lock) {
+      if (!seenPaths.add(path)) {
+        throw new FilerException("already created " + path);
+      }
+      TurbineJavaFileObject result = new TurbineJavaFileObject(location, kind, path);
+      files.add(result);
+      return result;
     }
-    TurbineJavaFileObject result = new TurbineJavaFileObject(location, kind, path);
-    files.add(result);
-    return result;
   }
 
   @Override
@@ -196,14 +264,20 @@ public class TurbineFiler implements Filer {
     String path = packageRelativePath(pkg, relativeName);
     return switch (standardLocation) {
       case CLASS_OUTPUT -> {
-        byte[] generated = generatedClasses.get(path);
+        byte[] generated;
+        synchronized (lock) {
+          generated = generatedClasses.get(path);
+        }
         if (generated == null) {
           throw new FileNotFoundException(path);
         }
         yield new BytesFileObject(path, Suppliers.ofInstance(generated));
       }
       case SOURCE_OUTPUT -> {
-        byte[] source = generatedSources.get(path);
+        byte[] source;
+        synchronized (lock) {
+          source = generatedSources.get(path);
+        }
         if (source == null) {
           throw new FileNotFoundException(path);
         }

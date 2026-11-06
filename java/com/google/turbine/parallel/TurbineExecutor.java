@@ -16,6 +16,7 @@
 
 package com.google.turbine.parallel;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
@@ -47,6 +48,23 @@ public final class TurbineExecutor implements AutoCloseable {
 
   public static TurbineExecutor direct() {
     return new TurbineExecutor(null, 1, 0);
+  }
+
+  /**
+   * Returns the maximum number of tasks this executor runs at the same time, 1 if it runs them on
+   * the calling thread.
+   */
+  public int parallelism() {
+    return parallelism;
+  }
+
+  /**
+   * Runs {@code task}, in the background if this executor is parallel, or else on the calling
+   * thread before returning. Either way, an exception thrown by the task is reported by the
+   * returned future.
+   */
+  public ListenableFuture<?> submit(Runnable task) {
+    return Futures.submit(task, delegate != null ? delegate : directExecutor());
   }
 
   public static TurbineExecutor create(boolean parallel, int minThreshold) {

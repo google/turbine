@@ -20,6 +20,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
+import static com.google.turbine.testing.TestBinder.bind;
+import static com.google.turbine.testing.TestBinder.bindingRequest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -35,6 +37,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
@@ -63,7 +66,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -139,11 +141,12 @@ public class ProcessingIntegrationTest {
             () ->
                 Binder.bind(
                     executor,
-                    units,
-                    classpath,
-                    processorInfo,
-                    TestClassPaths.TURBINE_BOOTCLASSPATH,
-                    Optional.empty()));
+                    BindingRequest.builder()
+                        .units(units)
+                        .classpath(classpath)
+                        .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                        .processorInfo(processorInfo)
+                        .build()));
     assertThat(e).hasCauseThat().hasMessageThat().contains("crash!");
     ImmutableList<String> messages =
         e.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
@@ -247,17 +250,16 @@ public class ProcessingIntegrationTest {
             "class Test {",
             "}");
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            ProcessorInfo.create(
-                ImmutableList.of(new ResourceProcessor()),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            bindingRequest()
+                .units(units)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new ResourceProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
 
     assertThat(bound.generatedSources().keySet()).containsExactly("Gen.java", "source.txt");
     assertThat(bound.generatedClasses().keySet()).containsExactly("class.txt");
@@ -283,17 +285,16 @@ public class ProcessingIntegrationTest {
             "=== Two.java ===", //
             "class Two extends One {}");
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            ProcessorInfo.create(
-                ImmutableList.of(new ElementsAnnotatedWithProcessor()),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            bindingRequest()
+                .units(units)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new ElementsAnnotatedWithProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
 
     assertThat(
             Splitter.on(System.lineSeparator())
@@ -427,6 +428,53 @@ public class ProcessingIntegrationTest {
   }
 
   @SupportedAnnotationTypes("*")
+  public static class FinalRoundBadSourceProcessor extends AbstractProcessor {
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+      return SourceVersion.latestSupported();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+      if (roundEnv.processingOver()) {
+        try (Writer writer = processingEnv.getFiler().createSourceFile("Gen").openWriter()) {
+          writer.write("class Gen extends NoSuch {}");
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
+      return false;
+    }
+  }
+
+  @Test
+  public void finalRoundBadSource_logVariantReturnsResult() throws IOException {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            "=== Test.java ===", //
+            "class Test {",
+            "}");
+    TurbineLog log = new TurbineLog();
+    BindingResult result =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            log,
+            bindingRequest()
+                .units(units)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new FinalRoundBadSourceProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
+    assertThat(log.anyErrors()).isTrue();
+    // the result includes the generated outputs, as for errors in earlier rounds
+    assertThat(result.generatedSources().keySet()).containsExactly("Gen.java");
+  }
+
+  @SupportedAnnotationTypes("*")
   public static class SuperTypeProcessor extends AbstractProcessor {
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -517,17 +565,16 @@ public class ProcessingIntegrationTest {
             "class T {",
             "}");
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            ProcessorInfo.create(
-                ImmutableList.of(new GenerateAnnotationProcessor()),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            bindingRequest()
+                .units(units)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new GenerateAnnotationProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
     assertThat(bound.generatedSources()).containsKey("A.java");
   }
 
@@ -718,15 +765,19 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             log,
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
-            ProcessorInfo.create(
-                ImmutableList.of(new RecordFromADistanceProcessor()),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new RecordFromADistanceProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
     ImmutableList<String> messages =
         log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
     assertThat(messages).contains("[x, y]");
@@ -788,15 +839,19 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             new TurbineLog(),
-            parseUnit("=== T.java ===", "class T {}"),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
-            ProcessorInfo.create(
-                ImmutableList.of(processor),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+            BindingRequest.builder()
+                .units(parseUnit("=== T.java ===", "class T {}"))
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(processor),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
 
     // The enclosing type isn't known until `p.Gen` is generated, and the result from the first
     // round must not be cached.
@@ -1006,15 +1061,19 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             log,
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
-            ProcessorInfo.create(
-                ImmutableList.of(new MethodAnnotationTypeKindProcessor()),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new MethodAnnotationTypeKindProcessor()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
     assertThat(bound.units().keySet()).containsExactly(new ClassSymbol("Y"));
     ImmutableList<String> messages =
         log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
@@ -1078,11 +1137,12 @@ public class ProcessingIntegrationTest {
                 Binder.bind(
                     executor,
                     log,
-                    units,
-                    classPath,
-                    processorInfo,
-                    TestClassPaths.TURBINE_BOOTCLASSPATH,
-                    Optional.empty()));
+                    BindingRequest.builder()
+                        .units(units)
+                        .classpath(classPath)
+                        .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                        .processorInfo(processorInfo)
+                        .build()));
     assertThat(e.diagnostics().stream().map(TurbineDiagnostic::message))
         .containsExactly("symbol not found A");
   }
@@ -1529,6 +1589,40 @@ public class ProcessingIntegrationTest {
                 """));
   }
 
+  @Test
+  public void retainDeclsFalse_processorsStillSeeDeclarations() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === E.java ===
+            enum E {
+                /** constant 1 */
+                CONSTANT1;
+            }
+            """);
+    BindingRequest request =
+        bindingRequest()
+            .units(units)
+            .retainDecls(false)
+            .processorInfo(
+                ProcessorInfo.create(
+                    ImmutableList.of(new EnumConstants()),
+                    getClass().getClassLoader(),
+                    ImmutableMap.of(),
+                    SourceVersion.latestSupported()))
+            .build();
+    TurbineError e = assertThrows(TurbineError.class, () -> bind(request));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            normalizeLineEndings(
+                """
+                E.java:3: error: CONSTANT1: constant 1
+                    CONSTANT1;
+                    ^\
+                """));
+  }
+
   @SupportedAnnotationTypes("*")
   public static class ErrorBinaryNameProcessor extends AbstractProcessor {
     @Override
@@ -1651,15 +1745,19 @@ public class ProcessingIntegrationTest {
         Binder.bind(
             TurbineExecutor.direct(),
             log,
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(libJar)),
-            ProcessorInfo.create(
-                ImmutableList.of(new PermittedSubclasses()),
-                getClass().getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(new PermittedSubclasses()),
+                        getClass().getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
     ImmutableList<String> messages =
         log.diagnostics().stream().map(TurbineDiagnostic::message).collect(toImmutableList());
     assertThat(messages).contains("permits T.A, T.B, T.C");
@@ -1810,17 +1908,16 @@ public class ProcessingIntegrationTest {
     return assertThrows(
         TurbineError.class,
         () ->
-            Binder.bind(
-                TurbineExecutor.direct(),
-                units,
-                ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-                ProcessorInfo.create(
-                    ImmutableList.copyOf(processors),
-                    getClass().getClassLoader(),
-                    ImmutableMap.of(),
-                    SourceVersion.latestSupported()),
-                TestClassPaths.TURBINE_BOOTCLASSPATH,
-                Optional.empty()));
+            bind(
+                bindingRequest()
+                    .units(units)
+                    .processorInfo(
+                        ProcessorInfo.create(
+                            ImmutableList.copyOf(processors),
+                            getClass().getClassLoader(),
+                            ImmutableMap.of(),
+                            SourceVersion.latestSupported()))
+                    .build()));
   }
 
   private String normalizeLineEndings(String string) {

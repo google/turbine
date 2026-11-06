@@ -20,6 +20,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.io.MoreFiles.getFileExtension;
+import static com.google.turbine.testing.TestBinder.bind;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.comparing;
@@ -39,7 +40,7 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.io.MoreFiles;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.ClassPath;
 import com.google.turbine.binder.ClassPathBinder;
@@ -813,7 +814,8 @@ public final class IntegrationTestSupport {
       Optional<String> moduleVersion,
       ImmutableList<String> javacopts)
       throws IOException {
-    BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
+    BindingResult bound =
+        turbineAnalysis(input, classpath, bootClassPath, moduleVersion, /* retainDecls= */ false);
     return Lower.lowerAll(
             TurbineExecutor.direct(),
             TurbineJavacOptions.parse(javacopts).lowerOptions(),
@@ -830,18 +832,34 @@ public final class IntegrationTestSupport {
       ClassPath bootClassPath,
       Optional<String> moduleVersion)
       throws IOException {
+    return turbineAnalysis(input, classpath, bootClassPath, moduleVersion, /* retainDecls= */ true);
+  }
+
+  /**
+   * Binds the given sources. If {@code retainDecls} is false, declarations are dropped after
+   * binding, which is what header compilations without annotation processors do.
+   */
+  public static BindingResult turbineAnalysis(
+      Map<String, String> input,
+      ImmutableList<Path> classpath,
+      ClassPath bootClassPath,
+      Optional<String> moduleVersion,
+      boolean retainDecls)
+      throws IOException {
     ImmutableList<CompUnit> units =
         input.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
             .map(Parser::parse)
             .collect(toImmutableList());
 
-    return Binder.bind(
-        TurbineExecutor.direct(),
-        units,
-        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath),
-        bootClassPath,
-        moduleVersion);
+    return bind(
+        BindingRequest.builder()
+            .units(units)
+            .classpath(ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath))
+            .bootclasspath(bootClassPath)
+            .moduleVersion(moduleVersion)
+            .retainDecls(retainDecls)
+            .build());
   }
 
   public static JavacTask runJavacAnalysis(

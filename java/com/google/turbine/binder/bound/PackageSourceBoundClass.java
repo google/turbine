@@ -16,20 +16,22 @@
 
 package com.google.turbine.binder.bound;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.lookup.ImportScope;
 import com.google.turbine.binder.lookup.MemberImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.TyDecl;
 import org.jspecify.annotations.Nullable;
 
 /** A {@link BoundClass} with shared lookup scopes for the current compilation unit and package. */
 public class PackageSourceBoundClass implements BoundClass {
   private final SourceBoundClass base;
-  private final ImportScope scope;
-  private final MemberImportIndex memberImports;
+  private @Nullable ImportScope scope;
+  private @Nullable MemberImportIndex memberImports;
   private final SourceFile source;
 
   public PackageSourceBoundClass(
@@ -43,8 +45,43 @@ public class PackageSourceBoundClass implements BoundClass {
     this.source = source;
   }
 
-  public Tree.TyDecl decl() {
+  /**
+   * The Java class declaration; classes that weren't declared in Java don't have one, see {@link
+   * #javaDecl()}.
+   *
+   * <p>Must not be called after {@link #clear}, which {@code TypeBinder} calls once it has finished
+   * binding the class.
+   */
+  public TyDecl decl() {
     return base.decl();
+  }
+
+  /** The Java class declaration, or {@code null} for a class that wasn't declared in Java. */
+  public @Nullable TyDecl javaDecl() {
+    return base.javaDecl();
+  }
+
+  public SourceBoundClass base() {
+    return base;
+  }
+
+  /**
+   * Drops the references to the lookup scopes (and, unless {@code retainDecls} is set, the
+   * declaration's AST) so they can be garbage collected.
+   *
+   * <p>This is called by {@code TypeBinder} once it has finished binding this class. It's safe
+   * because the scopes and declaration of a class are only read while binding that class itself
+   * (member lookups in other classes go through {@code ClassMemberScopes} over {@link
+   * HeaderBoundClass}es). After that, {@link #scope()} and {@link #memberImports()} must not be
+   * called, and neither must {@link #decl()} unless {@code retainDecls} is set; later phases must
+   * use the values retained in the {@link SourceTypeBoundClass} instead.
+   */
+  public void clear(boolean retainDecls) {
+    this.scope = null;
+    this.memberImports = null;
+    if (!retainDecls) {
+      base.clearDecl();
+    }
   }
 
   @Override
@@ -67,13 +104,22 @@ public class PackageSourceBoundClass implements BoundClass {
     return base.children();
   }
 
+  /**
+   * The lookup scope for the enclosing compilation unit.
+   *
+   * <p>Must not be called after {@link #clear}.
+   */
   public ImportScope scope() {
-    return scope;
+    return requireNonNull(scope);
   }
 
-  /** The static member import index for the enclosing compilation unit. */
+  /**
+   * The static member import index for the enclosing compilation unit.
+   *
+   * <p>Must not be called after {@link #clear}.
+   */
   public MemberImportIndex memberImports() {
-    return memberImports;
+    return requireNonNull(memberImports);
   }
 
   /** The source file. */

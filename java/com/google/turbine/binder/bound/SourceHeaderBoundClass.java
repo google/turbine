@@ -24,7 +24,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.TyDecl;
 import org.jspecify.annotations.Nullable;
 
 /** A {@link HeaderBoundClass} that corresponds to a source file being compiled. */
@@ -82,12 +82,34 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
     return typeParameters;
   }
 
+  /** See {@link PackageSourceBoundClass#scope}. */
   public ImportScope scope() {
     return base.scope();
   }
 
-  public Tree.TyDecl decl() {
+  /**
+   * The Java class declaration; classes that weren't declared in Java don't have one, see {@link
+   * #javaDecl()}.
+   *
+   * <p>Must not be called after {@link #clear}, which {@code TypeBinder} calls once it has finished
+   * binding the class.
+   */
+  public TyDecl decl() {
     return base.decl();
+  }
+
+  /** The Java class declaration, or {@code null} for a class that wasn't declared in Java. */
+  public @Nullable TyDecl javaDecl() {
+    return base.javaDecl();
+  }
+
+  public PackageSourceBoundClass base() {
+    return base;
+  }
+
+  /** See {@link PackageSourceBoundClass#clear}. */
+  public void clear(boolean retainDecls) {
+    base.clear(retainDecls);
   }
 
   /** The static member import index for the enclosing compilation unit. */

@@ -53,7 +53,7 @@ public class SourceFile {
     return lineMap().source().substring(beginIndex, endIndex);
   }
 
-  LineMap lineMap() {
+  public LineMap lineMap() {
     return lineMap.get();
   }
 

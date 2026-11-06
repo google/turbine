@@ -26,6 +26,9 @@ import java.nio.file.Paths;
 /// Creates the class loader for annotation processors on the processor path.
 public final class ProcessorClassLoader {
 
+  private static final String KOTLIN_MODEL =
+      "com.google.turbine.kotlin.processing.TurbineKotlinModel";
+
   /// Returns a class loader for the annotation processors on the given processor path.
   ///
   /// @param processorPath the jars on the processor path
@@ -42,7 +45,9 @@ public final class ProcessorClassLoader {
         new ClassLoader(ClassLoader.getPlatformClassLoader()) {
           @Override
           protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")) {
+            if (name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
+                || name.equals(KOTLIN_MODEL)
+                || name.startsWith(KOTLIN_MODEL + "$")) {
               return Class.forName(name);
             }
             if (!builtinProcessors.isEmpty()) {

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.turbine.diag.TurbineDiagnostic;
@@ -34,6 +35,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
 import javax.tools.Diagnostic;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -250,6 +252,39 @@ public class TurbineExecutorTest {
       assertThat(log.diagnostics().stream().map(TurbineDiagnostic::message))
           .containsExactly("input 1", "input 2", "input 3")
           .inOrder();
+    }
+  }
+
+  @Test
+  public void submit_directAndParallel() throws Exception {
+    try (TurbineExecutor direct = TurbineExecutor.direct()) {
+      assertThat(direct.parallelism()).isEqualTo(1);
+      boolean[] ran = {false};
+      var _ = direct.submit(() -> ran[0] = true);
+      assertThat(ran[0]).isTrue();
+    }
+
+    ListeningExecutorService service = listeningDecorator(newFixedThreadPool(4));
+    Thread mainThread = Thread.currentThread();
+    try (TurbineExecutor parallel = new TurbineExecutor(service, 4, 0)) {
+      assertThat(parallel.parallelism()).isEqualTo(4);
+      Thread[] taskThread = new Thread[1];
+      parallel.submit(() -> taskThread[0] = Thread.currentThread()).get();
+      assertThat(taskThread[0]).isNotNull();
+      assertThat(taskThread[0]).isNotEqualTo(mainThread);
+    }
+  }
+
+  @Test
+  public void submit_directFailureIsReportedByFuture() {
+    try (TurbineExecutor direct = TurbineExecutor.direct()) {
+      ListenableFuture<?> future =
+          direct.submit(
+              () -> {
+                throw new IllegalStateException("boom");
+              });
+      ExecutionException e = assertThrows(ExecutionException.class, future::get);
+      assertThat(e).hasCauseThat().isInstanceOf(IllegalStateException.class);
     }
   }
 }

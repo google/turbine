@@ -135,13 +135,14 @@ class RemovePrivateMembers {
               info.kind(),
               children.buildOrThrow(),
               info.typeParameters(),
-              info.enclosingScope(),
               info.scope(),
               info.memberImports(),
               info.annotationMetadata(),
               info.annotations(),
               info.source(),
-              info.decl());
+              info.decl(),
+              info.sourceKind(),
+              info.position());
       result.put(sym, rewritten);
     }
   }
@@ -172,8 +173,9 @@ class RemovePrivateMembers {
       Map<ClassSymbol, SourceTypeBoundClass> unit,
       LowerOptions options) {
     List<ClassSymbol> roots = new ArrayList<>(unit.size());
-    for (ClassSymbol sym : unit.keySet()) {
-      if (!isEffectivelyPrivate(sym, unit)) {
+    for (Map.Entry<ClassSymbol, SourceTypeBoundClass> e : unit.entrySet()) {
+      ClassSymbol sym = e.getKey();
+      if (!isEffectivelyPrivate(sym, unit) || e.getValue().isKotlin()) {
         roots.add(sym);
       }
     }

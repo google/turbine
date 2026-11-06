@@ -24,6 +24,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.turbine.binder.bound.AnnotationMetadata;
+import com.google.turbine.binder.bound.AnnotationViews;
+import com.google.turbine.binder.bound.KotlinMemberInfo;
+import com.google.turbine.binder.bound.KotlinMemberInfo.Role;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TurbineAnnotationValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
@@ -43,6 +46,7 @@ import com.google.turbine.type.Type.ArrayTy;
 import com.google.turbine.type.Type.ClassTy;
 import com.google.turbine.type.Type.ClassTy.SimpleClassTy;
 import com.google.turbine.type.Type.PrimTy;
+import com.google.turbine.type.Type.TyKind;
 import com.google.turbine.type.Type.TyVar;
 import java.util.Collection;
 import java.util.Map;
@@ -68,10 +72,16 @@ import java.util.Map;
  */
 public final class DisambiguateTypeAnnotations {
 
+  /**
+   * Annotations on Kotlin declarations are modelled as if they were written in Java before the
+   * fully qualified name of the declaration's type (e.g. {@code @Nullable java.time.Instant x});
+   * see {@link #admissibleBeforeQualifiedName}.
+   */
   public static SourceTypeBoundClass bind(
       SourceTypeBoundClass base, Env<ClassSymbol, TypeBoundClass> env, TurbineLog log) {
 
-    DisambiguateTypeAnnotations binder = new DisambiguateTypeAnnotations(env, log);
+    DisambiguateTypeAnnotations binder =
+        new DisambiguateTypeAnnotations(env, log, /* kotlin= */ base.isKotlin());
     return new SourceTypeBoundClass(
         base.interfaceTypes(),
         base.permits(),
@@ -85,21 +95,25 @@ public final class DisambiguateTypeAnnotations {
         base.kind(),
         base.children(),
         base.typeParameters(),
-        base.enclosingScope(),
         base.scope(),
         base.memberImports(),
         base.annotationMetadata(),
         binder.groupRepeated(base.annotations()),
         base.source(),
-        base.decl());
+        base.decl(),
+        base.sourceKind(),
+        base.position());
   }
 
   private final Env<ClassSymbol, TypeBoundClass> env;
   private final TurbineLog log;
+  private final boolean kotlin;
 
-  private DisambiguateTypeAnnotations(Env<ClassSymbol, TypeBoundClass> env, TurbineLog log) {
+  private DisambiguateTypeAnnotations(
+      Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, boolean kotlin) {
     this.env = env;
     this.log = log;
+    this.kotlin = kotlin;
   }
 
   private ImmutableList<MethodInfo> bindMethods(ImmutableList<MethodInfo> fields) {
@@ -111,6 +125,27 @@ public final class DisambiguateTypeAnnotations {
   }
 
   private MethodInfo bindMethod(MethodInfo base) {
+    if (KotlinMemberInfo.roleOf(base.kotlin()) == Role.PROPERTY_ANNOTATIONS) {
+      ImmutableList.Builder<AnnoInfo> declarationAnnotations = ImmutableList.builder();
+      for (AnnoInfo anno : groupRepeated(base.annotations())) {
+        if (getTarget(anno).contains(TurbineElementType.METHOD) || hasKotlinPropertyTarget(anno)) {
+          declarationAnnotations.add(anno);
+        }
+      }
+      return new MethodInfo(
+          base.sym(),
+          base.tyParams(),
+          base.returnType(),
+          bindParameters(base.parameters(), TurbineElementType.PARAMETER),
+          base.exceptions(),
+          base.access(),
+          base.defaultValue(),
+          base.decl(),
+          base.position(),
+          declarationAnnotations.build(),
+          base.receiver() != null ? bindParam(base.receiver(), TurbineElementType.PARAMETER) : null,
+          base.kotlin());
+    }
     ImmutableList<ParamInfo> parameters =
         bindParameters(base.parameters(), TurbineElementType.PARAMETER);
     ParamInfo receiver =
@@ -136,8 +171,10 @@ public final class DisambiguateTypeAnnotations {
         base.access(),
         base.defaultValue(),
         base.decl(),
+        base.position(),
         declarationAnnotations.build(),
-        receiver);
+        receiver,
+        base.kotlin());
   }
 
   private ImmutableList<ParamInfo> bindParameters(
@@ -192,14 +229,36 @@ public final class DisambiguateTypeAnnotations {
     ImmutableList.Builder<AnnoInfo> typeAnnotations = ImmutableList.builder();
     for (AnnoInfo anno : annotations) {
       ImmutableSet<TurbineElementType> target = getTarget(anno);
-      if (target.contains(TurbineElementType.TYPE_USE)) {
+      boolean declaration = target.contains(declarationTarget);
+      if (target.contains(TurbineElementType.TYPE_USE)
+          && !(kotlin && declaration && !admissibleBeforeQualifiedName(type))) {
         typeAnnotations.add(anno);
       }
-      if (target.contains(declarationTarget)) {
+      if (declaration) {
         declarationAnnotations.add(anno);
       }
     }
     return addAnnotationsToType(type, typeAnnotations.build());
+  }
+
+  /**
+   * Returns true if an annotation written before the fully qualified name of {@code type} (e.g.
+   * {@code @A java.lang.String}) is admissible as a type annotation. Package qualifiers are
+   * skipped, so the annotation applies to the outermost class of the type. If that class is nested,
+   * the annotation would apply to its enclosing class, which is only a scoping construct, so an
+   * annotation that is also applicable to the declaration is only a declaration annotation (JLS
+   * 9.7.4).
+   */
+  private boolean admissibleBeforeQualifiedName(Type type) {
+    while (type.tyKind() == TyKind.ARRAY_TY) {
+      type = ((ArrayTy) type).elementType();
+    }
+    if (type.tyKind() != TyKind.CLASS_TY) {
+      return true;
+    }
+    ClassSymbol sym = ((ClassTy) type).classes().getFirst().sym();
+    TypeBoundClass info = env.get(sym);
+    return info == null || info.owner() == null;
   }
 
   private ImmutableSet<TurbineElementType> getTarget(AnnoInfo anno) {
@@ -216,6 +275,11 @@ public final class DisambiguateTypeAnnotations {
       return AnnotationMetadata.DEFAULT_TARGETS;
     }
     return metadata.target();
+  }
+
+  private boolean hasKotlinPropertyTarget(AnnoInfo anno) {
+    ClassSymbol sym = anno.sym();
+    return sym != null && AnnotationViews.hasKotlinPropertyTarget(env.get(sym));
   }
 
   private ImmutableList<FieldInfo> bindFields(ImmutableList<FieldInfo> fields) {
@@ -235,7 +299,14 @@ public final class DisambiguateTypeAnnotations {
         disambiguate(
             TurbineElementType.FIELD, base.type(), base.annotations(), declarationAnnotations);
     return new FieldInfo(
-        base.sym(), type, base.access(), declarationAnnotations.build(), base.decl(), base.value());
+        base.sym(),
+        type,
+        base.access(),
+        declarationAnnotations.build(),
+        base.decl(),
+        base.position(),
+        base.value(),
+        base.kotlin());
   }
 
   /**
@@ -302,7 +373,8 @@ public final class DisambiguateTypeAnnotations {
    */
   public static ImmutableList<AnnoInfo> groupRepeated(
       Env<ClassSymbol, TypeBoundClass> env, TurbineLog log, ImmutableList<AnnoInfo> annotations) {
-    return new DisambiguateTypeAnnotations(env, log).groupRepeated(annotations);
+    return new DisambiguateTypeAnnotations(env, log, /* kotlin= */ false)
+        .groupRepeated(annotations);
   }
 
   private ImmutableList<AnnoInfo> groupRepeated(ImmutableList<AnnoInfo> annotations) {

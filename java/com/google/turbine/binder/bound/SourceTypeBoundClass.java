@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder.bound;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.lookup.CompoundScope;
@@ -24,7 +26,7 @@ import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.model.TurbineTyKind;
-import com.google.turbine.tree.Tree;
+import com.google.turbine.tree.Tree.TyDecl;
 import com.google.turbine.type.AnnoInfo;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
@@ -33,6 +35,13 @@ import org.jspecify.annotations.Nullable;
 
 /** A HeaderBoundClass for classes compiled from source. */
 public class SourceTypeBoundClass implements TypeBoundClass {
+
+  /** The kind of source declaration a class was bound from. */
+  public enum SourceKind {
+    JAVA,
+    KOTLIN_CLASS,
+    KOTLIN_FILE_FACADE
+  }
 
   private final TurbineTyKind kind;
   private final @Nullable ClassSymbol owner;
@@ -48,12 +57,13 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableList<RecordComponentInfo> components;
   private final ImmutableList<MethodInfo> methods;
   private final ImmutableList<FieldInfo> fields;
-  private final CompoundScope enclosingScope;
   private final CompoundScope scope;
   private final MemberImportIndex memberImports;
   private final @Nullable AnnotationMetadata annotationMetadata;
   private final ImmutableList<AnnoInfo> annotations;
-  private final Tree.TyDecl decl;
+  private final @Nullable TyDecl decl;
+  private final SourceKind sourceKind;
+  private final int position;
   private final SourceFile source;
 
   public SourceTypeBoundClass(
@@ -69,13 +79,14 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       TurbineTyKind kind,
       ImmutableMap<String, ClassSymbol> children,
       ImmutableMap<String, TyVarSymbol> typeParameters,
-      CompoundScope enclosingScope,
       CompoundScope scope,
       MemberImportIndex memberImports,
       @Nullable AnnotationMetadata annotationMetadata,
       ImmutableList<AnnoInfo> annotations,
       SourceFile source,
-      Tree.TyDecl decl) {
+      @Nullable TyDecl decl,
+      SourceKind sourceKind,
+      int position) {
     this.interfaceTypes = interfaceTypes;
     this.permits = permits;
     this.superClassType = superClassType;
@@ -88,13 +99,14 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.kind = kind;
     this.children = children;
     this.typeParameters = typeParameters;
-    this.enclosingScope = enclosingScope;
     this.scope = scope;
     this.memberImports = memberImports;
     this.annotationMetadata = annotationMetadata;
     this.annotations = annotations;
     this.source = source;
     this.decl = decl;
+    this.sourceKind = requireNonNull(sourceKind);
+    this.position = position;
   }
 
   @Override
@@ -189,17 +201,26 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return typeParameterTypes;
   }
 
-  /** The scope of the enclosing declaration or compilation unit. */
-  public CompoundScope enclosingScope() {
-    return enclosingScope;
-  }
+  // TODO(cushon): remove scope() and memberImports() once Metalava no longer uses them. Turbine
+  // itself only needs the scopes during binding (see ClassScopes), but Metalava's
+  // TurbineFieldResolver uses them to resolve field references after binding. Metalava can't
+  // migrate to an alternative until it picks up a new Turbine release, which requires AOSP to build
+  // with JDK 25 (b/578966412).
 
-  /** The scope of the current class, including its members. */
+  /**
+   * The scope of the current class, including its members.
+   *
+   * <p>This is only kept for compatibility with existing callers, and will be removed.
+   */
   public CompoundScope scope() {
     return scope;
   }
 
-  /** The static member import index for the enclosing compilation unit. */
+  /**
+   * The static member import index for the enclosing compilation unit.
+   *
+   * <p>This is only kept for compatibility with existing callers, and will be removed.
+   */
   public MemberImportIndex memberImports() {
     return memberImports;
   }
@@ -214,7 +235,29 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return source;
   }
 
-  public Tree.TyDecl decl() {
+  /**
+   * The Java class declaration, or {@code null} for Kotlin classes or if it was dropped after
+   * binding because no annotation processors will run.
+   */
+  public @Nullable TyDecl decl() {
     return decl;
+  }
+
+  /** The kind of source declaration the class was bound from. */
+  public SourceKind sourceKind() {
+    return sourceKind;
+  }
+
+  public boolean isKotlin() {
+    return sourceKind != SourceKind.JAVA;
+  }
+
+  public boolean isKotlinFileFacade() {
+    return sourceKind == SourceKind.KOTLIN_FILE_FACADE;
+  }
+
+  /** The position of the class declaration. */
+  public int position() {
+    return position;
   }
 }

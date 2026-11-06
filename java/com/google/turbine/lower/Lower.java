@@ -24,6 +24,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.turbine.binder.bound.EnumConstantValue;
+import com.google.turbine.binder.bound.KotlinBuiltinAnnotations;
+import com.google.turbine.binder.bound.KotlinMemberInfo;
 import com.google.turbine.binder.bound.ModuleInfo.ExportInfo;
 import com.google.turbine.binder.bound.ModuleInfo.OpenInfo;
 import com.google.turbine.binder.bound.ModuleInfo.ProvideInfo;
@@ -244,7 +246,7 @@ public class Lower {
     {
       Set<ClassSymbol> all = new LinkedHashSet<>();
       for (ClassSymbol sym : sig.classes) {
-        addEnclosing(module.source(), env, all, sym);
+        addEnclosing(module.source(), env, all, sym, /* isKotlin= */ false);
       }
       for (ClassSymbol innerSym : all) {
         innerClasses.add(innerClass(env, innerSym));
@@ -344,7 +346,7 @@ public class Lower {
 
     List<ClassFile.MethodInfo> methods = new ArrayList<>();
     for (MethodInfo m : info.methods()) {
-      methods.add(lowerMethod(m, sym));
+      methods.add(lowerMethod(m, sym, info.isKotlin()));
     }
 
     ImmutableList.Builder<ClassFile.FieldInfo> fields = ImmutableList.builder();
@@ -358,7 +360,7 @@ public class Lower {
 
     String nestHost = null;
     ImmutableList<String> nestMembers = ImmutableList.of();
-    if (lowerOptions.languageVersion().emitNests()) {
+    if (lowerOptions.languageVersion().emitNests() && !info.isKotlin()) {
       nestHost = collectNestHost(info.source(), info.owner());
       nestMembers = nestHost == null ? collectNestMembers(info.source(), info) : ImmutableList.of();
     }
@@ -409,7 +411,8 @@ public class Lower {
         c.name(), desc, signature, lowerAnnotations(c.annotations()), typeAnnotations.build());
   }
 
-  private ClassFile.MethodInfo lowerMethod(final MethodInfo m, final ClassSymbol sym) {
+  private ClassFile.MethodInfo lowerMethod(
+      final MethodInfo m, final ClassSymbol sym, boolean isKotlin) {
     int access = m.access();
     if (!lowerOptions.languageVersion().emitStrictfp()) {
       // For Java ≥ 17, FP is always strict, and the ACC_STRICT flag is never emitted
@@ -419,7 +422,8 @@ public class Lower {
         m.tyParams().isEmpty() ? emptyTenv : new TyVarEnv(m.tyParams());
     String name = m.name();
     String desc = sig.methodDescriptor(m, tenv);
-    String signature = sig.methodSignature(env, m, sym);
+    String signature =
+        KotlinMemberInfo.omitsSignature(m.kotlin()) ? null : sig.methodSignature(env, m, sym);
     ImmutableList.Builder<String> exceptions = ImmutableList.builder();
     if (!m.exceptions().isEmpty()) {
       for (Type e : m.exceptions()) {
@@ -433,7 +437,12 @@ public class Lower {
 
     ImmutableList<ImmutableList<AnnotationInfo>> paramAnnotations = parameterAnnotations(m);
 
-    ImmutableList<TypeAnnotationInfo> typeAnnotations = methodTypeAnnotations(m);
+    // Like kotlinc, don't emit type annotations for the synthetic methods of Kotlin classes (e.g.
+    // the $annotations methods that hold property annotations).
+    ImmutableList<TypeAnnotationInfo> typeAnnotations =
+        isKotlin && (m.access() & TurbineFlag.ACC_SYNTHETIC) != 0
+            ? ImmutableList.of()
+            : methodTypeAnnotations(m);
 
     ImmutableList<ClassFile.MethodInfo.ParameterInfo> parameters =
         lowerOptions.methodParameters() ? methodParameters(m) : ImmutableList.of();
@@ -509,12 +518,13 @@ public class Lower {
   private ImmutableList<ClassFile.InnerClass> collectInnerClasses(
       SourceFile source, ClassSymbol origin, SourceTypeBoundClass info) {
     Set<ClassSymbol> all = new LinkedHashSet<>();
-    addEnclosing(source, env, all, origin);
+    boolean isKotlin = info.isKotlin();
+    addEnclosing(source, env, all, origin, isKotlin);
     for (ClassSymbol sym : info.children().values()) {
-      addEnclosing(source, env, all, sym);
+      addEnclosing(source, env, all, sym, isKotlin);
     }
     for (ClassSymbol sym : sig.classes) {
-      addEnclosing(source, env, all, sym);
+      addEnclosing(source, env, all, sym, isKotlin);
     }
     ImmutableList.Builder<ClassFile.InnerClass> inners = ImmutableList.builder();
     for (ClassSymbol innerSym : all) {
@@ -534,14 +544,20 @@ public class Lower {
       SourceFile source,
       Env<ClassSymbol, TypeBoundClass> env,
       Set<ClassSymbol> all,
-      ClassSymbol sym) {
+      ClassSymbol sym,
+      boolean isKotlin) {
     TypeBoundClass info = env.get(sym);
     if (info == null) {
+      if (isKotlin) {
+        // Kotlin signatures may mention Kotlin built-in classes that have no class files, which
+        // can't be nested.
+        return;
+      }
       throw TurbineError.format(source, ErrorKind.CLASS_FILE_NOT_FOUND, sym);
     }
     ClassSymbol owner = info.owner();
     if (owner != null) {
-      addEnclosing(source, env, all, owner);
+      addEnclosing(source, env, all, owner, isKotlin);
       all.add(sym);
     }
   }
@@ -685,8 +701,14 @@ public class Lower {
    * and {@code null} if it should not be retained in bytecode.
    */
   private @Nullable RuntimeVisibility getVisibility(ClassSymbol sym) {
+    TypeBoundClass info = env.get(sym);
+    // Kotlin sources may use built-in Kotlin annotations without their class files on the
+    // classpath, so the retention of known ones is used when the class is missing.
     RetentionPolicy retention =
-        requireNonNull(env.getNonNull(sym).annotationMetadata()).retention();
+        info != null
+            ? requireNonNull(info.annotationMetadata()).retention()
+            : requireNonNull(
+                KotlinBuiltinAnnotations.builtinAnnotationRetention(sym), sym::toString);
     return switch (retention) {
       case CLASS -> RuntimeVisibility.INVISIBLE;
       case RUNTIME -> RuntimeVisibility.VISIBLE;

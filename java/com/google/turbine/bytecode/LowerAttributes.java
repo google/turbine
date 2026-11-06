@@ -25,6 +25,7 @@ import com.google.turbine.bytecode.Attribute.MethodParameters;
 import com.google.turbine.bytecode.Attribute.Signature;
 import com.google.turbine.bytecode.ClassFile.AnnotationInfo;
 import com.google.turbine.bytecode.ClassFile.TypeAnnotationInfo;
+import com.google.turbine.model.TurbineFlag;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +35,9 @@ public final class LowerAttributes {
   /** Collects the {@link Attribute}s for a {@link ClassFile}. */
   static List<Attribute> classAttributes(ClassFile classfile) {
     List<Attribute> attributes = new ArrayList<>();
+    if ((classfile.access() & TurbineFlag.ACC_DEPRECATED) != 0) {
+      attributes.add(Attribute.DEPRECATED);
+    }
     if (!classfile.innerClasses().isEmpty()) {
       attributes.add(new InnerClasses(classfile.innerClasses()));
     }
@@ -81,6 +85,9 @@ public final class LowerAttributes {
   /** Collects the {@link Attribute}s for a {@link MethodInfo}. */
   static List<Attribute> methodAttributes(ClassFile.MethodInfo method) {
     List<Attribute> attributes = new ArrayList<>();
+    if ((method.access() & TurbineFlag.ACC_DEPRECATED) != 0) {
+      attributes.add(Attribute.DEPRECATED);
+    }
     addAllAnnotations(attributes, method.annotations());
     addAllTypeAnnotations(attributes, method.typeAnnotations());
     if (method.signature() != null) {
@@ -102,6 +109,9 @@ public final class LowerAttributes {
   /** Collects the {@link Attribute}s for a {@link FieldInfo}. */
   static List<Attribute> fieldAttributes(ClassFile.FieldInfo field) {
     List<Attribute> attributes = new ArrayList<>();
+    if ((field.access() & TurbineFlag.ACC_DEPRECATED) != 0) {
+      attributes.add(Attribute.DEPRECATED);
+    }
     if (field.signature() != null) {
       attributes.add(new Signature(field.signature()));
     }
@@ -117,7 +127,8 @@ public final class LowerAttributes {
     List<AnnotationInfo> visible = new ArrayList<>();
     List<AnnotationInfo> invisible = new ArrayList<>();
     for (AnnotationInfo annotation : annotations) {
-      if (annotation.typeName().equals("Ljava/lang/Deprecated;")) {
+      if (annotation.typeName().equals("Ljava/lang/Deprecated;")
+          && !attributes.contains(Attribute.DEPRECATED)) {
         attributes.add(Attribute.DEPRECATED);
       }
       (annotation.isRuntimeVisible() ? visible : invisible).add(annotation);

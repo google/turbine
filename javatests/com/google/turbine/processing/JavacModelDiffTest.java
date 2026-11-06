@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.TruthJUnit.assume;
+import static com.google.turbine.testing.TestBinder.bind;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
@@ -33,7 +34,7 @@ import com.google.common.escape.CharEscaper;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
-import com.google.turbine.binder.Binder;
+import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.Processing.ProcessorInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -49,7 +50,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -271,17 +271,18 @@ public class JavacModelDiffTest {
             .map(e -> Parser.parse(new SourceFile(e.getKey(), e.getValue())))
             .collect(toImmutableList());
     var _ =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            units,
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath),
-            ProcessorInfo.create(
-                ImmutableList.of(processor),
-                JavacModelDiffTest.class.getClassLoader(),
-                ImmutableMap.of(),
-                SourceVersion.latestSupported()),
-            TestClassPaths.TURBINE_BOOTCLASSPATH,
-            Optional.empty());
+        bind(
+            BindingRequest.builder()
+                .units(units)
+                .classpath(ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath))
+                .bootclasspath(TestClassPaths.TURBINE_BOOTCLASSPATH)
+                .processorInfo(
+                    ProcessorInfo.create(
+                        ImmutableList.of(processor),
+                        JavacModelDiffTest.class.getClassLoader(),
+                        ImmutableMap.of(),
+                        SourceVersion.latestSupported()))
+                .build());
     return processor.output();
   }
 
