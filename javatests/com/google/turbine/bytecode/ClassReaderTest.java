@@ -447,4 +447,43 @@ public class ClassReaderTest {
                 .getValue())
         .isEqualTo(0x14);
   }
+
+  @Test
+  public void readWithSyntheticMethods() {
+    ClassWriter cw = new ClassWriter(0);
+    cw.visit(
+        52,
+        Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
+        "test/SyntheticMethods",
+        null,
+        "java/lang/Object",
+        null);
+    cw.visitMethod(Opcodes.ACC_PUBLIC, "declared", "()V", null, null).visitEnd();
+    cw.visitMethod(
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+            "getProp$annotations",
+            "()V",
+            null,
+            null)
+        .visitEnd();
+    cw.visitMethod(
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE,
+            "bridge",
+            "()Ljava/lang/Object;",
+            null,
+            null)
+        .visitEnd();
+    cw.visitEnd();
+    byte[] bytes = cw.toByteArray();
+
+    ClassFile withoutSynthetics = ClassReader.read(() -> "test/SyntheticMethods.class", bytes);
+    assertThat(withoutSynthetics.methods().stream().map(ClassFile.MethodInfo::name))
+        .containsExactly("declared");
+
+    ClassFile withSynthetics =
+        ClassReader.readWithSyntheticMethods(() -> "test/SyntheticMethods.class", bytes);
+    assertThat(withSynthetics.methods().stream().map(ClassFile.MethodInfo::name))
+        .containsExactly("declared", "getProp$annotations")
+        .inOrder();
+  }
 }
