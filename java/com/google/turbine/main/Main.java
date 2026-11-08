@@ -247,12 +247,12 @@ public final class Main {
         ImmutableMap<String, byte[]> transitive =
             options.headerCompilationOutput().isPresent()
                 ? ImmutableMap.of()
-                : Transitive.collectDeps(executor, bootclasspath, bound);
+                : Transitive.collectDeps(executor, bootclasspath, bound, lowered.classes());
         writeOutput(options, bound.generatedClasses(), lowered.bytes(), transitive);
       }
       if (options.headerCompilationOutput().isPresent()) {
         ImmutableMap<String, byte[]> transitive =
-            Transitive.collectDeps(executor, bootclasspath, bound);
+            Transitive.collectDeps(executor, bootclasspath, bound, lowered.classes());
         writeHeaderCompilationOutput(options, lowered.trimmedBytes(), transitive);
       }
       if (options.outputManifest().isPresent()) {

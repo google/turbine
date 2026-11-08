@@ -586,4 +586,67 @@ public class TransitiveTest {
     ClassFile c = ClassReader.read(libc::toString, readJar(libc).get("c/C.class"));
     assertThat(getOnlyElement(c.fields()).descriptor()).isEqualTo("La/A$Inner;");
   }
+
+  @Test
+  public void privateMemberClassSupertypes() throws Exception {
+    Path liba =
+        runTurbine(
+            new SourceBuilder()
+                .addSourceLines(
+                    "a/Hidden.java",
+                    """
+                    package a;
+                    public class Hidden {
+                      public static final int CONST = 1;
+                    }
+                    """)
+                .addSourceLines(
+                    "a/Visible.java",
+                    """
+                    package a;
+                    public class Visible {}
+                    """)
+                .build(),
+            ImmutableList.of());
+    ImmutableList<Path> sources =
+        new SourceBuilder()
+            .addSourceLines(
+                "b/B.java",
+                """
+                package b;
+                public class B {
+                  // not referenced by any non-private API, and omitted from the output
+                  private static class Impl extends a.Hidden {}
+                  // referenced by a non-private API, and kept in the output
+                  private static class Kept extends a.Visible {}
+                  public Kept kept() {
+                    return null;
+                  }
+                }
+                """)
+            .build();
+
+    // Downstream compilations can't reference B.Impl, so its supertypes aren't repackaged.
+
+    Path libb = runTurbine(sources, ImmutableList.of(liba));
+    assertThat(readJar(libb).keySet())
+        .containsExactly(
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/a/Visible.turbine",
+            "b/B$Kept.class",
+            "b/B.class")
+        .inOrder();
+
+    Path headerOutput = temporaryFolder.newFolder().toPath().resolve("header.jar");
+    var _ = runTurbine(sources, ImmutableList.of(liba), Optional.of(headerOutput));
+    assertThat(readJar(headerOutput).keySet())
+        .containsExactly(
+            "META-INF/",
+            "META-INF/MANIFEST.MF",
+            "META-INF/TRANSITIVE/a/Visible.turbine",
+            "b/B$Kept.class",
+            "b/B.class")
+        .inOrder();
+  }
 }

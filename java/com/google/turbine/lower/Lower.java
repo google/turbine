@@ -104,11 +104,18 @@ public class Lower {
     /** Returns the set of all referenced symbols in the compilation. */
     public abstract ImmutableSet<ClassSymbol> symbols();
 
+    /**
+     * Returns the classes in the compilation that were lowered to bytecode. This excludes private
+     * member classes that were removed because they are not referenced by any non-private API.
+     */
+    public abstract ImmutableSet<ClassSymbol> classes();
+
     public static Lowered create(
         ImmutableMap<String, byte[]> bytes,
         ImmutableMap<String, byte[]> trimmedBytes,
-        ImmutableSet<ClassSymbol> symbols) {
-      return new AutoValue_Lower_Lowered(bytes, trimmedBytes, symbols);
+        ImmutableSet<ClassSymbol> symbols,
+        ImmutableSet<ClassSymbol> classes) {
+      return new AutoValue_Lower_Lowered(bytes, trimmedBytes, symbols, classes);
     }
   }
 
@@ -183,7 +190,8 @@ public class Lower {
       symbols.addAll(lowered.symbols());
     }
     log.maybeThrow();
-    return Lowered.create(result.buildOrThrow(), trimmed.buildOrThrow(), symbols.build());
+    return Lowered.create(
+        result.buildOrThrow(), trimmed.buildOrThrow(), symbols.build(), pruned.keySet());
   }
 
   /** Lowers a class to bytecode. */

@@ -43,9 +43,21 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Transitive {
 
+  /**
+   * Returns trimmed copies of the classpath classes in the supertype closure of {@code classes},
+   * keyed by binary name.
+   *
+   * @param classes the classes in the compilation that are written to the output, see {@link
+   *     com.google.turbine.lower.Lower.Lowered#classes}. Private member classes that are omitted
+   *     from the output can't be referenced by downstream compilations, so their supertypes don't
+   *     need to be repackaged.
+   */
   public static ImmutableMap<String, byte[]> collectDeps(
-      TurbineExecutor executor, ClassPath bootClassPath, BindingResult bound) {
-    Set<ClassSymbol> closure = superClosure(bound);
+      TurbineExecutor executor,
+      ClassPath bootClassPath,
+      BindingResult bound,
+      Set<ClassSymbol> classes) {
+    Set<ClassSymbol> closure = superClosure(bound, classes);
     Dependencies.addPackageInfos(closure, bound);
     ImmutableList.Builder<BytecodeBoundClass> toTrim = ImmutableList.builder();
     for (ClassSymbol sym : closure) {
@@ -142,12 +154,12 @@ public final class Transitive {
     return false;
   }
 
-  private static Set<ClassSymbol> superClosure(BindingResult bound) {
+  private static Set<ClassSymbol> superClosure(BindingResult bound, Set<ClassSymbol> classes) {
     Env<ClassSymbol, TypeBoundClass> env =
         CompoundEnv.<ClassSymbol, TypeBoundClass>of(new SimpleEnv<>(bound.units()))
             .append(bound.classPathEnv());
     Set<ClassSymbol> closure = new LinkedHashSet<>();
-    for (ClassSymbol sym : bound.units().keySet()) {
+    for (ClassSymbol sym : classes) {
       addSuperTypes(closure, env, sym);
     }
     Set<ClassSymbol> directChildren = new LinkedHashSet<>();
