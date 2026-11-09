@@ -42,21 +42,20 @@ public final class ProcessorClassLoader {
         new ClassLoader(ClassLoader.getPlatformClassLoader()) {
           @Override
           protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")) {
+            if (name.equals("com.google.turbine.processing.TurbineProcessingEnvironment")
+                || name.startsWith("com.sun.source.")
+                || name.startsWith("com.sun.tools.")
+                || name.startsWith("com.google.common.collect.")
+                || name.startsWith("com.google.common.base.")
+                || name.startsWith("com.google.common.graph.")
+                || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")) {
               return Class.forName(name);
             }
-            if (!builtinProcessors.isEmpty()) {
-              if (name.startsWith("com.sun.source.")
-                  || name.startsWith("com.sun.tools.")
-                  || name.startsWith("com.google.common.collect.")
-                  || name.startsWith("com.google.common.base.")
-                  || name.startsWith("com.google.common.graph.")
-                  || name.startsWith("com.google.devtools.build.buildjar.javac.statistics.")
-                  || name.startsWith("dagger.model.")
-                  || name.startsWith("dagger.spi.")
-                  || builtinProcessors.contains(name)) {
-                return Class.forName(name);
-              }
+            if (!builtinProcessors.isEmpty()
+                && (name.startsWith("dagger.model.")
+                    || name.startsWith("dagger.spi.")
+                    || builtinProcessors.contains(name))) {
+              return Class.forName(name);
             }
             throw new ClassNotFoundException(name);
           }
