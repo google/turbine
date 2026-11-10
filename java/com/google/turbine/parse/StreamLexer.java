@@ -369,6 +369,16 @@ public class StreamLexer implements Lexer {
     }
   }
 
+  @Override
+  public boolean skipBalancedBlock() {
+    int nextCh = reader.skipBalancedBlock();
+    if (nextCh != -1) {
+      ch = nextCh;
+      return true;
+    }
+    return false;
+  }
+
   // the current token prefix is /*, the token is a JLS 3.7 traditional comment
   private void traditionalComment() {
     eat();
