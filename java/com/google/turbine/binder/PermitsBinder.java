@@ -96,7 +96,8 @@ final class PermitsBinder {
                 /* annotationMetadata= */ base.annotationMetadata(),
                 /* annotations= */ base.annotations(),
                 /* source= */ base.source(),
-                /* decl= */ base.decl()));
+                /* decl= */ base.decl(),
+                /* position= */ base.position()));
       }
     }
     return builder.build();

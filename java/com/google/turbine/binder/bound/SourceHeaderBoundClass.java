@@ -82,12 +82,24 @@ public class SourceHeaderBoundClass implements HeaderBoundClass {
     return typeParameters;
   }
 
+  /** See {@link PackageSourceBoundClass#scope}. */
   public ImportScope scope() {
     return base.scope();
   }
 
+  /**
+   * The class declaration.
+   *
+   * <p>Must not be called after {@link #clearDecl}, which {@code TypeBinder} calls when
+   * declarations are not retained.
+   */
   public Tree.TyDecl decl() {
     return base.decl();
+  }
+
+  /** See {@link PackageSourceBoundClass#clearDecl}. */
+  public void clearDecl() {
+    base.clearDecl();
   }
 
   /** The static member import index for the enclosing compilation unit. */

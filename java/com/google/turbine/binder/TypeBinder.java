@@ -183,18 +183,23 @@ public class TypeBinder {
   private final ClassMemberScopes memberScopes;
   private final ClassSymbol owner;
   private final SourceHeaderBoundClass base;
+  private final boolean retainDecls;
+  private final int classPosition;
 
   private TypeBinder(
       TurbineLogWithSource log,
       Env<ClassSymbol, HeaderBoundClass> env,
       ClassMemberScopes memberScopes,
       ClassSymbol owner,
-      SourceHeaderBoundClass base) {
+      SourceHeaderBoundClass base,
+      boolean retainDecls) {
     this.log = log;
     this.env = env;
     this.memberScopes = memberScopes;
     this.owner = owner;
     this.base = base;
+    this.retainDecls = retainDecls;
+    this.classPosition = base.decl().position();
   }
 
   /** Binds the types of a class, and returns the bound class and its lookup scopes. */
@@ -203,11 +208,13 @@ public class TypeBinder {
       Env<ClassSymbol, HeaderBoundClass> env,
       ClassMemberScopes memberScopes,
       ClassSymbol sym,
-      SourceHeaderBoundClass base) {
-    return new TypeBinder(log, env, memberScopes, sym, base).bind();
+      SourceHeaderBoundClass base,
+      boolean retainDecls) {
+    return new TypeBinder(log, env, memberScopes, sym, base, retainDecls).bind();
   }
 
   private Result bind() {
+    Tree.TyDecl decl = base.decl();
     // This method uses two scopes. This first one is built up as we process the signature
     // and its elements become visible to subsequent elements (e.g. type parameters can
     // refer to previous declared type parameters, the superclass type can refer to
@@ -216,19 +223,19 @@ public class TypeBinder {
     CompoundScope enclosingScope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
-            .append(new SingletonScope(base.decl().name().value(), owner));
+            .append(new SingletonScope(decl.name().value(), owner));
     if (base.owner() != null) {
       enclosingScope = enclosingScope.append(memberScopes.get(base.owner()));
     }
 
-    ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, base.decl().annos());
+    ImmutableList<AnnoInfo> annotations = bindAnnotations(enclosingScope, decl.annos());
 
     CompoundScope bindingScope = enclosingScope;
 
     // type parameters can refer to each other in f-bounds, so update the scope first
     bindingScope = withTypeParameters(bindingScope, base.typeParameters());
     final ImmutableMap<TyVarSymbol, TyVarInfo> typeParameterTypes =
-        bindTyParams(base.decl().typarams(), bindingScope, base.typeParameters());
+        bindTyParams(decl.typarams(), bindingScope, base.typeParameters());
 
     ImmutableList.Builder<Type> interfaceTypes = ImmutableList.builder();
     Type superClassType;
@@ -246,9 +253,9 @@ public class TypeBinder {
         interfaceTypes.add(Type.ClassTy.asNonParametricClassTy(ClassSymbol.ANNOTATION));
       }
       case CLASS -> {
-        if (base.decl().xtnds().isPresent()) {
+        if (decl.xtnds().isPresent()) {
           superClassType =
-              checkClassType(bindingScope, base.decl().xtnds().get(), /* expectInterface= */ false);
+              checkClassType(bindingScope, decl.xtnds().get(), /* expectInterface= */ false);
         } else if (owner.equals(ClassSymbol.OBJECT)) {
           // java.lang.Object doesn't have a superclass
           superClassType = null;
@@ -257,21 +264,21 @@ public class TypeBinder {
         }
       }
       case INTERFACE -> {
-        if (base.decl().xtnds().isPresent()) {
+        if (decl.xtnds().isPresent()) {
           throw new AssertionError();
         }
         superClassType = Type.ClassTy.OBJECT;
       }
       case RECORD -> superClassType = Type.ClassTy.asNonParametricClassTy(ClassSymbol.RECORD);
-      default -> throw new AssertionError(base.decl().tykind());
+      default -> throw new AssertionError(decl.tykind());
     }
 
-    for (Tree.ClassTy i : base.decl().impls()) {
+    for (Tree.ClassTy i : decl.impls()) {
       interfaceTypes.add(checkClassType(bindingScope, i, /* expectInterface= */ true));
     }
 
     ImmutableList.Builder<ClassSymbol> permits = ImmutableList.builder();
-    for (Tree.ClassTy i : base.decl().permits()) {
+    for (Tree.ClassTy i : decl.permits()) {
       Type type = bindClassTy(bindingScope, i);
       switch (type.tyKind()) {
         case ERROR_TY -> {}
@@ -283,14 +290,14 @@ public class TypeBinder {
     CompoundScope scope =
         base.scope()
             .toScope(Resolve.resolveFunction(env, owner))
-            .append(new SingletonScope(base.decl().name().value(), owner))
+            .append(new SingletonScope(decl.name().value(), owner))
             .append(memberScopes.get(owner));
 
     SyntheticMethods syntheticMethods = new SyntheticMethods();
 
-    ImmutableList<RecordComponentInfo> components = bindComponents(scope, base.decl().components());
+    ImmutableList<RecordComponentInfo> components = bindComponents(scope, decl.components());
 
-    List<MethodInfo> boundMethods = bindMethods(scope, base.decl().members(), components);
+    List<MethodInfo> boundMethods = bindMethods(scope, decl.members(), components);
     ImmutableList<MethodInfo> methods;
     if (base.kind().equals(TurbineTyKind.RECORD)) {
       methods = recordMethods(syntheticMethods, components, boundMethods);
@@ -302,7 +309,7 @@ public class TypeBinder {
               .build();
     }
 
-    ImmutableList<FieldInfo> boundFields = bindFields(scope, base.decl().members());
+    ImmutableList<FieldInfo> boundFields = bindFields(scope, decl.members());
     ImmutableList<FieldInfo> fields;
     if (base.kind().equals(TurbineTyKind.RECORD)) {
       fields =
@@ -313,6 +320,10 @@ public class TypeBinder {
               .build();
     } else {
       fields = boundFields;
+    }
+
+    if (!retainDecls) {
+      base.clearDecl();
     }
 
     SourceTypeBoundClass bound =
@@ -332,7 +343,8 @@ public class TypeBinder {
             /* annotationMetadata= */ null,
             annotations,
             base.source(),
-            base.decl());
+            retainDecls ? decl : null,
+            classPosition);
     return new Result(bound, new ClassScopes(enclosingScope, scope, base.memberImports()));
   }
 
@@ -391,6 +403,7 @@ public class TypeBinder {
               TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
               null,
               null,
+              classPosition,
               ImmutableList.of(),
               null));
     }
@@ -406,6 +419,7 @@ public class TypeBinder {
               TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
               null,
               null,
+              classPosition,
               ImmutableList.of(),
               null));
     }
@@ -426,6 +440,7 @@ public class TypeBinder {
               TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL,
               null,
               null,
+              classPosition,
               ImmutableList.of(),
               null));
     }
@@ -444,6 +459,7 @@ public class TypeBinder {
               TurbineFlag.ACC_PUBLIC,
               null,
               null,
+              classPosition,
               c.annotations(),
               null));
     }
@@ -460,6 +476,7 @@ public class TypeBinder {
               TurbineFlag.ACC_PRIVATE | TurbineFlag.ACC_FINAL,
               c.annotations(),
               /* decl= */ null,
+              classPosition,
               /* value= */ null));
     }
     return fields.build();
@@ -563,7 +580,7 @@ public class TypeBinder {
               bindTy(scope, p.ty()),
               bindAnnotations(scope, p.annos()),
               access,
-              p);
+              retainDecls ? p : null);
       result.add(param);
     }
     return result.build();
@@ -610,6 +627,7 @@ public class TypeBinder {
         access | TurbineFlag.ACC_SYNTH_CTOR,
         null,
         null,
+        classPosition,
         ImmutableList.of(),
         null);
   }
@@ -669,6 +687,7 @@ public class TypeBinder {
             access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
             null,
+            classPosition,
             ImmutableList.of(),
             null));
     MethodSymbol valueOfMethod = syntheticMethods.create(owner, "valueOf");
@@ -687,6 +706,7 @@ public class TypeBinder {
             access | TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_STATIC,
             null,
             null,
+            classPosition,
             ImmutableList.of(),
             null));
     // javac adds the implicit constructor after values and valueOf
@@ -861,6 +881,8 @@ public class TypeBinder {
     }
 
     ImmutableList<AnnoInfo> annotations = bindAnnotations(scope, t.annos());
+    // Annotation element defaults are evaluated later by ConstBinder.
+    MethDecl retainedDecl = retainDecls || t.defaultValue().isPresent() ? t : null;
     return new MethodInfo(
         sym,
         typeParameterTypes,
@@ -869,7 +891,8 @@ public class TypeBinder {
         exceptions.build(),
         access,
         null,
-        t,
+        retainedDecl,
+        t.position(),
         annotations,
         receiver);
   }
@@ -914,7 +937,9 @@ public class TypeBinder {
           access |= TurbineFlag.ACC_PUBLIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_STATIC;
       default -> {}
     }
-    return new FieldInfo(sym, type, access, annotations, decl, null);
+    // Constant field initializers are evaluated later by Binder and ConstBinder.
+    Tree.VarDecl retainedDecl = retainDecls || Binder.isConst(access, decl, type) ? decl : null;
+    return new FieldInfo(sym, type, access, annotations, retainedDecl, decl.position(), null);
   }
 
   private ImmutableList<AnnoInfo> bindAnnotations(

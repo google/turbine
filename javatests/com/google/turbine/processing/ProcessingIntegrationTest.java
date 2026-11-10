@@ -1589,6 +1589,40 @@ public class ProcessingIntegrationTest {
                 """));
   }
 
+  @Test
+  public void retainDeclsFalse_processorsStillSeeDeclarations() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        parseUnit(
+            """
+            === E.java ===
+            enum E {
+                /** constant 1 */
+                CONSTANT1;
+            }
+            """);
+    BindingRequest request =
+        bindingRequest()
+            .units(units)
+            .retainDecls(false)
+            .processorInfo(
+                ProcessorInfo.create(
+                    ImmutableList.of(new EnumConstants()),
+                    getClass().getClassLoader(),
+                    ImmutableMap.of(),
+                    SourceVersion.latestSupported()))
+            .build();
+    TurbineError e = assertThrows(TurbineError.class, () -> bind(request));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            normalizeLineEndings(
+                """
+                E.java:3: error: CONSTANT1: constant 1
+                    CONSTANT1;
+                    ^\
+                """));
+  }
+
   @SupportedAnnotationTypes("*")
   public static class ErrorBinaryNameProcessor extends AbstractProcessor {
     @Override

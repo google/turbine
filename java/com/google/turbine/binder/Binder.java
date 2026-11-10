@@ -88,17 +88,27 @@ public final class Binder {
    *     are processors and at least one compilation unit.
    * @param moduleVersion The version to record for any modules declared by the compilation units,
    *     as with javac's {@code --module-version}.
+   * @param retainDecls Whether to keep the declaration ASTs of the bound classes and their members
+   *     in the result. If not, they're dropped after binding to save memory, and the result can be
+   *     used for lowering and dependency analysis, but not for building a {@code javax.lang.model}
+   *     (e.g. for doc comments). Declarations are always kept if annotation processors run.
    */
   public record BindingRequest(
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
       ProcessorInfo processorInfo,
-      Optional<String> moduleVersion) {
+      Optional<String> moduleVersion,
+      boolean retainDecls) {
 
-    /** Returns a {@link Builder}, with no annotation processors and no module version. */
+    /**
+     * Returns a {@link Builder}, with no annotation processors, no module version, and declarations
+     * retained.
+     */
     public static Builder builder() {
-      return new AutoBuilder_Binder_BindingRequest_Builder().processorInfo(ProcessorInfo.empty());
+      return new AutoBuilder_Binder_BindingRequest_Builder()
+          .processorInfo(ProcessorInfo.empty())
+          .retainDecls(true);
     }
 
     /** Returns a {@link Builder} initialized with the values of this request. */
@@ -118,6 +128,8 @@ public final class Binder {
       public abstract Builder processorInfo(ProcessorInfo processorInfo);
 
       public abstract Builder moduleVersion(Optional<String> moduleVersion);
+
+      public abstract Builder retainDecls(boolean retainDecls);
 
       public abstract BindingRequest build();
     }
@@ -161,6 +173,8 @@ public final class Binder {
             /* generatedSources= */ ImmutableMap.of(),
             /* generatedClasses= */ ImmutableMap.of());
       }
+      // Annotation processing needs the declarations to build a javax.lang.model.
+      request = request.toBuilder().retainDecls(true).build();
       BindingResult br =
           bind(
               executor,
@@ -201,6 +215,7 @@ public final class Binder {
         request.classpath(),
         request.bootclasspath(),
         request.moduleVersion(),
+        request.retainDecls(),
         generatedSources,
         generatedClasses);
   }
@@ -212,6 +227,7 @@ public final class Binder {
       ClassPath classpath,
       ClassPath bootclasspath,
       Optional<String> moduleVersion,
+      boolean retainDecls,
       ImmutableMap<String, byte[]> generatedSources,
       ImmutableMap<String, byte[]> generatedClasses) {
     ImmutableList<PreprocessedCompUnit> preProcessedUnits =
@@ -247,7 +263,8 @@ public final class Binder {
             log,
             syms,
             henv,
-            CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
+            CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv),
+            retainDecls);
 
     SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv =
         PermitsBinder.bindPermits(syms, bindTypesResult.tenv());
@@ -259,7 +276,8 @@ public final class Binder {
             tenv,
             bindTypesResult.scopes(),
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
-            log);
+            log,
+            retainDecls);
     tenv =
         disambiguateAndCanonicalize(
             executor,
@@ -425,7 +443,8 @@ public final class Binder {
       TurbineLog log,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
-      Env<ClassSymbol, HeaderBoundClass> henv) {
+      Env<ClassSymbol, HeaderBoundClass> henv,
+      boolean retainDecls) {
     TypeBinder.ClassMemberScopes memberScopes = new TypeBinder.ClassMemberScopes(henv);
     ImmutableMap<ClassSymbol, TypeBinder.Result> results =
         executor.toMapWithLog(
@@ -434,7 +453,7 @@ public final class Binder {
             (sym, taskLog) -> {
               SourceHeaderBoundClass base = shenv.getNonNull(sym);
               return TypeBinder.bind(
-                  taskLog.withSource(base.source()), henv, memberScopes, sym, base);
+                  taskLog.withSource(base.source()), henv, memberScopes, sym, base, retainDecls);
             });
     ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> bound =
         ImmutableMap.builderWithExpectedSize(results.size());
@@ -508,7 +527,8 @@ public final class Binder {
       Env<ClassSymbol, SourceTypeBoundClass> env,
       ImmutableMap<ClassSymbol, ClassScopes> scopes,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
-      TurbineLog log) {
+      TurbineLog log,
+      boolean retainDecls) {
 
     // LazyEnv isn't thread-safe, so first evaluate all constant fields eagerly, and then bind the
     // rest of each class in parallel using the evaluated values.
@@ -525,7 +545,8 @@ public final class Binder {
                       baseEnv,
                       base,
                       requireNonNull(scopes.get(sym)),
-                      taskLog.withSource(base.source()))
+                      taskLog.withSource(base.source()),
+                      retainDecls)
                   .bind();
             }));
   }
@@ -629,21 +650,23 @@ public final class Binder {
   }
 
   static boolean isConst(FieldInfo field) {
-    if ((field.access() & TurbineFlag.ACC_FINAL) == 0) {
+    return field.decl() != null && isConst(field.access(), field.decl(), field.type());
+  }
+
+  /** Returns true if a field with the given access, declaration, and type may be a constant. */
+  static boolean isConst(int access, Tree.VarDecl decl, Type type) {
+    if ((access & TurbineFlag.ACC_FINAL) == 0) {
       return false;
     }
-    if (field.decl() == null) {
-      return false;
-    }
-    final Optional<Tree.Expression> init = field.decl().init();
+    final Optional<Tree.Expression> init = decl.init();
     if (!init.isPresent()) {
       return false;
     }
-    switch (field.type().tyKind()) {
+    switch (type.tyKind()) {
       case PRIM_TY:
         break;
       case CLASS_TY:
-        if (((Type.ClassTy) field.type()).sym().equals(ClassSymbol.STRING)) {
+        if (((Type.ClassTy) type).sym().equals(ClassSymbol.STRING)) {
           break;
         }
       // fall through

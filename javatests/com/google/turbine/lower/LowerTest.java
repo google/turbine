@@ -139,6 +139,7 @@ public class LowerTest {
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
+                /* position= */ 0,
                 ImmutableList.of(),
                 null),
             new SourceTypeBoundClass.MethodInfo(
@@ -184,6 +185,7 @@ public class LowerTest {
                 TurbineFlag.ACC_PUBLIC,
                 null,
                 null,
+                /* position= */ 0,
                 ImmutableList.of(),
                 null));
     ImmutableList<SourceTypeBoundClass.FieldInfo> fields =
@@ -194,6 +196,7 @@ public class LowerTest {
                 TurbineFlag.ACC_STATIC | TurbineFlag.ACC_FINAL | TurbineFlag.ACC_PUBLIC,
                 ImmutableList.of(),
                 null,
+                /* position= */ 0,
                 null));
     ClassSymbol owner = null;
     TurbineTyKind kind = TurbineTyKind.CLASS;
@@ -218,7 +221,8 @@ public class LowerTest {
             null,
             ImmutableList.of(),
             null,
-            null);
+            null,
+            /* position= */ 0);
 
     SourceTypeBoundClass i =
         new SourceTypeBoundClass(
@@ -237,7 +241,8 @@ public class LowerTest {
             null,
             ImmutableList.of(),
             null,
-            null);
+            null,
+            /* position= */ 0);
 
     SimpleEnv.Builder<ClassSymbol, SourceTypeBoundClass> b = SimpleEnv.builder();
     b.put(new ClassSymbol("test/Test"), c);

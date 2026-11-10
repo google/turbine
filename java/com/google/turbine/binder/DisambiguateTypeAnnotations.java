@@ -88,7 +88,8 @@ public final class DisambiguateTypeAnnotations {
         base.annotationMetadata(),
         binder.groupRepeated(base.annotations()),
         base.source(),
-        base.decl());
+        base.decl(),
+        base.position());
   }
 
   private final Env<ClassSymbol, TypeBoundClass> env;
@@ -133,6 +134,7 @@ public final class DisambiguateTypeAnnotations {
         base.access(),
         base.defaultValue(),
         base.decl(),
+        base.position(),
         declarationAnnotations.build(),
         receiver);
   }
@@ -232,7 +234,13 @@ public final class DisambiguateTypeAnnotations {
         disambiguate(
             TurbineElementType.FIELD, base.type(), base.annotations(), declarationAnnotations);
     return new FieldInfo(
-        base.sym(), type, base.access(), declarationAnnotations.build(), base.decl(), base.value());
+        base.sym(),
+        type,
+        base.access(),
+        declarationAnnotations.build(),
+        base.decl(),
+        base.position(),
+        base.value());
   }
 
   /**

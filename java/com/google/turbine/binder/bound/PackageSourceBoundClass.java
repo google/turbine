@@ -43,8 +43,27 @@ public class PackageSourceBoundClass implements BoundClass {
     this.source = source;
   }
 
+  /**
+   * The class declaration.
+   *
+   * <p>Must not be called after {@link #clearDecl}, which {@code TypeBinder} calls when
+   * declarations are not retained.
+   */
   public Tree.TyDecl decl() {
     return base.decl();
+  }
+
+  /**
+   * Drops the reference to the declaration's AST so it can be garbage collected.
+   *
+   * <p>{@code TypeBinder} calls this once it has finished binding this class, if declarations are
+   * not being retained. It's safe because the declaration of a class is only read while binding
+   * that class itself (member lookups in other classes go through {@code ClassMemberScopes} over
+   * {@link HeaderBoundClass}es). After that, {@link #decl()} must not be called; later phases must
+   * use the declarations retained in the {@link SourceTypeBoundClass} instead.
+   */
+  public void clearDecl() {
+    base.clearDecl();
   }
 
   @Override
@@ -67,6 +86,7 @@ public class PackageSourceBoundClass implements BoundClass {
     return base.children();
   }
 
+  /** The lookup scope for the enclosing compilation unit. */
   public ImportScope scope() {
     return scope;
   }

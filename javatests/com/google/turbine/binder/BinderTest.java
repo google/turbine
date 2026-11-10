@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.turbine.testing.TestBinder.bind;
 import static com.google.turbine.testing.TestBinder.bindingRequest;
@@ -30,6 +31,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.Binder.BindingRequest;
+import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -388,6 +390,80 @@ public class BinderTest {
         .containsExactly(
             "f", "No<Foo,Bar>.@Test.A Such<Baz>.I",
             "g", "List<java.lang.String>.@Test.A NoSuch<Foo,Bar>.I");
+  }
+
+  @Test
+  public void retainDecls() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                "class Test {",
+                "  static final int CONST = 42;",
+                "  int field;",
+                "  void method() {}",
+                "}"));
+
+    SourceTypeBoundClass retained =
+        getBoundClass(bind(bindingRequest().units(units).build()).units(), "Test");
+    assertThat(retained.decl()).isNotNull();
+    assertThat(retained.fields().stream().allMatch(f -> f.decl() != null)).isTrue();
+    // the implicit default constructor is synthetic, and never has a declaration
+    assertThat(
+            retained.methods().stream()
+                .filter(m -> m.name().equals("method"))
+                .collect(onlyElement())
+                .decl())
+        .isNotNull();
+
+    SourceTypeBoundClass dropped =
+        getBoundClass(
+            bind(bindingRequest().units(units).retainDecls(false).build()).units(), "Test");
+    assertThat(dropped.decl()).isNull();
+    assertThat(dropped.fields().stream().allMatch(f -> f.decl() == null)).isTrue();
+    assertThat(dropped.methods().stream().allMatch(m -> m.decl() == null)).isTrue();
+    // the constant value is still available after the declaration is dropped
+    assertThat(
+            dropped.fields().stream()
+                .filter(f -> f.name().equals("CONST"))
+                .collect(onlyElement())
+                .value()
+                .getValue())
+        .isEqualTo(42);
+  }
+
+  @Test
+  public void retainDeclsParallelExecutor() throws Exception {
+    ImmutableList.Builder<Tree.CompUnit> unitsBuilder = ImmutableList.builder();
+    for (int i = 0; i < 16; i++) {
+      String prev = i == 0 ? "Object" : "C" + (i - 1);
+      String constExpr = i == 0 ? "1" : "C" + (i - 1) + ".K + 1";
+      unitsBuilder.add(
+          parseLines(
+              """
+              package p;
+              public class C%d extends %s {
+                public static final int K = %s;
+                public class Inner {}
+                public C%d.Inner m(Inner x) { return null; }
+              }
+              """
+                  .formatted(i, prev, constExpr, i)));
+    }
+    ImmutableList<Tree.CompUnit> units = unitsBuilder.build();
+    try (TurbineExecutor executor =
+        TurbineExecutor.create(/* parallel= */ true, /* minThreshold= */ 1)) {
+      BindingResult bound =
+          Binder.bind(executor, bindingRequest().units(units).retainDecls(false).build());
+      SourceTypeBoundClass last = getBoundClass(bound.units(), "p/C15");
+      assertThat(last.decl()).isNull();
+      assertThat(
+              last.fields().stream()
+                  .filter(f -> f.name().equals("K"))
+                  .collect(onlyElement())
+                  .value()
+                  .getValue())
+          .isEqualTo(16);
+    }
   }
 
   private static String printErrorTy(Type.ErrorTy errorTy) {

@@ -16,6 +16,8 @@
 
 package com.google.turbine.binder.bound;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.model.TurbineTyKind;
@@ -28,7 +30,8 @@ public class SourceBoundClass implements BoundClass {
   private final @Nullable ClassSymbol owner;
   private final ImmutableMap<String, ClassSymbol> children;
   private final int access;
-  private final Tree.TyDecl decl;
+  private final TurbineTyKind kind;
+  private Tree.@Nullable TyDecl decl;
 
   public SourceBoundClass(
       ClassSymbol sym,
@@ -40,16 +43,34 @@ public class SourceBoundClass implements BoundClass {
     this.owner = owner;
     this.children = children;
     this.access = access;
+    this.kind = decl.tykind();
     this.decl = decl;
   }
 
+  /**
+   * The class declaration.
+   *
+   * <p>Must not be called after {@link #clearDecl}, which {@code TypeBinder} calls once it has
+   * finished binding the class when declarations are not retained.
+   */
   public Tree.TyDecl decl() {
-    return decl;
+    return requireNonNull(decl);
+  }
+
+  /**
+   * Drops the reference to the declaration's AST so it can be garbage collected.
+   *
+   * <p>This is called by {@code TypeBinder} once it has finished binding this class, if no
+   * annotation processors will run. After that, {@link #decl()} must not be called; later phases
+   * must use the declaration retained in the {@link SourceTypeBoundClass} (if any) instead.
+   */
+  public void clearDecl() {
+    this.decl = null;
   }
 
   @Override
   public TurbineTyKind kind() {
-    return decl().tykind();
+    return kind;
   }
 
   @Override

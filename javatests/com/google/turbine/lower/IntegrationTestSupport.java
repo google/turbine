@@ -814,7 +814,8 @@ public final class IntegrationTestSupport {
       Optional<String> moduleVersion,
       ImmutableList<String> javacopts)
       throws IOException {
-    BindingResult bound = turbineAnalysis(input, classpath, bootClassPath, moduleVersion);
+    BindingResult bound =
+        turbineAnalysis(input, classpath, bootClassPath, moduleVersion, /* retainDecls= */ false);
     return Lower.lowerAll(
             TurbineExecutor.direct(),
             TurbineJavacOptions.parse(javacopts).lowerOptions(),
@@ -831,6 +832,20 @@ public final class IntegrationTestSupport {
       ClassPath bootClassPath,
       Optional<String> moduleVersion)
       throws IOException {
+    return turbineAnalysis(input, classpath, bootClassPath, moduleVersion, /* retainDecls= */ true);
+  }
+
+  /**
+   * Binds the given sources. If {@code retainDecls} is false, declarations are dropped after
+   * binding, which is what header compilations without annotation processors do.
+   */
+  public static BindingResult turbineAnalysis(
+      Map<String, String> input,
+      ImmutableList<Path> classpath,
+      ClassPath bootClassPath,
+      Optional<String> moduleVersion,
+      boolean retainDecls)
+      throws IOException {
     ImmutableList<CompUnit> units =
         input.entrySet().stream()
             .map(e -> new SourceFile(e.getKey(), e.getValue()))
@@ -843,6 +858,7 @@ public final class IntegrationTestSupport {
             .classpath(ClassPathBinder.bindClasspath(TurbineExecutor.direct(), classpath))
             .bootclasspath(bootClassPath)
             .moduleVersion(moduleVersion)
+            .retainDecls(retainDecls)
             .build());
   }
 

@@ -48,7 +48,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
   private final ImmutableList<FieldInfo> fields;
   private final @Nullable AnnotationMetadata annotationMetadata;
   private final ImmutableList<AnnoInfo> annotations;
-  private final Tree.TyDecl decl;
+  private final Tree.@Nullable TyDecl decl;
+  private final int position;
   private final SourceFile source;
 
   public SourceTypeBoundClass(
@@ -67,7 +68,8 @@ public class SourceTypeBoundClass implements TypeBoundClass {
       @Nullable AnnotationMetadata annotationMetadata,
       ImmutableList<AnnoInfo> annotations,
       SourceFile source,
-      Tree.TyDecl decl) {
+      Tree.@Nullable TyDecl decl,
+      int position) {
     this.interfaceTypes = interfaceTypes;
     this.permits = permits;
     this.superClassType = superClassType;
@@ -84,6 +86,7 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     this.annotations = annotations;
     this.source = source;
     this.decl = decl;
+    this.position = position;
   }
 
   @Override
@@ -188,7 +191,16 @@ public class SourceTypeBoundClass implements TypeBoundClass {
     return source;
   }
 
-  public Tree.TyDecl decl() {
+  /**
+   * The class declaration, or {@code null} if it was dropped after binding because no annotation
+   * processors will run.
+   */
+  public Tree.@Nullable TyDecl decl() {
     return decl;
+  }
+
+  /** The position of the class declaration. */
+  public int position() {
+    return position;
   }
 }

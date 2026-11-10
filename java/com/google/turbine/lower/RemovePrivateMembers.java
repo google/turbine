@@ -138,7 +138,8 @@ class RemovePrivateMembers {
               info.annotationMetadata(),
               info.annotations(),
               info.source(),
-              info.decl());
+              info.decl(),
+              info.position());
       result.put(sym, rewritten);
     }
   }

@@ -317,6 +317,7 @@ public final class Main {
                     ProcessorClassLoader.create(
                         /* processorPath= */ options.processorPath(),
                         /* builtinProcessors= */ options.builtinProcessors())))
+            .retainDecls(false)
             .build());
   }
 
