@@ -170,20 +170,13 @@ public class TypeBinder {
       this.env = env;
     }
 
-    ClassMemberScope get(ClassSymbol sym) {
+    private ClassMemberScope get(ClassSymbol sym) {
       return scopes.computeIfAbsent(sym, s -> new ClassMemberScope(s, env));
     }
   }
 
-  /** Creates {@link SourceTypeBoundClass} nodes for a compilation. */
-  static SourceTypeBoundClass bind(
-      TurbineLogWithSource log,
-      Env<ClassSymbol, HeaderBoundClass> env,
-      ClassMemberScopes memberScopes,
-      ClassSymbol sym,
-      SourceHeaderBoundClass base) {
-    return new TypeBinder(log, env, memberScopes, sym, base).bind();
-  }
+  /** The result of binding a class: the bound class and its lookup scopes. */
+  record Result(SourceTypeBoundClass bound, ClassScopes scopes) {}
 
   private final TurbineLogWithSource log;
   private final Env<ClassSymbol, HeaderBoundClass> env;
@@ -204,7 +197,17 @@ public class TypeBinder {
     this.base = base;
   }
 
-  private SourceTypeBoundClass bind() {
+  /** Binds the types of a class, and returns the bound class and its lookup scopes. */
+  static Result bind(
+      TurbineLogWithSource log,
+      Env<ClassSymbol, HeaderBoundClass> env,
+      ClassMemberScopes memberScopes,
+      ClassSymbol sym,
+      SourceHeaderBoundClass base) {
+    return new TypeBinder(log, env, memberScopes, sym, base).bind();
+  }
+
+  private Result bind() {
     // This method uses two scopes. This first one is built up as we process the signature
     // and its elements become visible to subsequent elements (e.g. type parameters can
     // refer to previous declared type parameters, the superclass type can refer to
@@ -312,26 +315,25 @@ public class TypeBinder {
       fields = boundFields;
     }
 
-    return new SourceTypeBoundClass(
-        interfaceTypes.build(),
-        permits.build(),
-        superClassType,
-        typeParameterTypes,
-        base.access(),
-        components,
-        methods,
-        fields,
-        base.owner(),
-        base.kind(),
-        base.children(),
-        base.typeParameters(),
-        enclosingScope,
-        scope,
-        base.memberImports(),
-        /* annotation metadata */ null,
-        annotations,
-        base.source(),
-        base.decl());
+    SourceTypeBoundClass bound =
+        new SourceTypeBoundClass(
+            interfaceTypes.build(),
+            permits.build(),
+            superClassType,
+            typeParameterTypes,
+            base.access(),
+            components,
+            methods,
+            fields,
+            base.owner(),
+            base.kind(),
+            base.children(),
+            base.typeParameters(),
+            /* annotationMetadata= */ null,
+            annotations,
+            base.source(),
+            base.decl());
+    return new Result(bound, new ClassScopes(enclosingScope, scope, base.memberImports()));
   }
 
   private ImmutableList<MethodInfo> recordMethods(

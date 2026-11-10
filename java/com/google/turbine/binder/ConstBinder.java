@@ -66,28 +66,31 @@ public class ConstBinder {
   private final Env<FieldSymbol, Value> constantEnv;
   private final ClassSymbol origin;
   private final SourceTypeBoundClass base;
+  private final ClassScopes scopes;
   private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
   private final ConstEvaluator constEvaluator;
   private final TurbineLogWithSource log;
 
-  public ConstBinder(
+  ConstBinder(
       Env<FieldSymbol, Value> constantEnv,
       ClassSymbol origin,
       CompoundEnv<ClassSymbol, TypeBoundClass> env,
       SourceTypeBoundClass base,
+      ClassScopes scopes,
       TurbineLogWithSource log) {
     this.constantEnv = constantEnv;
     this.origin = origin;
     this.base = base;
+    this.scopes = scopes;
     this.env = env;
     this.log = log;
     this.constEvaluator =
         new ConstEvaluator(
             origin,
             origin,
-            base.memberImports(),
+            scopes.memberImports(),
             base.source(),
-            base.scope(),
+            scopes.scope(),
             constantEnv,
             env,
             log);
@@ -98,9 +101,9 @@ public class ConstBinder {
         new ConstEvaluator(
                 origin,
                 base.owner(),
-                base.memberImports(),
+                scopes.memberImports(),
                 base.source(),
-                base.enclosingScope(),
+                scopes.enclosingScope(),
                 constantEnv,
                 env,
                 log)
@@ -121,9 +124,6 @@ public class ConstBinder {
         base.kind(),
         base.children(),
         base.typeParameters(),
-        base.enclosingScope(),
-        base.scope(),
-        base.memberImports(),
         bindAnnotationMetadata(base.kind(), annos),
         annos,
         base.source(),

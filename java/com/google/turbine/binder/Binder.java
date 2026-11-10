@@ -241,7 +241,7 @@ public final class Binder {
 
     Env<ClassSymbol, SourceHeaderBoundClass> henv = bindHierarchy(log, syms, psenv, classPathEnv);
 
-    SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv =
+    BindTypesResult bindTypesResult =
         bindTypes(
             executor,
             log,
@@ -249,13 +249,15 @@ public final class Binder {
             henv,
             CompoundEnv.<ClassSymbol, HeaderBoundClass>of(classPathEnv).append(henv));
 
-    tenv = PermitsBinder.bindPermits(syms, tenv);
+    SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv =
+        PermitsBinder.bindPermits(syms, bindTypesResult.tenv());
 
     tenv =
         constants(
             executor,
             syms,
             tenv,
+            bindTypesResult.scopes(),
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             log);
     tenv =
@@ -276,6 +278,7 @@ public final class Binder {
 
     return new BindingResult(
         tenv.asMap(),
+        bindTypesResult.scopes(),
         boundModules,
         classPathEnv,
         tli,
@@ -410,14 +413,21 @@ public final class Binder {
     return new SimpleEnv<>(builder.buildOrThrow());
   }
 
-  private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> bindTypes(
+  /**
+   * The result of type binding: the bound classes, and their lookup scopes for constant evaluation.
+   */
+  private record BindTypesResult(
+      SimpleEnv<ClassSymbol, SourceTypeBoundClass> tenv,
+      ImmutableMap<ClassSymbol, ClassScopes> scopes) {}
+
+  private static BindTypesResult bindTypes(
       TurbineExecutor executor,
       TurbineLog log,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceHeaderBoundClass> shenv,
       Env<ClassSymbol, HeaderBoundClass> henv) {
     TypeBinder.ClassMemberScopes memberScopes = new TypeBinder.ClassMemberScopes(henv);
-    return new SimpleEnv<>(
+    ImmutableMap<ClassSymbol, TypeBinder.Result> results =
         executor.toMapWithLog(
             log,
             syms.asList(),
@@ -425,7 +435,16 @@ public final class Binder {
               SourceHeaderBoundClass base = shenv.getNonNull(sym);
               return TypeBinder.bind(
                   taskLog.withSource(base.source()), henv, memberScopes, sym, base);
-            }));
+            });
+    ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> bound =
+        ImmutableMap.builderWithExpectedSize(results.size());
+    ImmutableMap.Builder<ClassSymbol, ClassScopes> scopes =
+        ImmutableMap.builderWithExpectedSize(results.size());
+    results.forEach((sym, result) -> {
+      bound.put(sym, result.bound());
+      scopes.put(sym, result.scopes());
+    });
+    return new BindTypesResult(new SimpleEnv<>(bound.buildOrThrow()), scopes.buildOrThrow());
   }
 
   private static SimpleEnv<ClassSymbol, SourceTypeBoundClass> disambiguateAndCanonicalize(
@@ -487,12 +506,13 @@ public final class Binder {
       TurbineExecutor executor,
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
+      ImmutableMap<ClassSymbol, ClassScopes> scopes,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
       TurbineLog log) {
 
     // LazyEnv isn't thread-safe, so first evaluate all constant fields eagerly, and then bind the
     // rest of each class in parallel using the evaluated values.
-    Env<FieldSymbol, Const.Value> constenv = evaluateConstants(syms, env, baseEnv, log);
+    Env<FieldSymbol, Const.Value> constenv = evaluateConstants(syms, env, scopes, baseEnv, log);
     return new SimpleEnv<>(
         executor.toMapWithLog(
             log,
@@ -500,7 +520,12 @@ public final class Binder {
             (sym, taskLog) -> {
               SourceTypeBoundClass base = env.getNonNull(sym);
               return new ConstBinder(
-                      constenv, sym, baseEnv, base, taskLog.withSource(base.source()))
+                      constenv,
+                      sym,
+                      baseEnv,
+                      base,
+                      requireNonNull(scopes.get(sym)),
+                      taskLog.withSource(base.source()))
                   .bind();
             }));
   }
@@ -509,6 +534,7 @@ public final class Binder {
   private static SimpleEnv<FieldSymbol, Const.Value> evaluateConstants(
       ImmutableSet<ClassSymbol> syms,
       Env<ClassSymbol, SourceTypeBoundClass> env,
+      ImmutableMap<ClassSymbol, ClassScopes> scopes,
       CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
       TurbineLog log) {
     // Prepare to lazily evaluate constant fields in each compilation unit.
@@ -519,11 +545,13 @@ public final class Binder {
     List<FieldSymbol> constFields = new ArrayList<>();
     for (ClassSymbol sym : syms) {
       SourceTypeBoundClass info = env.getNonNull(sym);
+      ClassScopes classScopes = requireNonNull(scopes.get(sym));
       for (FieldInfo field : info.fields()) {
         if (!isConst(field)) {
           continue;
         }
-        completers.put(field.sym(), new LazyConstCompleter(sym, info, baseEnv, field, log));
+        completers.put(
+            field.sym(), new LazyConstCompleter(sym, info, classScopes, baseEnv, field, log));
         constFields.add(field.sym());
       }
     }
@@ -547,6 +575,7 @@ public final class Binder {
       implements LazyEnv.Completer<FieldSymbol, Const.Value, Const.Value> {
     private final ClassSymbol sym;
     private final SourceTypeBoundClass info;
+    private final ClassScopes scopes;
     private final CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv;
     private final FieldInfo field;
     private final TurbineLog log;
@@ -554,11 +583,13 @@ public final class Binder {
     LazyConstCompleter(
         ClassSymbol sym,
         SourceTypeBoundClass info,
+        ClassScopes scopes,
         CompoundEnv<ClassSymbol, TypeBoundClass> baseEnv,
         FieldInfo field,
         TurbineLog log) {
       this.sym = sym;
       this.info = info;
+      this.scopes = scopes;
       this.baseEnv = baseEnv;
       this.field = field;
       this.log = log;
@@ -573,9 +604,9 @@ public final class Binder {
             new ConstEvaluator(
                     sym,
                     sym,
-                    info.memberImports(),
+                    scopes.memberImports(),
                     info.source(),
-                    info.scope(),
+                    scopes.scope(),
                     env,
                     baseEnv,
                     fieldBinderLog.withSource(info.source()))
@@ -648,6 +679,7 @@ public final class Binder {
   /** The result of binding: bound nodes for sources in the compilation, and the classpath. */
   public static class BindingResult {
     private final ImmutableMap<ClassSymbol, SourceTypeBoundClass> units;
+    private final ImmutableMap<ClassSymbol, ClassScopes> scopes;
     private final ImmutableList<SourceModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
     private final TopLevelIndex tli;
@@ -655,8 +687,9 @@ public final class Binder {
     private final ImmutableMap<String, byte[]> generatedClasses;
     private final Statistics statistics;
 
-    public BindingResult(
+    BindingResult(
         ImmutableMap<ClassSymbol, SourceTypeBoundClass> units,
+        ImmutableMap<ClassSymbol, ClassScopes> scopes,
         ImmutableList<SourceModuleInfo> modules,
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
         TopLevelIndex tli,
@@ -664,6 +697,7 @@ public final class Binder {
         ImmutableMap<String, byte[]> generatedClasses,
         Statistics statistics) {
       this.units = units;
+      this.scopes = scopes;
       this.modules = modules;
       this.classPathEnv = classPathEnv;
       this.tli = tli;
@@ -714,29 +748,50 @@ public final class Binder {
      * @return the resolved field, or {@code null} if the field can't be resolved
      */
     public @Nullable FieldInfo resolveField(ClassSymbol sym, Tree.ConstVarName name) {
-      SourceTypeBoundClass info = requireNonNull(units.get(sym), sym.binaryName());
+      ClassScopes classScopes = requireNonNull(scopes.get(sym), sym.binaryName());
       return ConstEvaluator.resolveField(
           CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(new SimpleEnv<>(units)),
           sym,
           sym,
-          info.memberImports(),
-          info.scope(),
+          classScopes.memberImports(),
+          classScopes.scope(),
           name);
     }
 
     public BindingResult withGeneratedClasses(ImmutableMap<String, byte[]> generatedClasses) {
       return new BindingResult(
-          units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
+          units,
+          scopes,
+          modules,
+          classPathEnv,
+          tli,
+          generatedSources,
+          generatedClasses,
+          statistics);
     }
 
     public BindingResult withGeneratedSources(ImmutableMap<String, byte[]> generatedSources) {
       return new BindingResult(
-          units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
+          units,
+          scopes,
+          modules,
+          classPathEnv,
+          tli,
+          generatedSources,
+          generatedClasses,
+          statistics);
     }
 
     public BindingResult withStatistics(Statistics statistics) {
       return new BindingResult(
-          units, modules, classPathEnv, tli, generatedSources, generatedClasses, statistics);
+          units,
+          scopes,
+          modules,
+          classPathEnv,
+          tli,
+          generatedSources,
+          generatedClasses,
+          statistics);
     }
   }
 
