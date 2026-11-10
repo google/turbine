@@ -131,7 +131,7 @@ public class LowerTest {
     ImmutableList<SourceTypeBoundClass.MethodInfo> methods =
         ImmutableList.of(
             new SourceTypeBoundClass.MethodInfo(
-                new MethodSymbol(-1, new ClassSymbol("test/Test"), "f"),
+                new MethodSymbol.Source(new ClassSymbol("test/Test"), "f", -1),
                 ImmutableMap.of(),
                 PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                 ImmutableList.of(),
@@ -143,9 +143,10 @@ public class LowerTest {
                 ImmutableList.of(),
                 null),
             new SourceTypeBoundClass.MethodInfo(
-                new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"),
+                new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1),
                 ImmutableMap.of(
-                    new TyVarSymbol(new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "V"),
+                    new TyVarSymbol(
+                        new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "V"),
                     new SourceTypeBoundClass.TyVarInfo(
                         IntersectionTy.create(
                             ImmutableList.of(
@@ -157,7 +158,8 @@ public class LowerTest {
                                             ImmutableList.of()))))),
                         /* lowerBound= */ null,
                         ImmutableList.of()),
-                    new TyVarSymbol(new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "E"),
+                    new TyVarSymbol(
+                        new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "E"),
                     new SourceTypeBoundClass.TyVarInfo(
                         IntersectionTy.create(
                             ImmutableList.of(
@@ -173,14 +175,14 @@ public class LowerTest {
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
                         new ParamSymbol(
-                            new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "foo"),
+                            new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "foo"),
                         PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                         ImmutableList.of(),
                         0)),
                 ImmutableList.of(
                     TyVar.create(
                         new TyVarSymbol(
-                            new MethodSymbol(-1, new ClassSymbol("test/Test"), "g"), "E"),
+                            new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "E"),
                         ImmutableList.of())),
                 TurbineFlag.ACC_PUBLIC,
                 null,

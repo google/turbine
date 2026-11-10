@@ -562,7 +562,7 @@ public class TypeBinder {
     private int idx = -1;
 
     MethodSymbol create(ClassSymbol owner, String name) {
-      return new MethodSymbol(idx--, owner, name);
+      return new MethodSymbol.Source(owner, name, idx--);
     }
   }
 
@@ -770,7 +770,7 @@ public class TypeBinder {
   private MethodInfo bindMethod(
       int idx, CompoundScope scope, MethDecl t, ImmutableList<RecordComponentInfo> components) {
 
-    MethodSymbol sym = new MethodSymbol(idx, owner, t.name().value());
+    MethodSymbol sym = new MethodSymbol.Source(owner, t.name().value(), idx);
 
     ImmutableMap<String, TyVarSymbol> typeParameters;
     if (t.typarams().isEmpty()) {

@@ -17,57 +17,85 @@
 package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
-import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-/** A method symbol. */
+/**
+ * A method symbol.
+ *
+ * <p>Methods aren't uniquely identified by their name and owner, so method symbols also have an
+ * identity within their owner, which depends on where the method was read from:
+ *
+ * <ul>
+ *   <li>Methods declared in source are identified by their index in the enclosing declaration
+ *       ({@link Source}).
+ *   <li>Methods read from class files are identified by their JVM descriptor ({@link ClassFile}).
+ * </ul>
+ *
+ * <p>Symbols of the two kinds are never equal. That matters if an annotation processor generates a
+ * source file for a type that is also on the classpath: methods of the classpath type that a
+ * processor obtained in an earlier round must not be confused with unrelated methods of the
+ * generated source that happen to have the same index.
+ */
 @Immutable
-public class MethodSymbol implements Symbol {
-  /**
-   * The index of the method in its enclosing element. Used to implement equals and hashCode, since
-   * methods aren't uniquely identified by their name and owner.
-   */
-  private final int idx;
-
-  private final ClassSymbol owner;
-  private final String name;
-
-  public MethodSymbol(int idx, ClassSymbol owner, String name) {
-    this.idx = idx;
-    this.owner = owner;
-    this.name = name;
-  }
-
+public sealed interface MethodSymbol extends Symbol {
   /** The enclosing class. */
-  public ClassSymbol owner() {
-    return owner;
-  }
+  ClassSymbol owner();
 
   /** The method name. */
-  public String name() {
-    return name;
-  }
+  String name();
 
   @Override
-  public int hashCode() {
-    return Objects.hash(name, owner, idx);
-  }
-
-  @Override
-  public Kind symKind() {
+  default Kind symKind() {
     return Kind.METHOD;
   }
 
-  @Override
-  public boolean equals(@Nullable Object obj) {
-    if (!(obj instanceof MethodSymbol other)) {
-      return false;
+  /**
+   * A symbol for a method declared in source, identified by its index in its enclosing declaration.
+   */
+  @Immutable
+  record Source(ClassSymbol owner, String name, int idx) implements MethodSymbol {
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      // equals and hashCode are hand-written instead of record-generated, because the generated
+      // methods are linked through invokedynamic and are measurably slower in short-lived JVM
+      // compilations with annotation processors, which compare method symbols frequently.
+      return obj instanceof Source other
+          && owner.equals(other.owner)
+          && idx == other.idx
+          && name.equals(other.name);
     }
-    return name().equals(other.name()) && owner().equals(other.owner()) && idx == other.idx;
+
+    @Override
+    public int hashCode() {
+      return 31 * (31 * owner.hashCode() + name.hashCode()) + idx;
+    }
+
+    @Override
+    public String toString() {
+      return owner + "#" + name;
+    }
   }
 
-  @Override
-  public String toString() {
-    return owner + "#" + name;
+  /** A symbol for a method read from a class file, identified by its JVM descriptor. */
+  @Immutable
+  record ClassFile(ClassSymbol owner, String name, String descriptor) implements MethodSymbol {
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      // Hand-written for performance, see Source#equals.
+      return obj instanceof ClassFile other
+          && owner.equals(other.owner)
+          && name.equals(other.name)
+          && descriptor.equals(other.descriptor);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * (31 * owner.hashCode() + name.hashCode()) + descriptor.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return owner + "#" + name;
+    }
   }
 }

@@ -978,11 +978,11 @@ public final class Types {
    *
    * <p>If a processor generates a source file for a type that already exists on the classpath, the
    * generated source shadows the classpath type in later rounds. Processors may still hold elements
-   * for methods of the classpath type that they obtained in earlier rounds. Those methods may not
-   * be present in the generated source, even if it declares the same members as the classpath type:
-   * {@link MethodSymbol}s are identified by their index in the enclosing class, and that differs
-   * between class files and sources, for example if the class has an implicit default constructor.
-   * Those methods are looked up in the classpath version of the type.
+   * for methods of the classpath type that they obtained in earlier rounds. Those methods aren't
+   * present in the generated source, even if it declares the same members as the classpath type:
+   * the {@link MethodSymbol}s of class files are identified by their descriptor, and those of
+   * sources by their index in the enclosing class. Those methods are looked up in the classpath
+   * version of the type.
    */
   public @Nullable MethodInfo getMethodInfo(MethodSymbol method) {
     MethodInfo result = findMethod(classes.get(method.owner()), method);

@@ -494,14 +494,13 @@ public class BytecodeBoundClass implements TypeBoundClass {
 
   private ImmutableList<MethodInfo> computeMethods() {
     ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
-    int idx = 0;
     ClassFile cf = classFile();
     for (ClassFile.MethodInfo m : cf.methods()) {
       if (m.name().equals("<clinit>")) {
         // Don't bother reading class initializers, which we don't need
         continue;
       }
-      methods.add(bindMethod(cf, idx++, m));
+      methods.add(bindMethod(cf, m));
     }
     return methods.build();
   }
@@ -515,8 +514,8 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return local;
   }
 
-  private MethodInfo bindMethod(ClassFile classFile, int methodIdx, ClassFile.MethodInfo m) {
-    MethodSymbol methodSymbol = new MethodSymbol(methodIdx, sym, m.name());
+  private MethodInfo bindMethod(ClassFile classFile, ClassFile.MethodInfo m) {
+    MethodSymbol methodSymbol = new MethodSymbol.ClassFile(sym, m.name(), m.descriptor());
     Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
 
     ImmutableMap<String, TyVarSymbol> tyParams;
