@@ -18,6 +18,7 @@ package com.google.turbine.binder;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -53,6 +54,7 @@ import com.google.turbine.binder.lookup.WildImportIndex;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.ModuleSymbol;
+import com.google.turbine.diag.AnnotationProcessingError;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
@@ -75,58 +77,98 @@ import org.jspecify.annotations.Nullable;
 /** The entry point for analysis. */
 public final class Binder {
 
-  /** Binds symbols and types to the given compilation units. */
-  public static @Nullable BindingResult bind(
-      TurbineExecutor executor,
+  /**
+   * The inputs to {@link #bind(TurbineExecutor, BindingRequest)} and {@link #bind(TurbineExecutor,
+   * TurbineLog, BindingRequest)}.
+   *
+   * @param units The compilation units to bind.
+   * @param classpath The classpath to compile against.
+   * @param bootclasspath The bootclasspath (the platform classes) to compile against.
+   * @param processorInfo The annotation processors to run, if any. Processing only happens if there
+   *     are processors and at least one compilation unit.
+   * @param moduleVersion The version to record for any modules declared by the compilation units,
+   *     as with javac's {@code --module-version}.
+   */
+  public record BindingRequest(
       ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
+      ProcessorInfo processorInfo,
       Optional<String> moduleVersion) {
-    return bind(
-        executor, units, classpath, Processing.ProcessorInfo.empty(), bootclasspath, moduleVersion);
+
+    /** Returns a {@link Builder}, with no annotation processors and no module version. */
+    public static Builder builder() {
+      return new AutoBuilder_Binder_BindingRequest_Builder().processorInfo(ProcessorInfo.empty());
+    }
+
+    /** Returns a {@link Builder} initialized with the values of this request. */
+    public Builder toBuilder() {
+      return new AutoBuilder_Binder_BindingRequest_Builder(this);
+    }
+
+    /** A {@link BindingRequest} builder. */
+    @AutoBuilder
+    public abstract static class Builder {
+      public abstract Builder units(ImmutableList<CompUnit> units);
+
+      public abstract Builder classpath(ClassPath classpath);
+
+      public abstract Builder bootclasspath(ClassPath bootclasspath);
+
+      public abstract Builder processorInfo(ProcessorInfo processorInfo);
+
+      public abstract Builder moduleVersion(Optional<String> moduleVersion);
+
+      public abstract BindingRequest build();
+    }
   }
 
-  /** Binds symbols and types to the given compilation units. */
-  public static @Nullable BindingResult bind(
-      TurbineExecutor executor,
-      ImmutableList<CompUnit> units,
-      ClassPath classpath,
-      ProcessorInfo processorInfo,
-      ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
+  /**
+   * Binds symbols and types to the given compilation units, and runs any annotation processors in
+   * the request.
+   *
+   * @throws TurbineError if any errors are reported, including errors reported by annotation
+   *     processors
+   * @throws AnnotationProcessingError if an annotation processor throws an uncaught exception
+   */
+  public static BindingResult bind(TurbineExecutor executor, BindingRequest request) {
     TurbineLog log = new TurbineLog();
-    BindingResult br =
-        bind(executor, log, units, classpath, processorInfo, bootclasspath, moduleVersion);
+    BindingResult result = bind(executor, log, request);
     log.maybeThrow();
-    return br;
+    return result;
   }
 
-  /** Binds symbols and types to the given compilation units. */
-  public static @Nullable BindingResult bind(
-      TurbineExecutor executor,
-      TurbineLog log,
-      ImmutableList<CompUnit> units,
-      ClassPath classpath,
-      ProcessorInfo processorInfo,
-      ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
-    BindingResult br;
+  /**
+   * Binds symbols and types to the given compilation units, and runs any annotation processors in
+   * the request.
+   *
+   * <p>Errors are reported to {@code log} instead of being thrown, and callers must check for them
+   * (e.g. with {@link TurbineLog#maybeThrow}). Errors that prevent binding from continuing are
+   * thrown as a {@link TurbineError}, which also includes the diagnostics already in {@code log},
+   * and uncaught exceptions from annotation processors are thrown as an {@link
+   * AnnotationProcessingError}.
+   */
+  public static BindingResult bind(
+      TurbineExecutor executor, TurbineLog log, BindingRequest request) {
     try {
-      br =
+      if (request.processorInfo().processors().isEmpty() || request.units().isEmpty()) {
+        // Avoid retaining `request` (and its compilation units) across binding when no processors
+        // run, so any ASTs that aren't retained on bound classes can be garbage collected.
+        return bind(
+            executor,
+            log,
+            request,
+            /* generatedSources= */ ImmutableMap.of(),
+            /* generatedClasses= */ ImmutableMap.of());
+      }
+      BindingResult br =
           bind(
               executor,
               log,
-              units,
+              request,
               /* generatedSources= */ ImmutableMap.of(),
-              /* generatedClasses= */ ImmutableMap.of(),
-              classpath,
-              bootclasspath,
-              moduleVersion);
-      if (!processorInfo.processors().isEmpty() && !units.isEmpty()) {
-        br =
-            Processing.process(
-                executor, log, units, classpath, processorInfo, bootclasspath, br, moduleVersion);
-      }
+              /* generatedClasses= */ ImmutableMap.of());
+      return Processing.process(executor, log, request, br);
     } catch (TurbineError turbineError) {
       throw new TurbineError(
           ImmutableList.<TurbineDiagnostic>builder()
@@ -134,18 +176,44 @@ public final class Binder {
               .addAll(turbineError.diagnostics())
               .build());
     }
-    return br;
   }
 
+  /**
+   * Binds symbols and types to the given compilation units, without running annotation processors.
+   * Used by {@link Processing} for each processing round.
+   *
+   * @param generatedSources sources generated by annotation processors so far, recorded in the
+   *     result
+   * @param generatedClasses classes generated by annotation processors so far, recorded in the
+   *     result
+   */
   static BindingResult bind(
       TurbineExecutor executor,
       TurbineLog log,
-      ImmutableList<CompUnit> units,
+      BindingRequest request,
       ImmutableMap<String, byte[]> generatedSources,
-      ImmutableMap<String, byte[]> generatedClasses,
+      ImmutableMap<String, byte[]> generatedClasses) {
+    // Pass the request's fields separately, so bindUnits doesn't retain the request.
+    return bindUnits(
+        executor,
+        log,
+        request.units(),
+        request.classpath(),
+        request.bootclasspath(),
+        request.moduleVersion(),
+        generatedSources,
+        generatedClasses);
+  }
+
+  private static BindingResult bindUnits(
+      TurbineExecutor executor,
+      TurbineLog log,
+      ImmutableList<CompUnit> units,
       ClassPath classpath,
       ClassPath bootclasspath,
-      Optional<String> moduleVersion) {
+      Optional<String> moduleVersion,
+      ImmutableMap<String, byte[]> generatedSources,
+      ImmutableMap<String, byte[]> generatedClasses) {
     ImmutableList<PreprocessedCompUnit> preProcessedUnits =
         CompUnitPreprocessor.preprocess(log, units);
 

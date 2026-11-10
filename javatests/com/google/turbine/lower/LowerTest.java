@@ -19,6 +19,7 @@ package com.google.turbine.lower;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.turbine.testing.TestBinder.bind;
 import static com.google.turbine.testing.TestClassPaths.TURBINE_BOOTCLASSPATH;
 import static com.google.turbine.testing.TestResources.getResource;
 import static java.lang.classfile.ClassFile.JAVA_8_VERSION;
@@ -30,9 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.objectweb.asm.Opcodes;
-import com.google.turbine.binder.Binder;
 import com.google.turbine.binder.Binder.BindingResult;
-import com.google.turbine.binder.ClassPathBinder;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
@@ -80,7 +79,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
@@ -271,8 +269,7 @@ public class LowerTest {
   @Test
   public void innerClassAttributeOrder() throws IOException {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     Joiner.on('\n')
@@ -281,10 +278,7 @@ public class LowerTest {
                             "  class Inner {",
                             "    class InnerMost {}",
                             "  }",
-                            "}"))),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                            "}"))));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -354,8 +348,7 @@ public class LowerTest {
   @Test
   public void typePath() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     Joiner.on('\n')
@@ -366,10 +359,7 @@ public class LowerTest {
                             "@Target({ElementType.TYPE_USE}) @interface Anno {}",
                             "class Test {",
                             "  public @Anno int[][] xs;",
-                            "}"))),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                            "}"))));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -453,13 +443,7 @@ public class LowerTest {
 
   @Test
   public void deprecated() throws Exception {
-    BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            ImmutableList.of(Parser.parse("@Deprecated class Test {}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+    BindingResult bound = bind(ImmutableList.of(Parser.parse("@Deprecated class Test {}")));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -667,13 +651,7 @@ public class LowerTest {
 
   @Test
   public void minClassVersion() throws Exception {
-    BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
-            ImmutableList.of(Parser.parse("class Test {}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+    BindingResult bound = bind(ImmutableList.of(Parser.parse("class Test {}")));
     Map<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -709,17 +687,13 @@ public class LowerTest {
   @Test
   public void privateFields() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  private int x;\n"
                         + "  int y;\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -747,18 +721,14 @@ public class LowerTest {
   @Test
   public void privateFieldsInRecords() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     record R(int x, int y) {
                       private static final int z = 1;
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -787,17 +757,13 @@ public class LowerTest {
   @Test
   public void noPrivateFields() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  private int x;\n"
                         + "  int y;\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -825,8 +791,7 @@ public class LowerTest {
   @Test
   public void privateFieldsPrivateMemberClasses() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -834,10 +799,7 @@ public class LowerTest {
                       private static class Inner {}
                       private Inner x;
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -872,18 +834,14 @@ public class LowerTest {
   @Test
   public void emitAllPrivateMemberClasses() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     class Test {
                       private static class Inner {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -899,18 +857,14 @@ public class LowerTest {
   @Test
   public void noemitAllPrivateMemberClasses() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     class Test {
                       private static class Inner {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -926,8 +880,7 @@ public class LowerTest {
   @Test
   public void repeatedTypeAnnotationError() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     new SourceFile(
@@ -940,10 +893,7 @@ public class LowerTest {
                         class Test {
                           List<@Anno @Anno Integer> xs;
                           }
-                        """))),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        """))));
     TurbineError turbineError =
         assertThrows(
             TurbineError.class,
@@ -967,16 +917,12 @@ public class LowerTest {
   @Test
   public void methodParameters() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  void f(int x, int y) {}\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1014,16 +960,12 @@ public class LowerTest {
   @Test
   public void noMethodParameters() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     "class Test {\n" //
                         + "  void f(int x, int y) {}\n"
-                        + "}")),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                        + "}")));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1095,8 +1037,7 @@ public class LowerTest {
   @Test
   public void privateSealedClass() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1105,10 +1046,7 @@ public class LowerTest {
                       private static final class A extends Test {}
                       private static final class B extends Test {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1136,8 +1074,7 @@ public class LowerTest {
   @Test
   public void keepPermits() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1146,10 +1083,7 @@ public class LowerTest {
                       private static final class A extends Test {}
                       public static final class B extends Test {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1177,8 +1111,7 @@ public class LowerTest {
   @Test
   public void usagesInTopLevelClass() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1188,10 +1121,7 @@ public class LowerTest {
                       public static class I {}
                     }
                     class B { public A a; }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
 
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> unit =
         Stream.of("A", "A$I")
@@ -1225,18 +1155,14 @@ public class LowerTest {
 
   private static int strictfpAccess(int release) throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
                     class Test {
                       strictfp void f() {}
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1279,8 +1205,7 @@ public class LowerTest {
   @Test
   public void emitNestsPrunedPrivateMember() throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1290,10 +1215,7 @@ public class LowerTest {
                         }
                       }
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
@@ -1318,8 +1240,7 @@ public class LowerTest {
 
   private boolean emitNests(int release) throws Exception {
     BindingResult bound =
-        Binder.bind(
-            TurbineExecutor.direct(),
+        bind(
             ImmutableList.of(
                 Parser.parse(
                     """
@@ -1327,10 +1248,7 @@ public class LowerTest {
                       class Inner {
                       }
                     }
-                    """)),
-            ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()),
-            TURBINE_BOOTCLASSPATH,
-            /* moduleVersion= */ Optional.empty());
+                    """)));
     ImmutableMap<String, byte[]> lowered =
         Lower.lowerAll(
                 TurbineExecutor.direct(),
