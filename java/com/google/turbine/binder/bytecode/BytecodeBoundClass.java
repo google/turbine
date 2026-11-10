@@ -62,6 +62,7 @@ import com.google.turbine.type.Type.IntersectionTy;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -514,6 +515,53 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return local;
   }
 
+  /**
+   * Returns the bound synthetic methods of this class whose name and descriptor {@code filter}
+   * accepts.
+   *
+   * <p>Synthetic methods aren't part of {@link #methods()}, since javac doesn't enter them, but
+   * some carry information about source declarations, e.g. Kotlin stores property annotations on
+   * synthetic {@code $annotations} methods. This re-reads the class file, so callers that need
+   * several synthetic methods should ask for them together and cache the result.
+   */
+  public ImmutableList<MethodInfo> syntheticMethods(BiPredicate<String, String> filter) {
+    ClassFile cf = classFileWithSyntheticMethods();
+    ImmutableList.Builder<MethodInfo> methods = ImmutableList.builder();
+    for (ClassFile.MethodInfo m : cf.methods()) {
+      if ((m.access() & TurbineFlag.ACC_SYNTHETIC) != 0 && filter.test(m.name(), m.descriptor())) {
+        methods.add(bindMethod(cf, m));
+      }
+    }
+    return methods.build();
+  }
+
+  /**
+   * Re-reads the class file the symbol was loaded from, including its synthetic methods. Callers
+   * should cache the result.
+   */
+  public ClassFile classFileWithSyntheticMethods() {
+    return ClassReader.readWithSyntheticMethods(this::path, bytes.get());
+  }
+
+  /**
+   * Returns the non-synthetic class file method that {@code method} was bound from, or {@code null}
+   * if {@code method} isn't a non-synthetic method of this class. Gives access to facts the bound
+   * model doesn't carry, like whether the class file recorded parameter names.
+   */
+  public ClassFile.@Nullable MethodInfo classFileMethod(MethodSymbol method) {
+    if (!(method instanceof MethodSymbol.ClassFile classFileMethod
+        && classFileMethod.owner().equals(sym))) {
+      return null;
+    }
+    for (ClassFile.MethodInfo m : classFile().methods()) {
+      if (m.name().equals(classFileMethod.name())
+          && m.descriptor().equals(classFileMethod.descriptor())) {
+        return m;
+      }
+    }
+    return null;
+  }
+
   private MethodInfo bindMethod(ClassFile classFile, ClassFile.MethodInfo m) {
     MethodSymbol methodSymbol = new MethodSymbol.ClassFile(sym, m.name(), m.descriptor());
     Sig.MethodSig sig = new SigParser(firstNonNull(m.signature(), m.descriptor())).parseMethodSig();
@@ -875,11 +923,15 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return jarFile.get();
   }
 
+  private String path() {
+    return jarFile.get() + "!" + sym.binaryName();
+  }
+
   /** The class file the symbol was loaded from. */
   public ClassFile classFile() {
     ClassFile local = this.classFile;
     if (local == null) {
-      ClassFile cf = ClassReader.read(() -> jarFile.get() + "!" + sym.binaryName(), bytes.get());
+      ClassFile cf = ClassReader.read(this::path, bytes.get());
       verify(
           cf.name().equals(sym.binaryName()),
           "expected class data for %s, saw %s instead",

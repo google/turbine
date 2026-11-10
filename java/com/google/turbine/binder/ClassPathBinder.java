@@ -98,6 +98,7 @@ public final class ClassPathBinder {
     SimpleTopLevelIndex.Builder indexBuilder = SimpleTopLevelIndex.builder();
     Map<ModuleSymbol, ModuleInfo> modules = new HashMap<>();
     Map<String, Supplier<byte[]>> resources = Maps.newHashMapWithExpectedSize(totalResources);
+    ImmutableList.Builder<Supplier<byte[]>> kotlinModules = ImmutableList.builder();
     for (JarResult r : results) {
       for (BytecodeBoundClass c : r.classes) {
         if (map.putIfAbsent(c.sym(), c) == null) {
@@ -109,6 +110,9 @@ public final class ClassPathBinder {
       }
       for (Resource resource : r.resources) {
         resources.put(resource.name(), resource.entry());
+        if (isKotlinModuleResource(resource.name())) {
+          kotlinModules.add(resource.entry());
+        }
       }
     }
     for (JarResult r : results) {
@@ -120,6 +124,7 @@ public final class ClassPathBinder {
     }
     SimpleEnv<ModuleSymbol, ModuleInfo> moduleEnv = new SimpleEnv<>(ImmutableMap.copyOf(modules));
     TopLevelIndex index = indexBuilder.build();
+    ImmutableList<Supplier<byte[]>> kotlinModuleList = kotlinModules.build();
     return new ClassPath() {
       @Override
       public Env<ClassSymbol, BytecodeBoundClass> env() {
@@ -140,7 +145,19 @@ public final class ClassPathBinder {
       public @Nullable Supplier<byte[]> resource(String path) {
         return resources.get(path);
       }
+
+      @Override
+      public ImmutableList<Supplier<byte[]>> kotlinModules() {
+        return kotlinModuleList;
+      }
     };
+  }
+
+  /** Returns true for top-level {@code META-INF/*.kotlin_module} files. */
+  private static boolean isKotlinModuleResource(String name) {
+    return name.startsWith("META-INF/")
+        && name.endsWith(".kotlin_module")
+        && name.indexOf('/', "META-INF/".length()) == -1;
   }
 
   /**
