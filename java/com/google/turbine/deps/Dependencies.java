@@ -68,12 +68,12 @@ public final class Dependencies {
         // the symbol wasn't loaded from the classpath
         continue;
       }
-      String jarFile = info.jarFile();
       if (bootclasspath.env().get(sym) != null) {
         // bootclasspath deps are not tracked
         continue;
       }
-      jars.add(jarFile);
+      jars.add(info.jarFile());
+      jars.add(info.realJarFile());
     }
     for (String jarFile : jars) {
       deps.addDependency(
@@ -105,6 +105,9 @@ public final class Dependencies {
         addAnnotations(closure, field.annotations());
       }
       addSuperTypes(closure, env, info);
+    }
+    for (ClassSymbol sym : bound.classPathEnv().loadedSymbols()) {
+      addSuperTypes(closure, env, sym);
     }
     return closure;
   }

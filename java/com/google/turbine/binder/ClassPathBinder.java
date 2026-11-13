@@ -72,6 +72,17 @@ public final class ClassPathBinder {
           public @Nullable BytecodeBoundClass get(ClassSymbol sym) {
             return map.get(sym);
           }
+
+          @Override
+          public Iterable<ClassSymbol> loadedSymbols() {
+            ImmutableList.Builder<ClassSymbol> loaded = ImmutableList.builder();
+            for (Map.Entry<ClassSymbol, BytecodeBoundClass> e : map.entrySet()) {
+              if (e.getValue().isLoaded()) {
+                loaded.add(e.getKey());
+              }
+            }
+            return loaded.build();
+          }
         };
     ImmutableList<JarResult> results =
         executor.mapChunks(

@@ -16,6 +16,7 @@
 
 package com.google.turbine.binder.env;
 
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.Symbol;
 import org.jspecify.annotations.Nullable;
@@ -36,6 +37,11 @@ import org.jspecify.annotations.Nullable;
 public interface Env<S extends Symbol, V> {
   /** Returns the information associated with the given symbol in this environment. */
   @Nullable V get(S sym);
+
+  /** Returns symbols whose bound values were loaded in this environment. */
+  default Iterable<S> loadedSymbols() {
+    return ImmutableList.of();
+  }
 
   default V getNonNull(S sym) {
     V result = get(sym);

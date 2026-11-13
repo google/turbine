@@ -404,6 +404,54 @@ public class DependenciesTest {
             libA, DepsProto.Dependency.Kind.EXPLICIT, libB, DepsProto.Dependency.Kind.EXPLICIT);
   }
 
+  @Test
+  public void constantField() throws Exception {
+    Path liba =
+        new LibraryBuilder()
+            .addSourceLines(
+                "a/A.java", //
+                "package a;",
+                "public class A {",
+                "  public static final int CONST = 42;",
+                "}")
+            .compileToJar("liba.jar");
+    DepsProto.Dependencies deps =
+        new DepsBuilder()
+            .setClasspath(liba)
+            .addSourceLines(
+                "Test.java", //
+                "import a.A;",
+                "class Test {",
+                "  public static final int X = A.CONST + 1;",
+                "}")
+            .run();
+    assertThat(depsMap(deps)).containsExactly(liba, DepsProto.Dependency.Kind.EXPLICIT);
+  }
+
+  @Test
+  public void sourceRetentionAnnotation() throws Exception {
+    Path liba =
+        new LibraryBuilder()
+            .addSourceLines(
+                "a/SourceAnno.java", //
+                "package a;",
+                "import java.lang.annotation.Retention;",
+                "import static java.lang.annotation.RetentionPolicy.SOURCE;",
+                "@Retention(SOURCE)",
+                "public @interface SourceAnno {}")
+            .compileToJar("liba.jar");
+    DepsProto.Dependencies deps =
+        new DepsBuilder()
+            .setClasspath(liba)
+            .addSourceLines(
+                "Test.java", //
+                "import a.SourceAnno;",
+                "@SourceAnno",
+                "class Test {}")
+            .run();
+    assertThat(depsMap(deps)).containsExactly(liba, DepsProto.Dependency.Kind.EXPLICIT);
+  }
+
   private Path libB() throws Exception {
     return new LibraryBuilder()
         .addSourceLines(
