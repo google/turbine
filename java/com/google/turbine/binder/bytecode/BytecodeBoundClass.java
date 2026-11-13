@@ -875,6 +875,16 @@ public class BytecodeBoundClass implements TypeBoundClass {
     return jarFile.get();
   }
 
+  /** The jar file on the classpath containing the symbol's entry. */
+  public String realJarFile() {
+    return jarFile.get();
+  }
+
+  /** Returns true if the underlying class file was read during compilation. */
+  public boolean isLoaded() {
+    return classFile != null;
+  }
+
   /** The class file the symbol was loaded from. */
   public ClassFile classFile() {
     ClassFile local = this.classFile;

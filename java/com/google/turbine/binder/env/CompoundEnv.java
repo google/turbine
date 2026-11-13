@@ -18,6 +18,7 @@ package com.google.turbine.binder.env;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.Iterables;
 import com.google.turbine.binder.sym.Symbol;
 import org.jspecify.annotations.Nullable;
 
@@ -39,6 +40,14 @@ public class CompoundEnv<S extends Symbol, V> implements Env<S, V> {
       return result;
     }
     return base != null ? base.get(sym) : null;
+  }
+
+  @Override
+  public Iterable<S> loadedSymbols() {
+    if (base == null) {
+      return env.loadedSymbols();
+    }
+    return Iterables.concat(env.loadedSymbols(), base.loadedSymbols());
   }
 
   /** A chainable compound env with a single entry. */

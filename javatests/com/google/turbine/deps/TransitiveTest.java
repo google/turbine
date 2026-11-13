@@ -570,9 +570,10 @@ public class TransitiveTest {
 
     // A class that refers to the transitive class a.A by name, rather than as a member of a
     // supertype, compiles against just the repackaged version of a.A in libb.
-    Path libc =
-        runTurbine(
-            new SourceBuilder()
+    Path libc = temporaryFolder.newFolder().toPath().resolve("out.jar");
+    Path libcDeps = temporaryFolder.newFolder().toPath().resolve("out.jdeps");
+    ImmutableList<String> sources =
+        new SourceBuilder()
                 .addSourceLines(
                     "c/C.java", //
                     "package c;",
@@ -580,11 +581,27 @@ public class TransitiveTest {
                     "public class C {",
                     "  public A.Inner i;",
                     "}")
-                .build(),
-            ImmutableList.of(libb));
+                .build()
+                .stream()
+                .map(Path::toString)
+                .collect(toImmutableList());
+    Main.compile(
+        optionsWithBootclasspath()
+            .setSources(sources)
+            .setClassPath(Stream.of(libb).map(Path::toString).collect(toImmutableList()))
+            .setOutput(libc.toString())
+            .setOutputDeps(libcDeps.toString())
+            .setTargetLabel("//foo:foo")
+            .build());
 
     ClassFile c = ClassReader.read(libc::toString, readJar(libc).get("c/C.class"));
     assertThat(getOnlyElement(c.fields()).descriptor()).isEqualTo("La/A$Inner;");
+    assertThat(readDeps(libcDeps))
+        .containsExactly(
+            liba.toString().replace(File.separatorChar, '/'),
+            Kind.EXPLICIT,
+            libb.toString().replace(File.separatorChar, '/'),
+            Kind.EXPLICIT);
   }
 
   @Test
