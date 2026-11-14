@@ -689,6 +689,10 @@ public class ConstEvaluator {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(position, a, type);
     b = coerce(position, b, type);
+    if (isIntegralZero(b)) {
+      // Integer division by zero completes abruptly, so this is not a constant expression
+      return null;
+    }
     return switch (type) {
       case INT -> new Const.IntValue(asInt(position, a).value() / asInt(position, b).value());
       case LONG -> new Const.LongValue(asLong(position, a).value() / asLong(position, b).value());
@@ -704,6 +708,10 @@ public class ConstEvaluator {
     TurbineConstantTypeKind type = promoteBinary(position, a, b);
     a = coerce(position, a, type);
     b = coerce(position, b, type);
+    if (isIntegralZero(b)) {
+      // Integer division by zero completes abruptly, so this is not a constant expression
+      return null;
+    }
     return switch (type) {
       case INT -> new Const.IntValue(asInt(position, a).value() % asInt(position, b).value());
       case LONG -> new Const.LongValue(asLong(position, a).value() % asLong(position, b).value());
@@ -712,6 +720,15 @@ public class ConstEvaluator {
       case DOUBLE ->
           new Const.DoubleValue(asDouble(position, a).value() % asDouble(position, b).value());
       default -> throw error(position, ErrorKind.OPERAND_TYPE, type);
+    };
+  }
+
+  /** Returns true if the value is an integer or long zero. */
+  private static boolean isIntegralZero(Const.Value value) {
+    return switch (value.constantTypeKind()) {
+      case INT -> ((Const.IntValue) value).value() == 0;
+      case LONG -> ((Const.LongValue) value).value() == 0;
+      default -> false;
     };
   }
 
@@ -949,6 +966,9 @@ public class ConstEvaluator {
         result = value;
       } else {
         result = evalBinary(child.position(), t.op(), requireNonNull(result), value);
+        if (result == null) {
+          return null;
+        }
       }
       first = false;
     }

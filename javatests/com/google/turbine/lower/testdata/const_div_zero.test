@@ -1,0 +1,17 @@
+=== test/A.java ===
+package test;
+
+public class A {
+  // integer division by zero completes abruptly, so these are not constant expressions
+  public static final int I1 = 1 / 0;
+  public static final int I2 = 1 % 0;
+  public static final long L1 = 1L / 0L;
+  public static final long L2 = 1L % 0;
+  public static final int I3 = 1 / 0 / 2;
+  public static final String S1 = "x" + 1 % 0;
+
+  public static final int I4 = 7 / 2;
+  public static final int I5 = Integer.MIN_VALUE % -1;
+  public static final double D1 = 1.0 / 0;
+  public static final float F1 = 1f % 0;
+}

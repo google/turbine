@@ -1,0 +1,39 @@
+=== test/A.class ===
+// class version 69.0 (69)
+// access flags 0x21
+public class test/A {
+
+
+  // access flags 0x19
+  public final static I I1
+
+  // access flags 0x19
+  public final static I I2
+
+  // access flags 0x19
+  public final static J L1
+
+  // access flags 0x19
+  public final static J L2
+
+  // access flags 0x19
+  public final static I I3
+
+  // access flags 0x19
+  public final static Ljava/lang/String; S1
+
+  // access flags 0x19
+  public final static I I4 = 3
+
+  // access flags 0x19
+  public final static I I5 = 0
+
+  // access flags 0x19
+  public final static D D1 = InfinityD
+
+  // access flags 0x19
+  public final static F F1 = NaNF
+
+  // access flags 0x1
+  public <init>()V
+}
