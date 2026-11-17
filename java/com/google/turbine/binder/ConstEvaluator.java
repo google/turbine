@@ -691,6 +691,7 @@ public class ConstEvaluator {
     b = coerce(position, b, type);
     if (isIntegralZero(b)) {
       // Integer division by zero completes abruptly, so this is not a constant expression
+      log.error(position, ErrorKind.DIVISION_BY_ZERO);
       return null;
     }
     return switch (type) {
@@ -710,6 +711,7 @@ public class ConstEvaluator {
     b = coerce(position, b, type);
     if (isIntegralZero(b)) {
       // Integer division by zero completes abruptly, so this is not a constant expression
+      log.error(position, ErrorKind.DIVISION_BY_ZERO);
       return null;
     }
     return switch (type) {

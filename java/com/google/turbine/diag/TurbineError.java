@@ -50,6 +50,7 @@ public class TurbineError extends Error {
     CANNOT_RESOLVE_FIELD("could not resolve field %s"),
     EXPRESSION_ERROR("could not evaluate constant expression"),
     OPERAND_TYPE("bad operand type %s"),
+    DIVISION_BY_ZERO("division by zero"),
     TYPE_CONVERSION("value %s of type %s cannot be converted to %s"),
     CYCLIC_HIERARCHY("cycle in class hierarchy: %s"),
     NOT_AN_ANNOTATION("%s is not an annotation"),

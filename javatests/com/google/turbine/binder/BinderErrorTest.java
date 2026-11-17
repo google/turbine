@@ -1143,6 +1143,68 @@ public class BinderErrorTest {
           "                   ^",
         }
       },
+      // Integer division by zero in a constant expression is an error. C refers to A and doesn't
+      // get a second diagnostic; floating-point division by zero is still a constant.
+      {
+        {
+          """
+          class T {
+            static final int A = 1 / 0;
+            static final long B = 1L % 0;
+            static final int C = A + 1;
+            static final String D = "x" + 1 % 0;
+            static final int E = 2 / 0 / 2;
+            static final int F = true ? 1 : 1 / 0;
+            final int g = 1 / 0;
+            static final double H = 1.0 / 0;
+            static final int I = 7 / 2;
+          }
+          """
+        },
+        {
+          """
+          <>:2: error: division by zero
+            static final int A = 1 / 0;
+                                     ^
+          <>:3: error: division by zero
+            static final long B = 1L % 0;
+                                       ^
+          <>:5: error: division by zero
+            static final String D = "x" + 1 % 0;
+                                              ^
+          <>:6: error: division by zero
+            static final int E = 2 / 0 / 2;
+                                     ^
+          <>:7: error: division by zero
+            static final int F = true ? 1 : 1 / 0;
+                                                ^
+          <>:8: error: division by zero
+            final int g = 1 / 0;
+                              ^\
+          """
+        }
+      },
+      {
+        {
+          """
+          @interface Anno {
+            int value();
+          }
+          @Anno(1 / 0)
+          class T {}
+          """
+        },
+        {
+          """
+          <>:4: error: division by zero
+          @Anno(1 / 0)
+                    ^
+          <>:4: error: could not evaluate constant expression
+          @Anno(1 / 0)
+                    ^\
+          """
+        }
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
