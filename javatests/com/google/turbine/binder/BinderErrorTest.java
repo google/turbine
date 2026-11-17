@@ -1143,6 +1143,47 @@ public class BinderErrorTest {
           "                   ^",
         }
       },
+      {
+        {
+          """
+          class A {
+            class Inner {}
+          }
+          class B extends Missing implements A {
+            B.Inner f;
+          }
+          """
+        },
+        {
+          """
+          <>:4: error: could not resolve Missing
+          class B extends Missing implements A {
+                          ^
+          <>:4: error: expected interface type: A
+          class B extends Missing implements A {
+                                             ^\
+          """
+        }
+      },
+      {
+        {
+          """
+          class A {
+            class Inner {}
+          }
+          interface Bad extends A {
+            Bad.Inner f = null;
+          }
+          """
+        },
+        {
+          """
+          <>:4: error: expected interface type: A
+          interface Bad extends A {
+                                ^\
+          """
+        }
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }

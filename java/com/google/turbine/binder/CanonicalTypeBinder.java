@@ -30,7 +30,6 @@ import com.google.turbine.binder.bound.TypeBoundClass.TyVarInfo;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
-import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.type.Type;
 import com.google.turbine.type.Type.ClassTy;
@@ -45,17 +44,12 @@ import java.util.Map;
 public final class CanonicalTypeBinder {
 
   private final TurbineLogWithSource log;
-  private final SourceFile source;
   private final Env<ClassSymbol, TypeBoundClass> env;
   private final ClassSymbol sym;
 
   private CanonicalTypeBinder(
-      TurbineLogWithSource log,
-      SourceFile source,
-      Env<ClassSymbol, TypeBoundClass> env,
-      ClassSymbol sym) {
+      TurbineLogWithSource log, Env<ClassSymbol, TypeBoundClass> env, ClassSymbol sym) {
     this.log = log;
-    this.source = source;
     this.env = env;
     this.sym = sym;
   }
@@ -65,20 +59,17 @@ public final class CanonicalTypeBinder {
       ClassSymbol sym,
       SourceTypeBoundClass base,
       Env<ClassSymbol, TypeBoundClass> env) {
-    CanonicalTypeBinder binder = new CanonicalTypeBinder(log, base.source(), env, sym);
+    CanonicalTypeBinder binder = new CanonicalTypeBinder(log, env, sym);
     Type superClassType = base.superClassType();
     int pos = base.position();
     if (superClassType != null && superClassType.tyKind() == TyKind.CLASS_TY) {
       superClassType =
-          Canonicalize.canonicalizeClassTy(
-              log, base.source(), pos, env, base.owner(), (ClassTy) superClassType);
+          Canonicalize.canonicalizeClassTy(log, pos, env, base.owner(), (ClassTy) superClassType);
     }
     ImmutableList.Builder<Type> interfaceTypes = ImmutableList.builder();
     for (Type i : base.interfaceTypes()) {
       if (i.tyKind() == TyKind.CLASS_TY) {
-        i =
-            Canonicalize.canonicalizeClassTy(
-                log, base.source(), pos, env, base.owner(), (ClassTy) i);
+        i = Canonicalize.canonicalizeClassTy(log, pos, env, base.owner(), (ClassTy) i);
       }
       interfaceTypes.add(i);
     }
@@ -108,7 +99,7 @@ public final class CanonicalTypeBinder {
   }
 
   private Type canonicalize(int position, Type type) {
-    return Canonicalize.canonicalize(log, source, position, env, sym, type);
+    return Canonicalize.canonicalize(log, position, env, sym, type);
   }
 
   private ImmutableList<FieldInfo> fields(ImmutableList<FieldInfo> fields) {

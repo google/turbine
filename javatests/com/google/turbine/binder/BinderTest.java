@@ -356,6 +356,163 @@ public class BinderTest {
   }
 
   @Test
+  public void noJavaLangInnerClass() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                """
+                class Outer<T> {
+                  class Inner {
+                    Inner self;
+                  }
+                  enum E {
+                    A;
+                    Inner x;
+                  }
+                  record R(Inner x) {}
+                }
+                """));
+    TurbineLog log = new TurbineLog();
+    Binder.BindingResult br =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            log,
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()))
+                .bootclasspath(
+                    ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of()))
+                .build());
+    assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
+        .containsExactly(TurbineError.ErrorKind.NO_JAVA_LANG);
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = br.units();
+
+    SourceTypeBoundClass inner = getBoundClass(bound, "Outer$Inner");
+    assertThat(inner.fields().stream().collect(onlyElement()).type().toString())
+        .isEqualTo("Outer<T>.Inner");
+    SourceTypeBoundClass e = getBoundClass(bound, "Outer$E");
+    assertThat(
+            e.fields().stream()
+                .filter(f -> f.name().equals("x"))
+                .collect(onlyElement())
+                .type()
+                .toString())
+        .isEqualTo("Outer<T>.Inner");
+    SourceTypeBoundClass r = getBoundClass(bound, "Outer$R");
+    assertThat(r.components().stream().collect(onlyElement()).type().toString())
+        .isEqualTo("Outer<T>.Inner");
+  }
+
+  @Test
+  public void canonicalizeMissingClassFile() throws Exception {
+    Map<String, byte[]> lib =
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of(
+                "A.java",
+                """
+                class A {
+                  class M {
+                    class I {}
+                  }
+                }
+                """,
+                "B.java",
+                """
+                class B extends A {
+                  class BM extends M {
+                    class BI extends I {}
+                  }
+                }
+                """),
+            ImmutableList.of());
+
+    // Omit A.class from the classpath.
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      for (String name : ImmutableList.of("A$M", "A$M$I", "B", "B$BM", "B$BM$BI")) {
+        jos.putNextEntry(new JarEntry(name + ".class"));
+        jos.write(requireNonNull(lib.get(name)));
+      }
+    }
+
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                """
+                public class Test extends B {
+                  class M extends BM {
+                    I i;
+                  }
+                }
+                """));
+    TurbineLog log = new TurbineLog();
+    Binder.BindingResult br =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            log,
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TURBINE_BOOTCLASSPATH)
+                .build());
+    assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
+        .containsExactly(TurbineError.ErrorKind.CLASS_FILE_NOT_FOUND);
+    assertThat(br.units().keySet())
+        .containsExactly(new ClassSymbol("Test"), new ClassSymbol("Test$M"));
+  }
+
+  @Test
+  public void canonicalizeMissingSuperclass() throws Exception {
+    Map<String, byte[]> lib =
+        IntegrationTestSupport.runJavac(
+            ImmutableMap.of(
+                "Missing.java", "class Missing {}",
+                "Base.java", "class Base extends Missing {}"),
+            ImmutableList.of());
+
+    // Omit Missing.class from the classpath.
+    Path libJar = temporaryFolder.newFile("lib.jar").toPath();
+    try (OutputStream os = Files.newOutputStream(libJar);
+        JarOutputStream jos = new JarOutputStream(os)) {
+      jos.putNextEntry(new JarEntry("Base.class"));
+      jos.write(requireNonNull(lib.get("Base")));
+    }
+
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            parseLines(
+                """
+                class Outer {
+                  class Inner {}
+                  class Sub extends Base {
+                    Inner f;
+                  }
+                }
+                """));
+    TurbineLog log = new TurbineLog();
+    Binder.BindingResult br =
+        Binder.bind(
+            TurbineExecutor.direct(),
+            log,
+            BindingRequest.builder()
+                .units(units)
+                .classpath(
+                    ClassPathBinder.bindClasspath(
+                        TurbineExecutor.direct(), ImmutableList.of(libJar)))
+                .bootclasspath(TURBINE_BOOTCLASSPATH)
+                .build());
+    assertThat(log.diagnostics().stream().map(TurbineDiagnostic::kind))
+        .containsExactly(TurbineError.ErrorKind.CLASS_FILE_NOT_FOUND);
+    SourceTypeBoundClass sub = getBoundClass(br.units(), "Outer$Sub");
+    assertThat(sub.fields().stream().collect(onlyElement()).type().toString())
+        .isEqualTo("Outer.Inner");
+  }
+
+  @Test
   public void genericErrorType() throws Exception {
     ImmutableList<Tree.CompUnit> units =
         ImmutableList.of(
