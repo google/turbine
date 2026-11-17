@@ -23,8 +23,6 @@ import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.TyVarSymbol;
-import com.google.turbine.diag.SourceFile;
-import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineError.ErrorKind;
 import com.google.turbine.diag.TurbineLog.TurbineLogWithSource;
 import com.google.turbine.model.TurbineFlag;
@@ -70,42 +68,35 @@ public class Canonicalize {
   /** Canonicalizes the given type. */
   public static Type canonicalize(
       TurbineLogWithSource log,
-      SourceFile source,
       int position,
       Env<ClassSymbol, TypeBoundClass> env,
       ClassSymbol sym,
       Type type) {
-    return new Canonicalize(log, source, position, env).canonicalize(sym, type);
+    return new Canonicalize(log, position, env).canonicalize(sym, type);
   }
 
   /** Canonicalize a qualified class type, excluding type arguments. */
   public static ClassTy canonicalizeClassTy(
       TurbineLogWithSource log,
-      SourceFile source,
       int position,
       Env<ClassSymbol, TypeBoundClass> env,
-      ClassSymbol owner,
+      @Nullable ClassSymbol owner,
       ClassTy classTy) {
-    return new Canonicalize(log, source, position, env).canonicalizeClassTy(owner, classTy);
+    return new Canonicalize(log, position, env).canonicalizeClassTy(owner, classTy);
   }
 
   private final TurbineLogWithSource log;
-  private final SourceFile source;
   private final int position;
   private final Env<ClassSymbol, TypeBoundClass> env;
 
   public Canonicalize(
-      TurbineLogWithSource log,
-      SourceFile source,
-      int position,
-      Env<ClassSymbol, TypeBoundClass> env) {
+      TurbineLogWithSource log, int position, Env<ClassSymbol, TypeBoundClass> env) {
     this.log = log;
-    this.source = source;
     this.position = position;
     this.env = env;
   }
 
-  public Type canonicalize(ClassSymbol base, Type type) {
+  public Type canonicalize(@Nullable ClassSymbol base, Type type) {
     return switch (type.tyKind()) {
       case PRIM_TY, VOID_TY, TY_VAR, ERROR_TY -> type;
       case WILD_TY -> canonicalizeWildTy(base, (WildTy) type);
@@ -119,7 +110,7 @@ public class Canonicalize {
     };
   }
 
-  private ClassTy canon(ClassSymbol base, ClassTy ty) {
+  private ClassTy canon(@Nullable ClassSymbol base, ClassTy ty) {
     if (ty.sym().binaryName().indexOf('$') == -1) {
       // The binary name of an inner class will always contain $.
       // Names that contain $ may not be inner classes, and will fall through to the full
@@ -152,6 +143,9 @@ public class Canonicalize {
   private boolean isRaw(ClassTy ty) {
     for (ClassTy.SimpleClassTy s : ty.classes().reverse()) {
       TypeBoundClass info = getInfo(s.sym());
+      if (info == null) {
+        return false;
+      }
       if (s.targs().isEmpty() && !info.typeParameters().isEmpty()) {
         return true;
       }
@@ -163,30 +157,40 @@ public class Canonicalize {
   }
 
   /** Given a base symbol to canonicalize, find any implicit enclosing instances. */
-  private Collection<ClassTy.SimpleClassTy> lexicalBase(ClassSymbol first, ClassSymbol owner) {
-
-    if ((getInfo(first).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
+  private Collection<ClassTy.SimpleClassTy> lexicalBase(
+      ClassSymbol first, @Nullable ClassSymbol owner) {
+    TypeBoundClass firstInfo = getInfo(first);
+    if (firstInfo == null
+        || (firstInfo.access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
       return ImmutableList.of();
     }
-    ClassSymbol canonOwner = getInfo(first).owner();
+    ClassSymbol canonOwner = firstInfo.owner();
     Deque<ClassTy.SimpleClassTy> result = new ArrayDeque<>();
     while (canonOwner != null && owner != null) {
-      if (!isSubclass(owner, canonOwner)) {
-        owner = getInfo(owner).owner();
-        continue;
-      }
-      result.addFirst(uninstantiated(owner));
-      if ((getInfo(owner).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
+      TypeBoundClass ownerInfo = getInfo(owner);
+      if (ownerInfo == null) {
         break;
       }
-      canonOwner = getInfo(canonOwner).owner();
+      if (!isSubclass(owner, canonOwner)) {
+        owner = ownerInfo.owner();
+        continue;
+      }
+      result.addFirst(uninstantiated(owner, ownerInfo));
+      if ((ownerInfo.access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
+        break;
+      }
+      TypeBoundClass canonOwnerInfo = getInfo(canonOwner);
+      if (canonOwnerInfo == null) {
+        break;
+      }
+      canonOwner = canonOwnerInfo.owner();
     }
     return result;
   }
 
-  private ClassTy.SimpleClassTy uninstantiated(ClassSymbol owner) {
+  private static ClassTy.SimpleClassTy uninstantiated(ClassSymbol owner, TypeBoundClass info) {
     ImmutableList.Builder<Type> targs = ImmutableList.builder();
-    for (TyVarSymbol p : getInfo(owner).typeParameterTypes().keySet()) {
+    for (TyVarSymbol p : info.typeParameterTypes().keySet()) {
       targs.add(Type.TyVar.create(p, ImmutableList.of()));
     }
     return ClassTy.SimpleClassTy.create(owner, targs.build(), ImmutableList.of());
@@ -198,7 +202,17 @@ public class Canonicalize {
       if (s.equals(t)) {
         return true;
       }
-      s = getInfo(s).superclass();
+      if (s.equals(ClassSymbol.OBJECT)) {
+        return false;
+      }
+      if (s.equals(ClassSymbol.ENUM) || s.equals(ClassSymbol.RECORD)) {
+        return t.equals(ClassSymbol.OBJECT);
+      }
+      TypeBoundClass info = getInfo(s);
+      if (info == null) {
+        return false;
+      }
+      s = info.superclass();
     }
     return false;
   }
@@ -209,12 +223,13 @@ public class Canonicalize {
    */
   private ClassTy canonOne(ClassTy base, SimpleClassTy ty) {
     // if the class is static, it has a trivial canonical qualifier with no type arguments
-    if ((getInfo(ty.sym()).access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
+    TypeBoundClass tyInfo = getInfo(ty.sym());
+    if (tyInfo == null || (tyInfo.access() & TurbineFlag.ACC_STATIC) == TurbineFlag.ACC_STATIC) {
       return ClassTy.create(ImmutableList.of(ty));
     }
     ImmutableList.Builder<ClassTy.SimpleClassTy> simples = ImmutableList.builder();
     // this inner class is known to have an owner
-    ClassSymbol owner = requireNonNull(getInfo(ty.sym()).owner());
+    ClassSymbol owner = requireNonNull(tyInfo.owner());
     if (owner.equals(base.sym())) {
       // if the canonical prefix is the owner the next symbol in the qualified name,
       // the type is already in canonical form
@@ -226,18 +241,29 @@ public class Canonicalize {
     // and instantiate it as a member of the current class
     ClassTy curr = base;
     Map<TyVarSymbol, Type> mapping = new LinkedHashMap<>();
-    while (curr != null) {
-      for (ClassTy.SimpleClassTy s : curr.classes()) {
-        addInstantiation(mapping, s);
-      }
+    while (true) {
       if (curr.sym().equals(owner)) {
+        for (ClassTy.SimpleClassTy s : curr.classes()) {
+          addInstantiation(mapping, s);
+        }
         for (ClassTy.SimpleClassTy s : curr.classes()) {
           simples.add(instantiate(mapping, s.sym()));
         }
         break;
       }
+      if (curr.sym().equals(ClassSymbol.OBJECT)) {
+        simples.addAll(base.classes());
+        break;
+      }
+      for (ClassTy.SimpleClassTy s : curr.classes()) {
+        addInstantiation(mapping, s);
+      }
       TypeBoundClass info = getInfo(curr.sym());
-      curr = canon(info.owner(), (ClassTy) info.superClassType());
+      if (info == null || !(info.superClassType() instanceof ClassTy superClassType)) {
+        simples.addAll(base.classes());
+        break;
+      }
+      curr = canon(info.owner(), superClassType);
     }
     simples.add(ty);
     return ClassTy.create(simples.build());
@@ -245,7 +271,11 @@ public class Canonicalize {
 
   /** Add the type arguments of a simple class type to a type mapping. */
   private void addInstantiation(Map<TyVarSymbol, Type> mapping, ClassTy.SimpleClassTy simpleType) {
-    Collection<TyVarSymbol> symbols = getInfo(simpleType.sym()).typeParameters().values();
+    TypeBoundClass info = getInfo(simpleType.sym());
+    if (info == null) {
+      return;
+    }
+    Collection<TyVarSymbol> symbols = info.typeParameters().values();
     if (simpleType.targs().isEmpty()) {
       // the type is raw
       for (TyVarSymbol sym : symbols) {
@@ -276,8 +306,12 @@ public class Canonicalize {
   /** Instantiate a simple class type for the given symbol, and with the given type mapping. */
   private ClassTy.SimpleClassTy instantiate(
       Map<TyVarSymbol, Type> mapping, ClassSymbol classSymbol) {
+    TypeBoundClass info = getInfo(classSymbol);
+    if (info == null) {
+      return ClassTy.SimpleClassTy.create(classSymbol, ImmutableList.of(), ImmutableList.of());
+    }
     List<Type> args = new ArrayList<>();
-    for (TyVarSymbol sym : getInfo(classSymbol).typeParameterTypes().keySet()) {
+    for (TyVarSymbol sym : info.typeParameterTypes().keySet()) {
       if (!mapping.containsKey(sym)) {
         args.add(Type.TyVar.create(sym, ImmutableList.of()));
         continue;
@@ -355,7 +389,7 @@ public class Canonicalize {
 
   // Identity comparison is intentional: canonicalization returns its input when nothing changed.
   @SuppressWarnings("ReferenceEquality")
-  private ClassTy canonicalizeClassTy(ClassSymbol base, ClassTy ty) {
+  private ClassTy canonicalizeClassTy(@Nullable ClassSymbol base, ClassTy ty) {
     if (ty.classes().size() == 1 && ty.classes().getFirst().targs().isEmpty()) {
       return canon(base, ty);
     }
@@ -380,7 +414,7 @@ public class Canonicalize {
 
   // Identity comparison is intentional: canonicalization returns its input when nothing changed.
   @SuppressWarnings("ReferenceEquality")
-  private ImmutableList<Type> canonicalize(ImmutableList<Type> targs, ClassSymbol base) {
+  private ImmutableList<Type> canonicalize(ImmutableList<Type> targs, @Nullable ClassSymbol base) {
     if (targs.isEmpty()) {
       return targs;
     }
@@ -394,7 +428,7 @@ public class Canonicalize {
     return changed ? result.build() : targs;
   }
 
-  private Type canonicalizeWildTy(ClassSymbol base, WildTy type) {
+  private Type canonicalizeWildTy(@Nullable ClassSymbol base, WildTy type) {
     return switch (type.boundKind()) {
       case NONE -> type;
       case LOWER ->
@@ -404,7 +438,7 @@ public class Canonicalize {
     };
   }
 
-  private Type canonicalizeIntersectionTy(ClassSymbol base, IntersectionTy type) {
+  private Type canonicalizeIntersectionTy(@Nullable ClassSymbol base, IntersectionTy type) {
     ImmutableList.Builder<Type> bounds = ImmutableList.builder();
     for (Type bound : type.bounds()) {
       bounds.add(canonicalize(base, bound));
@@ -412,10 +446,10 @@ public class Canonicalize {
     return IntersectionTy.create(bounds.build());
   }
 
-  private TypeBoundClass getInfo(ClassSymbol canonOwner) {
+  private @Nullable TypeBoundClass getInfo(ClassSymbol canonOwner) {
     TypeBoundClass info = env.get(canonOwner);
     if (info == null) {
-      throw TurbineError.format(source, position, ErrorKind.CLASS_FILE_NOT_FOUND, canonOwner);
+      log.error(position, ErrorKind.CLASS_FILE_NOT_FOUND, canonOwner);
     }
     return info;
   }
