@@ -520,11 +520,13 @@ public class BinderTest {
                 "import java.lang.annotation.Target;",
                 "import java.lang.annotation.ElementType;",
                 "import java.util.List;",
+                "import java.util.Map;",
                 "public class Test {",
                 "  @Target(ElementType.TYPE_USE)",
                 "  @interface A {};",
                 "  No<@A Foo, Bar>.@A Such<Baz>.I f;",
                 "  List<String>.@A NoSuch<Foo, Bar>.I g;",
+                "  Map.Entry.Missing h;",
                 "}"));
     TurbineLog log = new TurbineLog();
     Binder.BindingResult br =
@@ -540,13 +542,27 @@ public class BinderTest {
     ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound = br.units();
 
     SourceTypeBoundClass a = getBoundClass(bound, "Test");
-    ImmutableMap<String, String> fields =
-        a.fields().stream()
-            .collect(toImmutableMap(f -> f.name(), f -> printErrorTy((Type.ErrorTy) f.type())));
-    assertThat(fields)
+    ImmutableMap<String, Type.ErrorTy> errorTypes =
+        a.fields().stream().collect(toImmutableMap(f -> f.name(), f -> (Type.ErrorTy) f.type()));
+    assertThat(
+            errorTypes.entrySet().stream()
+                .collect(toImmutableMap(Map.Entry::getKey, e -> printErrorTy(e.getValue()))))
         .containsExactly(
             "f", "No<Foo,Bar>.@Test.A Such<Baz>.I",
-            "g", "List<java.lang.String>.@Test.A NoSuch<Foo,Bar>.I");
+            "g", "List<java.lang.String>.@Test.A NoSuch<Foo,Bar>.I",
+            "h", "Map.Map$Entry.Missing");
+    assertThat(errorTypes.get("f").classes().stream().map(Type.ErrorTy.SimpleErrorTy::sym))
+        .containsExactly(null, null, null)
+        .inOrder();
+    assertThat(errorTypes.get("g").classes().stream().map(Type.ErrorTy.SimpleErrorTy::sym))
+        .containsExactly(new ClassSymbol("java/util/List"), null, null)
+        .inOrder();
+    assertThat(errorTypes.get("h").classes().stream().map(Type.ErrorTy.SimpleErrorTy::sym))
+        .containsExactly(
+            new ClassSymbol("java/util/Map"), new ClassSymbol("java/util/Map$Entry"), null)
+        .inOrder();
+    assertThat(errorTypes.get("g").toString()).isEqualTo("List.NoSuch.I");
+    assertThat(errorTypes.get("h").toString()).isEqualTo("Map.Map$Entry.Missing");
   }
 
   @Test

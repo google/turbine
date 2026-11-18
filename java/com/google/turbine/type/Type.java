@@ -550,9 +550,20 @@ public interface Type {
   /** An error type. */
   final class ErrorTy implements Type {
 
-    /** One element of a qualified {@link ErrorTy}. */
+    /**
+     * One element of a qualified {@link ErrorTy}.
+     *
+     * @param name the simple name of this segment
+     * @param targs the type arguments on this segment
+     * @param annos the type annotations on this segment
+     * @param sym the resolved class symbol for a resolved prefix segment, or {@code null} if
+     *     unresolved
+     */
     public record SimpleErrorTy(
-        String name, ImmutableList<Type> targs, ImmutableList<AnnoInfo> annos) {}
+        String name,
+        ImmutableList<Type> targs,
+        ImmutableList<AnnoInfo> annos,
+        @Nullable ClassSymbol sym) {}
 
     private final ImmutableList<SimpleErrorTy> classes;
 
@@ -595,14 +606,14 @@ public interface Type {
     public static ErrorTy create(Iterable<Tree.Ident> names) {
       ImmutableList.Builder<SimpleErrorTy> classes = ImmutableList.builder();
       for (Tree.Ident ident : names) {
-        classes.add(new SimpleErrorTy(ident.value(), ImmutableList.of(), ImmutableList.of()));
+        classes.add(new SimpleErrorTy(ident.value(), ImmutableList.of(), ImmutableList.of(), null));
       }
       return create(classes.build());
     }
 
     public static ErrorTy create(String name) {
       return create(
-          ImmutableList.of(new SimpleErrorTy(name, ImmutableList.of(), ImmutableList.of())));
+          ImmutableList.of(new SimpleErrorTy(name, ImmutableList.of(), ImmutableList.of(), null)));
     }
 
     @Override

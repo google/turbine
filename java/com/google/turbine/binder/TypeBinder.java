@@ -1099,7 +1099,7 @@ public class TypeBinder {
         ImmutableList.Builder<Type.ErrorTy.SimpleErrorTy> errorClasses = ImmutableList.builder();
         for (Type.ClassTy.SimpleClassTy c : classes.build()) {
           errorClasses.add(
-              new Type.ErrorTy.SimpleErrorTy(c.sym().simpleName(), c.targs(), c.annos()));
+              new Type.ErrorTy.SimpleErrorTy(c.sym().simpleName(), c.targs(), c.annos(), c.sym()));
         }
         for (; idx < flat.size(); idx++) {
           errorClasses.add(bindSimpleErrorTy(scope, flat.get(idx)));
@@ -1118,7 +1118,7 @@ public class TypeBinder {
   private Type.ErrorTy.SimpleErrorTy bindSimpleErrorTy(CompoundScope scope, Tree.ClassTy classTy) {
     ImmutableList<Type> tyargs = bindTyArgs(scope, classTy.tyargs());
     ImmutableList<AnnoInfo> annos = bindAnnotations(scope, classTy.annos());
-    return new Type.ErrorTy.SimpleErrorTy(classTy.name().value(), tyargs, annos);
+    return new Type.ErrorTy.SimpleErrorTy(classTy.name().value(), tyargs, annos, null);
   }
 
   private Type.PrimTy bindPrimTy(CompoundScope scope, PrimTy t) {
