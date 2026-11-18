@@ -93,14 +93,20 @@ public final class CompUnitPreprocessor {
 
   public static ImmutableList<PreprocessedCompUnit> preprocess(
       TurbineLog log, List<CompUnit> units) {
+    Set<ClassSymbol> seen = new HashSet<>();
     ImmutableList.Builder<PreprocessedCompUnit> result = ImmutableList.builder();
     for (CompUnit unit : units) {
-      result.add(preprocess(log, unit));
+      result.add(preprocess(log, unit, seen));
     }
     return result.build();
   }
 
   public static PreprocessedCompUnit preprocess(TurbineLog log, CompUnit unit) {
+    return preprocess(log, unit, new HashSet<>());
+  }
+
+  private static PreprocessedCompUnit preprocess(
+      TurbineLog log, CompUnit unit, Set<ClassSymbol> seen) {
     String packageName;
     Iterable<TyDecl> decls = unit.decls();
     if (unit.pkg().isPresent()) {
@@ -118,9 +124,13 @@ public final class CompUnitPreprocessor {
     for (TyDecl decl : decls) {
       ClassSymbol sym =
           new ClassSymbol((!packageName.isEmpty() ? packageName + "/" : "") + decl.name());
+      if (!seen.add(sym)) {
+        log.withSource(unit.source()).error(decl.position(), ErrorKind.DUPLICATE_DECLARATION, sym);
+        continue;
+      }
       int access = access(decl.mods(), decl);
       ImmutableMap<String, ClassSymbol> children =
-          preprocessChildren(log, unit.source(), types, sym, decl.members(), access);
+          preprocessChildren(log, unit.source(), types, sym, decl.members(), access, seen);
       types.add(new SourceBoundClass(sym, null, children, access, decl));
     }
     return new PreprocessedCompUnit(
@@ -145,13 +155,13 @@ public final class CompUnitPreprocessor {
       ImmutableList.Builder<SourceBoundClass> types,
       ClassSymbol owner,
       ImmutableList<Tree> members,
-      int enclosing) {
+      int enclosing,
+      Set<ClassSymbol> seen) {
     ImmutableMap.Builder<String, ClassSymbol> result = ImmutableMap.builder();
-    Set<String> seen = new HashSet<>();
     for (Tree member : members) {
       if (member instanceof Tree.TyDecl decl) {
         ClassSymbol sym = new ClassSymbol(owner.binaryName() + '$' + decl.name());
-        if (!seen.add(decl.name().value())) {
+        if (!seen.add(sym)) {
           log.withSource(source).error(member.position(), ErrorKind.DUPLICATE_DECLARATION, sym);
           continue;
         }
@@ -160,7 +170,7 @@ public final class CompUnitPreprocessor {
         int access = innerClassAccess(enclosing, decl);
 
         ImmutableMap<String, ClassSymbol> children =
-            preprocessChildren(log, source, types, sym, decl.members(), access);
+            preprocessChildren(log, source, types, sym, decl.members(), access, seen);
         types.add(new SourceBoundClass(sym, owner, children, access, decl));
       }
     }

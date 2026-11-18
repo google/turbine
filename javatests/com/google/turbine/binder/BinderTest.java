@@ -35,6 +35,7 @@ import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.sym.ClassSymbol;
+import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
 import com.google.turbine.diag.TurbineError;
 import com.google.turbine.diag.TurbineLog;
@@ -733,6 +734,50 @@ public class BinderTest {
                   throw new AssertionError("info should not be called for top-level classes");
                 }))
         .isEqualTo("Outer");
+  }
+
+  @Test
+  public void duplicateTopLevelClassLogsAndContinues() throws Exception {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            Parser.parse(
+                new SourceFile(
+                    "a/Foo.java",
+                    """
+                    package test.pkg;
+                    public class Foo {
+                      public static final int X = 1;
+                      public static class OnlyInFirst {}
+                    }
+                    """)),
+            Parser.parse(
+                new SourceFile(
+                    "b/Foo.java",
+                    """
+                    package test.pkg;
+                    public class Foo {
+                      public static final int X = 2;
+                      public static class OnlyInSecond {}
+                    }
+                    """)));
+
+    TurbineExecutor executor = TurbineExecutor.direct();
+    BindingRequest request = bindingRequest().units(units).build();
+    TurbineLog log = new TurbineLog();
+    BindingResult bound = Binder.bind(executor, log, request);
+    assertThat(log.diagnostics()).hasSize(1);
+    TurbineDiagnostic diagnostic = log.diagnostics().getFirst();
+    assertThat(diagnostic.kind()).isEqualTo(TurbineError.ErrorKind.DUPLICATE_DECLARATION);
+    assertThat(diagnostic.path()).hasValue("b/Foo.java");
+    assertThat(bound.units().keySet())
+        .containsExactly(
+            new ClassSymbol("test/pkg/Foo"), new ClassSymbol("test/pkg/Foo$OnlyInFirst"));
+    SourceTypeBoundClass foo = getBoundClass(bound.units(), "test/pkg/Foo");
+    assertThat(foo.source().path()).isEqualTo("a/Foo.java");
+    assertThat(foo.fields().stream().collect(onlyElement()).value().getValue()).isEqualTo(1);
+
+    TurbineError error = assertThrows(TurbineError.class, () -> Binder.bind(executor, request));
+    assertThat(error).hasMessageThat().contains("duplicate declaration of test.pkg.Foo");
   }
 
   private Tree.CompUnit parseLines(String... lines) {
