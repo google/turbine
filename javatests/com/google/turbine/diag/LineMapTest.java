@@ -60,4 +60,23 @@ public class LineMapTest {
     assertThat(map.lineNumber(2)).isEqualTo(1);
     assertThat(map.lineNumber(3)).isEqualTo(2);
   }
+
+  @Test
+  public void sourceFileLineMap() {
+    String input = "hello\nworld\n";
+    int[] reads = {0};
+    SourceFile sourceFile =
+        new SourceFile(
+            "Test.java",
+            () -> {
+              reads[0]++;
+              return input;
+            });
+
+    LineMap map = sourceFile.lineMap();
+    assertThat(map.lineNumber(input.indexOf("world"))).isEqualTo(2);
+    assertThat(map.column(input.indexOf("world") + 1)).isEqualTo(1);
+    assertThat(sourceFile.lineMap()).isSameInstanceAs(map);
+    assertThat(reads[0]).isEqualTo(1);
+  }
 }

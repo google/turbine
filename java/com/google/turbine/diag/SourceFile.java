@@ -53,7 +53,8 @@ public class SourceFile {
     return lineMap().source().substring(beginIndex, endIndex);
   }
 
-  LineMap lineMap() {
+  /** Returns a memoized {@link LineMap} for this source file. */
+  public LineMap lineMap() {
     return lineMap.get();
   }
 
