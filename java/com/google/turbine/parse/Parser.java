@@ -105,6 +105,7 @@ public class Parser {
   private Parser(Lexer lexer) {
     this.lexer = lexer;
     this.token = lexer.next();
+    this.position = lexer.position();
   }
 
   /** The access modifiers, annotations, and javadoc for a declaration. */
@@ -155,8 +156,9 @@ public class Parser {
     while (true) {
       switch (token) {
         case PACKAGE -> {
+          int pos = position;
           next();
-          pkg = Optional.of(packageDeclaration(modifiers.build()));
+          pkg = Optional.of(packageDeclaration(pos, modifiers.build()));
           modifiers.reset();
         }
         case IMPORT -> {
@@ -1458,11 +1460,11 @@ public class Parser {
     return new ImportDecl(pos, type.build(), stat, wild);
   }
 
-  private PkgDecl packageDeclaration(Modifiers modifiers) {
+  private PkgDecl packageDeclaration(int pos, Modifiers modifiers) {
     if (!modifiers.access().isEmpty()) {
       throw error(ErrorKind.UNEXPECTED_MODIFIER, modifiers);
     }
-    PkgDecl result = new PkgDecl(position, qualIdent(), modifiers.annos(), modifiers.javadoc());
+    PkgDecl result = new PkgDecl(pos, qualIdent(), modifiers.annos(), modifiers.javadoc());
     eat(Token.SEMI);
     return result;
   }

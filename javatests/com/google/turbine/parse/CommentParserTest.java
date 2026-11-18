@@ -231,4 +231,31 @@ public class CommentParserTest {
             .collect(toImmutableMap(m -> m.name().value(), m -> m.javadoc().docComment().trim()));
     assertThat(javadoc).containsExactly("ONE", "ONE", "TWO", "TWO");
   }
+
+  @Test
+  public void packagePosition() {
+    String source =
+        """
+        /* header comment */
+        package /* package */ packagefoo.bar;
+        class Test {}
+        """;
+    Tree.CompUnit unit = Parser.parse(source);
+    Tree.PkgDecl pkg = unit.pkg().orElseThrow();
+    assertThat(source.substring(0, pkg.position())).isEqualTo("/* header comment */\n");
+    assertThat(source.substring(pkg.position()))
+        .startsWith("package /* package */ packagefoo.bar;");
+    assertThat(source.substring(pkg.name().getFirst().position())).startsWith("packagefoo.bar;");
+
+    String annotated =
+        """
+        /* header comment */
+        @Deprecated
+        package foo.bar;
+        """;
+    Tree.PkgDecl annotatedPkg = Parser.parse(annotated).pkg().orElseThrow();
+    assertThat(annotated.substring(annotatedPkg.annos().getFirst().position()))
+        .startsWith("@Deprecated");
+    assertThat(annotated.substring(annotatedPkg.position())).startsWith("package foo.bar;");
+  }
 }
