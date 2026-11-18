@@ -1,0 +1,12 @@
+=== test/A.java ===
+package test;
+
+public class A {
+  public static final int I1 = 7 / 2;
+  public static final int I2 = Integer.MIN_VALUE % -1;
+  public static final long L1 = 7L / 2L;
+  public static final long L2 = 7L % 2L;
+  public static final double D1 = 1.0 / 0;
+  public static final double D2 = 1 / 0.0;
+  public static final float F1 = 1f % 0;
+}

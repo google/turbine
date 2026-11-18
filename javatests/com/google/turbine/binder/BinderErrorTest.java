@@ -1184,6 +1184,88 @@ public class BinderErrorTest {
           """
         }
       },
+      {
+        {
+          """
+          public class A {
+            public static final int I1 = 1 / 0;
+            public static final int I2 = 1 % 0;
+            public static final long L1 = 1L / 0L;
+            public static final long L2 = 1L % 0;
+            public static final int I3 = 1 / 0 / 2;
+            public static final String S1 = "x" + 1 % 0;
+            public static final int ZERO = 0;
+            public static final int I4 = 1 / ZERO;
+            public static final byte BYTE_ZERO = 0;
+            public static final int I5 = 1 / BYTE_ZERO;
+            public static final int I6 = I1 + 1;
+            public static final int I7 = true ? 1 : 1 / 0;
+            public final int i8 = 1 / 0;
+          }
+          """
+        },
+        {
+          """
+          <>:2: error: division by zero
+            public static final int I1 = 1 / 0;
+                                             ^
+          <>:3: error: division by zero
+            public static final int I2 = 1 % 0;
+                                             ^
+          <>:4: error: division by zero
+            public static final long L1 = 1L / 0L;
+                                               ^
+          <>:5: error: division by zero
+            public static final long L2 = 1L % 0;
+                                               ^
+          <>:6: error: division by zero
+            public static final int I3 = 1 / 0 / 2;
+                                             ^
+          <>:7: error: division by zero
+            public static final String S1 = "x" + 1 % 0;
+                                                      ^
+          <>:9: error: division by zero
+            public static final int I4 = 1 / ZERO;
+                                             ^
+          <>:11: error: division by zero
+            public static final int I5 = 1 / BYTE_ZERO;
+                                             ^
+          <>:13: error: division by zero
+            public static final int I7 = true ? 1 : 1 / 0;
+                                                        ^
+          <>:14: error: division by zero
+            public final int i8 = 1 / 0;
+                                      ^\
+          """
+        }
+      },
+      {
+        {
+          """
+          @interface Anno {
+            int value() default 1 / 0;
+          }
+          @Anno(1 / 0)
+          class T {}
+          """
+        },
+        {
+          """
+          <>:2: error: division by zero
+            int value() default 1 / 0;
+                                    ^
+          <>:2: error: could not evaluate constant expression
+            int value() default 1 / 0;
+                                    ^
+          <>:4: error: division by zero
+          @Anno(1 / 0)
+                    ^
+          <>:4: error: could not evaluate constant expression
+          @Anno(1 / 0)
+                    ^\
+          """
+        }
+      },
     };
     return Arrays.asList((Object[][]) testCases);
   }
