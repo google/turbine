@@ -26,6 +26,7 @@ import com.google.turbine.binder.bound.TurbineClassValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass.FieldInfo;
 import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
 import com.google.turbine.binder.env.CompoundEnv;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.sym.ClassSymbol;
@@ -37,6 +38,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +120,35 @@ public class BytecodeBoundClassTest {
             .filter(x -> x.name().equals("baz"))
             .collect(onlyElement());
     assertThat(b.exceptions()).hasSize(1);
+  }
+
+  @Test
+  public void missingMethodParameters() {
+    String name = HasMethod.class.getName().replace('.', '/');
+    String path = "/" + name + ".class";
+    byte[] bytes = toByteArrayOrDie(requireNonNull(getClass().getResourceAsStream(path), path));
+    byte[] stripped =
+        ClassFile.of()
+            .transformClass(
+                ClassFile.of().parse(bytes),
+                ClassTransform.transformingMethods(
+                    MethodTransform.dropping(e -> e instanceof MethodParametersAttribute)));
+
+    BytecodeBoundClass c =
+        new BytecodeBoundClass(
+            new ClassSymbol(name), () -> stripped, TURBINE_BOOTCLASSPATH.env(), () -> "test.jar");
+    MethodInfo m = c.methods().stream().filter(x -> x.name().equals("foo")).collect(onlyElement());
+
+    assertThat(m.parameters()).hasSize(2);
+    ParamInfo first = m.parameters().get(0);
+    ParamInfo second = m.parameters().get(1);
+    assertThat(first.name()).isNull();
+    assertThat(first.sym().index()).isEqualTo(0);
+    assertThat(first.annotations()).hasSize(1);
+    assertThat(second.name()).isNull();
+    assertThat(second.sym().index()).isEqualTo(1);
+    assertThat(second.annotations()).isEmpty();
+    assertThat(first.sym()).isNotEqualTo(second.sym());
   }
 
   @interface VoidAnno {

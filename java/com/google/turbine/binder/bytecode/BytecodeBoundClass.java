@@ -561,7 +561,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
     ImmutableList.Builder<ParamInfo> formals = ImmutableList.builder();
     int idx = 0;
     for (Sig.TySig tySig : paramSigs) {
-      String name;
+      String name = null;
       int access = 0;
       if (idx < m.parameters().size()) {
         // ClassReader omits synthetic and mandated parameters, so the remaining entries
@@ -569,8 +569,6 @@ public class BytecodeBoundClass implements TypeBoundClass {
         ParameterInfo paramInfo = m.parameters().get(idx);
         name = paramInfo.name();
         access = paramInfo.access();
-      } else {
-        name = "arg" + idx;
       }
       ImmutableList<AnnoInfo> annotations =
           (idx < m.parameterAnnotations().size())
@@ -578,7 +576,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
               : ImmutableList.of();
       formals.add(
           new ParamInfo(
-              new ParamSymbol(methodSymbol, name),
+              new ParamSymbol(methodSymbol, idx, name),
               BytecodeBinder.bindTy(
                   tySig,
                   scope,
@@ -630,7 +628,7 @@ public class BytecodeBoundClass implements TypeBoundClass {
       ClassSymbol receiverSym = innerClassConstructor(m) ? requireNonNull(owner()) : sym;
       receiver =
           new ParamInfo(
-              new ParamSymbol(methodSymbol, "this"),
+              new ParamSymbol(methodSymbol, -1, "this"),
               BytecodeBinder.asNonParametricClassTy(receiverSym, receiverAnnotations, scope),
               /* annotations= */ ImmutableList.of(),
               /* access= */ 0);

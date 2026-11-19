@@ -465,7 +465,7 @@ public class Lower {
     }
     ImmutableList.Builder<ParameterInfo> result = ImmutableList.builder();
     for (ParamInfo p : m.parameters()) {
-      result.add(new ParameterInfo(p.name(), p.access() & PARAMETER_ACCESS_MASK));
+      result.add(new ParameterInfo(requireNonNull(p.name()), p.access() & PARAMETER_ACCESS_MASK));
     }
     return result.build();
   }

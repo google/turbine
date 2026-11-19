@@ -17,27 +17,39 @@
 package com.google.turbine.binder.sym;
 
 import com.google.errorprone.annotations.Immutable;
-import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /** A parameter symbol. */
 @Immutable
 public class ParamSymbol implements Symbol {
   private final MethodSymbol owner;
-  private final String name;
+  private final int index;
+  private final @Nullable String name;
 
-  public ParamSymbol(MethodSymbol owner, String name) {
+  public ParamSymbol(MethodSymbol owner, int index, @Nullable String name) {
     this.owner = owner;
+    this.index = index;
     this.name = name;
   }
 
-  /** The enclosing class. */
+  /** The enclosing method. */
   public MethodSymbol owner() {
     return owner;
   }
 
-  /** The parameter name. */
-  public String name() {
+  /**
+   * The 0-based index of the parameter in its enclosing method's parameter list, or {@code -1} for
+   * a receiver parameter.
+   */
+  public int index() {
+    return index;
+  }
+
+  /**
+   * The parameter name, or {@code null} if unknown (e.g. from bytecode without a {@code
+   * MethodParameters} attribute).
+   */
+  public @Nullable String name() {
     return name;
   }
 
@@ -48,7 +60,7 @@ public class ParamSymbol implements Symbol {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, owner);
+    return 31 * owner.hashCode() + index;
   }
 
   @Override
@@ -56,11 +68,11 @@ public class ParamSymbol implements Symbol {
     if (!(obj instanceof ParamSymbol other)) {
       return false;
     }
-    return name().equals(other.name()) && owner().equals(other.owner());
+    return index == other.index && owner.equals(other.owner);
   }
 
   @Override
   public String toString() {
-    return name;
+    return name != null ? name : "arg" + index;
   }
 }

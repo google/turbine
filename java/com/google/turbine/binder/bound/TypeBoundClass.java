@@ -421,8 +421,11 @@ public interface TypeBoundClass extends HeaderBoundClass {
       return annotations;
     }
 
-    /** The parameter's name. */
-    public String name() {
+    /**
+     * The parameter's name, or {@code null} if unknown (e.g. from bytecode without a {@code
+     * MethodParameters} attribute).
+     */
+    public @Nullable String name() {
       return sym.name();
     }
 

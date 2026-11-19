@@ -838,6 +838,46 @@ public class BinderTest {
         .isSameInstanceAs(result.classPathEnv().get(ClassSymbol.OBJECT));
   }
 
+  @Test
+  public void paramSymbols() {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            Parser.parse(
+                """
+                package test.pkg;
+                public class Test {
+                  public record R(int a, String b) {
+                    public R {}
+                  }
+                  public void f(Test this, int x, String y) {}
+                }
+                """));
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(TurbineExecutor.direct(), bindingRequest().units(units).build()).units();
+
+    SourceTypeBoundClass record = getBoundClass(bound, "test/pkg/Test$R");
+    MethodInfo ctor =
+        record.methods().stream().filter(m -> m.name().equals("<init>")).collect(onlyElement());
+    assertThat(ctor.parameters().stream().map(p -> p.sym().index()))
+        .containsExactly(0, 1)
+        .inOrder();
+    assertThat(ctor.parameters().stream().map(ParamInfo::name)).containsExactly("a", "b").inOrder();
+
+    SourceTypeBoundClass test = getBoundClass(bound, "test/pkg/Test");
+    MethodInfo method =
+        test.methods().stream().filter(m -> m.name().equals("f")).collect(onlyElement());
+    ParamInfo receiver = requireNonNull(method.receiver());
+    assertThat(receiver.sym().index()).isEqualTo(-1);
+    assertThat(receiver.name()).isEqualTo("this");
+    assertThat(method.parameters().stream().map(p -> p.sym().index()))
+        .containsExactly(0, 1)
+        .inOrder();
+    assertThat(method.parameters().stream().map(ParamInfo::name))
+        .containsExactly("x", "y")
+        .inOrder();
+    assertThat(receiver.sym()).isNotEqualTo(method.parameters().get(0).sym());
+  }
+
   private Tree.CompUnit parseLines(String... lines) {
     return Parser.parse(Joiner.on('\n').join(lines));
   }

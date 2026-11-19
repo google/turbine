@@ -310,10 +310,9 @@ public class ModelFactory {
 
   public ParamInfo getParamInfo(ParamSymbol sym) {
     MethodInfo info = getMethodInfo(sym.owner());
-    for (ParamInfo p : info.parameters()) {
-      if (p.sym().equals(sym)) {
-        return p;
-      }
+    int index = sym.index();
+    if (index >= 0 && index < info.parameters().size()) {
+      return info.parameters().get(index);
     }
     return null;
   }

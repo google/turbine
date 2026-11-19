@@ -1219,7 +1219,7 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public Name getSimpleName() {
-      return new TurbineName(sym.name());
+      return new TurbineName(name());
     }
 
     @Override
@@ -1239,7 +1239,12 @@ public abstract class TurbineElement implements Element {
 
     @Override
     public String toString() {
-      return String.valueOf(sym.name());
+      return name();
+    }
+
+    private String name() {
+      String name = sym.name();
+      return name != null ? name : "arg" + sym.index();
     }
 
     @Override

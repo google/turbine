@@ -20,15 +20,26 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MoreCollectors;
 import com.google.common.testing.EqualsTester;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.CompoundEnv;
+import com.google.turbine.binder.env.SimpleEnv;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
 import com.google.turbine.binder.sym.PackageSymbol;
 import com.google.turbine.testing.TestClassPaths;
 import com.google.turbine.type.Type.ClassTy;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.util.List;
+import java.util.Optional;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -237,6 +248,64 @@ public class TurbineElementTest {
     assertThat(parameter.getEnclosedElements()).isEmpty();
     assertThat(parameter.getSimpleName().toString()).isNotEmpty();
     assertThat(parameter.getConstantValue()).isNull();
+  }
+
+  @Test
+  public void bytecodeParameters() {
+    MethodTypeDesc descriptor =
+        MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int, ConstantDescs.CD_String);
+    byte[] bytes =
+        ClassFile.of()
+            .build(
+                ClassDesc.of("Test"),
+                cb -> {
+                  cb.withMethod("unnamed", descriptor, ClassFile.ACC_PUBLIC, mb -> {});
+                  cb.withMethod(
+                      "named",
+                      descriptor,
+                      ClassFile.ACC_PUBLIC,
+                      mb ->
+                          mb.with(
+                              MethodParametersAttribute.of(
+                                  MethodParameterInfo.ofParameter(Optional.of("first"), 0),
+                                  MethodParameterInfo.ofParameter(Optional.of("second"), 0))));
+                });
+    ClassSymbol sym = new ClassSymbol("Test");
+    BytecodeBoundClass bound =
+        new BytecodeBoundClass(
+            sym, () -> bytes, TestClassPaths.TURBINE_BOOTCLASSPATH.env(), () -> "test.jar");
+    CompoundEnv<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(TestClassPaths.TURBINE_BOOTCLASSPATH.env())
+            .append(new SimpleEnv<>(ImmutableMap.of(sym, bound)));
+    ModelFactory modelFactory =
+        new ModelFactory(env, env, TestClassPaths.TURBINE_BOOTCLASSPATH.index());
+
+    TypeElement test = modelFactory.typeElement(sym);
+    ExecutableElement unnamed =
+        ElementFilter.methodsIn(test.getEnclosedElements()).stream()
+            .filter(m -> m.getSimpleName().contentEquals("unnamed"))
+            .collect(MoreCollectors.onlyElement());
+    List<? extends VariableElement> unnamedParams = unnamed.getParameters();
+    assertThat(unnamedParams).hasSize(2);
+    assertThat(unnamedParams.get(0).getSimpleName().toString()).isEqualTo("arg0");
+    assertThat(unnamedParams.get(0).toString()).isEqualTo("arg0");
+    assertThat(unnamedParams.get(0).asType().toString()).isEqualTo("int");
+    assertThat(unnamedParams.get(1).getSimpleName().toString()).isEqualTo("arg1");
+    assertThat(unnamedParams.get(1).toString()).isEqualTo("arg1");
+    assertThat(unnamedParams.get(1).asType().toString()).isEqualTo("java.lang.String");
+    assertThat(unnamedParams.get(0)).isNotEqualTo(unnamedParams.get(1));
+
+    ExecutableElement named =
+        ElementFilter.methodsIn(test.getEnclosedElements()).stream()
+            .filter(m -> m.getSimpleName().contentEquals("named"))
+            .collect(MoreCollectors.onlyElement());
+    List<? extends VariableElement> namedParams = named.getParameters();
+    assertThat(namedParams).hasSize(2);
+    assertThat(namedParams.get(0).getSimpleName().toString()).isEqualTo("first");
+    assertThat(namedParams.get(0).toString()).isEqualTo("first");
+    assertThat(namedParams.get(1).getSimpleName().toString()).isEqualTo("second");
+    assertThat(namedParams.get(1).toString()).isEqualTo("second");
+    assertThat(namedParams.get(0)).isNotEqualTo(namedParams.get(1));
   }
 
   @Test

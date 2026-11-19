@@ -432,7 +432,7 @@ public class TypeBinder {
               Type.PrimTy.create(TurbineConstantTypeKind.BOOLEAN, ImmutableList.of()),
               ImmutableList.of(
                   new ParamInfo(
-                      new ParamSymbol(equalsMethod, "o"),
+                      new ParamSymbol(equalsMethod, 0, "o"),
                       Type.ClassTy.OBJECT,
                       ImmutableList.of(),
                       /* access= */ 0)),
@@ -486,10 +486,11 @@ public class TypeBinder {
       SyntheticMethods syntheticMethods, ImmutableList<RecordComponentInfo> components) {
     MethodSymbol symbol = syntheticMethods.create(owner, "<init>");
     ImmutableList.Builder<ParamInfo> params = ImmutableList.builder();
+    int idx = 0;
     for (RecordComponentInfo component : components) {
       params.add(
           new ParamInfo(
-              new ParamSymbol(symbol, component.name()),
+              new ParamSymbol(symbol, idx++, component.name()),
               component.type(),
               component.annotations(),
               component.access()));
@@ -651,7 +652,7 @@ public class TypeBinder {
       sym = info.owner();
     }
     return new ParamInfo(
-        new ParamSymbol(owner, "this$" + enclosingInstances),
+        new ParamSymbol(owner, 0, "this$" + enclosingInstances),
         Type.ClassTy.asNonParametricClassTy(base.owner()),
         ImmutableList.of(),
         access);
@@ -660,13 +661,13 @@ public class TypeBinder {
   private static ImmutableList<ParamInfo> enumCtorParams(MethodSymbol owner) {
     return ImmutableList.of(
         new ParamInfo(
-            new ParamSymbol(owner, "$enum$name"),
+            new ParamSymbol(owner, 0, "$enum$name"),
             Type.ClassTy.STRING,
             ImmutableList.of(),
             /*synthetic*/
             TurbineFlag.ACC_SYNTHETIC),
         new ParamInfo(
-            new ParamSymbol(owner, "$enum$ordinal"),
+            new ParamSymbol(owner, 1, "$enum$ordinal"),
             Type.PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
             ImmutableList.of(),
             /*synthetic*/
@@ -699,7 +700,7 @@ public class TypeBinder {
             Type.ClassTy.asNonParametricClassTy(owner),
             ImmutableList.of(
                 new ParamInfo(
-                    new ParamSymbol(valueOfMethod, "name"),
+                    new ParamSymbol(valueOfMethod, 0, "name"),
                     Type.ClassTy.STRING,
                     ImmutableList.of(),
                     TurbineFlag.ACC_MANDATED)),
@@ -799,19 +800,25 @@ public class TypeBinder {
     }
 
     ImmutableList.Builder<ParamInfo> parameters = ImmutableList.builder();
+    int paramIdx = 0;
     String name = t.name().value();
     if (name.equals("<init>")) {
       if (hasEnclosingInstance(base)) {
         parameters.add(enclosingInstanceParameter(sym));
+        paramIdx++;
       } else {
         switch (base.kind()) {
-          case ENUM -> parameters.addAll(enumCtorParams(sym));
+          case ENUM -> {
+            ImmutableList<ParamInfo> enumParams = enumCtorParams(sym);
+            parameters.addAll(enumParams);
+            paramIdx += enumParams.size();
+          }
           case RECORD -> {
             if (t.mods().contains(TurbineModifier.COMPACT_CTOR)) {
               for (RecordComponentInfo component : components) {
                 parameters.add(
                     new ParamInfo(
-                        new ParamSymbol(sym, component.name()),
+                        new ParamSymbol(sym, paramIdx++, component.name()),
                         component.type(),
                         component.annotations(),
                         component.access()));
@@ -830,13 +837,14 @@ public class TypeBinder {
           access |= m.flag();
         }
       }
+      boolean isReceiver = p.name().value().equals("this");
       ParamInfo param =
           new ParamInfo(
-              new ParamSymbol(sym, p.name().value()),
+              new ParamSymbol(sym, isReceiver ? -1 : paramIdx++, p.name().value()),
               bindTy(scope, p.ty()),
               bindAnnotations(scope, p.annos()), /*synthetic*/
               access);
-      if (p.name().value().equals("this")) {
+      if (isReceiver) {
         receiver = param;
         continue;
       }

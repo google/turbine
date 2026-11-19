@@ -175,7 +175,9 @@ public class LowerTest {
                 ImmutableList.of(
                     new SourceTypeBoundClass.ParamInfo(
                         new ParamSymbol(
-                            new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1), "foo"),
+                            new MethodSymbol.Source(new ClassSymbol("test/Test"), "g", -1),
+                            0,
+                            "foo"),
                         PrimTy.create(TurbineConstantTypeKind.INT, ImmutableList.of()),
                         ImmutableList.of(),
                         0)),
