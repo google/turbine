@@ -572,7 +572,9 @@ public class TypeBinder {
     for (Tree.VarDecl p : components) {
       int access = 0;
       for (TurbineModifier m : p.mods()) {
-        access |= m.flag();
+        if (m != TurbineModifier.VARARGS) {
+          access |= m.flag();
+        }
       }
       RecordComponentInfo param =
           new RecordComponentInfo(
@@ -614,8 +616,7 @@ public class TypeBinder {
       MethodSymbol symbol, ImmutableList<ParamInfo> formals, TurbineVisibility visibility) {
     int access = visibility.flag();
     access |= (base.access() & TurbineFlag.ACC_STRICT);
-    if (!formals.isEmpty()
-        && (formals.getLast().access() & TurbineFlag.ACC_VARARGS) == TurbineFlag.ACC_VARARGS) {
+    if (base.kind() == TurbineTyKind.RECORD && isVarArgsRecord()) {
       access |= TurbineFlag.ACC_VARARGS;
     }
     return new MethodInfo(
@@ -825,7 +826,9 @@ public class TypeBinder {
     for (Tree.VarDecl p : t.params()) {
       int access = 0;
       for (TurbineModifier m : p.mods()) {
-        access |= m.flag();
+        if (m != TurbineModifier.VARARGS) {
+          access |= m.flag();
+        }
       }
       ParamInfo param =
           new ParamInfo(

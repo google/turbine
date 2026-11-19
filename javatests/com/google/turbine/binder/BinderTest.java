@@ -34,6 +34,9 @@ import com.google.turbine.binder.Binder.BindingRequest;
 import com.google.turbine.binder.Binder.BindingResult;
 import com.google.turbine.binder.bound.SourceTypeBoundClass;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.ParamInfo;
+import com.google.turbine.binder.bound.TypeBoundClass.RecordComponentInfo;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.diag.SourceFile;
 import com.google.turbine.diag.TurbineDiagnostic;
@@ -778,6 +781,43 @@ public class BinderTest {
 
     TurbineError error = assertThrows(TurbineError.class, () -> Binder.bind(executor, request));
     assertThat(error).hasMessageThat().contains("duplicate declaration of test.pkg.Foo");
+  }
+
+  @Test
+  public void varargsAccessFlags() {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            Parser.parse(
+                """
+                package test.pkg;
+                public class Test {
+                  public void f(final String... args) {}
+                  public record R1(int... x) {}
+                  public record R2(int... x) {
+                    public R2 {}
+                  }
+                }
+                """));
+    ImmutableMap<ClassSymbol, SourceTypeBoundClass> bound =
+        Binder.bind(TurbineExecutor.direct(), bindingRequest().units(units).build()).units();
+
+    SourceTypeBoundClass test = getBoundClass(bound, "test/pkg/Test");
+    MethodInfo method =
+        test.methods().stream().filter(m -> m.name().equals("f")).collect(onlyElement());
+    assertThat(method.access() & TurbineFlag.ACC_VARARGS).isEqualTo(TurbineFlag.ACC_VARARGS);
+    ParamInfo methodParam = method.parameters().stream().collect(onlyElement());
+    assertThat(methodParam.access()).isEqualTo(TurbineFlag.ACC_FINAL);
+
+    for (String recordName : ImmutableList.of("test/pkg/Test$R1", "test/pkg/Test$R2")) {
+      SourceTypeBoundClass record = getBoundClass(bound, recordName);
+      RecordComponentInfo component = record.components().stream().collect(onlyElement());
+      assertThat(component.access()).isEqualTo(0);
+      MethodInfo ctor =
+          record.methods().stream().filter(m -> m.name().equals("<init>")).collect(onlyElement());
+      assertThat(ctor.access() & TurbineFlag.ACC_VARARGS).isEqualTo(TurbineFlag.ACC_VARARGS);
+      ParamInfo ctorParam = ctor.parameters().stream().collect(onlyElement());
+      assertThat(ctorParam.access()).isEqualTo(0);
+    }
   }
 
   private Tree.CompUnit parseLines(String... lines) {
