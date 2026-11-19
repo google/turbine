@@ -820,6 +820,24 @@ public class BinderTest {
     }
   }
 
+  @Test
+  public void bindingResultEnv() {
+    ImmutableList<Tree.CompUnit> units =
+        ImmutableList.of(
+            Parser.parse(
+                """
+                package test.pkg;
+                public class Test {}
+                """));
+    BindingResult result =
+        Binder.bind(TurbineExecutor.direct(), bindingRequest().units(units).build());
+    assertThat(result.env()).isSameInstanceAs(result.env());
+    assertThat(result.env().get(new ClassSymbol("test/pkg/Test")))
+        .isSameInstanceAs(result.units().get(new ClassSymbol("test/pkg/Test")));
+    assertThat(result.env().get(ClassSymbol.OBJECT))
+        .isSameInstanceAs(result.classPathEnv().get(ClassSymbol.OBJECT));
+  }
+
   private Tree.CompUnit parseLines(String... lines) {
     return Parser.parse(Joiner.on('\n').join(lines));
   }

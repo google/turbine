@@ -286,19 +286,17 @@ public final class Binder {
             CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
             log);
 
+    CompoundEnv<ClassSymbol, TypeBoundClass> env =
+        CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv);
     ImmutableList<SourceModuleInfo> boundModules =
-        bindModules(
-            modules,
-            CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(tenv),
-            classPathModuleEnv,
-            moduleVersion,
-            log);
+        bindModules(modules, env, classPathModuleEnv, moduleVersion, log);
 
     return new BindingResult(
         tenv.asMap(),
         bindTypesResult.scopes(),
         boundModules,
         classPathEnv,
+        env,
         tli,
         generatedSources,
         generatedClasses,
@@ -705,6 +703,7 @@ public final class Binder {
     private final ImmutableMap<ClassSymbol, ClassScopes> scopes;
     private final ImmutableList<SourceModuleInfo> modules;
     private final CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv;
+    private final CompoundEnv<ClassSymbol, TypeBoundClass> env;
     private final TopLevelIndex tli;
     private final ImmutableMap<String, byte[]> generatedSources;
     private final ImmutableMap<String, byte[]> generatedClasses;
@@ -715,6 +714,7 @@ public final class Binder {
         ImmutableMap<ClassSymbol, ClassScopes> scopes,
         ImmutableList<SourceModuleInfo> modules,
         CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv,
+        CompoundEnv<ClassSymbol, TypeBoundClass> env,
         TopLevelIndex tli,
         ImmutableMap<String, byte[]> generatedSources,
         ImmutableMap<String, byte[]> generatedClasses,
@@ -723,6 +723,7 @@ public final class Binder {
       this.scopes = scopes;
       this.modules = modules;
       this.classPathEnv = classPathEnv;
+      this.env = env;
       this.tli = tli;
       this.generatedSources = generatedSources;
       this.generatedClasses = generatedClasses;
@@ -741,6 +742,11 @@ public final class Binder {
     /** The classpath. */
     public CompoundEnv<ClassSymbol, BytecodeBoundClass> classPathEnv() {
       return classPathEnv;
+    }
+
+    /** The combined environment of source and classpath classes (sources take precedence). */
+    public CompoundEnv<ClassSymbol, TypeBoundClass> env() {
+      return env;
     }
 
     public TopLevelIndex tli() {
@@ -773,12 +779,7 @@ public final class Binder {
     public @Nullable FieldInfo resolveField(ClassSymbol sym, Tree.ConstVarName name) {
       ClassScopes classScopes = requireNonNull(scopes.get(sym), sym.binaryName());
       return ConstEvaluator.resolveField(
-          CompoundEnv.<ClassSymbol, TypeBoundClass>of(classPathEnv).append(new SimpleEnv<>(units)),
-          sym,
-          sym,
-          classScopes.memberImports(),
-          classScopes.scope(),
-          name);
+          env, sym, sym, classScopes.memberImports(), classScopes.scope(), name);
     }
 
     public BindingResult withGeneratedClasses(ImmutableMap<String, byte[]> generatedClasses) {
@@ -787,6 +788,7 @@ public final class Binder {
           scopes,
           modules,
           classPathEnv,
+          env,
           tli,
           generatedSources,
           generatedClasses,
@@ -799,6 +801,7 @@ public final class Binder {
           scopes,
           modules,
           classPathEnv,
+          env,
           tli,
           generatedSources,
           generatedClasses,
@@ -811,6 +814,7 @@ public final class Binder {
           scopes,
           modules,
           classPathEnv,
+          env,
           tli,
           generatedSources,
           generatedClasses,
