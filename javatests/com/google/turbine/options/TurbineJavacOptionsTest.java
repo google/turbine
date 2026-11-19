@@ -192,7 +192,6 @@ public class TurbineJavacOptionsTest {
     LowerOptions lowerOptions = TurbineJavacOptions.parse(ImmutableList.of()).lowerOptions();
     assertThat(lowerOptions.emitPrivateFields()).isFalse();
     assertThat(lowerOptions.emitPrivateFieldsInRecords()).isFalse();
-    assertThat(lowerOptions.emitAllPrivateMemberClasses()).isFalse();
     assertThat(lowerOptions.methodParameters()).isTrue();
   }
 
@@ -207,11 +206,6 @@ public class TurbineJavacOptionsTest {
             TurbineJavacOptions.parse(ImmutableList.of("-XDturbine.emitPrivateFieldsInRecords"))
                 .lowerOptions()
                 .emitPrivateFieldsInRecords())
-        .isTrue();
-    assertThat(
-            TurbineJavacOptions.parse(ImmutableList.of("-XDturbine.emitAllPrivateMemberClasses"))
-                .lowerOptions()
-                .emitAllPrivateMemberClasses())
         .isTrue();
     assertThat(
             TurbineJavacOptions.parse(ImmutableList.of("-XDturbine.noMethodParameters"))

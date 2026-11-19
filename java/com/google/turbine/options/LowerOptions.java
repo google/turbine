@@ -23,8 +23,6 @@ public record LowerOptions(
     LanguageVersion languageVersion,
     boolean emitPrivateFields,
     boolean emitPrivateFieldsInRecords,
-    // TODO: b/496858305 - consider removing this after rolling out the feature
-    boolean emitAllPrivateMemberClasses,
     boolean methodParameters) {
 
   public static LowerOptions createDefault() {
@@ -36,7 +34,6 @@ public record LowerOptions(
         .languageVersion(LanguageVersion.createDefault())
         .emitPrivateFields(false)
         .emitPrivateFieldsInRecords(false)
-        .emitAllPrivateMemberClasses(false)
         .methodParameters(true);
   }
 
@@ -50,8 +47,6 @@ public record LowerOptions(
     public abstract Builder emitPrivateFields(boolean emitPrivateFields);
 
     public abstract Builder emitPrivateFieldsInRecords(boolean emitPrivateFieldsInRecords);
-
-    public abstract Builder emitAllPrivateMemberClasses(boolean emitAllPrivateMemberClasses);
 
     public abstract Builder methodParameters(boolean methodParameters);
 

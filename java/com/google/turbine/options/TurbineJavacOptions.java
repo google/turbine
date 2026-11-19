@@ -162,8 +162,6 @@ public record TurbineJavacOptions(
         case "-XDturbine.emitPrivateFields" -> lowerOptionsBuilder.emitPrivateFields(true);
         case "-XDturbine.emitPrivateFieldsInRecords" ->
             lowerOptionsBuilder.emitPrivateFieldsInRecords(true);
-        case "-XDturbine.emitAllPrivateMemberClasses" ->
-            lowerOptionsBuilder.emitAllPrivateMemberClasses(true);
         case "-XDturbine.noMethodParameters" -> lowerOptionsBuilder.methodParameters(false);
         case "-XDnoParallel" -> builder.parallel(false);
         default -> {

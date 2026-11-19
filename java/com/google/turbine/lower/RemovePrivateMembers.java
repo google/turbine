@@ -89,10 +89,7 @@ class RemovePrivateMembers {
       Map<ClassSymbol, SourceTypeBoundClass> unit,
       LowerOptions options,
       ImmutableMap.Builder<ClassSymbol, SourceTypeBoundClass> result) {
-    Set<ClassSymbol> reachableClasses =
-        options.emitAllPrivateMemberClasses()
-            ? unit.keySet()
-            : reachableClasses(env, unit, options);
+    Set<ClassSymbol> reachableClasses = reachableClasses(env, unit, options);
     for (Map.Entry<ClassSymbol, SourceTypeBoundClass> e : unit.entrySet()) {
       ClassSymbol sym = e.getKey();
       SourceTypeBoundClass info = e.getValue();
