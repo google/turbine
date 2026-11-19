@@ -124,7 +124,7 @@ public class ModelFactory {
   private final Map<TyVarSymbol, TurbineTypeParameterElement> tyParamCache = new HashMap<>();
   private final Map<PackageSymbol, TurbinePackageElement> packageCache = new HashMap<>();
 
-  private final HashMap<CharSequence, ClassSymbol> inferSymbolCache = new HashMap<>();
+  private final HashMap<String, ClassSymbol> inferSymbolCache = new HashMap<>();
 
   private final ClassHierarchy cha;
   private Types types;
@@ -270,10 +270,10 @@ public class ModelFactory {
   }
 
   public ClassSymbol inferSymbol(CharSequence name) {
-    return inferSymbolCache.computeIfAbsent(name, key -> inferSymbolImpl(name));
+    return inferSymbolCache.computeIfAbsent(name.toString(), this::inferSymbolImpl);
   }
 
-  private ClassSymbol inferSymbolImpl(CharSequence name) {
+  private ClassSymbol inferSymbolImpl(String name) {
     LookupResult lookup = tli.scope().lookup(new LookupKey(asIdents(name)));
     if (lookup == null) {
       return null;
@@ -288,7 +288,7 @@ public class ModelFactory {
     return sym;
   }
 
-  private static ImmutableList<Ident> asIdents(CharSequence name) {
+  private static ImmutableList<Ident> asIdents(String name) {
     ImmutableList.Builder<Ident> result = ImmutableList.builder();
     for (String bit : Splitter.on('.').split(name)) {
       result.add(new Ident(-1, bit));

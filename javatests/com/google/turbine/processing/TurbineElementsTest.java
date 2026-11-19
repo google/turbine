@@ -264,6 +264,14 @@ public class TurbineElementsTest {
       assertThat(turbineElements.getTypeElement(name).getQualifiedName().toString())
           .isEqualTo(name);
     }
+    StringBuilder sb = new StringBuilder("java.util.Map");
+    TypeElement map = turbineElements.getTypeElement(sb);
+    assertThat(map.getQualifiedName().toString()).isEqualTo("java.util.Map");
+    sb.setLength(0);
+    sb.append("java.lang.String");
+    assertThat(turbineElements.getTypeElement(sb).getQualifiedName().toString())
+        .isEqualTo("java.lang.String");
+    assertThat(turbineElements.getTypeElement(map.getQualifiedName())).isSameInstanceAs(map);
     assertThat(turbineElements.getTypeElement("NoSuch")).isNull();
     assertThat(turbineElements.getTypeElement("java.lang.Object.NoSuch")).isNull();
     assertThat(turbineElements.getTypeElement("java.lang.NoSuch")).isNull();
