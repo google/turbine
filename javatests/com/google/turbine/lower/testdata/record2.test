@@ -24,4 +24,8 @@ class Records {
       Objects.requireNonNull(x);
     }
   }
+
+  public record R4(int... x) {
+    public R4 {}
+  }
 }

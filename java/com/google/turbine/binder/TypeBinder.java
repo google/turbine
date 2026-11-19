@@ -872,6 +872,11 @@ public class TypeBinder {
           access |= TurbineFlag.ACC_PRIVATE;
         }
       }
+      case RECORD -> {
+        if (t.mods().contains(TurbineModifier.COMPACT_CTOR) && isVarArgsRecord()) {
+          access |= TurbineFlag.ACC_VARARGS;
+        }
+      }
       default -> {}
     }
 
@@ -900,6 +905,11 @@ public class TypeBinder {
   private static CompoundScope withTypeParameters(
       CompoundScope scope, ImmutableMap<String, TyVarSymbol> typeParameters) {
     return typeParameters.isEmpty() ? scope : scope.append(new MapScope(typeParameters));
+  }
+
+  private boolean isVarArgsRecord() {
+    ImmutableList<Tree.VarDecl> components = base.decl().components();
+    return !components.isEmpty() && components.getLast().mods().contains(TurbineModifier.VARARGS);
   }
 
   private static boolean hasEnclosingInstance(HeaderBoundClass base) {

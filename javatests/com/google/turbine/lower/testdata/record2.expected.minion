@@ -88,6 +88,32 @@ public final class Records$R3 extends java/lang/Record {
   // declaration: T x()
   public x()Ljava/lang/Object;
 }
+=== Records$R4.class ===
+// class version 69.0 (69)
+// RECORD
+// access flags 0x10031
+public final class Records$R4 extends java/lang/Record {
+
+  NESTHOST Records
+  // access flags 0x19
+  public final static INNERCLASS Records$R4 Records R4
+  RECORDCOMPONENT   [I x
+
+  // access flags 0x81
+  public varargs <init>([I)V
+
+  // access flags 0x11
+  public final toString()Ljava/lang/String;
+
+  // access flags 0x11
+  public final hashCode()I
+
+  // access flags 0x11
+  public final equals(Ljava/lang/Object;)Z
+
+  // access flags 0x1
+  public x()[I
+}
 === Records.class ===
 // class version 69.0 (69)
 // access flags 0x20
@@ -96,12 +122,15 @@ class Records {
   NESTMEMBER Records$R1
   NESTMEMBER Records$R2
   NESTMEMBER Records$R3
+  NESTMEMBER Records$R4
   // access flags 0x19
   public final static INNERCLASS Records$R1 Records R1
   // access flags 0x19
   public final static INNERCLASS Records$R2 Records R2
   // access flags 0x19
   public final static INNERCLASS Records$R3 Records R3
+  // access flags 0x19
+  public final static INNERCLASS Records$R4 Records R4
 
   // access flags 0x0
   <init>()V
