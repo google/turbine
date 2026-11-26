@@ -17,6 +17,7 @@
 package com.google.turbine.binder;
 
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.google.turbine.binder.bound.ModuleInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
@@ -40,4 +41,13 @@ public interface ClassPath {
   TopLevelIndex index();
 
   @Nullable Supplier<byte[]> resource(String path);
+
+  /**
+   * The contents of the classpath's {@code META-INF/*.kotlin_module} files, which list the classes
+   * containing the top-level declarations of each Kotlin package. Unlike {@link #resource}, this
+   * includes files with the same name from different jars.
+   */
+  default ImmutableList<Supplier<byte[]>> kotlinModules() {
+    return ImmutableList.of();
+  }
 }

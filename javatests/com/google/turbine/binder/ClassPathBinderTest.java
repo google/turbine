@@ -28,12 +28,15 @@ import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.base.Supplier;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.MoreFiles;
 import com.google.turbine.binder.bound.EnumConstantValue;
 import com.google.turbine.binder.bound.TypeBoundClass;
+import com.google.turbine.binder.bound.TypeBoundClass.MethodInfo;
 import com.google.turbine.binder.bytecode.BytecodeBoundClass;
 import com.google.turbine.binder.env.Env;
 import com.google.turbine.binder.lookup.LookupKey;
@@ -42,6 +45,8 @@ import com.google.turbine.binder.lookup.PackageScope;
 import com.google.turbine.binder.lookup.Scope;
 import com.google.turbine.binder.sym.ClassSymbol;
 import com.google.turbine.binder.sym.FieldSymbol;
+import com.google.turbine.binder.sym.MethodSymbol;
+import com.google.turbine.bytecode.ClassFile;
 import com.google.turbine.model.TurbineFlag;
 import com.google.turbine.model.TurbineTyKind;
 import com.google.turbine.parallel.TurbineExecutor;
@@ -51,6 +56,7 @@ import com.google.turbine.type.Type.ClassTy;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -374,5 +380,104 @@ public class ClassPathBinderTest {
         jos.write(cw.toByteArray());
       }
     }
+  }
+
+  @Test
+  public void syntheticAndClassFileMethods() throws Exception {
+    Path jar = temporaryFolder.newFile("synthetic.jar").toPath();
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(jar))) {
+      jos.putNextEntry(new JarEntry("foo/Bar.class"));
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(52, Opcodes.ACC_PUBLIC, "foo/Bar", null, "java/lang/Object", new String[] {});
+      var declared = cw.visitMethod(Opcodes.ACC_PUBLIC, "declared", "(I)V", null, null);
+      declared.visitParameter("count", 0);
+      declared.visitEnd();
+      var syntheticAnnotations =
+          cw.visitMethod(
+              Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+              "getValue$annotations",
+              "()V",
+              null,
+              null);
+      syntheticAnnotations.visitAnnotation("Ljava/lang/Deprecated;", true).visitEnd();
+      syntheticAnnotations.visitEnd();
+      cw.visitMethod(
+              Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+              "other$synthetic",
+              "()V",
+              null,
+              null)
+          .visitEnd();
+      cw.visitEnd();
+      jos.write(cw.toByteArray());
+    }
+
+    ClassPath bound =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(jar));
+    ClassSymbol sym = new ClassSymbol("foo/Bar");
+    BytecodeBoundClass info = requireNonNull(bound.env().get(sym));
+
+    MethodInfo declaredInfo = getOnlyElement(info.methods());
+    assertThat(declaredInfo.name()).isEqualTo("declared");
+
+    ClassFile.MethodInfo cfDeclared = requireNonNull(info.classFileMethod(declaredInfo.sym()));
+    assertThat(cfDeclared.descriptor()).isEqualTo("(I)V");
+    assertThat(getOnlyElement(cfDeclared.parameters()).name()).isEqualTo("count");
+    assertThat(info.classFileMethod(new MethodSymbol.ClassFile(sym, "missing", "()V"))).isNull();
+    assertThat(info.classFileMethod(new MethodSymbol.Source(sym, "declared", 0))).isNull();
+    assertThat(
+            info.classFileMethod(
+                new MethodSymbol.ClassFile(new ClassSymbol("foo/Other"), "declared", "(I)V")))
+        .isNull();
+
+    ImmutableList<MethodInfo> filteredSynthetics =
+        info.syntheticMethods((name, desc) -> name.endsWith("$annotations") && desc.equals("()V"));
+    MethodInfo synthMethod = getOnlyElement(filteredSynthetics);
+    assertThat(synthMethod.name()).isEqualTo("getValue$annotations");
+    assertThat(getOnlyElement(synthMethod.annotations()).sym())
+        .isEqualTo(new ClassSymbol("java/lang/Deprecated"));
+
+    assertThat(
+            info.classFileWithSyntheticMethods().methods().stream().map(ClassFile.MethodInfo::name))
+        .containsExactly("declared", "getValue$annotations", "other$synthetic")
+        .inOrder();
+  }
+
+  private static void writeJar(Path jar, ImmutableMap<String, byte[]> entries) throws Exception {
+    try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(jar))) {
+      for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+        jos.putNextEntry(new JarEntry(entry.getKey()));
+        jos.write(entry.getValue());
+      }
+    }
+  }
+
+  @Test
+  public void kotlinModules() throws Exception {
+    Path jar1 = temporaryFolder.newFile("one.jar").toPath();
+    writeJar(
+        jar1,
+        ImmutableMap.of(
+            "META-INF/foo.kotlin_module", new byte[] {1, 2},
+            "META-INF/sub/nested.kotlin_module", new byte[] {9},
+            "META-INF/other.txt", new byte[] {8}));
+    Path jar2 = temporaryFolder.newFile("two.jar").toPath();
+    writeJar(
+        jar2,
+        ImmutableMap.of(
+            "META-INF/foo.kotlin_module", new byte[] {3, 4},
+            "META-INF/bar.kotlin_module", new byte[] {5}));
+
+    ClassPath classPath =
+        ClassPathBinder.bindClasspath(TurbineExecutor.direct(), ImmutableList.of(jar1, jar2));
+
+    // Top-level META-INF/*.kotlin_module files of all jars, including ones with the same name, in
+    // classpath order.
+    ImmutableList<byte[]> modules =
+        classPath.kotlinModules().stream().map(Supplier::get).collect(toImmutableList());
+    assertThat(modules).hasSize(3);
+    assertThat(modules.get(0)).isEqualTo(new byte[] {1, 2});
+    assertThat(modules.get(1)).isEqualTo(new byte[] {3, 4});
+    assertThat(modules.get(2)).isEqualTo(new byte[] {5});
   }
 }
